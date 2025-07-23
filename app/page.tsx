@@ -33,7 +33,8 @@ export default function Home() {
         </p>
         <div className="w-full h-[500px] bg-[#111] border border-gray-800 rounded-xl p-4">
           <iframe
-            src=\"https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1\"
+            srcsrc="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
+
             width="100%"
             height="100%"
             frameBorder="0"
