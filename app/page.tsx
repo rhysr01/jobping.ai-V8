@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 
@@ -7,7 +6,7 @@ export default function Home() {
     <main className="min-h-screen bg-black text-white font-sans px-6 py-12">
       {/* HEADER */}
       <header className="flex justify-between items-center max-w-6xl mx-auto mb-24">
-        <h1 className="text-2xl font-light tracking-tight uppercase text-white">JobPingAI</h1>
+        <h1 className="text-2xl font-light tracking-tight uppercase">JobPingAI</h1>
         <Link
           href="#signup"
           className="px-5 py-2 bg-white text-black rounded-lg font-medium hover:opacity-90 transition"
@@ -22,27 +21,27 @@ export default function Home() {
           Graduate job opportunities. Straight to your inbox.
         </h2>
         <p className="text-gray-400 text-lg max-w-xl mx-auto">
-          No job boards. No dashboards. Just personalised roles for university grads — delivered by email.
+          No job boards. No dashboards. Just personalised roles for university grads &mdash; delivered by email.
         </p>
       </section>
 
       {/* SIGNUP FORM */}
       <section id="signup" className="max-w-3xl mx-auto mb-24 text-center">
         <h3 className="text-2xl font-semibold mb-4">Sign Up</h3>
-        <p className="text-gray-400 mb-6">
-          Choose a plan and get started in under a minute.
-        </p>
+        <p className="text-gray-400 mb-6">Choose a plan and get started in under a minute.</p>
         <div className="w-full h-[500px] bg-[#111] border border-gray-800 rounded-xl p-4">
-          <iframe>
-          src ="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
+          <iframe
+            src="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
             width="100%"
             height="100%"
             frameBorder="0"
             title="JobPing Signup"
             className="rounded-md"
             aria-label="Signup form"
-          </iframe>
-          <p className="text-sm text-gray-500 mt-2">Having trouble? <a href="https://tally.so/r/mJEqx4" target="_blank" rel="noopener noreferrer" className="underline">Open the form in a new tab</a>.</p>
+          ></iframe>
+          <p className="text-sm text-gray-500 mt-2">
+            Having trouble? <a href="https://tally.so/r/mJEqx4" target="_blank" rel="noopener noreferrer" className="underline">Open the form in a new tab</a>.
+          </p>
         </div>
       </section>
 
@@ -54,17 +53,17 @@ export default function Home() {
           <div>
             <span className="text-2xl text-white mb-2 block">1</span>
             <h4 className="text-lg font-medium mb-2">Tell us your preferences</h4>
-            <p>Choose your city, goals, and start date — takes 30 seconds.</p>
+            <p>Choose your city, goals, and start date &mdash; takes 30 seconds.</p>
           </div>
           <div>
             <span className="text-2xl text-white mb-2 block">2</span>
             <h4 className="text-lg font-medium mb-2">We find jobs for you</h4>
-            <p>We scan thousands of listings across the web, so you don’t have to.</p>
+            <p>We scan thousands of listings across the web, so you don&apos;t have to.</p>
           </div>
           <div>
             <span className="text-2xl text-white mb-2 block">3</span>
             <h4 className="text-lg font-medium mb-2">You get matches by email</h4>
-            <p>Receive job opportunities daily — sorted by location, skills, and visa fit.</p>
+            <p>Receive job opportunities daily &mdash; sorted by location, skills, and visa fit.</p>
           </div>
         </div>
       </section>
@@ -76,8 +75,8 @@ export default function Home() {
           {/* FREE PLAN */}
           <div className="border border-gray-700 hover:border-white transition-all duration-300 rounded-xl p-6 bg-[#111]">
             <h4 className="text-xl font-medium mb-2">Free</h4>
-            <p className="text-gray-400 mb-4">5 jobs per day · €0/month</p>
-            <p className="text-sm text-gray-500">Ideal if you’re browsing casually.</p>
+            <p className="text-gray-400 mb-4">5 jobs per day &middot; €0/month</p>
+            <p className="text-sm text-gray-500">Ideal if you&apos;re browsing casually.</p>
           </div>
 
           {/* PREMIUM PLAN */}
@@ -101,7 +100,7 @@ export default function Home() {
           We remove the noise of job boards and deliver curated matches daily to your inbox.
         </p>
         <p className="mt-4">
-          We’re currently available in Madrid, Dublin, Amsterdam, Paris, Berlin, Milan, Lisbon, and London.
+          We&apos;re currently available in Madrid, Dublin, Amsterdam, Paris, Berlin, Milan, Lisbon, and London.
         </p>
       </section>
 
