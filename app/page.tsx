@@ -30,9 +30,11 @@ export default function Home() {
         {/* Noise texture overlay */}
         <div className="fixed inset-0 opacity-[0.02] pointer-events-none z-0">
           <svg width="100%" height="100%">
-            <filter id="noise">
-              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" />
-            </filter>
+            <defs>
+              <filter id="noise">
+                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={1} />
+              </filter>
+            </defs>
             <rect width="100%" height="100%" filter="url(#noise)" />
           </svg>
         </div>
@@ -188,6 +190,17 @@ export default function Home() {
                 onLoad={() => setIframeLoaded(true)}
               />
               
+              <p className="text-center text-sm text-white/40 mt-6 font-light">
+                Form not loading?{' '}
+                <a
+                  href="https://tally.so/r/mJEqx4"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 ml-1 underline"
+                >
+                  Open in new tab →
+                </a>
+              </p>
             </div>
           </motion.div>
         </section>
