@@ -6,4 +6,12 @@
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
-    -moz
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  body {
+    background-color: #0A0A0A;
+    color: #fff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+}
