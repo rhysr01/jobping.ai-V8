@@ -20,8 +20,8 @@ export default function Home() {
         src="https://tally.so/widgets/embed.js"
         strategy="lazyOnload"
         onLoad={() => {
-          if (typeof window !== 'undefined' && (window as any).Tally) {
-            (window as any).Tally.loadEmbeds();
+          if (typeof window !== 'undefined' && (window as Window & { Tally?: { loadEmbeds: () => void } }).Tally) {
+            (window as Window & { Tally?: { loadEmbeds: () => void } }).Tally.loadEmbeds();
           }
         }}
       />
