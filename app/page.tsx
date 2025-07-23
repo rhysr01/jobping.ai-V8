@@ -18,10 +18,10 @@ export default function Home() {
       {/* HERO */}
       <section className="text-center max-w-3xl mx-auto mb-20">
         <h2 className="text-6xl font-light tracking-tight mb-6">
-          Personalised job matches daily in your inbox.
+          Graduate job opportunities. Straight to your inbox.
         </h2>
         <p className="text-gray-400 text-lg max-w-xl mx-auto">
-          No job boards. No dashboards. Just University Graduate roles personalized for you — delivered directly by email.
+          No job boards. No dashboards. Just personalised roles for university grads — delivered by email.
         </p>
       </section>
 
@@ -33,7 +33,7 @@ export default function Home() {
         </p>
         <div className="w-full h-[500px] bg-[#111] border border-gray-800 rounded-xl p-4">
           <iframe
-            src="https://tally.so/r/wMjXgM?alignLeft=1&transparentBackground=1&hideTitle=1"
+            src=\"https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1\"
             width="100%"
             height="100%"
             frameBorder="0"
@@ -55,13 +55,13 @@ export default function Home() {
           </div>
           <div>
             <span className="text-2xl text-white mb-2 block">2</span>
-            <h4 className="text-lg font-medium mb-2">We find the jobs for you</h4>
+            <h4 className="text-lg font-medium mb-2">We find jobs for you</h4>
             <p>We scan thousands of listings across the web, so you don’t have to.</p>
           </div>
           <div>
             <span className="text-2xl text-white mb-2 block">3</span>
             <h4 className="text-lg font-medium mb-2">You get matches by email</h4>
-            <p>Receive internships daily — sorted by location, skills, and visa fit.</p>
+            <p>Receive job opportunities daily — sorted by location, skills, and visa fit.</p>
           </div>
         </div>
       </section>
@@ -85,7 +85,7 @@ export default function Home() {
             <h4 className="text-xl font-medium mb-2">Premium</h4>
             <p className="text-gray-400 mb-2">15 jobs per day</p>
             <p className="text-gray-400 mb-4">€15/month or €30/3 months</p>
-            <p className="text-sm text-gray-500">Best for students actively applying.</p>
+            <p className="text-sm text-gray-500">Best for graduates actively applying.</p>
           </div>
         </div>
       </section>
@@ -94,8 +94,8 @@ export default function Home() {
       <section className="max-w-2xl mx-auto text-center text-gray-300 text-sm mb-24">
         <h3 className="text-lg font-medium text-white mb-4">About Us</h3>
         <p>
-  JobPingAI is built for students and recent university graduates seeking career-aligned internships and entry-level roles.
-  We remove the noise of job boards and deliver curated matches daily to your inbox.
+          JobPingAI is built for students and recent university graduates seeking career-aligned job opportunities.
+          We remove the noise of job boards and deliver curated matches daily to your inbox.
         </p>
         <p className="mt-4">
           We’re currently available in Madrid, Dublin, Amsterdam, Paris, Berlin, Milan, Lisbon, and London.

@@ -1,26 +1,43 @@
 import './globals.css';
+import type { Metadata } from 'next';
 import { ReactNode } from 'react';
 
-export const metadata = {
-  title: 'JobPingAI – Graduate Jobs Delivered',
+export const metadata: Metadata = {
+  title: 'JobPingAI – Graduate Job Matches Delivered',
   description:
-    'University graduate jobs delivered to your inbox daily. No job boards. No dashboards. Just personalised email matches for students and grads.',
+    'Graduate job opportunities delivered directly to your inbox. No job boards. No filters. Just smart, email-based career matching for university graduates.',
+  icons: {
+    icon: '/favicon.ico',
+  },
+  openGraph: {
+    title: 'JobPingAI – Graduate Job Matches Delivered',
+    description:
+      'Get 5–15 job opportunities daily based on your preferences, city, and start date. Clean, email-first job discovery — no dashboard needed.',
+    url: 'https://jobping.vercel.app',
+    siteName: 'JobPingAI',
+    images: [
+      {
+        url: 'https://jobping.vercel.app/preview.png',
+        width: 1200,
+        height: 630,
+        alt: 'JobPingAI – Preview',
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'JobPingAI – Graduate Job Matches Delivered',
+    description:
+      'University graduate jobs delivered to your inbox — smart, email-only career discovery with zero job board noise.',
+    images: ['https://jobping.vercel.app/preview.png'],
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="icon" href="/favicon.ico" />
-        <meta property="og:title" content="JobPingAI – Graduate Jobs Delivered" />
-        <meta
-          property="og:description"
-          content="University graduate jobs delivered daily. No job boards. Just personalised internship matches by email."
-        />
-        <meta property="og:image" content="https://jobpingai.vercel.app/preview.png" />
-        <meta name="twitter:card" content="summary_large_image" />
-      </head>
-      <body className="bg-black text-white font-sans">
+    <html lang="en" className="scroll-smooth">
+      <body className="bg-black text-white font-sans antialiased selection:bg-white selection:text-black">
         {children}
       </body>
     </html>
