@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Safe global body styles */
 body {
-  @apply bg-black text-white font-sans;
+  background-color: #000;
+  color: #fff;
+  font-family: system-ui, sans-serif;
 }
