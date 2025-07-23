@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 
@@ -17,7 +18,7 @@ export default function Home() {
 
       {/* HERO */}
       <section className="text-center max-w-3xl mx-auto mb-20">
-        <h2 className="text-6xl font-light tracking-tight mb-6">
+        <h2 className="text-6xl font-light tracking-tight leading-tight mb-6">
           Graduate job opportunities. Straight to your inbox.
         </h2>
         <p className="text-gray-400 text-lg max-w-xl mx-auto">
@@ -32,20 +33,21 @@ export default function Home() {
           Choose a plan and get started in under a minute.
         </p>
         <div className="w-full h-[500px] bg-[#111] border border-gray-800 rounded-xl p-4">
-          <iframe
-            srcsrc="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
-
+          <iframe>
+          src ="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
             width="100%"
             height="100%"
             frameBorder="0"
             title="JobPing Signup"
             className="rounded-md"
-          ></iframe>
+            aria-label="Signup form"
+          </iframe>
+          <p className="text-sm text-gray-500 mt-2">Having trouble? <a href="https://tally.so/r/mJEqx4" target="_blank" rel="noopener noreferrer" className="underline">Open the form in a new tab</a>.</p>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="max-w-4xl mx-auto mb-24 text-center">
+      <section className="max-w-4xl mx-auto mb-24 text-center bg-[#0d0d0d] py-12 rounded-xl">
         <h3 className="text-2xl font-semibold mb-8">How It Works</h3>
         <hr className="border-gray-800 mb-10" />
         <div className="grid md:grid-cols-3 gap-12 text-gray-300 text-base">
