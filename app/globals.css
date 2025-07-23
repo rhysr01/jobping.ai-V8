@@ -1,10 +1,9 @@
-@tailwind base;
+css@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Safe global body styles */
-body {
-  background-color: #000;
-  color: #fff;
-  font-family: system-ui, sans-serif;
-}
+/* Base styles */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz

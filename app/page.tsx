@@ -1,117 +1,336 @@
 'use client';
-import Link from 'next/link';
+import { useState } from 'react';
+import Script from 'next/script';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Home() {
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [activeTab, setActiveTab] = useState('free');
+
+  // Minimal fade animation preset
+  const fadeUpAnimation = {
+    initial: { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.6, ease: [0.33, 1, 0.68, 1] }
+  };
+
   return (
-    <main className="min-h-screen bg-black text-white font-sans px-6 py-12">
-      {/* HEADER */}
-      <header className="flex justify-between items-center max-w-6xl mx-auto mb-24">
-        <h1 className="text-2xl font-light tracking-tight uppercase">JobPingAI</h1>
-        <Link
-          href="#signup"
-          className="px-5 py-2 bg-white text-black rounded-lg font-medium hover:opacity-90 transition"
+    <>
+      <Script
+        src="https://tally.so/widgets/embed.js"
+        strategy="lazyOnload"
+        onLoad={() => {
+          if (typeof window !== 'undefined' && (window as any).Tally) {
+            (window as any).Tally.loadEmbeds();
+          }
+        }}
+      />
+
+      <div className="min-h-screen bg-[#0A0A0A] text-white overflow-x-hidden" style={{ fontFamily: 'Inter, -apple-system, sans-serif' }}>
+        {/* Noise texture overlay */}
+        <div className="fixed inset-0 opacity-[0.02] pointer-events-none z-0">
+          <svg width="100%" height="100%">
+            <filter id="noise">
+              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" />
+            </filter>
+            <rect width="100%" height="100%" filter="url(#noise)" />
+          </svg>
+        </div>
+
+        {/* Single subtle glow behind hero */}
+        <div className="fixed top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/[0.02] rounded-full blur-[200px] pointer-events-none" />
+
+        {/* Navigation */}
+        <motion.nav 
+          {...fadeUpAnimation}
+          className="relative z-10 px-8 py-8"
         >
-          Join Free
-        </Link>
-      </header>
-
-      {/* HERO */}
-      <section className="text-center max-w-3xl mx-auto mb-20">
-        <h2 className="text-6xl font-light tracking-tight leading-tight mb-6">
-          Graduate job opportunities. Straight to your inbox.
-        </h2>
-        <p className="text-gray-400 text-lg max-w-xl mx-auto">
-          No job boards. No dashboards. Just personalised roles for university grads &mdash; delivered by email.
-        </p>
-      </section>
-
-      {/* SIGNUP FORM */}
-      <section id="signup" className="max-w-3xl mx-auto mb-24 text-center">
-        <h3 className="text-2xl font-semibold mb-4">Sign Up</h3>
-        <p className="text-gray-400 mb-6">Choose a plan and get started in under a minute.</p>
-        <div className="w-full h-[500px] bg-[#111] border border-gray-800 rounded-xl p-4">
-          <iframe
-            src="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
-            width="100%"
-            height="100%"
-            frameBorder="0"
-            title="JobPing Signup"
-            className="rounded-md"
-            aria-label="Signup form"
-          ></iframe>
-          <p className="text-sm text-gray-500 mt-2">
-            Having trouble? <a href="https://tally.so/r/mJEqx4" target="_blank" rel="noopener noreferrer" className="underline">Open the form in a new tab</a>.
-          </p>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section className="max-w-4xl mx-auto mb-24 text-center bg-[#0d0d0d] py-12 rounded-xl">
-        <h3 className="text-2xl font-semibold mb-8">How It Works</h3>
-        <hr className="border-gray-800 mb-10" />
-        <div className="grid md:grid-cols-3 gap-12 text-gray-300 text-base">
-          <div>
-            <span className="text-2xl text-white mb-2 block">1</span>
-            <h4 className="text-lg font-medium mb-2">Tell us your preferences</h4>
-            <p>Choose your city, goals, and start date &mdash; takes 30 seconds.</p>
+          <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <span className="text-lg font-light tracking-tight">JobPing</span>
+            
+            <button
+              onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
+              className="px-6 py-2 text-sm font-light border border-white/20 rounded-full hover:bg-white hover:text-black transition-all duration-300"
+            >
+              Get Started
+            </button>
           </div>
-          <div>
-            <span className="text-2xl text-white mb-2 block">2</span>
-            <h4 className="text-lg font-medium mb-2">We find jobs for you</h4>
-            <p>We scan thousands of listings across the web, so you don&apos;t have to.</p>
-          </div>
-          <div>
-            <span className="text-2xl text-white mb-2 block">3</span>
-            <h4 className="text-lg font-medium mb-2">You get matches by email</h4>
-            <p>Receive job opportunities daily &mdash; sorted by location, skills, and visa fit.</p>
-          </div>
-        </div>
-      </section>
+        </motion.nav>
 
-      {/* PRICING */}
-      <section className="max-w-4xl mx-auto mb-24 text-center" id="pricing">
-        <h3 className="text-2xl font-semibold mb-8">Plans</h3>
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* FREE PLAN */}
-          <div className="border border-gray-700 hover:border-white transition-all duration-300 rounded-xl p-6 bg-[#111]">
-            <h4 className="text-xl font-medium mb-2">Free</h4>
-            <p className="text-gray-400 mb-4">5 jobs per day &middot; €0/month</p>
-            <p className="text-sm text-gray-500">Ideal if you&apos;re browsing casually.</p>
+        {/* Hero Section */}
+        <section className="relative min-h-[80vh] flex items-center justify-center px-8 -mt-20">
+          <motion.div 
+            {...fadeUpAnimation}
+            className="text-center max-w-4xl mx-auto"
+          >
+            <h1 className="text-[clamp(2rem,7vw,5rem)] font-light leading-[0.9] tracking-[-0.03em] mb-10">
+              Your next job{' '}
+              <span className="bg-gradient-to-r from-blue-400/80 to-purple-400/80 bg-clip-text text-transparent">
+                finds you.
+              </span>
+            </h1>
+            
+            <p className="text-lg text-white/70 max-w-md mx-auto mb-12 font-light">
+              AI-curated roles. Delivered daily. No job boards.
+            </p>
+            
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
+              className="px-8 py-3 bg-white text-black rounded-full hover:bg-white/90 transition-all duration-300 font-normal"
+            >
+              Start Free Trial
+            </motion.button>
+
+            {/* Subtle social proof */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8, duration: 0.6 }}
+              className="mt-12 text-sm text-white/40 font-light"
+            >
+              2,847 jobs added weekly
+            </motion.p>
+          </motion.div>
+        </section>
+
+        {/* How It Works */}
+        <section className="py-24 px-8">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="max-w-6xl mx-auto"
+          >
+            <h2 className="text-3xl font-light text-center mb-16 text-white/90">
+              How JobPing Works
+            </h2>
+
+            <div className="grid md:grid-cols-3 gap-12 md:gap-16">
+              {[
+                {
+                  number: '01',
+                  title: 'Share your goals',
+                  description: 'Describe your dream job in 30 seconds.'
+                },
+                {
+                  number: '02',
+                  title: 'AI curates daily',
+                  description: 'Our algorithm finds your perfect matches.'
+                },
+                {
+                  number: '03',
+                  title: 'Apply with ease',
+                  description: 'One click to apply. Skip the search.'
+                }
+              ].map((step, i) => (
+                <motion.div
+                  key={step.number}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: i * 0.1, ease: [0.33, 1, 0.68, 1] }}
+                  className="text-center md:text-left"
+                >
+                  <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center mb-4 mx-auto md:mx-0">
+                    <span className="text-sm font-light text-white/60">{step.number}</span>
+                  </div>
+                  <h3 className="text-xl font-normal mb-2 text-white/90">{step.title}</h3>
+                  <p className="text-white/60 font-light">{step.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </section>
+
+        {/* Sign-Up Form */}
+        <section id="signup" className="py-24 px-8">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="max-w-3xl mx-auto"
+          >
+            <h2 className="text-3xl font-light text-center mb-4 text-white/90">
+              Ready to start?
+            </h2>
+            <p className="text-center text-white/60 mb-12 font-light">
+              Join thousands finding their perfect role
+            </p>
+
+            <div className="relative bg-[#0f0f0f] backdrop-blur-xl rounded-3xl border border-white/10 p-8 md:p-12">
+              <AnimatePresence>
+                {!iframeLoaded && (
+                  <motion.div
+                    initial={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-3xl"
+                  >
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse" />
+                      <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse delay-75" />
+                      <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse delay-150" />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <iframe
+                src="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
+                width="100%"
+                height="500"
+                frameBorder="0"
+                title="JobPing Signup"
+                className="w-full"
+                onLoad={() => setIframeLoaded(true)}
+              />
+              
+            </div>
+          </motion.div>
+        </section>
+
+        {/* Pricing */}
+        <section id="pricing" className="py-24 px-8">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="max-w-4xl mx-auto"
+          >
+            <h2 className="text-3xl font-light text-center mb-4 text-white/90">
+              Simple, transparent pricing
+            </h2>
+            <p className="text-center text-white/60 mb-12 font-light">
+              For everyone.
+            </p>
+
+            {/* Toggle */}
+            <div className="flex justify-center mb-16">
+              <div className="relative bg-white/5 p-1 rounded-full inline-flex">
+                <button
+                  onClick={() => setActiveTab('free')}
+                  className={`px-6 py-2 rounded-full text-sm font-light transition-all ${
+                    activeTab === 'free' ? 'text-black' : 'text-white/40'
+                  }`}
+                  style={{ position: 'relative', zIndex: 10 }}
+                >
+                  Free
+                </button>
+                <button
+                  onClick={() => setActiveTab('premium')}
+                  className={`px-6 py-2 rounded-full text-sm font-light transition-all ${
+                    activeTab === 'premium' ? 'text-black' : 'text-white/40'
+                  }`}
+                  style={{ position: 'relative', zIndex: 10 }}
+                >
+                  Premium
+                </button>
+                <motion.div
+                  className="absolute top-1 bottom-1 bg-white rounded-full"
+                  animate={{
+                    x: activeTab === 'free' ? 4 : '100%',
+                    width: activeTab === 'free' ? 56 : 72,
+                  }}
+                  transition={{ type: "tween", duration: 0.3 }}
+                />
+              </div>
+            </div>
+
+            <AnimatePresence mode="wait">
+              {activeTab === 'free' ? (
+                <motion.div
+                  key="free"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className="max-w-sm mx-auto"
+                >
+                  <div className="text-center p-8 rounded-2xl border border-white/10">
+                    <h3 className="text-2xl font-light mb-2 text-white/90">Free Forever</h3>
+                    <div className="text-5xl font-light my-6">€0</div>
+                    <ul className="space-y-3 mb-8 text-white/70 font-light">
+                      <li>5 job matches daily</li>
+                      <li>Email delivery</li>
+                      <li>Basic preferences</li>
+                    </ul>
+                    <button
+                      onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="w-full py-3 border border-white/20 rounded-full hover:bg-white/5 transition-all font-light"
+                    >
+                      Start Free
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="premium"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto"
+                >
+                  {[
+                    { name: 'Monthly', price: '€15', period: 'per month' },
+                    { name: 'Quarterly', price: '€30', period: '3 months', highlight: true }
+                  ].map((plan) => (
+                    <div 
+                      key={plan.name}
+                      className={`text-center p-8 rounded-2xl border ${
+                        plan.highlight ? 'border-white/30' : 'border-white/10'
+                      }`}
+                    >
+                      {plan.highlight && (
+                        <span className="text-xs text-white/60 font-light">Save 33%</span>
+                      )}
+                      <h3 className="text-xl font-light mb-2 text-white/90 mt-2">{plan.name}</h3>
+                      <div className="text-4xl font-light my-4">{plan.price}</div>
+                      <div className="text-sm text-white/60 mb-6 font-light">{plan.period}</div>
+                      <ul className="space-y-2 mb-8 text-sm text-white/70 font-light">
+                        <li>15 job matches daily</li>
+                        <li>Priority AI matching</li>
+                        <li>Advanced filters</li>
+                      </ul>
+                      <button
+                        onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
+                        className={`w-full py-3 rounded-full transition-all font-light ${
+                          plan.highlight 
+                            ? 'bg-white text-black hover:bg-white/90' 
+                            : 'border border-white/20 hover:bg-white/5'
+                        }`}
+                      >
+                        Get Premium
+                      </button>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </section>
+
+        {/* Footer */}
+        <footer className="py-12 px-8 border-t border-white/5">
+          <div className="max-w-6xl mx-auto text-center">
+            <p className="text-sm text-white/40 font-light mb-4">
+              © 2025 JobPing. All rights reserved.
+            </p>
+            <div className="flex justify-center gap-6 text-sm">
+              <a href="/terms" className="text-white/40 hover:text-white/60 transition-colors font-light">
+                Terms
+              </a>
+              <a href="/privacy" className="text-white/40 hover:text-white/60 transition-colors font-light">
+                Privacy
+              </a>
+            </div>
           </div>
-
-          {/* PREMIUM PLAN */}
-          <div className="border border-white hover:bg-[#1f1f1f] transition-all duration-300 rounded-xl p-6 bg-[#1a1a1a] shadow-lg">
-            <span className="text-xs uppercase bg-white text-black px-2 py-1 rounded mb-2 inline-block font-semibold">
-              Most Popular
-            </span>
-            <h4 className="text-xl font-medium mb-2">Premium</h4>
-            <p className="text-gray-400 mb-2">15 jobs per day</p>
-            <p className="text-gray-400 mb-4">€15/month or €30/3 months</p>
-            <p className="text-sm text-gray-500">Best for graduates actively applying.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* ABOUT */}
-      <section className="max-w-2xl mx-auto text-center text-gray-300 text-sm mb-24">
-        <h3 className="text-lg font-medium text-white mb-4">About Us</h3>
-        <p>
-          JobPingAI is built for students and recent university graduates seeking career-aligned job opportunities.
-          We remove the noise of job boards and deliver curated matches daily to your inbox.
-        </p>
-        <p className="mt-4">
-          We&apos;re currently available in Madrid, Dublin, Amsterdam, Paris, Berlin, Milan, Lisbon, and London.
-        </p>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="text-center text-xs text-gray-600 border-t border-gray-800 pt-6">
-        <p className="hover:text-white/80">© 2025 JobPingAI</p>
-        <div className="mt-2 space-x-4">
-          <Link href="/privacy" className="hover:underline">Privacy</Link>
-          <Link href="/terms" className="hover:underline">Terms</Link>
-        </div>
-      </footer>
-    </main>
+        </footer>
+      </div>
+    </>
   );
 }
