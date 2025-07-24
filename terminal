@@ -1,4 +1,3 @@
 git add .
-git commit -m "Simplify color scheme to black/white/gray"
+git commit -m "Fix TypeScript error in priceselector"
 git push
-
