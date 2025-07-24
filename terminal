@@ -1,3 +1,6 @@
 git add .
-git commit -m "Fix TypeScript error in priceselector"
+git commit -m "Fix PricingSelector prop error"
 git push
+
+
+
