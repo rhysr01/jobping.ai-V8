@@ -79,14 +79,35 @@ export default function Home() {
               AI-curated roles. Delivered daily. No job boards.
             </p>
             
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
-              className="px-8 py-3 bg-white text-black rounded-full hover:bg-white/90 transition-all duration-300 font-normal"
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="group relative inline-block"
             >
-              Start Free Trial
-            </motion.button>
+              <motion.button
+                onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
+                className="relative px-10 py-4 bg-white text-black rounded-full font-semibold overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-white/20"
+                whileHover={{ y: -2 }}
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  Start Free Trial
+                  <motion.span
+                    animate={{ x: [0, 4, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    →
+                  </motion.span>
+                </span>
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-white to-gray-100"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                />
+              </motion.button>
+              
+              {/* Magnetic glow */}
+              <div className="absolute inset-0 bg-white/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
+            </motion.div>
 
             {/* Subtle social proof */}
             <motion.p
