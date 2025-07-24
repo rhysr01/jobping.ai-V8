@@ -1,18 +1,41 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Script from 'next/script';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GraduationCap, Sparkles, Zap, Target } from 'lucide-react';
 
 export default function Home() {
   const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [activeTab, setActiveTab] = useState('free');
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  // Minimal fade animation preset
-  const fadeUpAnimation = {
-    initial: { opacity: 0, y: 10 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
-  };
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  const features = [
+    {
+      title: 'AI-Powered Matching',
+      description: 'Advanced algorithms analyze your profile and preferences to find perfect job matches daily.',
+      tier: 'SMART',
+      icon: Sparkles
+    },
+    {
+      title: 'Graduate-Focused',
+      description: 'Curated opportunities specifically for ambitious graduates entering the job market.',
+      tier: 'TARGETED',
+      icon: Target
+    },
+    {
+      title: 'Zero Job Boards',
+      description: 'Skip the endless scrolling. We bring the best opportunities directly to your inbox.',
+      tier: 'EFFICIENT',
+      icon: Zap
+    }
+  ];
 
   return (
     <>
@@ -29,377 +52,262 @@ export default function Home() {
         }}
       />
 
-      <div className="min-h-screen bg-[#0A0A0A] text-white overflow-x-hidden" style={{ fontFamily: 'Inter, -apple-system, sans-serif' }}>
+      <div className="min-h-screen overflow-x-hidden relative">
+        {/* Cursor follower */}
+        <div 
+          className="fixed w-6 h-6 pointer-events-none z-50 mix-blend-difference"
+          style={{
+            left: mousePosition.x - 12,
+            top: mousePosition.y - 12,
+            background: 'radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%)',
+            borderRadius: '50%',
+            transition: 'all 0.1s ease-out'
+          }}
+        />
+
         {/* Animated Grid Background */}
-        <div className="fixed inset-0 -z-20 opacity-[0.03]">
+        <div className="fixed inset-0 -z-20 opacity-[0.04]">
           <div className="absolute inset-0" style={{
             backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+              linear-gradient(rgba(102, 126, 234, 0.4) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(102, 126, 234, 0.4) 1px, transparent 1px)
             `,
-            backgroundSize: '50px 50px',
-            animation: 'grid-move 20s linear infinite'
+            backgroundSize: '60px 60px',
+            animation: 'grid-move 25s linear infinite'
           }} />
         </div>
 
-        {/* Floating Orbs */}
+        {/* Enhanced Floating Orbs */}
         <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
           <motion.div
             animate={{ 
-              x: [0, 100, 0], 
-              y: [0, -50, 0],
-              scale: [1, 1.1, 1]
+              x: [0, 120, -50, 0], 
+              y: [0, -80, 40, 0],
+              scale: [1, 1.2, 0.8, 1],
+              rotate: [0, 180, 360]
             }}
-            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-            className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-[100px]"
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[120px] animate-breathe"
+            style={{
+              background: 'radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.15) 40%, rgba(240, 147, 251, 0.1) 70%, transparent 100%)'
+            }}
           />
           <motion.div
             animate={{ 
-              x: [0, -80, 0], 
-              y: [0, 60, 0],
-              scale: [1, 0.9, 1]
+              x: [0, -100, 80, 0], 
+              y: [0, 80, -60, 0],
+              scale: [1, 0.8, 1.3, 1],
+              rotate: [0, -180, -360]
             }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-[120px]"
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+            className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-[140px] animate-breathe"
+            style={{
+              background: 'radial-gradient(circle, rgba(240, 147, 251, 0.2) 0%, rgba(245, 87, 108, 0.15) 40%, rgba(79, 172, 254, 0.1) 70%, transparent 100%)'
+            }}
+          />
+          <motion.div
+            animate={{ 
+              x: [0, 60, -40, 0], 
+              y: [0, -40, 60, 0],
+              scale: [1, 1.1, 0.9, 1]
+            }}
+            transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+            className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full blur-[100px] animate-breathe"
+            style={{
+              background: 'radial-gradient(circle, rgba(79, 172, 254, 0.15) 0%, rgba(102, 126, 234, 0.1) 50%, transparent 100%)'
+            }}
           />
         </div>
 
-        {/* Noise texture overlay */}
-        <div className="fixed inset-0 opacity-[0.02] pointer-events-none z-0">
-          <svg width="100%" height="100%">
-            <defs>
-              <filter id="noise">
-                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={1} />
-              </filter>
-            </defs>
-            <rect width="100%" height="100%" filter="url(#noise)" />
-          </svg>
-        </div>
-
-        {/* Single subtle glow behind hero */}
-        <div className="fixed top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/[0.02] rounded-full blur-[200px] pointer-events-none" />
+        {/* Enhanced Noise texture overlay */}
+        <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='6' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          mixBlendMode: 'overlay'
+        }} />
 
         {/* Navigation */}
-        <motion.nav 
-          {...fadeUpAnimation}
-          className="relative z-10 px-8 py-8"
-        >
-          <div className="max-w-7xl mx-auto flex justify-between items-center">
-            <span className="text-lg font-light tracking-tight">JobPing</span>
-            
-            <button
-              onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
-              className="px-6 py-2 text-sm font-light border border-white/20 rounded-full hover:bg-white hover:text-black transition-all duration-300"
-            >
-              Get Started
-            </button>
-          </div>
-        </motion.nav>
+        <nav className="w-full py-8 px-6 md:px-12 flex justify-between items-center relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex items-center gap-3"
+          >
+            <GraduationCap className="w-7 h-7 text-gradient animate-pulse-glow" strokeWidth={1.5} />
+            <span className="premium-text text-xl font-semibold tracking-tight">JobPingAI</span>
+          </motion.div>
+          <motion.button 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
+            className="nav-button magnetic-button"
+          >
+            Get Started
+          </motion.button>
+        </nav>
 
         {/* Hero Section */}
-        <section className="relative min-h-[80vh] flex items-center justify-center px-8 -mt-20">
+        <section className="min-h-[90vh] flex flex-col items-center justify-center text-center px-6 relative">
+          {/* Logo + Heading */}
           <motion.div 
-            {...fadeUpAnimation}
-            className="text-center max-w-4xl mx-auto"
+            initial={{ opacity: 0, y: 30, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="flex items-center gap-4 mb-8"
           >
-            <h1 className="text-[clamp(2rem,7vw,5rem)] font-light leading-[0.9] tracking-[-0.03em] mb-10">
-              Your next job{' '}
-              <span className="bg-gradient-to-r from-blue-400/80 to-purple-400/80 bg-clip-text text-transparent">
-                finds you.
-              </span>
+            <GraduationCap className="w-10 h-10 text-gradient animate-pulse-glow animate-float" strokeWidth={1.5} />
+            <h1 className="text-[clamp(2.5rem,7vw,5rem)] font-bold hero-title tracking-tight">
+              JobPingAI
             </h1>
-            
-            <p className="text-lg text-white/70 max-w-md mx-auto mb-12 font-light">
-              AI-curated roles. Delivered daily. No job boards.
-            </p>
-            
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="group relative inline-block"
-            >
-              <motion.button
-                onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
-                className="relative px-10 py-4 bg-white text-black rounded-full font-semibold overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-white/20"
-                whileHover={{ y: -2 }}
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  Start Free Trial
-                  <motion.span
-                    animate={{ x: [0, 4, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  >
-                    →
-                  </motion.span>
-                </span>
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-white to-gray-100"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.3 }}
-                />
-              </motion.button>
-              
-              {/* Magnetic glow */}
-              <div className="absolute inset-0 bg-white/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
-            </motion.div>
-
-            {/* Subtle social proof */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-              className="mt-12 text-sm text-white/40 font-light"
-            >
-              2,847 jobs added weekly
-            </motion.p>
           </motion.div>
+
+          {/* Catchphrase */}
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="text-accent text-xl md:text-2xl font-light mb-12 max-w-2xl italic leading-relaxed"
+          >
+            AI-powered job discovery, built for ambitious graduates who deserve better than endless scrolling.
+          </motion.p>
+
+          {/* CTA */}
+          <motion.button
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
+            className="cta-button magnetic-button animate-gradient premium-glow"
+          >
+            Start Free Trial
+          </motion.button>
+
+          {/* Floating elements */}
+          <div className="absolute inset-0 pointer-events-none">
+            <motion.div
+              animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-1/4 left-1/4 w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-60"
+            />
+            <motion.div
+              animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-50"
+            />
+            <motion.div
+              animate={{ y: [0, -10, 0], rotate: [0, 3, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+              className="absolute bottom-1/3 left-1/3 w-1 h-1 bg-gradient-to-r from-pink-400 to-red-400 rounded-full opacity-40"
+            />
+          </div>
         </section>
 
-        {/* How It Works */}
-        <section className="py-24 px-8">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+        {/* Features Grid */}
+        <section className="py-32 px-6 relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: 0.8 }}
             className="max-w-6xl mx-auto"
           >
-            <h2 className="text-3xl font-light text-center mb-16 text-white/90">
-              How JobPing Works
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 hero-title">
+              Why Choose JobPingAI?
             </h2>
-
-            <div className="grid md:grid-cols-3 gap-12 md:gap-16">
-              {[
-                {
-                  number: '01',
-                  title: 'Share your goals',
-                  description: 'Describe your dream job in 30 seconds.'
-                },
-                {
-                  number: '02',
-                  title: 'AI curates daily',
-                  description: 'Our algorithm finds your perfect matches.'
-                },
-                {
-                  number: '03',
-                  title: 'Apply with ease',
-                  description: 'One click to apply. Skip the search.'
-                }
-              ].map((step, i) => (
-                <motion.div
-                  key={step.number}
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1, ease: [0.33, 1, 0.68, 1] }}
-                  className="text-center md:text-left"
-                >
-                  <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center mb-4 mx-auto md:mx-0">
-                    <span className="text-sm font-light text-white/60">{step.number}</span>
-                  </div>
-                  <h3 className="text-xl font-normal mb-2 text-white/90">{step.title}</h3>
-                  <p className="text-white/60 font-light">{step.description}</p>
-                </motion.div>
-              ))}
+            <div className="grid md:grid-cols-3 gap-10">
+              {features.map((item, index) => {
+                const IconComponent = item.icon;
+                return (
+                  <motion.div 
+                    key={item.title} 
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: index * 0.15 }}
+                    className="feature-card p-8 group"
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <IconComponent className="w-6 h-6 text-gradient" strokeWidth={1.5} />
+                      <h3 className="premium-text text-xl font-semibold tracking-tight">{item.title}</h3>
+                    </div>
+                    <p className="text-slate-300 font-light text-base leading-relaxed mb-6">{item.description}</p>
+                    <span className="text-sm text-accent font-semibold uppercase tracking-wider">{item.tier}</span>
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
         </section>
 
-        {/* Sign-Up Form */}
-        <section id="signup" className="py-24 px-8">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="max-w-3xl mx-auto"
-          >
-            <h2 className="text-3xl font-light text-center mb-4 text-white/90">
-              Ready to start?
-            </h2>
-            <p className="text-center text-white/60 mb-12 font-light">
-              Join thousands finding their perfect role
-            </p>
-
-            <div className="relative bg-[#0f0f0f] backdrop-blur-xl rounded-3xl border border-white/10 p-8 md:p-12">
+        {/* Sign-Up Panel */}
+        <section id="signup" className="py-40 px-6 relative z-10">
+          <div className="max-w-3xl mx-auto text-center">
+            <motion.h2 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="text-4xl md:text-5xl font-bold hero-title mb-8"
+            >
+              Join JobPingAI
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.1 }}
+              className="text-slate-300 text-lg md:text-xl font-light mb-12 leading-relaxed"
+            >
+              Trusted by thousands of graduates. No job boards. Just smart matches delivered daily.
+            </motion.p>
+            <motion.div 
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="signup-panel p-10"
+            >
               <AnimatePresence>
                 {!iframeLoaded && (
                   <motion.div
                     initial={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-3xl"
+                    className="absolute inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-10 rounded-3xl"
                   >
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse" />
-                      <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse delay-75" />
-                      <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse delay-150" />
+                    <div className="flex space-x-2">
+                      <div className="w-3 h-3 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full animate-pulse" />
+                      <div className="w-3 h-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse delay-75" />
+                      <div className="w-3 h-3 bg-gradient-to-r from-pink-400 to-red-400 rounded-full animate-pulse delay-150" />
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
-
+              
               <iframe
                 src="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
-                width="100%"
-                height="500"
-                frameBorder="0"
-                title="JobPing Signup"
-                className="w-full"
+                className="w-full h-[600px] rounded-2xl"
+                loading="lazy"
                 onLoad={() => setIframeLoaded(true)}
               />
-              
-              <p className="text-center text-sm text-white/40 mt-6 font-light">
-                Form not loading?{' '}
-                <a
-                  href="https://tally.so/r/mJEqx4"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 hover:text-blue-300 ml-1 underline"
-                >
-                  Open in new tab →
-                </a>
-              </p>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* Pricing */}
-        <section id="pricing" className="py-24 px-8">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="max-w-4xl mx-auto"
-          >
-            <h2 className="text-3xl font-light text-center mb-4 text-white/90">
-              Simple, transparent pricing
-            </h2>
-            <p className="text-center text-white/60 mb-12 font-light">
-              For everyone.
-            </p>
-
-            {/* Toggle */}
-            <div className="flex justify-center mb-16">
-              <div className="relative bg-white/5 p-1 rounded-full inline-flex">
-                <button
-                  onClick={() => setActiveTab('free')}
-                  className={`px-6 py-2 rounded-full text-sm font-light transition-all ${
-                    activeTab === 'free' ? 'text-black' : 'text-white/40'
-                  }`}
-                  style={{ position: 'relative', zIndex: 10 }}
-                >
-                  Free
-                </button>
-                <button
-                  onClick={() => setActiveTab('premium')}
-                  className={`px-6 py-2 rounded-full text-sm font-light transition-all ${
-                    activeTab === 'premium' ? 'text-black' : 'text-white/40'
-                  }`}
-                  style={{ position: 'relative', zIndex: 10 }}
-                >
-                  Premium
-                </button>
-                <motion.div
-                  className="absolute top-1 bottom-1 bg-white rounded-full"
-                  animate={{
-                    x: activeTab === 'free' ? 4 : '100%',
-                    width: activeTab === 'free' ? 56 : 72,
-                  }}
-                  transition={{ type: "tween", duration: 0.3 }}
-                />
-              </div>
-            </div>
-
-            <AnimatePresence mode="wait">
-              {activeTab === 'free' ? (
-                <motion.div
-                  key="free"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                  className="max-w-sm mx-auto"
-                >
-                  <div className="text-center p-8 rounded-2xl border border-white/10">
-                    <h3 className="text-2xl font-light mb-2 text-white/90">Free Forever</h3>
-                    <div className="text-5xl font-light my-6">€0</div>
-                    <ul className="space-y-3 mb-8 text-white/70 font-light">
-                      <li>5 job matches daily</li>
-                      <li>Email delivery</li>
-                      <li>Basic preferences</li>
-                    </ul>
-                    <button
-                      onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="w-full py-3 border border-white/20 rounded-full hover:bg-white/5 transition-all font-light"
-                    >
-                      Start Free
-                    </button>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="premium"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                  className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto"
-                >
-                  {[
-                    { name: 'Monthly', price: '€15', period: 'per month' },
-                    { name: 'Quarterly', price: '€30', period: '3 months', highlight: true }
-                  ].map((plan) => (
-                    <div 
-                      key={plan.name}
-                      className={`text-center p-8 rounded-2xl border ${
-                        plan.highlight ? 'border-white/30' : 'border-white/10'
-                      }`}
-                    >
-                      {plan.highlight && (
-                        <span className="text-xs text-white/60 font-light">Save 33%</span>
-                      )}
-                      <h3 className="text-xl font-light mb-2 text-white/90 mt-2">{plan.name}</h3>
-                      <div className="text-4xl font-light my-4">{plan.price}</div>
-                      <div className="text-sm text-white/60 mb-6 font-light">{plan.period}</div>
-                      <ul className="space-y-2 mb-8 text-sm text-white/70 font-light">
-                        <li>15 job matches daily</li>
-                        <li>Priority AI matching</li>
-                        <li>Advanced filters</li>
-                      </ul>
-                      <button
-                        onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
-                        className={`w-full py-3 rounded-full transition-all font-light ${
-                          plan.highlight 
-                            ? 'bg-white text-black hover:bg-white/90' 
-                            : 'border border-white/20 hover:bg-white/5'
-                        }`}
-                      >
-                        Get Premium
-                      </button>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+            </motion.div>
+          </div>
         </section>
 
         {/* Footer */}
-        <footer className="py-12 px-8 border-t border-white/5">
-          <div className="max-w-6xl mx-auto text-center">
-            <p className="text-sm text-white/40 font-light mb-4">
-              © 2025 JobPing. All rights reserved.
-            </p>
-            <div className="flex justify-center gap-6 text-sm">
-              <a href="/terms" className="text-white/40 hover:text-white/60 transition-colors font-light">
-                Terms
-              </a>
-              <a href="/privacy" className="text-white/40 hover:text-white/60 transition-colors font-light">
-                Privacy
-              </a>
-            </div>
-          </div>
+        <footer className="py-16 px-8 border-t border-white/10 text-center text-slate-400 text-sm font-light relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            © 2025 JobPingAI. All rights reserved. · 
+            <a href="/terms" className="hover:text-accent transition-colors ml-1">Terms</a> · 
+            <a href="/privacy" className="hover:text-accent transition-colors ml-1">Privacy</a>
+          </motion.div>
         </footer>
       </div>
     </>
