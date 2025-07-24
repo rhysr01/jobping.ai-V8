@@ -233,16 +233,16 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.15 }}
-                  className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-sm p-8 text-left transition-all duration-300 group hover:border-white/20 hover:bg-gradient-to-b hover:from-white/8 hover:to-white/2"
+                  className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-sm p-6 text-left transition-all duration-300 group hover:border-white/20 hover:bg-gradient-to-b hover:from-white/8 hover:to-white/2"
                 >
-                  <h3 className="text-2xl font-semibold text-white/90 mb-3 flex items-center gap-3">
+                  <h3 className="text-2xl font-semibold text-white/90 mb-2 flex items-center gap-2">
                     <IconComponent className="w-6 h-6 text-white/70" strokeWidth={1.5} />
                     {item.title}
                   </h3>
-                  <p className="text-white/60 text-sm leading-relaxed mb-4">
+                  <p className="text-white/60 text-sm leading-relaxed mb-3">
                     {item.description}
                   </p>
-                  <span className="inline-block text-xs uppercase tracking-wider text-white/40 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                  <span className="text-xs uppercase tracking-wide text-white/40 font-medium">
                     {item.tier}
                   </span>
                 </motion.div>
