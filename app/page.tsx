@@ -82,7 +82,7 @@ export default function Home() {
         <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
           <motion.div
             animate={{ 
-              x: [0, 120, -50, 0], 
+              x: [0, 120, -50, 0],
               y: [0, -80, 40, 0],
               scale: [1, 1.2, 0.8, 1],
               rotate: [0, 180, 360]
@@ -207,40 +207,48 @@ export default function Home() {
         </section>
 
         {/* Features Grid */}
-        <section className="py-32 px-6 relative z-10">
+        <section className="py-32 px-6 bg-[#0A0A0A] relative z-10">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="max-w-6xl mx-auto"
+            className="max-w-4xl mx-auto text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 hero-title">
+            <h2 className="text-4xl md:text-5xl font-semibold text-white/90 mb-4">
               Why Choose JobPingAI?
             </h2>
-            <div className="grid md:grid-cols-3 gap-10">
-              {features.map((item, index) => {
-                const IconComponent = item.icon;
-                return (
-                  <motion.div 
-                    key={item.title} 
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: index * 0.15 }}
-                    className="feature-card p-8 group"
-                  >
-                    <div className="flex items-center gap-3 mb-4">
-                      <IconComponent className="w-6 h-6 text-gradient" strokeWidth={1.5} />
-                      <h3 className="premium-text text-xl font-semibold tracking-tight">{item.title}</h3>
-                    </div>
-                    <p className="text-slate-300 font-light text-base leading-relaxed mb-6">{item.description}</p>
-                    <span className="text-sm text-accent font-semibold uppercase tracking-wider">{item.tier}</span>
-                  </motion.div>
-                );
-              })}
-            </div>
+            <p className="text-white/60 text-lg font-light">
+              Built for ambitious graduates. Backed by AI. Delivered with clarity.
+            </p>
           </motion.div>
+
+          <div className="space-y-6 max-w-3xl mx-auto">
+            {features.map((item, index) => {
+              const IconComponent = item.icon;
+              return (
+                <motion.div 
+                  key={item.title} 
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: index * 0.15 }}
+                  className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-sm p-8 text-left transition-all duration-300 group hover:border-white/20 hover:bg-gradient-to-b hover:from-white/8 hover:to-white/2"
+                >
+                  <h3 className="text-2xl font-semibold text-white/90 mb-3 flex items-center gap-3">
+                    <IconComponent className="w-6 h-6 text-white/70" strokeWidth={1.5} />
+                    {item.title}
+                  </h3>
+                  <p className="text-white/60 text-sm leading-relaxed mb-4">
+                    {item.description}
+                  </p>
+                  <span className="inline-block text-xs uppercase tracking-wider text-white/40 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                    {item.tier}
+                  </span>
+                </motion.div>
+              );
+            })}
+          </div>
         </section>
 
         {/* Pricing Selector */}

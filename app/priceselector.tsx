@@ -50,7 +50,47 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
       </div>
 
       {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto relative">
+        {/* Floating bubbles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <motion.div
+            animate={{ 
+              x: [0, 30, -20, 0], 
+              y: [0, -25, 15, 0],
+              scale: [1, 1.1, 0.9, 1]
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/4 left-1/4 w-3 h-3 bg-gray-400/20 rounded-full blur-sm"
+          />
+          <motion.div
+            animate={{ 
+              x: [0, -25, 20, 0], 
+              y: [0, 20, -15, 0],
+              scale: [1, 0.8, 1.2, 1]
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            className="absolute top-1/3 right-1/3 w-2 h-2 bg-gray-300/15 rounded-full blur-sm"
+          />
+          <motion.div
+            animate={{ 
+              x: [0, 15, -10, 0], 
+              y: [0, -15, 25, 0],
+              scale: [1, 1.3, 0.7, 1]
+            }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+            className="absolute bottom-1/4 left-1/2 w-2.5 h-2.5 bg-gray-400/10 rounded-full blur-sm"
+          />
+          <motion.div
+            animate={{ 
+              x: [0, -20, 35, 0], 
+              y: [0, 30, -20, 0],
+              scale: [1, 0.9, 1.4, 1]
+            }}
+            transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute bottom-1/3 right-1/4 w-1.5 h-1.5 bg-gray-300/20 rounded-full blur-sm"
+          />
+        </div>
+
         {plans.map((plan) => (
           <motion.div
             key={plan.name}
@@ -105,7 +145,7 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
               </p>
 
               {/* Features */}
-              <ul className="space-y-4 text-left">
+              <ul className="space-y-4 text-left max-w-xs mx-auto">
                 {plan.features.map((feature, index) => (
                   <FeatureItem key={index} text={feature} />
                 ))}
