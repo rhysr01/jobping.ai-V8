@@ -215,11 +215,11 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="max-w-4xl mx-auto text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-semibold text-white/90 mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
               Why Choose JobPingAI?
             </h2>
-            <p className="text-white/60 text-lg font-light">
-              Built for ambitious graduates. Backed by AI. Delivered with clarity.
+            <p className="text-gray-300 text-lg font-light">
+              Built for students by students. Powered by AI. Delivered with simplicity.
             </p>
           </motion.div>
 
@@ -233,16 +233,18 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.15 }}
-                  className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-sm p-6 text-left transition-all duration-300 group hover:border-white/20 hover:bg-gradient-to-b hover:from-white/8 hover:to-white/2"
+                  className="rounded-3xl border border-gray-700/50 bg-gradient-to-br from-gray-800/30 via-gray-900/20 to-transparent backdrop-blur-md p-8 text-left transition-all duration-300 group hover:border-gray-600/60 hover:bg-gradient-to-br hover:from-gray-700/40 hover:via-gray-800/30 hover:to-gray-900/10 hover:shadow-xl hover:shadow-gray-900/20"
                 >
-                  <h3 className="text-2xl font-semibold text-white/90 mb-2 flex items-center gap-2">
-                    <IconComponent className="w-6 h-6 text-white/70" strokeWidth={1.5} />
+                  <h3 className="text-3xl font-bold text-white mb-4 flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-gray-700/40 border border-gray-600/50">
+                      <IconComponent className="w-7 h-7 text-gray-200" strokeWidth={1.5} />
+                    </div>
                     {item.title}
                   </h3>
-                  <p className="text-white/60 text-sm leading-relaxed mb-3">
+                  <p className="text-gray-300 text-base leading-relaxed mb-4 font-light">
                     {item.description}
                   </p>
-                  <span className="text-xs uppercase tracking-wide text-white/40 font-medium">
+                  <span className="inline-block text-xs uppercase tracking-widest text-gray-400 bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-700/50 font-semibold">
                     {item.tier}
                   </span>
                 </motion.div>
@@ -276,62 +278,35 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Sign-Up Panel */}
+        {/* Signup Section */}
         <section id="signup" className="py-40 px-6 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <motion.h2 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="text-4xl md:text-5xl font-bold hero-title mb-8"
-            >
-              Join JobPingAI
-            </motion.h2>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.1 }}
-              className="text-slate-300 text-lg md:text-xl font-light mb-12 leading-relaxed"
-            >
-              Trusted by thousands of graduates. No job boards. Just smart matches delivered daily.
-            </motion.p>
-            <motion.div 
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="signup-panel p-10"
-            >
-              <AnimatePresence>
-                {!iframeLoaded && (
-                  <motion.div
-                    initial={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-10 rounded-3xl"
-                  >
-                    <div className="flex space-x-2">
-                      <div className="w-3 h-3 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full animate-pulse" />
-                      <div className="w-3 h-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse delay-75" />
-                      <div className="w-3 h-3 bg-gradient-to-r from-pink-400 to-red-400 rounded-full animate-pulse delay-150" />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="max-w-2xl mx-auto"
+          >
+            <div className="bg-gradient-to-br from-gray-800/40 via-gray-900/30 to-transparent backdrop-blur-xl border-2 border-gray-600/50 rounded-3xl p-12 shadow-2xl shadow-gray-900/30">
+              <h2 className="text-5xl font-black text-white mb-6 text-center">
+                Ready to Get Started?
+              </h2>
+              <p className="text-gray-200 text-xl text-center mb-10 font-light leading-relaxed">
+                Join thousands of ambitious graduates finding their dream jobs with AI-powered precision.
+              </p>
               
               <iframe
                 src="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
-                className="w-full h-[600px] rounded-2xl"
+                className="w-full h-[600px] rounded-2xl border border-gray-700/50"
                 loading="lazy"
                 onLoad={() => setIframeLoaded(true)}
               />
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         </section>
 
         {/* Footer */}
-        <footer className="py-16 px-8 border-t border-white/10 text-center text-slate-400 text-sm font-light relative z-10">
+        <footer className="py-20 px-8 border-t-2 border-gray-700/50 text-center text-gray-300 text-base font-medium relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -339,8 +314,8 @@ export default function Home() {
             transition={{ duration: 0.6 }}
           >
             © 2025 JobPingAI. All rights reserved. · 
-            <a href="/terms" className="hover:text-accent transition-colors ml-1">Terms</a> · 
-            <a href="/privacy" className="hover:text-accent transition-colors ml-1">Privacy</a>
+            <a href="/terms" className="hover:text-white transition-colors ml-1 font-semibold">Terms</a> · 
+            <a href="/privacy" className="hover:text-white transition-colors ml-1 font-semibold">Privacy</a>
           </motion.div>
         </footer>
       </div>
