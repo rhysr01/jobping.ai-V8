@@ -1,3 +1,4 @@
-git add app/globals.css
-git commit -m "Update color palette to minimal black/white/gray theme"
+git add .
+git commit -m "Simplify color scheme to black/white/gray"
 git push
+

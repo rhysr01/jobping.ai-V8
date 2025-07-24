@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Script from 'next/script';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GraduationCap, Sparkles, Zap, Target } from 'lucide-react';
+import PricingSelector from './priceselector';
 
 export default function Home() {
   const [iframeLoaded, setIframeLoaded] = useState(false);
@@ -66,11 +67,11 @@ export default function Home() {
         />
 
         {/* Animated Grid Background */}
-        <div className="fixed inset-0 -z-20 opacity-[0.04]">
+        <div className="fixed inset-0 -z-20 opacity-[0.02]">
           <div className="absolute inset-0" style={{
             backgroundImage: `
-              linear-gradient(rgba(102, 126, 234, 0.4) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(102, 126, 234, 0.4) 1px, transparent 1px)
+              linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
             `,
             backgroundSize: '60px 60px',
             animation: 'grid-move 25s linear infinite'
@@ -87,9 +88,9 @@ export default function Home() {
               rotate: [0, 180, 360]
             }}
             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[120px] animate-breathe"
+            className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[120px]"
             style={{
-              background: 'radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.15) 40%, rgba(240, 147, 251, 0.1) 70%, transparent 100%)'
+              background: 'radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 40%, transparent 70%)'
             }}
           />
           <motion.div
@@ -100,9 +101,9 @@ export default function Home() {
               rotate: [0, -180, -360]
             }}
             transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-            className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-[140px] animate-breathe"
+            className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-[140px]"
             style={{
-              background: 'radial-gradient(circle, rgba(240, 147, 251, 0.2) 0%, rgba(245, 87, 108, 0.15) 40%, rgba(79, 172, 254, 0.1) 70%, transparent 100%)'
+              background: 'radial-gradient(circle, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 40%, transparent 70%)'
             }}
           />
           <motion.div
@@ -112,9 +113,9 @@ export default function Home() {
               scale: [1, 1.1, 0.9, 1]
             }}
             transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-            className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full blur-[100px] animate-breathe"
+            className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full blur-[100px]"
             style={{
-              background: 'radial-gradient(circle, rgba(79, 172, 254, 0.15) 0%, rgba(102, 126, 234, 0.1) 50%, transparent 100%)'
+              background: 'radial-gradient(circle, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 50%, transparent 100%)'
             }}
           />
         </div>
@@ -240,6 +241,31 @@ export default function Home() {
               })}
             </div>
           </motion.div>
+        </section>
+
+        {/* Pricing Selector */}
+        <section className="py-16 px-6 relative z-10">
+          <div className="max-w-3xl mx-auto text-center">
+            <motion.h2 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="text-3xl md:text-4xl font-bold hero-title mb-8"
+            >
+              Choose Your Plan
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.1 }}
+              className="text-slate-300 text-lg md:text-xl font-light mb-12 leading-relaxed"
+            >
+              Select the plan that best fits your needs and budget.
+            </motion.p>
+            <PricingSelector onSelect={(plan) => console.log('Selected plan:', plan)} />
+          </div>
         </section>
 
         {/* Sign-Up Panel */}
