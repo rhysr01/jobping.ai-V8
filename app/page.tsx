@@ -30,6 +30,40 @@ export default function Home() {
       />
 
       <div className="min-h-screen bg-[#0A0A0A] text-white overflow-x-hidden" style={{ fontFamily: 'Inter, -apple-system, sans-serif' }}>
+        {/* Animated Grid Background */}
+        <div className="fixed inset-0 -z-20 opacity-[0.03]">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `
+              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px',
+            animation: 'grid-move 20s linear infinite'
+          }} />
+        </div>
+
+        {/* Floating Orbs */}
+        <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
+          <motion.div
+            animate={{ 
+              x: [0, 100, 0], 
+              y: [0, -50, 0],
+              scale: [1, 1.1, 1]
+            }}
+            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+            className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-[100px]"
+          />
+          <motion.div
+            animate={{ 
+              x: [0, -80, 0], 
+              y: [0, 60, 0],
+              scale: [1, 0.9, 1]
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-[120px]"
+          />
+        </div>
+
         {/* Noise texture overlay */}
         <div className="fixed inset-0 opacity-[0.02] pointer-events-none z-0">
           <svg width="100%" height="100%">
