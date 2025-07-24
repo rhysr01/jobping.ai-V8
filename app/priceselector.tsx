@@ -10,7 +10,11 @@ const FeatureItem = ({ text }: { text: string }) => (
   </li>
 );
 
-export default function Home() {
+interface PricingSelectorProps {
+  onSelect?: (plan: 'free' | 'premium') => void;
+}
+
+export default function PricingSelector({ onSelect }: PricingSelectorProps = {}) {
   return (
     <main className="min-h-screen bg-gradient-to-br from-black via-[#0d0d0d] to-[#111] text-white font-sans px-6 pt-32 pb-12 sm:pt-48">
       {/* HEADER */}
@@ -126,6 +130,7 @@ export default function Home() {
         <div className="mt-2 space-x-4">
           <Link href="/privacy" className="hover:underline">Privacy</Link>
           <Link href="/terms" className="hover:underline">Terms</Link>
+ 
         </div>
       </footer>
     </main>
