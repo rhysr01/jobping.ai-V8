@@ -14,7 +14,7 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps) {
       tier: 'Free Forever',
       description: 'Ideal for exploring the experience.',
       features: ['5 job matches daily', 'Email delivery', 'Basic filtering'],
-      value: 'free'
+      value: 'free' as const
     },
     {
       name: 'Premium',
@@ -23,7 +23,7 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps) {
       description: 'Designed for serious jobseekers.',
       features: ['15 job matches daily', 'Priority AI matching', 'Advanced filters'],
       highlight: true,
-      value: 'premium'
+      value: 'premium' as const
     }
   ];
 
