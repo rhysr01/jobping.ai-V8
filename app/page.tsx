@@ -11,7 +11,7 @@ export default function Home() {
   const fadeUpAnimation = {
     initial: { opacity: 0, y: 10 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6, ease: [0.33, 1, 0.68, 1] }
+    transition: { duration: 0.6 }
   };
 
   return (
@@ -20,8 +20,11 @@ export default function Home() {
         src="https://tally.so/widgets/embed.js"
         strategy="lazyOnload"
         onLoad={() => {
-          if (typeof window !== 'undefined' && (window as Window & { Tally?: { loadEmbeds: () => void } }).Tally) {
-            (window as Window & { Tally?: { loadEmbeds: () => void } }).Tally.loadEmbeds();
+          if (typeof window !== 'undefined') {
+            const tallyWindow = window as Window & { 
+              Tally?: { loadEmbeds: () => void } 
+            };
+            tallyWindow.Tally?.loadEmbeds();
           }
         }}
       />
