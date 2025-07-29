@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-
-export async function POST(req: NextRequest) {
-  try {
-    const supabase = createClient(
-      process.env.https://kpecjbjtdjzgkzywylhn.supabase.co
-      process.env.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwZWNqYmp0ZGp6Z2t6eXd5bGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MDA1NDMsImV4cCI6MjA2OTM3NjU0M30.farRPmTjuGef1muZrnCc43APluEIFbnhdJ5fxsrZi2g
-    );
-
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL! as string,
+  process.env.SUPABASE_SERVICE_ROLE_KEY! as string
+);
     // Get the data from Tally
     const tallyData = await req.json();
 
