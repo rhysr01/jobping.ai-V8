@@ -1,13 +1,19 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Script from 'next/script';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { GraduationCap, Sparkles, Zap, Target } from 'lucide-react';
 import PricingSelector from './priceselector';
+import MagneticButton from './components/MagneticButton';
 
 export default function Home() {
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  
+  // Parallax scroll effect
+  const { scrollY } = useScroll();
+  const gradientY = useTransform(scrollY, [0, 500], [0, -150]);
+  const opacity = useTransform(scrollY, [0, 300], [1, 0.3]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -79,45 +85,97 @@ export default function Home() {
         </div>
 
         {/* Enhanced Floating Orbs */}
-        <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
+        <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+          {/* Primary Orb - Larger and more prominent */}
           <motion.div
-            animate={{ 
-              x: [0, 120, -50, 0],
+            className="absolute top-1/4 left-1/4 w-[600px] h-[600px]"
+            animate={{
+              x: [0, 100, -50, 0],
               y: [0, -80, 40, 0],
-              scale: [1, 1.2, 0.8, 1],
-              rotate: [0, 180, 360]
             }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[120px]"
-            style={{
-              background: 'radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 40%, transparent 70%)'
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              ease: "easeInOut"
             }}
-          />
+          >
+            <div 
+              className="w-full h-full rounded-full"
+              style={{
+                background: `
+                  radial-gradient(
+                    circle at center,
+                    rgba(59, 130, 246, 0.15) 0%,
+                    rgba(59, 130, 246, 0.08) 25%,
+                    rgba(147, 51, 234, 0.05) 50%,
+                    transparent 70%
+                  )
+                `,
+                filter: 'blur(40px)',
+              }}
+            />
+          </motion.div>
+
+          {/* Secondary Orb - Complementary movement */}
           <motion.div
-            animate={{ 
-              x: [0, -100, 80, 0], 
-              y: [0, 80, -60, 0],
-              scale: [1, 0.8, 1.3, 1],
-              rotate: [0, -180, -360]
+            className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px]"
+            animate={{
+              x: [0, -80, 60, 0],
+              y: [0, 50, -70, 0],
             }}
-            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-            className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-[140px]"
-            style={{
-              background: 'radial-gradient(circle, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 40%, transparent 70%)'
+            transition={{
+              duration: 25,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 5
             }}
-          />
+          >
+            <div 
+              className="w-full h-full rounded-full"
+              style={{
+                background: `
+                  radial-gradient(
+                    circle at center,
+                    rgba(147, 51, 234, 0.12) 0%,
+                    rgba(147, 51, 234, 0.06) 25%,
+                    rgba(59, 130, 246, 0.03) 50%,
+                    transparent 70%
+                  )
+                `,
+                filter: 'blur(60px)',
+              }}
+            />
+          </motion.div>
+
+          {/* Accent Orb - Smaller, faster */}
           <motion.div
-            animate={{ 
-              x: [0, 60, -40, 0], 
-              y: [0, -40, 60, 0],
-              scale: [1, 1.1, 0.9, 1]
+            className="absolute top-1/2 left-1/2 w-[300px] h-[300px]"
+            animate={{
+              x: [0, 40, -60, 30, 0],
+              y: [0, -60, 20, -40, 0],
             }}
-            transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-            className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full blur-[100px]"
-            style={{
-              background: 'radial-gradient(circle, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 50%, transparent 100%)'
+            transition={{
+              duration: 15,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 2.5
             }}
-          />
+          >
+            <div 
+              className="w-full h-full rounded-full"
+              style={{
+                background: `
+                  radial-gradient(
+                    circle at center,
+                    rgba(236, 72, 153, 0.1) 0%,
+                    rgba(236, 72, 153, 0.05) 30%,
+                    transparent 60%
+                  )
+                `,
+                filter: 'blur(30px)',
+              }}
+            />
+          </motion.div>
         </div>
 
         {/* Enhanced Noise texture overlay */}
@@ -137,19 +195,30 @@ export default function Home() {
             <GraduationCap className="w-7 h-7 text-gradient animate-pulse-glow" strokeWidth={1.5} />
             <span className="premium-text text-xl font-semibold tracking-tight">JobPingAI</span>
           </motion.div>
-          <motion.button 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
-            className="nav-button magnetic-button"
           >
-            Get Started
-          </motion.button>
+            <MagneticButton
+              variant="secondary"
+              onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
+              className="nav-button"
+            >
+              Get Started
+            </MagneticButton>
+          </motion.div>
         </nav>
 
         {/* Hero Section */}
         <section className="min-h-[90vh] flex flex-col items-center justify-center text-center px-6 relative">
+          {/* Parallax gradient background */}
+          <motion.div
+            style={{ y: gradientY, opacity }}
+            className="absolute inset-0 -z-10"
+          >
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/[0.03] rounded-full blur-[100px]" />
+          </motion.div>
           {/* Logo + Heading */}
           <motion.div 
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
@@ -174,17 +243,18 @@ export default function Home() {
           </motion.p>
 
           {/* CTA */}
-          <motion.button
+          <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
-            className="cta-button magnetic-button animate-gradient premium-glow"
           >
-            Start Free Trial
-          </motion.button>
+            <MagneticButton
+              onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
+              className="cta-button animate-gradient premium-glow"
+            >
+              Start Free Trial
+            </MagneticButton>
+          </motion.div>
 
           {/* Floating elements */}
           <div className="absolute inset-0 pointer-events-none">
@@ -202,6 +272,16 @@ export default function Home() {
               animate={{ y: [0, -10, 0], rotate: [0, 3, 0] }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
               className="absolute bottom-1/3 left-1/3 w-1 h-1 bg-gradient-to-r from-pink-400 to-red-400 rounded-full opacity-40"
+            />
+            <motion.div
+              animate={{ y: [0, 25, -15, 0], x: [0, 10, -5, 0] }}
+              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+              className="absolute top-1/2 right-1/4 w-1.5 h-1.5 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full opacity-30"
+            />
+            <motion.div
+              animate={{ y: [0, -30, 20, 0], x: [0, -15, 8, 0] }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+              className="absolute bottom-1/4 right-1/3 w-1 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-25"
             />
           </div>
         </section>
@@ -227,13 +307,21 @@ export default function Home() {
             {features.map((item, index) => {
               const IconComponent = item.icon;
               return (
-                <motion.div 
+                <motion.article 
                   key={item.title} 
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: index * 0.15 }}
-                  className="rounded-3xl border border-gray-700/50 bg-gradient-to-br from-gray-800/30 via-gray-900/20 to-transparent backdrop-blur-md p-8 text-left transition-all duration-300 group hover:border-gray-600/60 hover:bg-gradient-to-br hover:from-gray-700/40 hover:via-gray-800/30 hover:to-gray-900/10 hover:shadow-xl hover:shadow-gray-900/20"
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ 
+                    duration: 0.5,
+                    delay: index * 0.1, // Stagger effect
+                    ease: [0.21, 0.47, 0.32, 0.98]
+                  }}
+                  whileHover={{ 
+                    y: -5,
+                    transition: { duration: 0.2 }
+                  }}
+                  className="group relative rounded-3xl border border-gray-700/50 bg-gradient-to-br from-gray-800/30 via-gray-900/20 to-transparent backdrop-blur-md p-8 text-left transition-all duration-300 hover:border-gray-600/60 hover:bg-gradient-to-br hover:from-gray-700/40 hover:via-gray-800/30 hover:to-gray-900/10 hover:shadow-xl hover:shadow-gray-900/20"
                 >
                   <h3 className="text-3xl font-bold text-white mb-4 flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-gray-700/40 border border-gray-600/50">
@@ -247,7 +335,7 @@ export default function Home() {
                   <span className="inline-block text-xs uppercase tracking-widest text-gray-400 bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-700/50 font-semibold">
                     {item.tier}
                   </span>
-                </motion.div>
+                </motion.article>
               );
             })}
           </div>
@@ -287,7 +375,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="max-w-2xl mx-auto"
           >
-            <div className="bg-gradient-to-br from-gray-800/40 via-gray-900/30 to-transparent backdrop-blur-xl border-2 border-gray-600/50 rounded-3xl p-12 shadow-2xl shadow-gray-900/30">
+            <div className="relative bg-gradient-to-br from-gray-800/40 via-gray-900/30 to-transparent backdrop-blur-xl border-2 border-gray-600/50 rounded-3xl p-12 shadow-2xl shadow-gray-900/30">
               <h2 className="text-5xl font-black text-white mb-6 text-center">
                 Ready to Get Started?
               </h2>
@@ -295,11 +383,60 @@ export default function Home() {
                 Join thousands of ambitious graduates finding their dream jobs with AI-powered precision.
               </p>
               
+              {/* Loading Skeleton - Shows while iframe loads */}
+              <AnimatePresence>
+                {!iframeLoaded && (
+                  <motion.div
+                    initial={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-12 z-10"
+                  >
+                    {/* Form Title Skeleton */}
+                    <div className="form-skeleton h-8 w-48 rounded-lg mb-6" />
+                    
+                    {/* Form Fields Skeleton */}
+                    <div className="space-y-4">
+                      <div>
+                        <div className="form-skeleton h-4 w-20 rounded mb-2" />
+                        <div className="form-skeleton h-12 w-full rounded-lg" />
+                      </div>
+                      <div>
+                        <div className="form-skeleton h-4 w-24 rounded mb-2" />
+                        <div className="form-skeleton h-12 w-full rounded-lg" />
+                      </div>
+                      <div>
+                        <div className="form-skeleton h-4 w-32 rounded mb-2" />
+                        <div className="form-skeleton h-12 w-full rounded-lg" />
+                      </div>
+                      <div>
+                        <div className="form-skeleton h-4 w-28 rounded mb-2" />
+                        <div className="form-skeleton h-12 w-full rounded-lg" />
+                      </div>
+                      <div>
+                        <div className="form-skeleton h-4 w-36 rounded mb-2" />
+                        <div className="form-skeleton h-12 w-full rounded-lg" />
+                      </div>
+                    </div>
+                    
+                    {/* Submit Button Skeleton */}
+                    <div className="form-skeleton h-12 w-full rounded-full mt-8" />
+                    
+                    {/* Loading text */}
+                    <p className="text-center text-white/40 text-sm mt-6">
+                      Preparing your signup form...
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Actual iframe */}
               <iframe
                 src="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
-                className="w-full h-[600px] rounded-2xl border border-gray-700/50"
+                className="w-full h-[600px] rounded-2xl border border-gray-700/50 transition-opacity duration-300"
                 loading="lazy"
                 onLoad={() => setIframeLoaded(true)}
+                style={{ opacity: iframeLoaded ? 1 : 0 }}
               />
             </div>
           </motion.div>

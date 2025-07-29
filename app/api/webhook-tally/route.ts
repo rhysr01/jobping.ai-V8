@@ -1,6 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// Helper function to trigger AI matching for new users
+async function triggerUserMatching(userEmail: string): Promise<void> {
+  try {
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000';
+    
+    const response = await fetch(`${baseUrl}/api/match-users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userEmail,
+        limit: 30 // Start with fewer jobs for new users
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Matching API returned ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log(`✅ Triggered matching for ${userEmail}: ${result.matches?.length || 0} matches found`);
+    
+  } catch (error) {
+    console.error('❌ Error triggering user matching:', error);
+    throw error;
+  }
+}
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL! as string,
   process.env.SUPABASE_SERVICE_ROLE_KEY! as string
@@ -58,6 +89,13 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error('Supabase Insert Error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Trigger AI matching for the new user (async, don't wait)
+    if (userEntry.email) {
+      triggerUserMatching(userEntry.email).catch(err => {
+        console.error('❌ Failed to trigger matching for new user:', err);
+      });
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

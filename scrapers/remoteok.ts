@@ -4,8 +4,8 @@ dotenv.config();
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import crypto from 'crypto';
 import { Job } from './types';
+import { generateJobHash, cleanText, normalizeLocation, inferSeniorityLevel, logJobError } from './utils';
 
 // Initialize Supabase once, no duplicates
 const supabase = createClient(
@@ -31,30 +31,30 @@ export async function scrapeRemoteOK(): Promise<Job[]> {
     $('tr.job').each((_, el) => {
       try {
         const $el = $(el);
-        const title = $el.find('.company_and_position [itemprop="title"]').text().trim();
-        const company = $el.find('.company_and_position [itemprop="name"]').text().trim();
-        const location = $el.find('.location').text().trim() || 'Remote';
-        const description = $el.find('.description').text().trim() || '';
+        const rawTitle = $el.find('.company_and_position [itemprop="title"]').text().trim();
+        const rawCompany = $el.find('.company_and_position [itemprop="name"]').text().trim();
+        const rawLocation = $el.find('.location').text().trim() || 'Remote';
+        const rawDescription = $el.find('.description').text().trim() || '';
         const relativeUrl = $el.attr('data-href');
         const job_url = relativeUrl ? `https://remoteok.com${relativeUrl}` : '';
         const posted_at = new Date().toISOString(); // fallback if no posted date
+
+        // Clean and validate data
+        const title = cleanText(rawTitle);
+        const company = cleanText(rawCompany);
+        const location = normalizeLocation(rawLocation);
+        const description = cleanText(rawDescription);
 
         // Early-career relevance filter
         const lower = `${title} ${description}`.toLowerCase();
         const isEarly = /intern|graduate|entry|junior|early[- ]?career/.test(lower);
         if (!title || !company || !job_url || !isEarly) return;
 
-        // Determine seniority level
-        const level = /intern/.test(lower)
-          ? 'internship'
-          : /graduate/.test(lower)
-          ? 'graduate'
-          : /entry|junior/.test(lower)
-          ? 'entry'
-          : 'other';
+        // Determine seniority level using utility function
+        const level = inferSeniorityLevel(lower);
 
         // Generate a unique hash to deduplicate jobs
-        const job_hash = crypto.createHash('md5').update(`${title}-${company}-${job_url}`).digest('hex');
+        const job_hash = generateJobHash(title, company, job_url);
 
         const job: Job = {
           title,
@@ -72,7 +72,7 @@ export async function scrapeRemoteOK(): Promise<Job[]> {
 
         jobs.push(job);
       } catch (err) {
-        console.warn('⚠️ Failed to parse a job row:', err);
+        logJobError('RemoteOK', err);
       }
     });
 
