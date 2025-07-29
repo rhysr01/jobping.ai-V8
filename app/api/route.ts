@@ -1,48 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
+// Initialize Supabase client using environment variables
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL! as string,
   process.env.SUPABASE_SERVICE_ROLE_KEY! as string
 );
 
+// Define Tally field type
+type TallyField = {
+  label: string;
+  value: string | string[] | null;
+};
+
+// Define expected Tally webhook payload shape
+type TallyWebhookPayload = {
+  data: {
+    fields: TallyField[];
+  };
+};
+
+// POST handler for incoming Tally webhook
 export async function POST(req: NextRequest) {
   try {
-    // Get the Tally webhook payload
-    const tallyData = await req.json();
+    const tallyData: TallyWebhookPayload = await req.json();
+    const formFields = tallyData.data.fields;
 
-    // Destructure the form fields from the payload
-    const {
-      data: { fields: formFields }
-    } = tallyData;
-
-    // Type-safe field shape for each form input
-    type FormField = { label: string; value: any };
-
-    // Helper function to get value by label match
+    // Helper to safely extract values
     const getField = (label: string) =>
-      formFields.find((f: FormField) => f.label.includes(label))?.value;
+      formFields.find((f) => f.label.toLowerCase().includes(label.toLowerCase()))?.value;
 
-    // Map fields to your Supabase `users` table structure
+    // Map Tally form fields to Supabase columns
     const userEntry = {
-      email: getField('Email'),
-      full_name: getField('Whats your name?'),
+      email: getField('email'),
+      full_name: getField('name'),
       target_cities: getField('target cities'),
       professional_experience: getField('professional experience'),
       employment_start_date: getField('employment start date'),
-      work_environment: getField('preferred work enviornment'),
+      work_environment: getField('work enviornment'),
       visa_status: getField('visa requirements'),
       entry_level_preference: getField('entry level'),
       languages_spoken: getField('languages'),
       company_types: getField('company types'),
       career_path: getField('career path'),
-      roles_selected: getField('Role(s)'),
-      cv_url: getField('CV'),
-      linkedin_url: getField('LinkedIn'),
+      roles_selected: getField('role'), // matches 'Role(s)' or any variant
+      cv_url: getField('cv'),
+      linkedin_url: getField('linkedin'),
     };
 
-    // Insert user into Supabase
     const { error } = await supabase.from('users').insert([userEntry]);
 
     if (error) {
@@ -50,9 +55,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error('Webhook Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error: unknown) {
+    console.error('Webhook Handler Error:', error);
+
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ error: 'Unknown server error' }, { status: 500 });
   }
+}
+
 }
