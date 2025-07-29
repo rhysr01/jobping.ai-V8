@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL! as string,
   process.env.SUPABASE_SERVICE_ROLE_KEY! as string
 );
+
+export async function POST(req: NextRequest) {
+  try {
     // Get the data from Tally
     const tallyData = await req.json();
 
@@ -11,6 +15,7 @@ const supabase = createClient(
     const {
       data: {
         fields: formFields
+      }
     } = tallyData;
 
     // Map the Tally fields to your Supabase table columns
@@ -42,7 +47,7 @@ const supabase = createClient(
     }
 
     return NextResponse.json({ success: true, data });
-    
+
   } catch (error) {
     console.error('Error handling webhook:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
