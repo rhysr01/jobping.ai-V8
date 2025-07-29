@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client using environment variables
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL! as string,
   process.env.SUPABASE_SERVICE_ROLE_KEY! as string
@@ -20,17 +19,23 @@ type TallyWebhookPayload = {
   };
 };
 
-// POST handler for incoming Tally webhook
 export async function POST(req: NextRequest) {
   try {
-    const tallyData: TallyWebhookPayload = await req.json();
-    const formFields = tallyData.data.fields;
+    console.log("✅ Webhook received");
 
-    // Helper to safely extract values
-    const getField = (label: string) =>
-      formFields.find((f) => f.label.toLowerCase().includes(label.toLowerCase()))?.value;
+    const tallyData = await req.json();
 
-    // Map Tally form fields to Supabase columns
+    // ✅ Extract the fields safely
+    const {
+      data: { fields: formFields },
+    } = tallyData as TallyWebhookPayload;
+
+    function getField(label: string) {
+      return formFields.find((f) =>
+        f.label.toLowerCase().includes(label.toLowerCase())
+      )?.value;
+    }
+
     const userEntry = {
       email: getField('email'),
       full_name: getField('name'),
@@ -43,7 +48,7 @@ export async function POST(req: NextRequest) {
       languages_spoken: getField('languages'),
       company_types: getField('company types'),
       career_path: getField('career path'),
-      roles_selected: getField('role'), // matches 'Role(s)' or any variant
+      roles_selected: getField('role'),
       cv_url: getField('cv'),
       linkedin_url: getField('linkedin'),
     };
@@ -66,4 +71,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unknown server error' }, { status: 500 });
   }
 }
-
