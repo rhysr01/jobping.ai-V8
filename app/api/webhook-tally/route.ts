@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       full_name: getField('name'),
       target_cities: getField('target cities'),
       professional_experience: getField('professional experience'),
-      employment_start_date: getField('employment start date'),
+      start_date: getField('employment start date'),
       work_environment: getField('work enviornment'),
       visa_status: getField('visa requirements'),
       entry_level_preference: getField('entry level'),
