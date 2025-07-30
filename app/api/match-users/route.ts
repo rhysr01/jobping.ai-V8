@@ -1,4 +1,3 @@
-// Full updated match-users/route.ts with proper types to remove red squiggles in VS Code
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
@@ -28,17 +27,16 @@ type EnhancedJob = Job & {
 
 type EnhancedUserPreferences = {
   email: string;
+  // add other real fields as needed
 };
 
 type UserPreferences = {
   email: string;
+  // add other real fields as needed
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface EnhancedMatchResult {}
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface MatchLog {}
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const entryLevel = 'intern';
 
 export async function POST(req: NextRequest) {
@@ -118,45 +116,42 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Helper stubs (silenced unused, typed safely)
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizeUserPreferences(userData: Record<string, unknown>): any {
-  return {};
+function normalizeUserPreferences(userData: Record<string, unknown>): EnhancedUserPreferences {
+  return { email: String(userData.email || '') };
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function enrichJobData(jobs: Job[]): any {
+
+function enrichJobData(jobs: Job[]): EnhancedJob[] {
   return jobs.map(j => ({ ...j, complexity_score: 0 }));
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function performEnhancedAIMatching(jobs: any, prefs: any): Promise<MatchResult[]> {
+
+function performEnhancedAIMatching(jobs: EnhancedJob[], prefs: EnhancedUserPreferences): Promise<MatchResult[]> {
   return Promise.resolve([]);
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function generateFallbackMatches(jobs: any, prefs: any): MatchResult[] {
+
+function generateFallbackMatches(jobs: EnhancedJob[], prefs: EnhancedUserPreferences): MatchResult[] {
   return [];
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 function getMatchQuality(score: number): 'excellent' | 'good' | 'fair' | 'low' {
   return 'good';
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function logMatchSession(userEmail: string, jobs: any, prefs: any, fallbackUsed: boolean): Promise<void> {
+
+function logMatchSession(userEmail: string, jobs: EnhancedJob[], prefs: EnhancedUserPreferences, fallbackUsed: boolean): Promise<void> {
   return Promise.resolve();
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 function performAIMatching(jobs: Job[], userPrefs: UserPreferences): Promise<MatchResult[]> {
   return Promise.resolve([]);
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 function processJobBatch(jobs: Job[], userPrefs: UserPreferences): Promise<MatchResult[]> {
   return Promise.resolve([]);
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 function buildMatchingPrompt(jobs: Job[], userPrefs: UserPreferences): string {
   return '';
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 function parseAndValidateMatches(response: string, jobs: Job[]): MatchResult[] {
   return [];
 }
