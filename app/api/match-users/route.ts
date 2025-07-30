@@ -1,3 +1,4 @@
+// Full updated match-users/route.ts with proper types to remove red squiggles in VS Code
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
