@@ -1,177 +1,208 @@
-// Full updated match-users/route.ts with proper types to remove red squiggles in VS Code
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import OpenAI from 'openai';
-import type { Job } from '../../../scrapers/types';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL! as string,
   process.env.SUPABASE_SERVICE_ROLE_KEY! as string
 );
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// ✅ Minimal placeholder types to fix missing references
-type MatchResult = {
-  job_id: string;
-  match_score: number;
-  match_reason: string;
-  match_quality?: 'excellent' | 'good' | 'fair' | 'low';
-  match_tags?: string[];
+// Type for Tally webhook payload
+type TallyWebhookData = {
+  eventId: string;
+  eventType: string;
+  createdAt: string;
+  data: {
+    responseId: string;
+    submissionId: string;
+    respondentId: string;
+    formId: string;
+    formName: string;
+    createdAt: string;
+    fields: Array<{
+      key: string;
+      label: string;
+      type: string;
+      value: string | string[];
+    }>;
+  };
 };
 
-type EnhancedJob = Job & {
-  complexity_score: number;
-};
-
-type EnhancedUserPreferences = {
+// User registration data extracted from Tally form
+type UserRegistrationData = {
   email: string;
-  // add other real fields as needed
+  fullName?: string;
+  university?: string;
+  graduationYear?: string;
+  preferredRole?: string;
+  skills?: string[];
+  locationPreference?: string;
+  workEnvironmentPreference?: 'remote' | 'hybrid' | 'on-site' | 'any';
+  plan?: 'free' | 'premium';
 };
-
-type UserPreferences = {
-  email: string;
-  // add other real fields as needed
-};
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface EnhancedMatchResult {}
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface MatchLog {}
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const entryLevel = 'intern';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userEmail, limit = 50 } = await req.json();
-    if (!userEmail) {
-      return NextResponse.json({ error: 'User email is required' }, { status: 400 });
+    // Verify webhook authenticity (add proper verification in production)
+    const signature = req.headers.get('tally-signature');
+    if (!signature) {
+      return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
     }
 
-    const { data: userData, error: userError } = await supabase
+    const payload: TallyWebhookData = await req.json();
+    
+    console.log('📝 Received Tally webhook:', payload.eventType);
+
+    // Only process form submissions
+    if (payload.eventType !== 'FORM_RESPONSE') {
+      return NextResponse.json({ message: 'Event type not handled' });
+    }
+
+    // Extract user data from Tally form fields
+    const userData = extractUserDataFromTallyFields(payload.data.fields);
+    
+    if (!userData.email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    // Check if user already exists
+    const { data: existingUser } = await supabase
       .from('users')
-      .select('*')
-      .eq('email', userEmail)
+      .select('email')
+      .eq('email', userData.email)
       .single();
 
-    if (userError || !userData) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (existingUser) {
+      console.log(`👤 User ${userData.email} already exists, updating preferences`);
+      
+      // Update existing user preferences
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          full_name: userData.fullName,
+          university: userData.university,
+          graduation_year: userData.graduationYear,
+          preferred_role: userData.preferredRole,
+          skills: userData.skills,
+          location_preference: userData.locationPreference,
+          work_environment_preference: userData.workEnvironmentPreference,
+          plan: userData.plan,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('email', userData.email);
+
+      if (updateError) {
+        console.error('❌ Failed to update user:', updateError);
+        return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
+      }
+    } else {
+      console.log(`✨ Creating new user: ${userData.email}`);
+      
+      // Create new user
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          email: userData.email,
+          full_name: userData.fullName,
+          university: userData.university,
+          graduation_year: userData.graduationYear,
+          preferred_role: userData.preferredRole,
+          skills: userData.skills,
+          location_preference: userData.locationPreference,
+          work_environment_preference: userData.workEnvironmentPreference,
+          plan: userData.plan || 'free',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+      if (insertError) {
+        console.error('❌ Failed to create user:', insertError);
+        return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+      }
     }
 
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const { data: jobs, error: jobsError } = await supabase
-      .from('jobs')
-      .select('*')
-      .gte('scraped_at', sevenDaysAgo.toISOString())
-      .order('scraped_at', { ascending: false })
-      .limit(limit);
-
-    if (jobsError) {
-      return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
+    // Optionally trigger initial job matching for the user
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        const baseUrl = process.env.VERCEL_URL 
+          ? `https://${process.env.VERCEL_URL}` 
+          : 'http://localhost:3000';
+        
+        await fetch(`${baseUrl}/api/match-users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userEmail: userData.email, limit: 10 }),
+        });
+        
+        console.log(`🎯 Triggered initial matching for ${userData.email}`);
+      } catch (matchError) {
+        console.error('⚠️ Failed to trigger initial matching:', matchError);
+        // Don't fail the webhook if matching fails
+      }
     }
 
-    if (!jobs || jobs.length === 0) {
-      return NextResponse.json({ matches: [] });
-    }
-
-    const enhancedUserPrefs = normalizeUserPreferences(userData);
-    const enhancedJobs = enrichJobData(jobs);
-
-    let matches: MatchResult[] = [];
-    let fallbackUsed = false;
-
-    try {
-      matches = await performEnhancedAIMatching(enhancedJobs, enhancedUserPrefs);
-    } catch (err) {
-      matches = generateFallbackMatches(enhancedJobs, enhancedUserPrefs);
-      fallbackUsed = true;
-    }
-
-    const matchEntries = matches.map(match => ({
-      user_email: userEmail,
-      job_hash: match.job_id,
-      match_score: match.match_score,
-      match_reason: match.match_reason,
-      match_quality: getMatchQuality(match.match_score),
-      match_tags: match.match_tags || [],
-      matched_at: new Date().toISOString(),
-    }));
-
-    await supabase
-      .from('matches')
-      .upsert(matchEntries, { onConflict: 'user_email,job_hash' });
-
-    await logMatchSession(userEmail, enhancedJobs, enhancedUserPrefs, fallbackUsed);
-
-    return NextResponse.json({
-      matches,
-      fallback_used: fallbackUsed,
+    return NextResponse.json({ 
+      success: true, 
+      message: 'User registered successfully',
+      user: userData.email 
     });
 
   } catch (error: unknown) {
+    console.error('🚨 Webhook processing error:', error);
+    
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    
     return NextResponse.json({ error: 'Unknown server error' }, { status: 500 });
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizeUserPreferences(userData: Record<string, unknown>): EnhancedUserPreferences {
-  return { email: String(userData.email || '') };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function enrichJobData(jobs: Job[]): EnhancedJob[] {
-  return jobs.map(j => ({ ...j, complexity_score: 0 }));
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function performEnhancedAIMatching(jobs: EnhancedJob[], prefs: EnhancedUserPreferences): Promise<MatchResult[]> {
-  return Promise.resolve([]);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function generateFallbackMatches(jobs: EnhancedJob[], prefs: EnhancedUserPreferences): MatchResult[] {
-  return [];
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getMatchQuality(score: number): 'excellent' | 'good' | 'fair' | 'low' {
-  return 'good';
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function logMatchSession(userEmail: string, jobs: EnhancedJob[], prefs: EnhancedUserPreferences, fallbackUsed: boolean): Promise<void> {
-  return Promise.resolve();
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function performAIMatching(jobs: Job[], userPrefs: UserPreferences): Promise<MatchResult[]> {
-  return Promise.resolve([]);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function processJobBatch(jobs: Job[], userPrefs: UserPreferences): Promise<MatchResult[]> {
-  return Promise.resolve([]);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function buildMatchingPrompt(jobs: Job[], userPrefs: UserPreferences): string {
-  return '';
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function parseAndValidateMatches(response: string, jobs: Job[]): MatchResult[] {
-  return [];
+// Extract user data from Tally form fields
+function extractUserDataFromTallyFields(fields: TallyWebhookData['data']['fields']): UserRegistrationData {
+  const userData: UserRegistrationData = { email: '' };
+  
+  fields.forEach(field => {
+    const value = Array.isArray(field.value) ? field.value.join(', ') : field.value;
+    
+    // Map Tally field keys to user data (adjust based on your actual form structure)
+    switch (field.key.toLowerCase()) {
+      case 'email':
+      case 'email_address':
+        userData.email = value;
+        break;
+      case 'full_name':
+      case 'name':
+        userData.fullName = value;
+        break;
+      case 'university':
+      case 'school':
+        userData.university = value;
+        break;
+      case 'graduation_year':
+      case 'grad_year':
+        userData.graduationYear = value;
+        break;
+      case 'preferred_role':
+      case 'role':
+        userData.preferredRole = value;
+        break;
+      case 'skills':
+        userData.skills = Array.isArray(field.value) ? field.value : [value];
+        break;
+      case 'location':
+      case 'location_preference':
+        userData.locationPreference = value;
+        break;
+      case 'work_environment':
+      case 'remote_preference':
+        userData.workEnvironmentPreference = value as 'remote' | 'hybrid' | 'on-site' | 'any';
+        break;
+      case 'plan':
+      case 'pricing_plan':
+        userData.plan = value as 'free' | 'premium';
+        break;
+    }
+  });
+  
+  return userData;
 }
