@@ -133,42 +133,44 @@ function enrichJobData(jobs: Job[]): EnhancedJob[] {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function performEnhancedAIMatching(jobs: EnhancedJob[], prefs: EnhancedUserPreferences): Promise<MatchResult[]> {
   return Promise.resolve([]);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function generateFallbackMatches(jobs: EnhancedJob[], prefs: EnhancedUserPreferences): MatchResult[] {
   return [];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getMatchQuality(score: number): 'excellent' | 'good' | 'fair' | 'low' {
   return 'good';
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function logMatchSession(userEmail: string, jobs: EnhancedJob[], prefs: EnhancedUserPreferences, fallbackUsed: boolean): Promise<void> {
   return Promise.resolve();
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function performAIMatching(jobs: Job[], userPrefs: UserPreferences): Promise<MatchResult[]> {
   return Promise.resolve([]);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function processJobBatch(jobs: Job[], userPrefs: UserPreferences): Promise<MatchResult[]> {
   return Promise.resolve([]);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function buildMatchingPrompt(jobs: Job[], userPrefs: UserPreferences): string {
   return '';
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function parseAndValidateMatches(response: string, jobs: Job[]): MatchResult[] {
   return [];
