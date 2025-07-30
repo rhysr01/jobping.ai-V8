@@ -7,7 +7,7 @@ async function triggerUserMatching(userEmail: string): Promise<void> {
     const baseUrl = process.env.VERCEL_URL 
       ? `https://${process.env.VERCEL_URL}` 
       : 'http://localhost:3000';
-    
+
     const response = await fetch(`${baseUrl}/api/match-users`, {
       method: 'POST',
       headers: {
@@ -15,7 +15,7 @@ async function triggerUserMatching(userEmail: string): Promise<void> {
       },
       body: JSON.stringify({
         userEmail,
-        limit: 30 // Start with fewer jobs for new users
+        limit: 30, // Start with fewer jobs for new users
       }),
     });
 
@@ -25,7 +25,7 @@ async function triggerUserMatching(userEmail: string): Promise<void> {
 
     const result = await response.json();
     console.log(`✅ Triggered matching for ${userEmail}: ${result.matches?.length || 0} matches found`);
-    
+
   } catch (error) {
     console.error('❌ Error triggering user matching:', error);
     throw error;
@@ -37,13 +37,13 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY! as string
 );
 
-// Define Tally field type
+// Tally field structure
 type TallyField = {
   label: string;
   value: string | string[] | null;
 };
 
-// Define expected Tally webhook payload shape
+// Tally webhook structure
 type TallyWebhookPayload = {
   data: {
     fields: TallyField[];
@@ -56,15 +56,15 @@ export async function POST(req: NextRequest) {
 
     const tallyData = await req.json();
 
-    // ✅ Extract the fields safely
     const {
       data: { fields: formFields },
     } = tallyData as TallyWebhookPayload;
 
-    function getField(label: string) {
+    // Utility to find a form field by partial label
+    function getField(label: string): string | string[] | null {
       return formFields.find((f) =>
         f.label.toLowerCase().includes(label.toLowerCase())
-      )?.value;
+      )?.value ?? null;
     }
 
     const userEntry = {
@@ -87,20 +87,23 @@ export async function POST(req: NextRequest) {
     const { error } = await supabase.from('users').insert([userEntry]);
 
     if (error) {
-      console.error('Supabase Insert Error:', error);
+      console.error('❌ Supabase Insert Error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Trigger AI matching for the new user (async, don't wait)
-    if (userEntry.email) {
+    // ✅ Trigger matching if email is a string (not array or null)
+    if (typeof userEntry.email === 'string') {
       triggerUserMatching(userEntry.email).catch(err => {
         console.error('❌ Failed to trigger matching for new user:', err);
       });
+    } else {
+      console.warn('⚠️ Skipped matching: invalid email format received', userEntry.email);
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
+
   } catch (error: unknown) {
-    console.error('Webhook Handler Error:', error);
+    console.error('❌ Webhook Handler Error:', error);
 
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

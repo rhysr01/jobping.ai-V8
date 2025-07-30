@@ -12,6 +12,24 @@ const sora = Sora({
 export const metadata: Metadata = {
   title: 'JobPingAI - AI-powered roles for graduates',
   description: 'AI-curated job opportunities delivered daily to ambitious graduates.',
+  openGraph: {
+    title: 'JobPingAI - AI-powered roles for graduates',
+    description: 'AI-curated job opportunities delivered daily to ambitious graduates.',
+    url: 'https://www.jobping.ai', // Replace with your actual domain
+    siteName: 'JobPingAI',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'JobPingAI Open Graph Banner',
+      },
+    ],
+    type: 'website',
+  },
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -23,3 +41,4 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     </html>
   );
 }
+export {}; // Force module context for Vercel

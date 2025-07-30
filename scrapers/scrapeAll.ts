@@ -1,9 +1,10 @@
 import { scrapeRemoteOK } from './remoteok';
-import { scrapecareerSites } from './scrapecareersite';
+import { scrapeAllCareerSites } from './scrapecareersite';
 import { createClient } from '@supabase/supabase-js';
 import type { Job } from './types';
 import dotenv from 'dotenv';
 import { getTodayISO, cleanText, normalizeLocation, inferSeniorityLevel, detectWorkEnvironment, detectLanguageRequirements } from './utils';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ const supabase = createClient(
 async function scrapeAll(): Promise<void> {
   console.log('🚀 Starting full scrape run for JobPing...');
   const scraped_at = getTodayISO();
+  const scraperRunId = crypto.randomUUID(); // Set once at the start of scraping
 
   const allSources: { name: string; scrapeFn: () => Promise<Job[]> }[] = [
     { name: 'RemoteOK', scrapeFn: scrapeRemoteOK },
@@ -69,7 +71,10 @@ async function scrapeAll(): Promise<void> {
     return;
   }
 
-  const { error } = await supabase.from('jobs').upsert(enrichedJobs, {
+  // Add scraper_run_id to each job
+  const jobsWithRunId = enrichedJobs.map(job => ({ ...job, scraper_run_id: scraperRunId }));
+
+  const { error } = await supabase.from('jobs').upsert(jobsWithRunId, {
     onConflict: 'job_hash',
   });
 

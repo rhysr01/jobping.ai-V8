@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Script from 'next/script';
+import Head from 'next/head';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { GraduationCap, Sparkles, Zap, Target } from 'lucide-react';
 import PricingSelector from './priceselector';
@@ -9,8 +10,7 @@ import MagneticButton from './components/MagneticButton';
 export default function Home() {
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  
-  // Parallax scroll effect
+
   const { scrollY } = useScroll();
   const gradientY = useTransform(scrollY, [0, 500], [0, -150]);
   const opacity = useTransform(scrollY, [0, 300], [1, 0.3]);
@@ -28,24 +28,37 @@ export default function Home() {
       title: 'AI-Powered Matching',
       description: 'Advanced algorithms analyze your profile and preferences to find perfect job matches daily.',
       tier: 'SMART',
-      icon: Sparkles
+      icon: Sparkles,
+      badge: '✨'
     },
     {
       title: 'Graduate-Focused',
       description: 'Curated opportunities specifically for ambitious graduates entering the job market.',
       tier: 'TARGETED',
-      icon: Target
+      icon: Target,
+      badge: '🎯'
     },
     {
       title: 'Zero Job Boards',
       description: 'Skip the endless scrolling. We bring the best opportunities directly to your inbox.',
       tier: 'EFFICIENT',
-      icon: Zap
+      icon: Zap,
+      badge: '⚡'
     }
   ];
 
   return (
     <>
+      <Head>
+        <title>JobPingAI – Smart Job Discovery for Graduates</title>
+        <meta name="description" content="AI-powered job matching built for ambitious graduates. Get personalized opportunities straight to your inbox." />
+        <meta property="og:title" content="JobPingAI – Smart Job Discovery for Graduates" />
+        <meta property="og:description" content="AI-powered job matching built for ambitious graduates. Get personalized opportunities straight to your inbox." />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="/og-image.png" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+
       <Script
         src="https://tally.so/widgets/embed.js"
         strategy="lazyOnload"
@@ -72,127 +85,18 @@ export default function Home() {
           }}
         />
 
-        {/* Animated Grid Background */}
-        <div className="fixed inset-0 -z-20 opacity-[0.02]">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `
-              linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: '60px 60px',
-            animation: 'grid-move 25s linear infinite'
-          }} />
-        </div>
-
-        {/* Enhanced Floating Orbs */}
-        <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-          {/* Primary Orb - Larger and more prominent */}
-          <motion.div
-            className="absolute top-1/4 left-1/4 w-[600px] h-[600px]"
-            animate={{
-              x: [0, 100, -50, 0],
-              y: [0, -80, 40, 0],
-            }}
-            transition={{
-              duration: 20,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          >
-            <div 
-              className="w-full h-full rounded-full"
-              style={{
-                background: `
-                  radial-gradient(
-                    circle at center,
-                    rgba(59, 130, 246, 0.15) 0%,
-                    rgba(59, 130, 246, 0.08) 25%,
-                    rgba(147, 51, 234, 0.05) 50%,
-                    transparent 70%
-                  )
-                `,
-                filter: 'blur(40px)',
-              }}
-            />
-          </motion.div>
-
-          {/* Secondary Orb - Complementary movement */}
-          <motion.div
-            className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px]"
-            animate={{
-              x: [0, -80, 60, 0],
-              y: [0, 50, -70, 0],
-            }}
-            transition={{
-              duration: 25,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 5
-            }}
-          >
-            <div 
-              className="w-full h-full rounded-full"
-              style={{
-                background: `
-                  radial-gradient(
-                    circle at center,
-                    rgba(147, 51, 234, 0.12) 0%,
-                    rgba(147, 51, 234, 0.06) 25%,
-                    rgba(59, 130, 246, 0.03) 50%,
-                    transparent 70%
-                  )
-                `,
-                filter: 'blur(60px)',
-              }}
-            />
-          </motion.div>
-
-          {/* Accent Orb - Smaller, faster */}
-          <motion.div
-            className="absolute top-1/2 left-1/2 w-[300px] h-[300px]"
-            animate={{
-              x: [0, 40, -60, 30, 0],
-              y: [0, -60, 20, -40, 0],
-            }}
-            transition={{
-              duration: 15,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 2.5
-            }}
-          >
-            <div 
-              className="w-full h-full rounded-full"
-              style={{
-                background: `
-                  radial-gradient(
-                    circle at center,
-                    rgba(236, 72, 153, 0.1) 0%,
-                    rgba(236, 72, 153, 0.05) 30%,
-                    transparent 60%
-                  )
-                `,
-                filter: 'blur(30px)',
-              }}
-            />
-          </motion.div>
-        </div>
-
-        {/* Enhanced Noise texture overlay */}
-        <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='6' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          mixBlendMode: 'overlay'
-        }} />
-
         {/* Navigation */}
         <nav className="w-full py-8 px-6 md:px-12 flex justify-between items-center relative z-10">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="flex items-center gap-3"
+            className="flex items-center gap-3 relative"
           >
-            <GraduationCap className="w-7 h-7 text-gradient animate-pulse-glow" strokeWidth={1.5} />
+            <div className="relative w-7 h-7">
+              <GraduationCap className="w-7 h-7 text-white z-10 relative" strokeWidth={1.5} />
+              <span className="absolute w-full h-full rounded-full bg-white opacity-40 animate-ping-slow z-0 top-0 left-0" />
+            </div>
             <span className="premium-text text-xl font-semibold tracking-tight">JobPingAI</span>
           </motion.div>
           <motion.div
@@ -209,7 +113,6 @@ export default function Home() {
             </MagneticButton>
           </motion.div>
         </nav>
-
         {/* Hero Section */}
         <section className="min-h-[90vh] flex flex-col items-center justify-center text-center px-6 relative">
           {/* Parallax gradient background */}
@@ -226,7 +129,10 @@ export default function Home() {
             transition={{ duration: 1, ease: "easeOut" }}
             className="flex items-center gap-4 mb-8"
           >
-            <GraduationCap className="w-10 h-10 text-gradient animate-pulse-glow animate-float" strokeWidth={1.5} />
+            <div className="relative w-10 h-10">
+              <GraduationCap className="w-10 h-10 text-white z-10 relative animate-float" strokeWidth={1.5} />
+              <span className="absolute w-full h-full rounded-full bg-white opacity-30 animate-ping-slow z-0 top-0 left-0" />
+            </div>
             <h1 className="text-[clamp(2.5rem,7vw,5rem)] font-bold hero-title tracking-tight">
               JobPingAI
             </h1>
@@ -314,7 +220,7 @@ export default function Home() {
                   viewport={{ once: true, margin: "-100px" }}
                   transition={{ 
                     duration: 0.5,
-                    delay: index * 0.1, // Stagger effect
+                    delay: index * 0.1,
                     ease: [0.21, 0.47, 0.32, 0.98]
                   }}
                   whileHover={{ 
@@ -332,7 +238,8 @@ export default function Home() {
                   <p className="text-gray-300 text-base leading-relaxed mb-4 font-light">
                     {item.description}
                   </p>
-                  <span className="inline-block text-xs uppercase tracking-widest text-gray-400 bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-700/50 font-semibold">
+                  <span className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-gray-400 bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-700/50 font-semibold">
+                    <span>{item.badge}</span>
                     {item.tier}
                   </span>
                 </motion.article>
@@ -340,7 +247,6 @@ export default function Home() {
             })}
           </div>
         </section>
-
         {/* Pricing Selector */}
         <section className="py-16 px-6 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
