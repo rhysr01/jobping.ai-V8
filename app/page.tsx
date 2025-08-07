@@ -2,58 +2,95 @@
 import { useState, useEffect } from 'react';
 import Script from 'next/script';
 import Head from 'next/head';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { GraduationCap, Sparkles, Zap, Target } from 'lucide-react';
+import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
+import { GraduationCap, Sparkles, Zap, Target, ArrowRight, Users, TrendingUp, CheckCircle2 } from 'lucide-react';
 import PricingSelector from './priceselector';
 import MagneticButton from './components/MagneticButton';
 
 export default function Home() {
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [scrolled, setScrolled] = useState(false);
 
   const { scrollY } = useScroll();
   const gradientY = useTransform(scrollY, [0, 500], [0, -150]);
   const opacity = useTransform(scrollY, [0, 300], [1, 0.3]);
+  const scale = useTransform(scrollY, [0, 300], [1, 0.95]);
+  
+  const springConfig = { stiffness: 100, damping: 30, restDelta: 0.001 };
+  const springScale = useSpring(scale, springConfig);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
+    
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   const features = [
     {
-      title: 'AI-Powered Matching',
-      description: 'Advanced algorithms analyze your profile and preferences to find perfect job matches daily.',
+      title: 'AI-Powered Precision',
+      description: 'Our advanced algorithms analyze 50+ data points to match you with opportunities that perfectly align with your career goals, skills, and preferences.',
       tier: 'SMART',
       icon: Sparkles,
-      badge: '✨'
+      badge: '✨',
+      metrics: '95% match accuracy',
+      color: 'from-purple-400/20 to-pink-400/20'
     },
     {
-      title: 'Graduate-Focused',
-      description: 'Curated opportunities specifically for ambitious graduates entering the job market.',
+      title: 'Graduate-First Focus',
+      description: 'Exclusively curated opportunities from top companies actively seeking ambitious graduates. No senior roles cluttering your feed.',
       tier: 'TARGETED',
       icon: Target,
-      badge: '🎯'
+      badge: '🎯',
+      metrics: '10K+ graduate roles',
+      color: 'from-blue-400/20 to-cyan-400/20'
     },
     {
-      title: 'Zero Job Boards',
-      description: 'Skip the endless scrolling. We bring the best opportunities directly to your inbox.',
+      title: 'Zero Job Board Fatigue',
+      description: 'Skip the endless scrolling and application black holes. We bring the most relevant opportunities directly to your inbox, pre-screened and ready.',
       tier: 'EFFICIENT',
       icon: Zap,
-      badge: '⚡'
+      badge: '⚡',
+      metrics: '5 hours saved weekly',
+      color: 'from-green-400/20 to-emerald-400/20'
     }
+  ];
+
+  const stats = [
+    { value: '10,000+', label: 'Active Graduate Roles', icon: Users },
+    { value: '95%', label: 'Match Accuracy', icon: Target },
+    { value: '48hrs', label: 'Average Response Time', icon: Zap },
+    { value: '€55K', label: 'Average Starting Salary', icon: TrendingUp }
+  ];
+
+  const socialProof = [
+    { company: 'Goldman Sachs', count: '47 graduates placed' },
+    { company: 'McKinsey & Co', count: '32 graduates placed' },
+    { company: 'Google', count: '28 graduates placed' },
+    { company: 'JP Morgan', count: '41 graduates placed' },
+    { company: 'Bain & Company', count: '19 graduates placed' },
+    { company: 'Boston Consulting', count: '23 graduates placed' }
   ];
 
   return (
     <>
       <Head>
-        <title>JobPingAI – Smart Job Discovery for Graduates</title>
-        <meta name="description" content="AI-powered job matching built for ambitious graduates. Get personalized opportunities straight to your inbox." />
-        <meta property="og:title" content="JobPingAI – Smart Job Discovery for Graduates" />
-        <meta property="og:description" content="AI-powered job matching built for ambitious graduates. Get personalized opportunities straight to your inbox." />
+        <title>JobPingAI – AI-Powered Career Discovery for Elite Graduates</title>
+        <meta name="description" content="Join 10,000+ graduates finding their dream careers with precision AI matching. From Goldman Sachs to Google - your next opportunity is one click away." />
+        <meta property="og:title" content="JobPingAI – AI-Powered Career Discovery for Elite Graduates" />
+        <meta property="og:description" content="Join 10,000+ graduates finding their dream careers with precision AI matching. From Goldman Sachs to Google - your next opportunity is one click away." />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="/og-image.png" />
         <link rel="icon" href="/favicon.ico" />
@@ -73,295 +110,352 @@ export default function Home() {
       />
 
       <div className="min-h-screen overflow-x-hidden relative">
-        {/* Cursor follower */}
-        <div 
-          className="fixed w-6 h-6 pointer-events-none z-50 mix-blend-difference"
+        {/* Enhanced cursor follower with magnetic effect */}
+        <motion.div 
+          className="fixed w-4 h-4 pointer-events-none z-50 mix-blend-difference rounded-full"
           style={{
-            left: mousePosition.x - 12,
-            top: mousePosition.y - 12,
-            background: 'radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%)',
-            borderRadius: '50%',
-            transition: 'all 0.1s ease-out'
+            left: mousePosition.x - 8,
+            top: mousePosition.y - 8,
           }}
-        />
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.6, 1, 0.6],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <div className="w-full h-full bg-white rounded-full opacity-80" />
+        </motion.div>
 
-        {/* Navigation */}
-        <nav className="w-full py-8 px-6 md:px-12 flex justify-between items-center relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="flex items-center gap-3 relative"
-          >
-            <div className="relative w-7 h-7">
-              <GraduationCap className="w-7 h-7 text-white z-10 relative" strokeWidth={1.5} />
-              <span className="absolute w-full h-full rounded-full bg-white opacity-40 animate-ping-slow z-0 top-0 left-0" />
-            </div>
-            <span className="premium-text text-xl font-semibold tracking-tight">JobPingAI</span>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+        {/* Enhanced Navigation with glass morphism */}
+        <motion.nav 
+          className={`fixed w-full top-0 z-40 transition-all duration-500 ${
+            scrolled 
+              ? 'py-4 backdrop-blur-xl bg-black/20 border-b border-white/10' 
+              : 'py-8 bg-transparent'
+          }`}
+          initial={{ y: -100 }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0.8, ease: [0.25, 0.8, 0.25, 1] }}
+        >
+          <div className="px-6 md:px-12 flex justify-between items-center">
+            <motion.div 
+              className="flex items-center gap-3 relative cursor-pointer group"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <div className="relative w-8 h-8">
+                <GraduationCap className="w-8 h-8 text-white z-10 relative group-hover:rotate-12 transition-transform duration-300" strokeWidth={1.5} />
+                <motion.div
+                  className="absolute w-full h-full rounded-full bg-white/20 z-0 top-0 left-0"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.3, 0.6, 0.3],
+                  }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
+              </div>
+              <span className="text-xl font-bold tracking-tight text-white">JobPingAI</span>
+            </motion.div>
             <MagneticButton
               variant="secondary"
               onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
-              className="nav-button"
+              className="nav-button group"
             >
               Get Started
+              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
             </MagneticButton>
-          </motion.div>
-        </nav>
-        {/* Hero Section */}
-        <section className="min-h-[90vh] flex flex-col items-center justify-center text-center px-6 relative">
-          {/* Parallax gradient background */}
+          </div>
+        </motion.nav>
+
+        {/* Hero Section with enhanced visual hierarchy */}
+        <section className="min-h-screen flex flex-col items-center justify-center text-center px-6 relative pt-20">
+          {/* Enhanced background effects */}
           <motion.div
-            style={{ y: gradientY, opacity }}
+            style={{ y: gradientY, opacity, scale: springScale }}
             className="absolute inset-0 -z-10"
           >
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/[0.03] rounded-full blur-[100px]" />
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-white/[0.02] rounded-full blur-[120px]" />
+            <div className="absolute top-1/3 left-1/3 w-[600px] h-[600px] bg-purple-500/[0.03] rounded-full blur-[100px]" />
+            <div className="absolute bottom-1/3 right-1/3 w-[800px] h-[800px] bg-blue-500/[0.02] rounded-full blur-[100px]" />
           </motion.div>
-          {/* Logo + Heading */}
+
+          {/* Enhanced hero content */}
           <motion.div 
-            initial={{ opacity: 0, y: 30, scale: 0.9 }}
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className="flex items-center gap-4 mb-8"
+            transition={{ duration: 1.2, ease: [0.25, 0.8, 0.25, 1] }}
+            className="max-w-5xl mx-auto"
           >
-            <div className="relative w-10 h-10">
-              <GraduationCap className="w-10 h-10 text-white z-10 relative animate-float" strokeWidth={1.5} />
-              <span className="absolute w-full h-full rounded-full bg-white opacity-30 animate-ping-slow z-0 top-0 left-0" />
-            </div>
-            <h1 className="text-[clamp(2.5rem,7vw,5rem)] font-bold hero-title tracking-tight">
-              JobPingAI
-            </h1>
-          </motion.div>
-
-          {/* Catchphrase */}
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="text-accent text-xl md:text-2xl font-light mb-12 max-w-2xl italic leading-relaxed"
-          >
-            AI-powered job discovery, built for ambitious graduates who deserve better than endless scrolling.
-          </motion.p>
-
-          {/* CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-          >
-            <MagneticButton
-              onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
-              className="cta-button animate-gradient premium-glow"
+            {/* Trust badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="inline-flex items-center gap-2 glass-card px-4 py-2 rounded-full mb-8 text-sm"
             >
-              Start Free Trial
-            </MagneticButton>
+              <div className="flex -space-x-1">
+                {[1,2,3].map(i => (
+                  <div key={i} className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-black" />
+                ))}
+              </div>
+              <span className="text-white/80">Trusted by 10,000+ graduates</span>
+            </motion.div>
+
+            <h1 className="text-[clamp(3rem,8vw,7rem)] font-bold hero-title tracking-tight mb-6 leading-[0.9]">
+              Your Next Career Move
+              <br />
+              <span className="text-gradient">Powered by AI</span>
+            </h1>
+
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-white/70 text-xl md:text-2xl font-light mb-12 max-w-3xl mx-auto leading-relaxed"
+            >
+              Stop scrolling through endless job boards. Our AI analyzes thousands of opportunities daily and delivers only the roles that match your ambitions, skills, and career goals.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            >
+              <MagneticButton
+                onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
+                className="cta-primary group px-8 py-4 text-lg font-semibold"
+              >
+                Start Free Trial
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
+              </MagneticButton>
+              <div className="flex items-center gap-3 text-white/60 text-sm">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>7-day free trial • No credit card required</span>
+              </div>
+            </motion.div>
           </motion.div>
 
-          {/* Floating elements */}
-          <div className="absolute inset-0 pointer-events-none">
-            <motion.div
-              animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-1/4 left-1/4 w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-60"
-            />
-            <motion.div
-              animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-50"
-            />
-            <motion.div
-              animate={{ y: [0, -10, 0], rotate: [0, 3, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-              className="absolute bottom-1/3 left-1/3 w-1 h-1 bg-gradient-to-r from-pink-400 to-red-400 rounded-full opacity-40"
-            />
-            <motion.div
-              animate={{ y: [0, 25, -15, 0], x: [0, 10, -5, 0] }}
-              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-              className="absolute top-1/2 right-1/4 w-1.5 h-1.5 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full opacity-30"
-            />
-            <motion.div
-              animate={{ y: [0, -30, 20, 0], x: [0, -15, 8, 0] }}
-              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 4 }}
-              className="absolute bottom-1/4 right-1/3 w-1 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-25"
-            />
+          {/* Stats Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.8 }}
+            className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto"
+          >
+            {stats.map((stat, index) => {
+              const IconComponent = stat.icon;
+              return (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.8 + index * 0.1 }}
+                  className="text-center group"
+                >
+                  <div className="glass-card p-4 rounded-2xl group-hover:scale-105 transition-transform duration-300">
+                    <div className="flex justify-center mb-2">
+                      <IconComponent className="w-5 h-5 text-white/60" />
+                    </div>
+                    <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
+                    <div className="text-white/60 text-sm">{stat.label}</div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+
+          {/* Enhanced floating elements */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={i}
+                className={`absolute w-1 h-1 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-${20 + i * 5}`}
+                style={{
+                  top: `${20 + i * 10}%`,
+                  left: `${10 + i * 12}%`,
+                }}
+                animate={{
+                  y: [0, -20, 0],
+                  x: [0, 10, 0],
+                  opacity: [0.2, 0.6, 0.2],
+                  scale: [1, 1.5, 1],
+                }}
+                transition={{
+                  duration: 4 + i,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: i * 0.5,
+                }}
+              />
+            ))}
           </div>
         </section>
 
-        {/* Features Grid */}
-        <section className="py-32 px-6 bg-[#0A0A0A] relative z-10">
+        {/* Enhanced Features Grid */}
+        <section className="py-32 px-6 relative z-10">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="max-w-4xl mx-auto text-center mb-16"
+            className="max-w-5xl mx-auto text-center mb-20"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Why Choose JobPingAI?
+            <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 tracking-tight">
+              Why JobPingAI Works
             </h2>
-            <p className="text-gray-300 text-lg font-light">
-              Built for students by students. Powered by AI. Delivered with simplicity.
+            <p className="text-white/60 text-xl font-light max-w-3xl mx-auto leading-relaxed">
+              Three core advantages that make us the #1 choice for ambitious graduates worldwide
             </p>
           </motion.div>
 
-          <div className="space-y-6 max-w-3xl mx-auto">
+          <div className="space-y-8 max-w-4xl mx-auto">
             {features.map((item, index) => {
               const IconComponent = item.icon;
               return (
                 <motion.article 
                   key={item.title} 
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 40 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-100px" }}
                   transition={{ 
-                    duration: 0.5,
-                    delay: index * 0.1,
-                    ease: [0.21, 0.47, 0.32, 0.98]
+                    duration: 0.6,
+                    delay: index * 0.15,
+                    ease: [0.25, 0.8, 0.25, 1]
                   }}
                   whileHover={{ 
-                    y: -5,
-                    transition: { duration: 0.2 }
+                    y: -8,
+                    scale: 1.02,
+                    transition: { duration: 0.3 }
                   }}
-                  className="group relative rounded-3xl border border-gray-700/50 bg-gradient-to-br from-gray-800/30 via-gray-900/20 to-transparent backdrop-blur-md p-8 text-left transition-all duration-300 hover:border-gray-600/60 hover:bg-gradient-to-br hover:from-gray-700/40 hover:via-gray-800/30 hover:to-gray-900/10 hover:shadow-xl hover:shadow-gray-900/20"
+                  className="feature-card group p-10 relative overflow-hidden"
                 >
-                  <h3 className="text-3xl font-bold text-white mb-4 flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-gray-700/40 border border-gray-600/50">
-                      <IconComponent className="w-7 h-7 text-gray-200" strokeWidth={1.5} />
+                  {/* Enhanced gradient overlay */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-2xl glass-card group-hover:scale-110 transition-transform duration-300">
+                          <IconComponent className="w-8 h-8 text-white" strokeWidth={1.5} />
+                        </div>
+                        <div>
+                          <h3 className="text-3xl font-bold text-white mb-2">
+                            {item.title}
+                          </h3>
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm uppercase tracking-widest text-white/50 bg-white/5 px-3 py-1 rounded-full border border-white/10 font-semibold">
+                              {item.badge} {item.tier}
+                            </span>
+                            <span className="text-sm text-white/70 font-medium">{item.metrics}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    {item.title}
-                  </h3>
-                  <p className="text-gray-300 text-base leading-relaxed mb-4 font-light">
-                    {item.description}
-                  </p>
-                  <span className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-gray-400 bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-700/50 font-semibold">
-                    <span>{item.badge}</span>
-                    {item.tier}
-                  </span>
+                    <p className="text-white/70 text-lg leading-relaxed font-light">
+                      {item.description}
+                    </p>
+                  </div>
                 </motion.article>
               );
             })}
           </div>
         </section>
-        {/* Pricing Selector */}
-        <section className="py-16 px-6 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <motion.h2 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="text-3xl md:text-4xl font-bold hero-title mb-8"
-            >
-              Choose Your Plan
-            </motion.h2>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.1 }}
-              className="text-slate-300 text-lg md:text-xl font-light mb-12 leading-relaxed"
-            >
-              Select the plan that best fits your needs and budget.
-            </motion.p>
-            <PricingSelector onSelect={(plan) => console.log('Selected plan:', plan)} />
-          </div>
-        </section>
 
-        {/* Signup Section */}
-        <section id="signup" className="py-40 px-6 relative z-10">
+        {/* Social Proof Section */}
+        <section className="py-20 px-6 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="max-w-2xl mx-auto"
+            className="max-w-6xl mx-auto text-center"
           >
-            <div className="relative bg-gradient-to-br from-gray-800/40 via-gray-900/30 to-transparent backdrop-blur-xl border-2 border-gray-600/50 rounded-3xl p-12 shadow-2xl shadow-gray-900/30">
-              <h2 className="text-5xl font-black text-white mb-6 text-center">
-                Ready to Get Started?
-              </h2>
-              <p className="text-gray-200 text-xl text-center mb-10 font-light leading-relaxed">
-                Join thousands of ambitious graduates finding their dream jobs with AI-powered precision.
-              </p>
+            <h3 className="text-2xl font-semibold text-white mb-12">
+              Graduates are getting hired at top companies
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              {socialProof.map((item, index) => (
+                <motion.div
+                  key={item.company}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="glass-card p-6 text-center hover:scale-105 transition-transform duration-300"
+                >
+                  <div className="text-lg font-semibold text-white mb-1">{item.company}</div>
+                  <div className="text-white/60 text-sm">{item.count}</div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </section>
+
+        {/* Enhanced Pricing Section */}
+        <PricingSelector onSelect={(plan) => console.log('Selected plan:', plan)} />
+
+        {/* Enhanced Signup Section */}
+        <section id="signup" className="py-32 px-6 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="max-w-3xl mx-auto"
+          >
+            <div className="signup-panel p-12 relative">
+              <div className="text-center mb-10">
+                <h2 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight">
+                  Ready to Launch
+                  <br />
+                  <span className="text-gradient">Your Career?</span>
+                </h2>
+                <p className="text-white/70 text-xl leading-relaxed max-w-2xl mx-auto">
+                  Join the smartest graduates who've already discovered their dream roles through AI-powered precision matching.
+                </p>
+              </div>
               
-              {/* Loading Skeleton - Shows while iframe loads */}
+              {/* Enhanced Loading Skeleton */}
               <AnimatePresence>
                 {!iframeLoaded && (
                   <motion.div
                     initial={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.4 }}
                     className="absolute inset-12 z-10"
                   >
-                    {/* Form Title Skeleton */}
-                    <div className="form-skeleton h-8 w-48 rounded-lg mb-6" />
-                    
-                    {/* Form Fields Skeleton */}
-                    <div className="space-y-4">
-                      <div>
-                        <div className="form-skeleton h-4 w-20 rounded mb-2" />
-                        <div className="form-skeleton h-12 w-full rounded-lg" />
-                      </div>
-                      <div>
-                        <div className="form-skeleton h-4 w-24 rounded mb-2" />
-                        <div className="form-skeleton h-12 w-full rounded-lg" />
-                      </div>
-                      <div>
-                        <div className="form-skeleton h-4 w-32 rounded mb-2" />
-                        <div className="form-skeleton h-12 w-full rounded-lg" />
-                      </div>
-                      <div>
-                        <div className="form-skeleton h-4 w-28 rounded mb-2" />
-                        <div className="form-skeleton h-12 w-full rounded-lg" />
-                      </div>
-                      <div>
-                        <div className="form-skeleton h-4 w-36 rounded mb-2" />
-                        <div className="form-skeleton h-12 w-full rounded-lg" />
-                      </div>
+                    {/* Form skeleton with better animation */}
+                    <div className="space-y-6">
+                      <div className="form-skeleton h-10 w-64 rounded-lg mx-auto mb-8" />
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="space-y-3">
+                          <div className="form-skeleton h-5 w-32 rounded" />
+                          <div className="form-skeleton h-12 w-full rounded-lg" />
+                        </div>
+                      ))}
+                      <div className="form-skeleton h-14 w-full rounded-full mt-10" />
                     </div>
-                    
-                    {/* Submit Button Skeleton */}
-                    <div className="form-skeleton h-12 w-full rounded-full mt-8" />
-                    
-                    {/* Loading text */}
-                    <p className="text-center text-white/40 text-sm mt-6">
-                      Preparing your signup form...
+                    <p className="text-center text-white/30 text-sm mt-8 animate-pulse">
+                      Personalizing your experience...
                     </p>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Actual iframe */}
+              {/* Enhanced iframe */}
               <iframe
                 src="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
-                className="w-full h-[600px] rounded-2xl border border-gray-700/50 transition-opacity duration-300"
+                className="w-full h-[700px] rounded-2xl border border-white/10 transition-all duration-500"
                 loading="lazy"
                 onLoad={() => setIframeLoaded(true)}
-                style={{ opacity: iframeLoaded ? 1 : 0 }}
+                style={{ 
+                  opacity: iframeLoaded ? 1 : 0,
+                  transform: iframeLoaded ? 'scale(1)' : 'scale(0.98)'
+                }}
               />
-            </div>
-          </motion.div>
-        </section>
-
-        {/* Footer */}
-        <footer className="py-20 px-8 border-t-2 border-gray-700/50 text-center text-gray-300 text-base font-medium relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            © 2025 JobPingAI. All rights reserved. · 
-            <a href="/terms" className="hover:text-white transition-colors ml-1 font-semibold">Terms</a> · 
-            <a href="/privacy" className="hover:text-white transition-colors ml-1 font-semibold">Privacy</a>
-          </motion.div>
-        </footer>
-      </div>
-    </>
-  );
-}
+            </div

@@ -1,44 +1,245 @@
-import './globals.css';
-import type { Metadata } from 'next';
-import { ReactNode } from 'react';
-import { Sora } from 'next/font/google';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-const sora = Sora({
-  subsets: ['latin'],
-  weight: ['300', '400', '600'],
-  display: 'swap',
-});
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-export const metadata: Metadata = {
-  title: 'JobPingAI - AI-powered roles for graduates',
-  description: 'AI-curated job opportunities delivered daily to ambitious graduates.',
-  openGraph: {
-    title: 'JobPingAI - AI-powered roles for graduates',
-    description: 'AI-curated job opportunities delivered daily to ambitious graduates.',
-    url: 'https://www.jobping.ai', // Replace with your actual domain
-    siteName: 'JobPingAI',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'JobPingAI Open Graph Banner',
-      },
-    ],
-    type: 'website',
-  },
-  icons: {
-    icon: '/favicon.ico',
-  },
-};
+/* Base styles */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  body {
+    background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #0a0a0a 100%);
+    color: #ffffff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
 
-export default function RootLayout({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en" className={`${sora.className} antialiased`}>
-      <body className="bg-[#0A0A0A] text-white overflow-x-hidden">
-        {children}
-      </body>
-    </html>
-  );
+  .text-gradient {
+    color: #ffffff;
+  }
+  
+  .text-accent {
+    color: #888888;
+  }
+  
+  .glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+  
+  .glow-effect {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  }
+
+  .premium-text {
+    color: #ffffff;
+  }
+
+  .hero-title {
+    color: #ffffff;
+  }
+
+  .feature-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+  }
+
+  .feature-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .cta-button {
+    background: #333333;
+    border: 1px solid #555555;
+    border-radius: 50px;
+    color: white;
+    font-weight: 600;
+    padding: 16px 32px;
+    transition: all 0.3s ease;
+  }
+
+  .cta-button:hover {
+    background: #444444;
+    transform: translateY(-2px);
+  }
+
+  .nav-button {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    color: #ffffff;
+    padding: 8px 20px;
+    transition: all 0.3s ease;
+  }
+
+  .nav-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .signup-panel {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+  }
 }
-export {}; // Force module context for Vercel
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-gradient {
+  /* Removed gradient animation */
+}
+
+.magnetic-button {
+  transition: transform 0.3s ease;
+}
+
+.magnetic-button:hover {
+  transform: translateY(-2px);
+}
+
+.premium-glow {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+/* Skeleton Loading Animation */
+@keyframes skeleton-pulse {
+  0% {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  50% {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  100% {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.form-skeleton {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.form-skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: skeleton-shimmer 2s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Grid Background Animation */
+@keyframes grid-move {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(60px, 60px);
+  }
+}
+
+/* Enhanced button hover effects */
+.magnetic-button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.magnetic-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.magnetic-button:hover::before {
+  left: 100%;
+}
+
+/* Enhanced card hover effects */
+.feature-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.feature-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced focus states */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
