@@ -1,177 +1,265 @@
-// Full updated match-users/route.ts with proper types to remove red squiggles in VS Code
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
-import type { Job } from '../../../scrapers/types';
+
+// Import job matching logic and types
+import {
+  performEnhancedAIMatching,
+  generateFallbackMatches,
+  logMatchSession,
+} from '@/utils/jobMatching';
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL! as string,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! as string
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// ✅ Minimal placeholder types to fix missing references
-type MatchResult = {
-  job_id: string;
-  match_score: number;
-  match_reason: string;
-  match_quality?: 'excellent' | 'good' | 'fair' | 'low';
-  match_tags?: string[];
+// Tally Webhook Type
+type TallyWebhookData = {
+  eventId: string;
+  eventType: string;
+  createdAt: string;
+  data: {
+    responseId: string;
+    submissionId: string;
+    respondentId: string;
+    formId: string;
+    formName: string;
+    createdAt: string;
+    fields: Array<{
+      key: string;
+      label: string;
+      type: string;
+      value: string | string[];
+    }>;
+  };
 };
 
-type EnhancedJob = Job & {
-  complexity_score: number;
-};
+// Extract user data matching your actual Tally form fields and Supabase schema
+function extractUserDataFromTallyFields(fields: TallyWebhookData['data']['fields']) {
+  const userData: Record<string, any> = { 
+    email: '',
+    active: true // Default to active for new signups
+  };
+  
+  fields.forEach(field => {
+    const value = Array.isArray(field.value) ? field.value.join(', ') : field.value;
+    
+    // Map Tally field keys to your Supabase column names
+    switch (field.key.toLowerCase()) {
+      case 'email':
+      case 'email_address':
+        userData.email = value;
+        break;
+      case 'full_name':
+      case 'name':
+        userData.full_name = value;
+        break;
+      case 'professional_expertise':
+      case 'background':
+      case 'expertise':
+        userData.professional_expertise = value;
+        break;
+      case 'start_date':
+      case 'availability':
+        userData.start_date = value;
+        break;
+      case 'work_environment':
+      case 'work_preference':
+        userData.work_environment = value;
+        break;
+      case 'visa_status':
+        userData.visa_status = value;
+        break;
+      case 'entry_level_preference':
+      case 'experience_level':
+        userData.entry_level_preference = value;
+        break;
+      case 'career_path':
+        userData.career_path = value;
+        break;
+      case 'target_date':
+      case 'graduation_date':
+        userData.target_date = value;
+        break;
+      case 'languages_spoken':
+      case 'languages':
+        userData.languages_spoken = value;
+        break;
+      case 'company_types':
+      case 'company_preference':
+        userData.company_types = value;
+        break;
+      case 'roles_selected':
+      case 'target_roles':
+      case 'preferred_roles':
+        userData.roles_selected = value;
+        break;
+      // Handle any additional fields from your form
+      default:
+        // Log unknown fields for debugging
+        console.log(`Unknown field: ${field.key} = ${value}`);
+        break;
+    }
+  });
 
-type EnhancedUserPreferences = {
-  email: string;
-  // add other real fields as needed
-};
-
-type UserPreferences = {
-  email: string;
-  // add other real fields as needed
-};
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface EnhancedMatchResult {}
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface MatchLog {}
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const entryLevel = 'intern';
+  return userData;
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { userEmail, limit = 50 } = await req.json();
-    if (!userEmail) {
-      return NextResponse.json({ error: 'User email is required' }, { status: 400 });
+    // Verify webhook signature if you set one up in Tally
+    // const signature = req.headers.get('tally-signature');
+    // if (!verifySignature(signature, body)) {
+    //   return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    // }
+
+    const payload: TallyWebhookData = await req.json();
+    
+    if (payload.eventType !== 'FORM_RESPONSE') {
+      return NextResponse.json({ message: 'Event type not handled' });
     }
 
-    const { data: userData, error: userError } = await supabase
+    // Extract user data from form submission
+    const userData = extractUserDataFromTallyFields(payload.data.fields);
+    
+    if (!userData.email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    console.log(`Processing Tally submission for: ${userData.email}`);
+
+    // Check if user already exists
+    const { data: existingUser, error: fetchError } = await supabase
       .from('users')
-      .select('*')
-      .eq('email', userEmail)
+      .select('email, created_at')
+      .eq('email', userData.email)
       .single();
 
-    if (userError || !userData) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    const isNewUser = !existingUser;
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      // PGRST116 = no rows returned (user doesn't exist), which is fine
+      throw fetchError;
     }
 
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Upsert user profile
+    const userRecord = {
+      ...userData,
+      updated_at: new Date().toISOString(),
+      ...(isNewUser && { created_at: new Date().toISOString() })
+    };
 
-    const { data: jobs, error: jobsError } = await supabase
-      .from('jobs')
-      .select('*')
-      .gte('scraped_at', sevenDaysAgo.toISOString())
-      .order('scraped_at', { ascending: false })
-      .limit(limit);
+    const { error: upsertError } = await supabase
+      .from('users')
+      .upsert(userRecord, { 
+        onConflict: 'email',
+        ignoreDuplicates: false 
+      });
 
-    if (jobsError) {
-      return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
+    if (upsertError) {
+      throw upsertError;
     }
 
-    if (!jobs || jobs.length === 0) {
-      return NextResponse.json({ matches: [] });
+    // For new users, optionally generate initial matches
+    let matches = [];
+    let matchType: 'ai_success' | 'fallback' | 'ai_failed' | 'skipped' = 'skipped';
+
+    if (isNewUser) {
+      console.log(`New user detected: ${userData.email}. Generating welcome matches...`);
+      
+      // Fetch recent jobs for initial matching
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      
+      const { data: jobs, error: jobsError } = await supabase
+        .from('jobs')
+        .select('*')
+        .gte('created_at', threeDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(30); // Smaller limit for welcome matches
+
+      if (jobsError) {
+        console.error('Failed to fetch jobs for new user matching:', jobsError);
+      } else if (jobs && jobs.length > 0) {
+        try {
+          matches = await performEnhancedAIMatching(jobs, userData as any, openai);
+          matchType = 'ai_success';
+          
+          if (!matches || matches.length === 0) {
+            matchType = 'fallback';
+            matches = generateFallbackMatches(jobs, userData as any);
+          }
+        } catch (err) {
+          console.error(`AI matching failed for new user ${userData.email}:`, err);
+          matchType = 'ai_failed';
+          matches = generateFallbackMatches(jobs, userData as any);
+        }
+
+        // Save welcome matches
+        if (matches.length > 0) {
+          const matchEntries = matches.map(match => ({
+            user_email: userData.email,
+            job_hash: match.job_hash,
+            match_score: match.match_score,
+            match_reason: match.match_reason,
+            match_quality: match.match_quality,
+            match_tags: match.match_tags,
+            matched_at: new Date().toISOString(),
+            created_at: new Date().toISOString()
+          }));
+
+          const { error: matchError } = await supabase
+            .from('matches')
+            .insert(matchEntries);
+
+          if (matchError) {
+            console.error(`Failed to save welcome matches for ${userData.email}:`, matchError);
+          }
+
+          // Log the welcome matching session
+          await logMatchSession(
+            userData.email,
+            matchType,
+            jobs.length,
+            matches.length
+          );
+        }
+      }
     }
 
-    const enhancedUserPrefs = normalizeUserPreferences(userData);
-    const enhancedJobs = enrichJobData(jobs);
-
-    let matches: MatchResult[] = [];
-    let fallbackUsed = false;
-
-    try {
-      matches = await performEnhancedAIMatching(enhancedJobs, enhancedUserPrefs);
-    } catch (err) {
-      matches = generateFallbackMatches(enhancedJobs, enhancedUserPrefs);
-      fallbackUsed = true;
+    // Send welcome email for new users (optional)
+    if (isNewUser && matches.length > 0) {
+      // You could trigger a welcome email here
+      console.log(`${matches.length} welcome matches generated for ${userData.email}`);
     }
 
-    const matchEntries = matches.map(match => ({
-      user_email: userEmail,
-      job_hash: match.job_id,
-      match_score: match.match_score,
-      match_reason: match.match_reason,
-      match_quality: getMatchQuality(match.match_score),
-      match_tags: match.match_tags || [],
-      matched_at: new Date().toISOString(),
-    }));
-
-    await supabase
-      .from('matches')
-      .upsert(matchEntries, { onConflict: 'user_email,job_hash' });
-
-    await logMatchSession(userEmail, enhancedJobs, enhancedUserPrefs, fallbackUsed);
-
-    return NextResponse.json({
-      matches,
-      fallback_used: fallbackUsed,
+    return NextResponse.json({ 
+      success: true, 
+      message: isNewUser ? 'New user registered successfully' : 'User profile updated',
+      user: userData.email,
+      is_new_user: isNewUser,
+      welcome_matches: matches.length,
+      fallback_used: matchType === 'fallback' || matchType === 'ai_failed'
     });
 
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    return NextResponse.json({ error: 'Unknown server error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Tally webhook processing error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Unknown server error' }, 
+      { status: 500 }
+    );
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizeUserPreferences(userData: Record<string, unknown>): EnhancedUserPreferences {
-  return { email: String(userData.email || '') };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function enrichJobData(jobs: Job[]): EnhancedJob[] {
-  return jobs.map(j => ({ ...j, complexity_score: 0 }));
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function performEnhancedAIMatching(jobs: EnhancedJob[], prefs: EnhancedUserPreferences): Promise<MatchResult[]> {
-  return Promise.resolve([]);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function generateFallbackMatches(jobs: EnhancedJob[], prefs: EnhancedUserPreferences): MatchResult[] {
-  return [];
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getMatchQuality(score: number): 'excellent' | 'good' | 'fair' | 'low' {
-  return 'good';
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function logMatchSession(userEmail: string, jobs: EnhancedJob[], prefs: EnhancedUserPreferences, fallbackUsed: boolean): Promise<void> {
-  return Promise.resolve();
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function performAIMatching(jobs: Job[], userPrefs: UserPreferences): Promise<MatchResult[]> {
-  return Promise.resolve([]);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function processJobBatch(jobs: Job[], userPrefs: UserPreferences): Promise<MatchResult[]> {
-  return Promise.resolve([]);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function buildMatchingPrompt(jobs: Job[], userPrefs: UserPreferences): string {
-  return '';
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function parseAndValidateMatches(response: string, jobs: Job[]): MatchResult[] {
-  return [];
+// Optional: Add GET endpoint for webhook testing
+export async function GET(req: NextRequest) {
+  return NextResponse.json({ 
+    message: 'Tally webhook endpoint is active',
+    timestamp: new Date().toISOString()
+  });
 }

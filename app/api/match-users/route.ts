@@ -1,70 +1,52 @@
-// Full updated match-users/route.ts with proper types to remove red squiggles in VS Code
+// app/api/match-users/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
-import type { Job } from '../../../scrapers/types';
+import {
+  performEnhancedAIMatching,
+  generateFallbackMatches,
+  logMatchSession,
+} from '@/utils/jobMatching';
+import type { Job, UserPreferences, JobMatch } from '@/utils/jobMatching';
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL! as string,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! as string
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// ✅ Minimal placeholder types to fix missing references
-type MatchResult = {
-  job_id: string;
-  match_score: number;
-  match_reason: string;
-  match_quality?: 'excellent' | 'good' | 'fair' | 'low';
-  match_tags?: string[];
-};
-
-type EnhancedJob = Job & {
-  complexity_score: number;
-};
-
-type EnhancedUserPreferences = {
-  email: string;
-  // add other real fields as needed
-};
-
-type UserPreferences = {
-  email: string;
-  // add other real fields as needed
-};
-
-interface EnhancedMatchResult {}
-interface MatchLog {}
-const entryLevel = 'intern';
-
 export async function POST(req: NextRequest) {
   try {
-    const { userEmail, limit = 50 } = await req.json();
-    if (!userEmail) {
-      return NextResponse.json({ error: 'User email is required' }, { status: 400 });
-    }
+    // For daily batch processing - no userEmail needed
+    const { limit = 50 } = await req.json();
 
-    const { data: userData, error: userError } = await supabase
+    // 1. Fetch ALL active users (not just one)
+    const { data: users, error: usersError } = await supabase
       .from('users')
       .select('*')
-      .eq('email', userEmail)
-      .single();
+      .eq('active', true); // Assuming you have an active flag
 
-    if (userError || !userData) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (usersError) {
+      return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
     }
 
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    if (!users || users.length === 0) {
+      return NextResponse.json({ message: 'No active users found' });
+    }
+
+    // 2. Fetch fresh jobs (from past 24 hours, not 7 days)
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setDate(twentyFourHoursAgo.getDate() - 1);
 
     const { data: jobs, error: jobsError } = await supabase
       .from('jobs')
       .select('*')
-      .gte('scraped_at', sevenDaysAgo.toISOString())
-      .order('scraped_at', { ascending: false })
+      .gte('created_at', twentyFourHoursAgo.toISOString()) // Use created_at not scraped_at
+      .eq('is_sent', false) // Only unsent jobs
+      .order('created_at', { ascending: false })
       .limit(limit);
 
     if (jobsError) {
@@ -72,87 +54,129 @@ export async function POST(req: NextRequest) {
     }
 
     if (!jobs || jobs.length === 0) {
-      return NextResponse.json({ matches: [] });
+      return NextResponse.json({ message: 'No new jobs to process' });
     }
 
-    const enhancedUserPrefs = normalizeUserPreferences(userData);
-    const enhancedJobs = enrichJobData(jobs);
+    // 3. Process each user
+    const results = [];
+    
+    for (const user of users) {
+      try {
+        console.log(`Processing matches for ${user.email}`);
+        
+        // Match jobs using AI (and fallback if necessary)
+        let matches: JobMatch[] = [];
+        let matchType: 'ai_success' | 'fallback' | 'ai_failed' = 'ai_success';
 
-    let matches: MatchResult[] = [];
-    let fallbackUsed = false;
+        try {
+          matches = await performEnhancedAIMatching(jobs, user, openai);
+          if (!matches || matches.length === 0) {
+            matchType = 'fallback';
+            matches = generateFallbackMatches(jobs, user);
+          }
+        } catch (err) {
+          console.error(`AI matching failed for ${user.email}:`, err);
+          matchType = 'ai_failed';
+          matches = generateFallbackMatches(jobs, user);
+        }
 
-    try {
-      matches = await performEnhancedAIMatching(enhancedJobs, enhancedUserPrefs);
-    } catch (err) {
-      matches = generateFallbackMatches(enhancedJobs, enhancedUserPrefs);
-      fallbackUsed = true;
+        // 4. Save matches to database (only if we have matches)
+        if (matches && matches.length > 0) {
+          const matchEntries = matches.map(match => ({
+            user_email: user.email,
+            job_hash: match.job_hash,
+            match_score: match.match_score,
+            match_reason: match.match_reason,
+            match_quality: match.match_quality,
+            match_tags: match.match_tags,
+            matched_at: new Date().toISOString(),
+            created_at: new Date().toISOString() // Add created_at for consistency
+          }));
+
+          // Use insert instead of upsert for daily matches
+          const { error: insertError } = await supabase
+            .from('matches')
+            .insert(matchEntries);
+
+          if (insertError) {
+            console.error(`Failed to save matches for ${user.email}:`, insertError);
+          }
+        }
+
+        // 5. Log session for monitoring
+        await logMatchSession(
+          user.email,
+          matchType,
+          jobs.length,
+          matches.length
+        );
+
+        results.push({
+          user_email: user.email,
+          matches_count: matches.length,
+          fallback_used: matchType !== 'ai_success'
+        });
+
+      } catch (userError) {
+        console.error(`Error processing user ${user.email}:`, userError);
+        
+        results.push({
+          user_email: user.email,
+          matches_count: 0,
+          error: userError.message
+        });
+      }
     }
 
-    const matchEntries = matches.map(match => ({
-      user_email: userEmail,
-      job_hash: match.job_id,
-      match_score: match.match_score,
-      match_reason: match.match_reason,
-      match_quality: getMatchQuality(match.match_score),
-      match_tags: match.match_tags || [],
-      matched_at: new Date().toISOString(),
-    }));
-
-    await supabase
-      .from('matches')
-      .upsert(matchEntries, { onConflict: 'user_email,job_hash' });
-
-    await logMatchSession(userEmail, enhancedJobs, enhancedUserPrefs, fallbackUsed);
+    // 6. Mark processed jobs as sent (so they don't get reprocessed)
+    if (jobs.length > 0) {
+      await supabase
+        .from('jobs')
+        .update({ is_sent: true })
+        .in('id', jobs.map(job => job.id));
+    }
 
     return NextResponse.json({
-      matches,
-      fallback_used: fallbackUsed,
+      success: true,
+      users_processed: users.length,
+      jobs_processed: jobs.length,
+      results
     });
 
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    return NextResponse.json({ error: 'Unknown server error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Match users API error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Unknown server error' }, 
+      { status: 500 }
+    );
   }
 }
 
-function normalizeUserPreferences(userData: Record<string, unknown>): EnhancedUserPreferences {
-  return { email: String(userData.email || '') };
-}
+// Optional: Add GET endpoint for single user testing
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const userEmail = searchParams.get('email');
+  
+  if (!userEmail) {
+    return NextResponse.json({ error: 'Email parameter required' }, { status: 400 });
+  }
 
-function enrichJobData(jobs: Job[]): EnhancedJob[] {
-  return jobs.map(j => ({ ...j, complexity_score: 0 }));
-}
+  try {
+    // Get user's recent matches
+    const { data: matches, error } = await supabase
+      .from('matches')
+      .select(`
+        *,
+        jobs!inner(*)
+      `)
+      .eq('user_email', userEmail)
+      .gte('matched_at', new Date(Date.now() - 24*60*60*1000).toISOString())
+      .order('match_score', { ascending: false });
 
-function performEnhancedAIMatching(jobs: EnhancedJob[], prefs: EnhancedUserPreferences): Promise<MatchResult[]> {
-  return Promise.resolve([]);
-}
+    if (error) throw error;
 
-function generateFallbackMatches(jobs: EnhancedJob[], prefs: EnhancedUserPreferences): MatchResult[] {
-  return [];
-}
-
-function getMatchQuality(score: number): 'excellent' | 'good' | 'fair' | 'low' {
-  return 'good';
-}
-
-function logMatchSession(userEmail: string, jobs: EnhancedJob[], prefs: EnhancedUserPreferences, fallbackUsed: boolean): Promise<void> {
-  return Promise.resolve();
-}
-
-function performAIMatching(jobs: Job[], userPrefs: UserPreferences): Promise<MatchResult[]> {
-  return Promise.resolve([]);
-}
-
-function processJobBatch(jobs: Job[], userPrefs: UserPreferences): Promise<MatchResult[]> {
-  return Promise.resolve([]);
-}
-
-function buildMatchingPrompt(jobs: Job[], userPrefs: UserPreferences): string {
-  return '';
-}
-
-function parseAndValidateMatches(response: string, jobs: Job[]): MatchResult[] {
-  return [];
+    return NextResponse.json({ matches: matches || [] });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
