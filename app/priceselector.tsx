@@ -16,7 +16,7 @@ const Badge = ({ children, variant = 'default' }: { children: React.ReactNode; v
     premium: 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-white border-purple-400/30',
     popular: 'bg-white text-black font-semibold shadow-lg'
   };
-  
+
   return (
     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs border transition-all duration-300 ${variants[variant]}`}>
       {children}
@@ -37,8 +37,8 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
       name: 'Starter',
       price: '€0',
       period: 'forever',
-      tagline: 'Perfect for exploring opportunities',
-      description: 'Everything you need to start your job search journey.',
+      tagline: 'Perfect for exploring daily job opportunity alerts',
+      description: 'Everything you need to kick start your job search journey.',
       features: [
         '5 AI-curated job matches daily',
         'Email delivery to your inbox',
@@ -46,43 +46,30 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
         'Graduate-focused opportunities',
         'Company insights included'
       ],
-      cta: 'Start Free',
-      popular: false
+      cta: 'Start Free'
     },
     premium: {
       name: 'Professional',
       price: '€15',
       period: 'month',
-      originalPrice: '€25',
       tagline: 'Built for ambitious job seekers',
-      description: 'Advanced AI matching with premium features for serious candidates.',
+      description: 'Advanced AI matching with premium features for serious candidates with serious job search goals.',
       features: [
-        '25 AI-curated job matches daily',
+        '25 AI-curated job matches DAILY',
         'Priority AI matching algorithm',
         'Advanced filtering & preferences',
-        'Salary insights & negotiation tips',
-        'Application tracking dashboard',
-        'Interview preparation resources',
         'Direct company contact info',
-        'Premium support & career coaching'
+        'Full access to all features, for those serious about their future'
       ],
-      cta: 'Start Premium Trial',
-      popular: true,
-      savings: 'Save 40%'
+      cta: 'Upgrade to Premium'
     }
   };
-
-  const testimonials = [
-    { text: "Found my dream role at Goldman Sachs in 3 days", author: "Sarah M.", company: "IE University" },
-    { text: "The AI matching is incredibly accurate", author: "Marcus L.", company: "London Business School" },
-    { text: "Saved me hours of job board scrolling", author: "Emma R.", company: "ESADE" }
-  ];
 
   return (
     <section className="py-20 px-6 relative">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="text-center mb-16"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -93,12 +80,12 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
             Choose Your Plan
           </h2>
           <p className="text-white/60 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-            Join 10,000+ students finding their dream careers with AI precision
+            Join students finding their dream careers with AI precision, make mass applications possible and time efficient.
           </p>
         </motion.div>
 
         {/* Plan Toggle */}
-        <motion.div 
+        <motion.div
           className="flex justify-center mb-16"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -131,13 +118,13 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
                 <Crown className="w-3.5 h-3.5" />
               </button>
             </div>
-            
+
             {/* Sliding background */}
             <motion.div
               className="absolute top-1.5 h-[calc(100%-12px)] bg-white rounded-full shadow-lg"
               animate={{
                 x: activeTab === 'free' ? 6 : 'calc(100% - 6px)',
-                width: activeTab === 'free' ? 72 : 110,
+                width: activeTab === 'free' ? 72 : 110
               }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
             />
@@ -187,11 +174,10 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
                 </motion.div>
               </div>
             ) : (
-              // Premium Plans - Multiple Options
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-                {/* Monthly Plan */}
+              // Premium Plan - Single Card (expand as needed)
+              <div className="max-w-md mx-auto">
                 <motion.div
-                  className="pricing-card pricing-card-premium p-8 relative"
+                  className="pricing-card pricing-card-premium p-8 text-center relative"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
@@ -206,4 +192,34 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
                     </Badge>
                   </div>
 
-                  <div
+                  <div className="mb-6">
+                    <h3 className="text-2xl font-bold text-white mb-2">{plans.premium.name}</h3>
+                    <p className="text-white/60 text-sm mb-4">{plans.premium.tagline}</p>
+                  </div>
+
+                  <div className="mb-8">
+                    <div className="text-4xl font-bold text-white mb-1">
+                      {plans.premium.price}
+                      <span className="text-lg font-normal text-white/60 ml-1">/{plans.premium.period}</span>
+                    </div>
+                    <p className="text-white/50 text-sm">{plans.premium.description}</p>
+                  </div>
+
+                  <ul className="space-y-4 text-left mb-8">
+                    {plans.premium.features.map((feature, index) => (
+                      <FeatureItem key={index} text={feature} />
+                    ))}
+                  </ul>
+
+                  <button className="w-full glass-button py-4 text-base font-semibold">
+                    {plans.premium.cta}
+                  </button>
+                </motion.div>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </section>
+  );
+}
