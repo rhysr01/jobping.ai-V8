@@ -18,9 +18,12 @@ function getSupabaseClient() {
   );
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI client inside functions to avoid build-time issues
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 // Tally Webhook Type
 type TallyWebhookData = {
@@ -193,6 +196,7 @@ export async function POST(req: NextRequest) {
         console.error('Failed to fetch jobs for new user matching:', jobsError);
       } else if (jobs && jobs.length > 0) {
         try {
+          const openai = getOpenAIClient();
           matches = await performEnhancedAIMatching(jobs, userData as unknown as UserPreferences, openai);
           matchType = 'ai_success';
           

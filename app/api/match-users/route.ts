@@ -17,9 +17,12 @@ function getSupabaseClient() {
   );
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI client inside functions to avoid build-time issues
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -73,6 +76,7 @@ export async function POST(req: NextRequest) {
         let matchType: 'ai_success' | 'fallback' | 'ai_failed' = 'ai_success';
 
         try {
+          const openai = getOpenAIClient();
           matches = await performEnhancedAIMatching(jobs, user, openai);
           if (!matches || matches.length === 0) {
             matchType = 'fallback';
