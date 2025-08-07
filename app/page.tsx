@@ -68,20 +68,21 @@ export default function Home() {
     }
   ];
 
+  // Removed "€55K" Average Starting Salary stat
   const stats = [
     { value: '10,000+', label: 'Active Graduate Roles', icon: Users },
     { value: '95%', label: 'Match Accuracy', icon: Target },
-    { value: '48hrs', label: 'Average Response Time', icon: Zap },
-    { value: '€55K', label: 'Average Starting Salary', icon: TrendingUp }
+    { value: '48hrs', label: 'Average Response Time', icon: Zap }
   ];
 
+  // Social Proof with only company names, counts removed
   const socialProof = [
-    { company: 'Goldman Sachs', count: '47 graduates placed' },
-    { company: 'McKinsey & Co', count: '32 graduates placed' },
-    { company: 'Google', count: '28 graduates placed' },
-    { company: 'JP Morgan', count: '41 graduates placed' },
-    { company: 'Bain & Company', count: '19 graduates placed' },
-    { company: 'Boston Consulting', count: '23 graduates placed' }
+    { company: 'Goldman Sachs' },
+    { company: 'McKinsey & Co' },
+    { company: 'Google' },
+    { company: 'JP Morgan' },
+    { company: 'Bain & Company' },
+    { company: 'Boston Consulting' }
   ];
 
   return (
@@ -389,7 +390,7 @@ export default function Home() {
                   className="glass-card p-6 text-center hover:scale-105 transition-transform duration-300"
                 >
                   <div className="text-lg font-semibold text-white mb-1">{item.company}</div>
-                  <div className="text-white/60 text-sm">{item.count}</div>
+                  {/* removed placed count */}
                 </motion.div>
               ))}
             </div>
@@ -459,3 +460,9 @@ export default function Home() {
                 }}
               />
             </div>
+          </motion.div>
+        </section>
+      </div>
+    </>
+  );
+}
