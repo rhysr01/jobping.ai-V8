@@ -213,4 +213,4 @@ if (require.main === module) {
 }
 
 // Export for use in scrapeAll.ts
-export { scrapeRemoteOK };
+// Function is already exported above

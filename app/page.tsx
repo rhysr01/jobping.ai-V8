@@ -417,7 +417,7 @@ export default function Home() {
                   <span className="text-gradient">Your Career?</span>
                 </h2>
                 <p className="text-white/70 text-xl leading-relaxed max-w-2xl mx-auto">
-                  Join the smartest graduates who've already discovered their dream roles through AI-powered precision matching.
+                  Join the smartest graduates who&apos;ve already discovered their dream roles through AI-powered precision matching.
                 </p>
               </div>
               

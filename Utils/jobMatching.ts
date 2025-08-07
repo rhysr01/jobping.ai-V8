@@ -146,8 +146,8 @@ export async function performEnhancedAIMatching(
  } catch (error) {
    console.error('AI matching failed:', error);
    
-   // Log failure and use fallback
-   await logMatchSession(userPrefs.email, 'ai_failed', jobs.length, 0, error.message);
+       // Log failure and use fallback
+    await logMatchSession(userPrefs.email, 'ai_failed', jobs.length, 0, error instanceof Error ? error.message : 'Unknown error');
    
    return generateFallbackMatches(jobs, userPrefs);
  }
@@ -180,7 +180,7 @@ export function parseAndValidateMatches(response: string, jobs: Job[]): JobMatch
  } catch (error) {
    console.error('Failed to parse AI response:', error);
    console.error('Raw response:', response);
-   throw new Error(`Parse error: ${error.message}`);
+   throw new Error(`Parse error: ${error instanceof Error ? error.message : 'Unknown error'}`);
  }
 }
 

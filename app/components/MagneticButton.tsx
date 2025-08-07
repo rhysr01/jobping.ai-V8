@@ -31,14 +31,14 @@ export default function MagneticButton({
       whileHover={!disabled ? { scale: 1.02 } : {}}
       whileTap={!disabled ? { scale: 0.98 } : {}}
       onHoverStart={(e) => {
-        if (!disabled) {
+        if (!disabled && e.target) {
           // Subtle magnetic effect
-          e.target.style.transform = 'scale(1.02) translateY(-1px)';
+          (e.target as HTMLElement).style.transform = 'scale(1.02) translateY(-1px)';
         }
       }}
       onHoverEnd={(e) => {
-        if (!disabled) {
-          e.target.style.transform = 'scale(1) translateY(0)';
+        if (!disabled && e.target) {
+          (e.target as HTMLElement).style.transform = 'scale(1) translateY(0)';
         }
       }}
     >

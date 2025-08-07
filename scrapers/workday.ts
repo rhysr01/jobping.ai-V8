@@ -293,7 +293,7 @@ async function processWorkdayJob(post: any, company: any, runId: string, userAge
 
 async function processWorkdayHTMLElement(
   $: cheerio.CheerioAPI, 
-  $el: cheerio.Cheerio<cheerio.Element>, 
+  $el: cheerio.Cheerio<any>, 
   company: any, 
   runId: string,
   userAgent: string

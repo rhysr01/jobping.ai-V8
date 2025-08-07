@@ -122,7 +122,7 @@ export async function scrapeLever(company: {
 
 async function processLeverJobElement(
   $: cheerio.CheerioAPI, 
-  $el: cheerio.Cheerio<cheerio.Element>, 
+  $el: cheerio.Cheerio<any>, 
   company: any, 
   runId: string,
   userAgent: string
@@ -204,7 +204,7 @@ async function processLeverJobElement(
   return job;
 }
 
-function extractLeverLocation($: cheerio.CheerioAPI, $el: cheerio.Cheerio<cheerio.Element>): string {
+function extractLeverLocation($: cheerio.CheerioAPI, $el: cheerio.Cheerio<any>): string {
   // Try multiple location selectors specific to Lever
   const locationSelectors = [
     '.posting-categories > span:first-child',  // Standard Lever location

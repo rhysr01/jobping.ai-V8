@@ -119,7 +119,7 @@ export async function scrapeGreenhouse(company: {
 
 async function processJobElement(
   $: cheerio.CheerioAPI, 
-  $el: cheerio.Cheerio<cheerio.Element>, 
+  $el: cheerio.Cheerio<any>, 
   company: any, 
   runId: string,
   userAgent: string
@@ -188,7 +188,7 @@ async function processJobElement(
   return job;
 }
 
-function extractLocation($: cheerio.CheerioAPI, $el: cheerio.Cheerio<cheerio.Element>): string {
+function extractLocation($: cheerio.CheerioAPI, $el: cheerio.Cheerio<any>): string {
   // Try multiple location selectors
   const locationSelectors = [
     '.location',

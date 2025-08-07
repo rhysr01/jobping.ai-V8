@@ -7,12 +7,16 @@ import {
   performEnhancedAIMatching,
   generateFallbackMatches,
   logMatchSession,
-} from '@/utils/jobMatching';
+  type UserPreferences,
+} from '@/Utils/jobMatching';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase client inside functions to avoid build-time issues
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -41,7 +45,7 @@ type TallyWebhookData = {
 
 // Extract user data matching your actual Tally form fields and Supabase schema
 function extractUserDataFromTallyFields(fields: TallyWebhookData['data']['fields']) {
-  const userData: Record<string, any> = { 
+  const userData: Record<string, string | boolean> = { 
     email: '',
     active: true // Default to active for new signups
   };
@@ -112,6 +116,8 @@ function extractUserDataFromTallyFields(fields: TallyWebhookData['data']['fields
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = getSupabaseClient();
+    
     // Verify webhook signature if you set one up in Tally
     // const signature = req.headers.get('tally-signature');
     // if (!verifySignature(signature, body)) {
@@ -187,23 +193,23 @@ export async function POST(req: NextRequest) {
         console.error('Failed to fetch jobs for new user matching:', jobsError);
       } else if (jobs && jobs.length > 0) {
         try {
-          matches = await performEnhancedAIMatching(jobs, userData as any, openai);
+          matches = await performEnhancedAIMatching(jobs, userData as unknown as UserPreferences, openai);
           matchType = 'ai_success';
           
           if (!matches || matches.length === 0) {
             matchType = 'fallback';
-            matches = generateFallbackMatches(jobs, userData as any);
+            matches = generateFallbackMatches(jobs, userData as unknown as UserPreferences);
           }
         } catch (err) {
           console.error(`AI matching failed for new user ${userData.email}:`, err);
           matchType = 'ai_failed';
-          matches = generateFallbackMatches(jobs, userData as any);
+          matches = generateFallbackMatches(jobs, userData as unknown as UserPreferences);
         }
 
         // Save welcome matches
         if (matches.length > 0) {
           const matchEntries = matches.map(match => ({
-            user_email: userData.email,
+            user_email: String(userData.email),
             job_hash: match.job_hash,
             match_score: match.match_score,
             match_reason: match.match_reason,
@@ -223,7 +229,7 @@ export async function POST(req: NextRequest) {
 
           // Log the welcome matching session
           await logMatchSession(
-            userData.email,
+            String(userData.email),
             matchType,
             jobs.length,
             matches.length
@@ -247,10 +253,10 @@ export async function POST(req: NextRequest) {
       fallback_used: matchType === 'fallback' || matchType === 'ai_failed'
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Tally webhook processing error:', error);
     return NextResponse.json(
-      { error: error.message || 'Unknown server error' }, 
+      { error: error instanceof Error ? error.message : 'Unknown server error' }, 
       { status: 500 }
     );
   }

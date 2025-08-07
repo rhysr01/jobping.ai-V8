@@ -6,13 +6,16 @@ import {
   performEnhancedAIMatching,
   generateFallbackMatches,
   logMatchSession,
-} from '@/utils/jobMatching';
-import type { Job, UserPreferences, JobMatch } from '@/utils/jobMatching';
+} from '@/Utils/jobMatching';
+import type { JobMatch } from '@/Utils/jobMatching';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase client inside functions to avoid build-time issues
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -24,6 +27,7 @@ export async function POST(req: NextRequest) {
     const { limit = 50 } = await req.json();
 
     // 1. Fetch ALL active users (not just one)
+    const supabase = getSupabaseClient();
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select('*')
@@ -123,7 +127,7 @@ export async function POST(req: NextRequest) {
         results.push({
           user_email: user.email,
           matches_count: 0,
-          error: userError.message
+          error: userError instanceof Error ? userError.message : 'Unknown error'
         });
       }
     }
@@ -143,10 +147,10 @@ export async function POST(req: NextRequest) {
       results
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Match users API error:', error);
     return NextResponse.json(
-      { error: error.message || 'Unknown server error' }, 
+      { error: error instanceof Error ? error.message : 'Unknown server error' }, 
       { status: 500 }
     );
   }
@@ -162,6 +166,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const supabase = getSupabaseClient();
     // Get user's recent matches
     const { data: matches, error } = await supabase
       .from('matches')
@@ -176,7 +181,7 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
 
     return NextResponse.json({ matches: matches || [] });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
