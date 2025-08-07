@@ -1,245 +1,88 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+import './globals.css';
+import type { Metadata } from 'next';
+import { ReactNode } from 'react';
+import { Inter } from 'next/font/google';
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-inter'
+});
 
-/* Base styles */
-@layer base {
-  html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-  
-  body {
-    background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #0a0a0a 100%);
-    color: #ffffff;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  }
+export const metadata: Metadata = {
+  title: 'JobPingAI - AI-powered roles for graduates',
+  description: 'AI-curated job opportunities delivered daily to ambitious graduates. Join 10,000+ students finding their dream careers.',
+  keywords: ['jobs', 'graduates', 'AI', 'career', 'recruitment', 'internships'],
+  authors: [{ name: 'JobPingAI Team' }],
+  creator: 'JobPingAI',
+  publisher: 'JobPingAI',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    title: 'JobPingAI - AI-powered roles for graduates',
+    description: 'AI-curated job opportunities delivered daily to ambitious graduates. Join 10,000+ students finding their dream careers.',
+    url: 'https://www.jobping.ai',
+    siteName: 'JobPingAI',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'JobPingAI - Smart Job Discovery Platform',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'JobPingAI - AI-powered roles for graduates',
+    description: 'AI-curated job opportunities delivered daily to ambitious graduates.',
+    images: ['/og-image.png'],
+  },
+  icons: {
+    icon: [
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  manifest: '/site.webmanifest',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+};
 
-  .text-gradient {
-    color: #ffffff;
-  }
-  
-  .text-accent {
-    color: #888888;
-  }
-  
-  .glass-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  }
-  
-  .glow-effect {
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-  }
-
-  .premium-text {
-    color: #ffffff;
-  }
-
-  .hero-title {
-    color: #ffffff;
-  }
-
-  .feature-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    transition: all 0.3s ease;
-  }
-
-  .feature-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-4px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  }
-
-  .cta-button {
-    background: #333333;
-    border: 1px solid #555555;
-    border-radius: 50px;
-    color: white;
-    font-weight: 600;
-    padding: 16px 32px;
-    transition: all 0.3s ease;
-  }
-
-  .cta-button:hover {
-    background: #444444;
-    transform: translateY(-2px);
-  }
-
-  .nav-button {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 25px;
-    color: #ffffff;
-    padding: 8px 20px;
-    transition: all 0.3s ease;
-  }
-
-  .nav-button:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .signup-panel {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(30px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
-  }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { 
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-  }
-  50% { 
-    box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
-  }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-.animate-gradient {
-  /* Removed gradient animation */
-}
-
-.magnetic-button {
-  transition: transform 0.3s ease;
-}
-
-.magnetic-button:hover {
-  transform: translateY(-2px);
-}
-
-.premium-glow {
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-}
-
-/* Skeleton Loading Animation */
-@keyframes skeleton-pulse {
-  0% {
-    background-color: rgba(255, 255, 255, 0.05);
-  }
-  50% {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-  100% {
-    background-color: rgba(255, 255, 255, 0.05);
-  }
-}
-
-.form-skeleton {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  animation: skeleton-pulse 1.5s ease-in-out infinite;
-  position: relative;
-  overflow: hidden;
-}
-
-.form-skeleton::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    transparent
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en" className={`${inter.variable} antialiased`} suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <meta name="theme-color" content="#000000" />
+        <meta name="color-scheme" content="dark" />
+      </head>
+      <body className="bg-black text-white overflow-x-hidden font-inter selection:bg-white/20">
+        <div className="grain-overlay" />
+        <div className="noise-overlay" />
+        {children}
+      </body>
+    </html>
   );
-  animation: skeleton-shimmer 2s infinite;
 }
 
-@keyframes skeleton-shimmer {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
-}
-
-/* Grid Background Animation */
-@keyframes grid-move {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(60px, 60px);
-  }
-}
-
-/* Enhanced button hover effects */
-.magnetic-button {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.magnetic-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    transparent
-  );
-  transition: left 0.5s;
-}
-
-.magnetic-button:hover::before {
-  left: 100%;
-}
-
-/* Enhanced card hover effects */
-.feature-card {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.feature-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-/* Smooth scroll behavior */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Enhanced focus states */
-button:focus-visible,
-a:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.5);
-  outline-offset: 2px;
-  border-radius: 8px;
-}
+export {};
