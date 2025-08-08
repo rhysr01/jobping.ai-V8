@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
-
-// Import job matching logic and types
 import {
   performEnhancedAIMatching,
   generateFallbackMatches,
@@ -55,8 +53,6 @@ function extractUserDataFromTallyFields(fields: TallyWebhookData['data']['fields
   
   fields.forEach(field => {
     const value = Array.isArray(field.value) ? field.value.join(', ') : field.value;
-    
-    // Map Tally field keys to your Supabase column names
     switch (field.key.toLowerCase()) {
       case 'email':
       case 'email_address':
@@ -106,9 +102,7 @@ function extractUserDataFromTallyFields(fields: TallyWebhookData['data']['fields
       case 'preferred_roles':
         userData.roles_selected = value;
         break;
-      // Handle any additional fields from your form
       default:
-        // Log unknown fields for debugging
         console.log(`Unknown field: ${field.key} = ${value}`);
         break;
     }
@@ -120,13 +114,6 @@ function extractUserDataFromTallyFields(fields: TallyWebhookData['data']['fields
 export async function POST(req: NextRequest) {
   try {
     const supabase = getSupabaseClient();
-    
-    // Verify webhook signature if you set one up in Tally
-    // const signature = req.headers.get('tally-signature');
-    // if (!verifySignature(signature, body)) {
-    //   return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-    // }
-
     const payload: TallyWebhookData = await req.json();
     
     if (payload.eventType !== 'FORM_RESPONSE') {
@@ -135,7 +122,6 @@ export async function POST(req: NextRequest) {
 
     // Extract user data from form submission
     const userData = extractUserDataFromTallyFields(payload.data.fields);
-    
     if (!userData.email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
@@ -152,7 +138,6 @@ export async function POST(req: NextRequest) {
     const isNewUser = !existingUser;
 
     if (fetchError && fetchError.code !== 'PGRST116') {
-      // PGRST116 = no rows returned (user doesn't exist), which is fine
       throw fetchError;
     }
 
@@ -180,8 +165,6 @@ export async function POST(req: NextRequest) {
 
     if (isNewUser) {
       console.log(`New user detected: ${userData.email}. Generating welcome matches...`);
-      
-      // Fetch recent jobs for initial matching
       const threeDaysAgo = new Date();
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
       
@@ -190,7 +173,7 @@ export async function POST(req: NextRequest) {
         .select('*')
         .gte('created_at', threeDaysAgo.toISOString())
         .order('created_at', { ascending: false })
-        .limit(30); // Smaller limit for welcome matches
+        .limit(30);
 
       if (jobsError) {
         console.error('Failed to fetch jobs for new user matching:', jobsError);
@@ -199,7 +182,6 @@ export async function POST(req: NextRequest) {
           const openai = getOpenAIClient();
           matches = await performEnhancedAIMatching(jobs, userData as unknown as UserPreferences, openai);
           matchType = 'ai_success';
-          
           if (!matches || matches.length === 0) {
             matchType = 'fallback';
             matches = generateFallbackMatches(jobs, userData as unknown as UserPreferences);
@@ -210,7 +192,6 @@ export async function POST(req: NextRequest) {
           matches = generateFallbackMatches(jobs, userData as unknown as UserPreferences);
         }
 
-        // Save welcome matches
         if (matches.length > 0) {
           const matchEntries = matches.map(match => ({
             user_email: String(userData.email),
@@ -231,7 +212,6 @@ export async function POST(req: NextRequest) {
             console.error(`Failed to save welcome matches for ${userData.email}:`, matchError);
           }
 
-          // Log the welcome matching session
           await logMatchSession(
             String(userData.email),
             matchType,
@@ -244,7 +224,7 @@ export async function POST(req: NextRequest) {
 
     // Send welcome email for new users (optional)
     if (isNewUser && matches.length > 0) {
-      // You could trigger a welcome email here
+      // Place your sendMatchedJobsEmail() call here if you want to trigger an email!
       console.log(`${matches.length} welcome matches generated for ${userData.email}`);
     }
 
