@@ -1,106 +1,464 @@
 import axios from 'axios';
+import * as cheerio from 'cheerio';
 import crypto from 'crypto';
-import { Job } from './types';
+
+interface Job {
+  title: string;
+  company: string;
+  location: string;
+  job_url: string;
+  description: string;
+  categories: string;
+  experience_required: string;
+  work_environment: string;
+  language_requirements: string;
+  source: string;
+  job_hash: string;
+  posted_at: string;
+  scraper_run_id: string;
+  company_profile_url: string;
+  created_at: string;
+}
+
+const USER_AGENTS = [
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+];
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function backoffRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+  let attempt = 0;
+  while (attempt <= maxRetries) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      attempt++;
+      if (attempt > maxRetries || ![429, 403, 503].includes(err?.response?.status)) {
+        throw err;
+      }
+      const delay = Math.min(1000 * Math.pow(2, attempt), 10000) + Math.random() * 1000;
+      console.warn(`🔁 Workday retrying ${err?.response?.status} in ${delay}ms (attempt ${attempt})`);
+      await sleep(delay);
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
 
 export async function scrapeWorkday(company: {
   name: string;
   url: string;
   platform: 'workday';
   tags?: string[];
-}): Promise<Job[]> {
+}, runId: string): Promise<Job[]> {
   const jobs: Job[] = [];
-  const scraped_at = new Date().toISOString();
+  const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 
   try {
-    const { data, headers } = await axios.get(company.url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-        Accept: 'application/json, text/html',
-      },
-    });
+    await sleep(500 + Math.random() * 1500);
 
-    if (typeof data !== 'object' || !data) {
-      console.warn(`⚠️ Unexpected response type for ${company.name}`);
-      return [];
+    // Try JSON API first
+    const jsonJobs = await scrapeWorkdayJSON(company, runId, userAgent);
+    if (jsonJobs.length > 0) {
+      return jsonJobs;
     }
 
-    const keys = Object.keys(data);
-    const jobListKey = keys.find((k) => Array.isArray(data[k]));
-    const jobArray = jobListKey ? data[jobListKey] : [];
+    // Fallback to HTML scraping
+    return await scrapeWorkdayHTML(company, runId, userAgent);
 
-    if (!Array.isArray(jobArray)) {
-      console.warn(`⚠️ No valid job list found in Workday response for ${company.name}`);
-      return [];
-    }
-
-    for (const post of jobArray) {
-      try {
-        const title = post.title?.trim() || '';
-        const location = post.location || 'Unknown';
-        const job_url = post.externalPath ? `https://workday.com${post.externalPath}` : '';
-        const posted_at = post.postedDate || scraped_at;
-
-        const lower = title.toLowerCase();
-        const isEarly = /intern|graduate|entry|junior|early[- ]?career/.test(lower);
-        if (!title || !job_url || !isEarly) continue;
-
-        const level = /intern/.test(lower)
-          ? 'internship'
-          : /graduate/.test(lower)
-          ? 'graduate'
-          : /entry|junior/.test(lower)
-          ? 'entry'
-          : 'other';
-
-        const env = /remote/.test(lower)
-          ? 'remote'
-          : /on[- ]?site/.test(lower)
-          ? 'on-site'
-          : 'hybrid';
-
-        const job_hash = crypto.createHash('md5').update(`${title}-${company.name}-${job_url}`).digest('hex');
-
-        jobs.push({
-          title,
-          company: company.name,
-          location,
-          job_url,
-          description: '',
-          categories: [level, env, ...(company.tags || [])],
-          source: 'workday',
-          job_hash,
-          scraped_at,
-          posted_at,
-        });
-      } catch (err) {
-        console.warn(`⚠️ Failed to parse job from ${company.name}:`, err);
-      }
-    }
-
-    console.log(`✅ Scraped ${jobs.length} early-career jobs from ${company.name}`);
-    return jobs;
-  } catch (error) {
-    console.error(`❌ Workday scrape failed for ${company.name}:`, (error as Error).message);
+  } catch (error: any) {
+    console.error(`❌ Workday scrape failed for ${company.name}:`, error.message);
     return [];
   }
 }
 
-// Local CLI test runner
+async function scrapeWorkdayJSON(company: any, runId: string, userAgent: string): Promise<Job[]> {
+  try {
+    const { data, headers } = await backoffRetry(() =>
+      axios.get(company.url, {
+        headers: {
+          'User-Agent': userAgent,
+          'Accept': 'application/json, text/html, */*',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+        timeout: 15000,
+      })
+    );
+
+    // Handle different Workday JSON response structures
+    let jobArray = [];
+
+    if (Array.isArray(data)) {
+      jobArray = data;
+    } else if (typeof data === 'object' && data) {
+      // Common Workday response patterns
+      const possibleArrayKeys = [
+        'jobPostings',
+        'jobs', 
+        'positions',
+        'openings',
+        'requisitions',
+        'searchResults',
+        'body'
+      ];
+
+      for (const key of possibleArrayKeys) {
+        if (data[key] && Array.isArray(data[key])) {
+          jobArray = data[key];
+          break;
+        }
+      }
+
+      // Sometimes nested deeper
+      if (jobArray.length === 0) {
+        const keys = Object.keys(data);
+        for (const key of keys) {
+          if (data[key] && typeof data[key] === 'object') {
+            const nested = Object.values(data[key]).find(val => Array.isArray(val));
+            if (nested) {
+              jobArray = nested as any[];
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if (!Array.isArray(jobArray) || jobArray.length === 0) {
+      console.warn(`⚠️ No valid job array found in Workday JSON for ${company.name}`);
+      return [];
+    }
+
+    const jobs = [];
+    for (const post of jobArray) {
+      try {
+        const job = await processWorkdayJob(post, company, runId, userAgent);
+        if (job) jobs.push(job);
+      } catch (err) {
+        console.warn(`⚠️ Failed to process Workday job from ${company.name}:`, err);
+      }
+    }
+
+    console.log(`✅ Scraped ${jobs.length} graduate jobs from Workday JSON at ${company.name}`);
+    return jobs;
+
+  } catch (error: any) {
+    console.warn(`Workday JSON scraping failed for ${company.name}, trying HTML fallback`);
+    throw error;
+  }
+}
+
+async function scrapeWorkdayHTML(company: any, runId: string, userAgent: string): Promise<Job[]> {
+  try {
+    const { data: html } = await backoffRetry(() =>
+      axios.get(company.url, {
+        headers: {
+          'User-Agent': userAgent,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+        timeout: 15000,
+      })
+    );
+
+    const $ = cheerio.load(html);
+    
+    // Common Workday HTML selectors
+    const jobSelectors = [
+      '[data-automation-id="jobTitle"]',
+      '.job-title',
+      '.wd-job-title',
+      '[data-automation-id="searchResultItem"]',
+      '.jobs-list-item',
+      '.job-posting'
+    ];
+    
+    let jobElements = $();
+    for (const selector of jobSelectors) {
+      jobElements = $(selector);
+      if (jobElements.length > 0) {
+        console.log(`Found ${jobElements.length} jobs using HTML selector: ${selector}`);
+        break;
+      }
+    }
+
+    if (jobElements.length === 0) {
+      console.warn(`⚠️ No jobs found in Workday HTML for ${company.name}`);
+      return [];
+    }
+
+    const jobs = [];
+    for (let i = 0; i < jobElements.length; i++) {
+      try {
+        const job = await processWorkdayHTMLElement($, jobElements.eq(i), company, runId, userAgent);
+        if (job) jobs.push(job);
+      } catch (err) {
+        console.warn(`⚠️ Failed to process HTML job element:`, err);
+      }
+    }
+
+    console.log(`✅ Scraped ${jobs.length} graduate jobs from Workday HTML at ${company.name}`);
+    return jobs;
+
+  } catch (error: any) {
+    console.error(`Workday HTML scraping failed for ${company.name}:`, error.message);
+    return [];
+  }
+}
+
+async function processWorkdayJob(post: any, company: any, runId: string, userAgent: string): Promise<Job | null> {
+  // Extract title from various possible fields
+  const title = (
+    post.title?.trim() ||
+    post.jobTitle?.trim() ||
+    post.positionTitle?.trim() ||
+    post.requisitionTitle?.trim() ||
+    post.name?.trim() ||
+    ''
+  );
+
+  if (!title) return null;
+
+  // Enhanced early career filter
+  const titleLower = title.toLowerCase();
+  const isEarlyCareer = /\b(intern|internship|graduate|grad|entry.?level|junior|trainee|early.?career|new.?grad|recent.?graduate|associate|0[-‒–—]?[12].?years?|entry.?position|campus|university)\b/.test(titleLower);
+  
+  if (!isEarlyCareer) return null;
+
+  // Extract location from various fields
+  const location = (
+    post.location?.trim() ||
+    post.primaryLocation?.trim() ||
+    post.workLocation?.trim() ||
+    post.jobLocation?.trim() ||
+    post.city?.trim() ||
+    'Location not specified'
+  );
+
+  // Build job URL with better logic
+  let jobUrl = '';
+  if (post.externalPath) {
+    // Determine base URL from company URL
+    const baseUrl = company.url.includes('myworkdayjobs.com') 
+      ? company.url.split('/')[0] + '//' + company.url.split('/')[2]
+      : 'https://www.myworkdayjobs.com';
+    jobUrl = `${baseUrl}${post.externalPath}`;
+  } else if (post.jobUrl || post.url) {
+    jobUrl = post.jobUrl || post.url;
+  } else if (post.jobId || post.requisitionId) {
+    // Construct URL from job ID
+    const baseUrl = company.url.split('/jobs')[0];
+    jobUrl = `${baseUrl}/job/${post.jobId || post.requisitionId}`;
+  }
+
+  if (!jobUrl) {
+    console.warn(`No job URL found for: ${title} at ${company.name}`);
+    return null;
+  }
+
+  // Scrape job description
+  const description = await scrapeWorkdayJobDescription(jobUrl, userAgent);
+  
+  // Analyze job content
+  const analysis = analyzeWorkdayJobContent(title, description, post);
+  
+  // Extract department/team
+  const department = (
+    post.department?.trim() ||
+    post.team?.trim() ||
+    post.businessUnit?.trim() ||
+    post.jobFamily?.trim() ||
+    'General'
+  );
+
+  const job: Job = {
+    title,
+    company: company.name,
+    location,
+    job_url: jobUrl,
+    description: description.slice(0, 2000),
+    categories: [department, analysis.level, analysis.workEnv].filter(Boolean).join(', '),
+    experience_required: analysis.experienceLevel,
+    work_environment: analysis.workEnv,
+    language_requirements: analysis.languages.join(', '),
+    source: 'workday',
+    job_hash: crypto.createHash('md5').update(`${title}-${company.name}-${jobUrl}`).digest('hex'),
+    posted_at: post.postedDate || post.datePosted || new Date().toISOString(),
+    scraper_run_id: runId,
+    company_profile_url: company.url,
+    created_at: new Date().toISOString(),
+  };
+
+  return job;
+}
+
+async function processWorkdayHTMLElement(
+  $: cheerio.CheerioAPI, 
+  $el: cheerio.Cheerio<any>, 
+  company: any, 
+  runId: string,
+  userAgent: string
+): Promise<Job | null> {
+  
+  const title = (
+    $el.find('[data-automation-id="jobTitle"] a').text().trim() ||
+    $el.find('.job-title a, .wd-job-title a').text().trim() ||
+    $el.find('a').first().text().trim() ||
+    $el.text().split('\n')[0]?.trim()
+  );
+
+  if (!title) return null;
+
+  const titleLower = title.toLowerCase();
+  const isEarlyCareer = /\b(intern|graduate|entry|junior|trainee|early.?career)\b/.test(titleLower);
+  
+  if (!isEarlyCareer) return null;
+
+  // Extract URL
+  let jobUrl = $el.find('a').first().attr('href') || '';
+  if (jobUrl.startsWith('/')) {
+    const baseUrl = company.url.split('/jobs')[0];
+    jobUrl = baseUrl + jobUrl;
+  }
+
+  if (!jobUrl) return null;
+
+  // Extract location
+  const location = (
+    $el.find('[data-automation-id="location"]').text().trim() ||
+    $el.find('.location, .job-location').text().trim() ||
+    'Location not specified'
+  );
+
+  const description = await scrapeWorkdayJobDescription(jobUrl, userAgent);
+  const analysis = analyzeWorkdayJobContent(title, description);
+
+  return {
+    title,
+    company: company.name,
+    location,
+    job_url: jobUrl,
+    description: description.slice(0, 2000),
+    categories: [analysis.level, analysis.workEnv].filter(Boolean).join(', '),
+    experience_required: analysis.experienceLevel,
+    work_environment: analysis.workEnv,
+    language_requirements: analysis.languages.join(', '),
+    source: 'workday',
+    job_hash: crypto.createHash('md5').update(`${title}-${company.name}-${jobUrl}`).digest('hex'),
+    posted_at: new Date().toISOString(),
+    scraper_run_id: runId,
+    company_profile_url: company.url,
+    created_at: new Date().toISOString(),
+  };
+}
+
+async function scrapeWorkdayJobDescription(jobUrl: string, userAgent: string): Promise<string> {
+  try {
+    await sleep(400 + Math.random() * 600);
+    
+    const { data: html } = await axios.get(jobUrl, {
+      headers: { 
+        'User-Agent': userAgent,
+        'Accept': 'text/html,application/xhtml+xml'
+      },
+      timeout: 10000,
+    });
+    
+    const $ = cheerio.load(html);
+    
+    // Workday-specific description selectors
+    const descriptionSelectors = [
+      '[data-automation-id="jobPostingDescription"]',
+      '.wd-job-description',
+      '[data-automation-id="jobPostingViewHeaderJobDescriptionDetails"]',
+      '.job-description',
+      '.jobDescription',
+      '.wd-body-text'
+    ];
+    
+    for (const selector of descriptionSelectors) {
+      const desc = $(selector).text().trim();
+      if (desc && desc.length > 100) {
+        return desc;
+      }
+    }
+    
+    // Fallback: get main content
+    const mainContent = $('main, .main-content, .content').text().trim();
+    if (mainContent && mainContent.length > 100) {
+      return mainContent.slice(0, 1500);
+    }
+    
+    return $('body').text().slice(0, 1000);
+    
+  } catch (err) {
+    console.warn(`Failed to scrape Workday description from ${jobUrl}:`, err);
+    return 'Description not available';
+  }
+}
+
+function analyzeWorkdayJobContent(title: string, description: string, apiData?: any) {
+  const content = `${title} ${description}`.toLowerCase();
+  
+  // Determine experience level
+  let experienceLevel = 'entry-level';
+  if (/\b(intern|internship)\b/.test(content)) experienceLevel = 'internship';
+  else if (/\b(graduate|grad.program|university.program|campus)\b/.test(content)) experienceLevel = 'graduate';
+  else if (/\b(junior|entry|associate|trainee)\b/.test(content)) experienceLevel = 'entry-level';
+  
+  // Determine work environment
+  let workEnv = 'hybrid';
+  if (/\b(remote|work.from.home|distributed|virtual)\b/.test(content)) workEnv = 'remote';
+  else if (/\b(on.?site|office|in.person|onsite)\b/.test(content)) workEnv = 'office';
+  else if (/\b(hybrid|flexible)\b/.test(content)) workEnv = 'hybrid';
+  
+  // Extract language requirements
+  const languages: string[] = [];
+  const langMatches = content.match(/\b(english|spanish|french|german|dutch|portuguese|italian|mandarin|japanese|korean|arabic)\b/g);
+  if (langMatches) {
+    languages.push(...[...new Set(langMatches)]);
+  }
+  
+  // Check API data for additional info
+  if (apiData) {
+    if (apiData.workLocation && /remote/i.test(apiData.workLocation)) {
+      workEnv = 'remote';
+    }
+    if (apiData.jobType && /intern/i.test(apiData.jobType)) {
+      experienceLevel = 'internship';
+    }
+  }
+  
+  const level = experienceLevel === 'internship' ? 'internship' : 
+                experienceLevel === 'graduate' ? 'graduate' : 'entry-level';
+  
+  return {
+    experienceLevel,
+    workEnv,
+    languages,
+    level
+  };
+}
+
+// Test runner
 if (require.main === module) {
   const testCompany = {
     name: 'ExampleCompany',
     url: 'https://careers.examplecompany.com/api/jobs',
-    platform: 'workday',
-    tags: ['test', 'example']
+    platform: 'workday' as const,
+    tags: ['test']
   };
 
-  scrapeWorkday(testCompany)
+  scrapeWorkday(testCompany, 'test-run-123')
     .then((jobs) => {
       if (jobs.length === 0) throw new Error('🛑 No jobs returned');
-      console.log(`🧪 Test run: scraped ${jobs.length} jobs`);
-      console.log('Fields available:', Object.keys(jobs[0] || {}));
-      console.log(jobs.slice(0, 3));
+      console.log(`🧪 Test: ${jobs.length} jobs`);
+      jobs.slice(0, 2).forEach(job => {
+        console.log(`- ${job.title} at ${job.company}`);
+        console.log(`  Location: ${job.location}`);
+        console.log(`  Experience: ${job.experience_required}`);
+        console.log(`  Work: ${job.work_environment}`);
+        console.log('---');
+      });
     })
-    .catch((err) => console.error('🛑 Test scrape failed:', err));
+    .catch(err => console.error('🛑 Test failed:', err));
 }
