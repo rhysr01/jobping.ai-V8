@@ -12,7 +12,7 @@ const FeatureItem = ({ text, highlight = false }: { text: string; highlight?: bo
 const Badge = ({ children, variant = 'default' }: { children: React.ReactNode; variant?: 'default' | 'premium' | 'popular' }) => {
   const variants = {
     default: 'bg-white/10 text-white/80 border-white/20',
-    premium: 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-white border-purple-400/30',
+    premium: 'bg-white/20 text-white border-white/30',
     popular: 'bg-white text-black font-semibold shadow-lg'
   };
 
@@ -90,7 +90,7 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.1 }}
         >
-          <div className="relative p-1.5 rounded-full glass-card">
+          <div className="relative p-1.5 rounded-full bg-gray-900 border border-gray-800">
             <div className="relative flex">
               <button
                 onClick={() => {
@@ -98,118 +98,100 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
                   onSelect?.('free');
                 }}
                 className={`relative px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 z-10 ${
-                  activeTab === 'free' ? 'text-black' : 'text-white/70 hover:text-white/90'
+                  activeTab === 'free'
+                    ? 'text-black bg-white shadow-lg'
+                    : 'text-white/60 hover:text-white'
                 }`}
               >
-                Starter
+                Free
               </button>
               <button
                 onClick={() => {
                   setActiveTab('premium');
                   onSelect?.('premium');
                 }}
-                className={`relative px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 z-10 flex items-center gap-2 ${
-                  activeTab === 'premium' ? 'text-black' : 'text-white/70 hover:text-white/90'
+                className={`relative px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 z-10 ${
+                  activeTab === 'premium'
+                    ? 'text-black bg-white shadow-lg'
+                    : 'text-white/60 hover:text-white'
                 }`}
               >
-                Professional
-                <Crown className="w-3.5 h-3.5" />
+                Premium
               </button>
             </div>
-
-            {/* Sliding background */}
-            <motion.div
-              className="absolute top-1.5 h-[calc(100%-12px)] bg-white rounded-full shadow-lg"
-              animate={{
-                x: activeTab === 'free' ? 6 : 'calc(100% - 6px)',
-                width: activeTab === 'free' ? 72 : 110
-              }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            />
           </div>
         </motion.div>
 
         {/* Pricing Cards */}
         <motion.div
-          key={activeTab}
+          className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
         >
-          {activeTab === 'free' ? (
-            // Free Plan - Single Card
-            <div className="max-w-md mx-auto">
-              <motion.div
-                className="pricing-card p-8 text-center relative"
-                whileHover={{ y: -6 }}
-              >
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-white mb-2">{plans.free.name}</h3>
-                  <p className="text-white/60 text-sm mb-4">{plans.free.tagline}</p>
-                </div>
-
-                <div className="mb-8">
-                  <div className="text-4xl font-bold text-white mb-1">
-                    {plans.free.price}
-                    <span className="text-lg font-normal text-white/60 ml-1">/{plans.free.period}</span>
-                  </div>
-                  <p className="text-white/50 text-sm">{plans.free.description}</p>
-                </div>
-
-                <ul className="space-y-4 text-left mb-8">
-                  {plans.free.features.map((feature, index) => (
-                    <FeatureItem key={index} text={feature} />
-                  ))}
-                </ul>
-
-                <button className="w-full glass-button py-4 text-base font-semibold">
-                  {plans.free.cta}
-                </button>
-              </motion.div>
+          {/* Free Plan */}
+          <motion.div
+            className={`relative p-8 rounded-2xl border transition-all duration-300 ${
+              activeTab === 'free'
+                ? 'bg-gray-900 border-gray-700 shadow-xl'
+                : 'bg-gray-950 border-gray-800 opacity-60'
+            }`}
+            whileHover={{ y: -4 }}
+          >
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-white mb-2">{plans.free.name}</h3>
+              <div className="flex items-baseline justify-center gap-2 mb-4">
+                <span className="text-4xl font-bold text-white">{plans.free.price}</span>
+                <span className="text-white/60">/{plans.free.period}</span>
+              </div>
+              <p className="text-white/60 text-sm">{plans.free.tagline}</p>
             </div>
-          ) : (
-            // Premium Plan - Single Card (expand as needed)
-            <div className="max-w-md mx-auto">
-              <motion.div
-                className="pricing-card pricing-card-premium p-8 text-center relative"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-                whileHover={{ y: -8, scale: 1.02 }}
-              >
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <Badge variant="popular">
-                    <Users className="w-3 h-3" />
-                    MOST POPULAR
-                  </Badge>
-                </div>
+            <ul className="space-y-4 mb-8">
+              {plans.free.features.map((feature, index) => (
+                <FeatureItem key={index} text={feature} />
+              ))}
+            </ul>
+            <button
+              onClick={() => onSelect?.('free')}
+              className="w-full py-3 px-6 bg-white text-black rounded-full font-semibold hover:bg-gray-100 transition-colors"
+            >
+              {plans.free.cta}
+            </button>
+          </motion.div>
 
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-white mb-2">{plans.premium.name}</h3>
-                  <p className="text-white/60 text-sm mb-4">{plans.premium.tagline}</p>
-                </div>
-
-                <div className="mb-8">
-                  <div className="text-4xl font-bold text-white mb-1">
-                    {plans.premium.price}
-                    <span className="text-lg font-normal text-white/60 ml-1">/{plans.premium.period}</span>
-                  </div>
-                  <p className="text-white/50 text-sm">{plans.premium.description}</p>
-                </div>
-
-                <ul className="space-y-4 text-left mb-8">
-                  {plans.premium.features.map((feature, index) => (
-                    <FeatureItem key={index} text={feature} />
-                  ))}
-                </ul>
-
-                <button className="w-full glass-button py-4 text-base font-semibold">
-                  {plans.premium.cta}
-                </button>
-              </motion.div>
+          {/* Premium Plan */}
+          <motion.div
+            className={`relative p-8 rounded-2xl border transition-all duration-300 ${
+              activeTab === 'premium'
+                ? 'bg-gray-900 border-gray-700 shadow-xl'
+                : 'bg-gray-950 border-gray-800 opacity-60'
+            }`}
+            whileHover={{ y: -4 }}
+          >
+            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+              <Badge variant="popular">Most Popular</Badge>
             </div>
-          )}
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-white mb-2">{plans.premium.name}</h3>
+              <div className="flex items-baseline justify-center gap-2 mb-4">
+                <span className="text-4xl font-bold text-white">{plans.premium.price}</span>
+                <span className="text-white/60">/{plans.premium.period}</span>
+              </div>
+              <p className="text-white/60 text-sm">{plans.premium.tagline}</p>
+            </div>
+            <ul className="space-y-4 mb-8">
+              {plans.premium.features.map((feature, index) => (
+                <FeatureItem key={index} text={feature} highlight={index < 2} />
+              ))}
+            </ul>
+            <button
+              onClick={() => onSelect?.('premium')}
+              className="w-full py-3 px-6 bg-white text-black rounded-full font-semibold hover:bg-gray-100 transition-colors"
+            >
+              {plans.premium.cta}
+            </button>
+          </motion.div>
         </motion.div>
       </div>
     </section>

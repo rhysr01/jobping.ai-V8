@@ -968,7 +968,7 @@ export async function GET(req: NextRequest) {
           total_matches: tierMatches.length,
           avg_match_score: tierMatches.reduce((sum: number, m: any) => sum + (m.match_score || 0), 0) / tierMatches.length,
           match_quality_distribution: tierMatches.reduce((dist: Record<string, number>, m: any) => {
-            const quality = m.match_quality || 'unknown';
+            const quality = m.match_quality || 'unknown';s
             dist[quality] = (dist[quality] || 0) + 1;
             return dist;
           }, {} as Record<string, number>)
