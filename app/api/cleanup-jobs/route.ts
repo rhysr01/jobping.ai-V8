@@ -1,0 +1,170 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+// Rate limiting for cleanup endpoint
+const cleanupRateLimit = new Map<string, { count: number; resetTime: number }>();
+
+function isCleanupRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const limit = cleanupRateLimit.get(ip);
+  
+  if (!limit || now > limit.resetTime) {
+    cleanupRateLimit.set(ip, { count: 1, resetTime: now + 300000 }); // 5 minute window
+    return false;
+  }
+  
+  if (limit.count >= 2) { // Max 2 cleanup requests per 5 minutes
+    return true;
+  }
+  
+  limit.count++;
+  return false;
+}
+
+export async function POST(req: NextRequest) {
+  // Rate limiting
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+            req.headers.get('x-real-ip') || 
+            'unknown-ip';
+  
+  if (isCleanupRateLimited(ip)) {
+    return NextResponse.json(
+      { error: 'Rate limited. Too many cleanup requests.' },
+      { status: 429 }
+    );
+  }
+
+  // Security: Check for API key
+  const apiKey = req.headers.get('x-api-key');
+  if (!apiKey || apiKey !== process.env.SCRAPE_API_KEY) {
+    return NextResponse.json(
+      { error: 'Unauthorized. Valid API key required.' },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const { daysThreshold = 7 } = await req.json();
+    const supabase = getSupabaseClient();
+
+    console.log(`🧹 Starting job cleanup for jobs not seen in ${daysThreshold} days`);
+
+    // Calculate the threshold date
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() - daysThreshold);
+
+    // Mark jobs as inactive if they haven't been seen recently
+    const { data: inactiveJobs, error: updateError } = await supabase
+      .from('jobs')
+      .update({ 
+        is_active: false,
+        last_seen_at: new Date().toISOString()
+      })
+      .eq('is_active', true)
+      .lt('last_seen_at', thresholdDate.toISOString())
+      .select('id, title, company, source, last_seen_at');
+
+    if (updateError) {
+      console.error('❌ Job cleanup failed:', updateError);
+      return NextResponse.json(
+        { error: 'Failed to update jobs', details: updateError.message },
+        { status: 500 }
+      );
+    }
+
+    // Get count of jobs that were marked inactive
+    const { count: totalInactive } = await supabase
+      .from('jobs')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', false);
+
+    // Get count of active jobs
+    const { count: totalActive } = await supabase
+      .from('jobs')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true);
+
+    console.log(`✅ Job cleanup completed: ${inactiveJobs?.length || 0} jobs marked inactive`);
+
+    return NextResponse.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      cleanup: {
+        jobsMarkedInactive: inactiveJobs?.length || 0,
+        thresholdDays: daysThreshold,
+        thresholdDate: thresholdDate.toISOString()
+      },
+      stats: {
+        totalActive: totalActive || 0,
+        totalInactive: totalInactive || 0,
+        totalJobs: (totalActive || 0) + (totalInactive || 0)
+      },
+      sampleInactiveJobs: inactiveJobs?.slice(0, 5) || []
+    });
+
+  } catch (error: any) {
+    console.error('❌ Job cleanup error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error', details: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  const supabase = getSupabaseClient();
+
+  try {
+    // Get job statistics
+    const { count: totalActive } = await supabase
+      .from('jobs')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true);
+
+    const { count: totalInactive } = await supabase
+      .from('jobs')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', false);
+
+    // Get jobs by source
+    const { data: sourceStats } = await supabase
+      .from('jobs')
+      .select('source, is_active')
+      .eq('is_active', true);
+
+    const sourceBreakdown = sourceStats?.reduce((acc: any, job) => {
+      acc[job.source] = (acc[job.source] || 0) + 1;
+      return acc;
+    }, {}) || {};
+
+    return NextResponse.json({
+      message: 'Job cleanup API active',
+      endpoints: {
+        POST: 'Mark old jobs as inactive',
+        GET: 'Job statistics'
+      },
+      stats: {
+        totalActive: totalActive || 0,
+        totalInactive: totalInactive || 0,
+        totalJobs: (totalActive || 0) + (totalInactive || 0),
+        sourceBreakdown
+      },
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error: any) {
+    console.error('❌ Job cleanup stats error:', error);
+    return NextResponse.json(
+      { error: 'Failed to get job statistics', details: error.message },
+      { status: 500 }
+    );
+  }
+}

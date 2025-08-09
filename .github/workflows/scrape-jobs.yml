@@ -1,0 +1,87 @@
+name: Automated Job Scraping
+
+on:
+  schedule:
+    # Run every 4 hours
+    - cron: '0 */4 * * *'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Platforms to scrape (comma-separated)'
+        required: false
+        default: 'all'
+        type: string
+      cleanup_only:
+        description: 'Run cleanup only'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run scraping
+      env:
+        SCRAPE_API_URL: ${{ secrets.SCRAPE_API_URL }}
+        CLEANUP_API_URL: ${{ secrets.CLEANUP_API_URL }}
+        SCRAPE_API_KEY: ${{ secrets.SCRAPE_API_KEY }}
+        SCRAPE_PLATFORMS: ${{ github.event.inputs.platforms || 'all' }}
+        CLEANUP_THRESHOLD_DAYS: '7'
+      run: |
+        if [ "${{ github.event.inputs.cleanup_only }}" = "true" ]; then
+          node scripts/schedule-scraping.js cleanup
+        else
+          node scripts/schedule-scraping.js
+        fi
+        
+    - name: Notify on failure
+      if: failure()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#jobs'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Optional: Add a job to run cleanup more frequently
+  cleanup:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' # Only run on schedule, not manual
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run cleanup
+      env:
+        SCRAPE_API_URL: ${{ secrets.SCRAPE_API_URL }}
+        CLEANUP_API_URL: ${{ secrets.CLEANUP_API_URL }}
+        SCRAPE_API_KEY: ${{ secrets.SCRAPE_API_KEY }}
+        CLEANUP_THRESHOLD_DAYS: '7'
+      run: node scripts/schedule-scraping.js cleanup
