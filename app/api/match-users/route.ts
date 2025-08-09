@@ -3,11 +3,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import {
-  performEnhancedAIMatching,
   generateFallbackMatches,
   logMatchSession,
   AIMatchingCache,
+  parseAndValidateMatches,
+  type UserPreferences,
 } from '@/Utils/jobMatching';
+import type { Job } from '@/scrapers/types';
 import { EnhancedRateLimiter } from '@/Utils/enhancedRateLimiter';
 import { PerformanceMonitor } from '@/Utils/performanceMonitor';
 import { AdvancedMonitoringOracle } from '@/Utils/advancedMonitoring';
@@ -75,8 +77,13 @@ interface JobWithFreshness {
 const enhancedRateLimiter = new EnhancedRateLimiter();
 
 // NEW: User clustering functionality
-function clusterSimilarUsers(users: any[], maxClusterSize: number = 3): any[][] {
-  const clusters: any[][] = [];
+interface User extends UserPreferences {
+  professional_expertise: string;
+  entry_level_preference: string;
+}
+
+function clusterSimilarUsers(users: UserPreferences[], maxClusterSize: number = 3): UserPreferences[][] {
+  const clusters: UserPreferences[][] = [];
   const processed = new Set<number>();
 
   for (let i = 0; i < users.length; i++) {
@@ -107,7 +114,7 @@ function clusterSimilarUsers(users: any[], maxClusterSize: number = 3): any[][] 
 
 // NEW: Enhanced AI matching with clustering and caching
 async function performEnhancedAIMatchingWithCaching(
-  users: any[],
+  users: UserPreferences[],
   jobs: JobWithFreshness[],
   openai: OpenAI,
   isNewUser: boolean = false
@@ -151,7 +158,7 @@ async function performEnhancedAIMatchingWithCaching(
 }
 
 // NEW: Helper function to call OpenAI for a cluster
-async function callOpenAIForCluster(userCluster: any[], jobs: JobWithFreshness[], openai: OpenAI): Promise<any[]> {
+async function callOpenAIForCluster(userCluster: UserPreferences[], jobs: JobWithFreshness[], openai: OpenAI): Promise<JobMatch[]> {
   // Batch the OpenAI call for the entire cluster
   const clusterPrompt = `
     Analyze these ${userCluster.length} similar users and ${jobs.length} jobs.
@@ -162,54 +169,37 @@ async function callOpenAIForCluster(userCluster: any[], jobs: JobWithFreshness[]
       visa: u.visa_status,
       email: u.email
     })))}
-    
-    Jobs: ${JSON.stringify(jobs.slice(0, 50).map(j => ({
-      title: j.title,
-      company: j.company,
-      location: j.location,
-      description: j.description?.substring(0, 200)
-    })))}
-    
-    Return matches for each user with scores and reasoning in JSON format:
-    [
-      {
-        "user_email": "user@example.com",
-        "matches": [
-          {
-            "job_hash": "abc123",
-            "match_score": 8.5,
-            "match_reason": "Strong fit for...",
-            "match_quality": "excellent",
-            "match_tags": "remote,entry-level"
-          }
-        ]
-      }
-    ]
+    Jobs: ${JSON.stringify(jobs.slice(0, 10))} // Limit to first 10 jobs for prompt size
   `;
-
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4",
-    messages: [{ role: "user", content: clusterPrompt }],
-    max_tokens: 2000,
-    temperature: 0.3,
-  });
-
-  const content = completion.choices[0]?.message?.content;
-  if (!content) {
-    throw new Error('No content in OpenAI response');
-  }
-
+  
   try {
-    return JSON.parse(content);
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4-turbo-preview',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an AI job matching expert. Analyze users and jobs to provide personalized matches.'
+        },
+        {
+          role: 'user',
+          content: clusterPrompt
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000
+    });
+    
+    const response = completion.choices[0]?.message?.content || '';
+    return parseAndValidateMatches(response, jobs as unknown as Job[]);
   } catch (error) {
-    console.error('Failed to parse OpenAI response:', error);
-    throw new Error('Invalid response format from OpenAI');
+    console.error('OpenAI cluster matching failed:', error);
+    return [];
   }
 }
 
 // NEW: Process cached matches
 async function processCachedMatches(
-  userCluster: any[], 
+  userCluster: UserPreferences[], 
   cachedMatches: any[], 
   allJobs: JobWithFreshness[], 
   results: Map<string, JobMatch[]>
@@ -232,7 +222,7 @@ async function processCachedMatches(
 
 // NEW: Process matching results for a cluster
 async function processMatchingResults(
-  userCluster: any[], 
+  userCluster: UserPreferences[], 
   matchingResults: any[], 
   results: Map<string, JobMatch[]>
 ): Promise<void> {
@@ -248,7 +238,7 @@ async function processMatchingResults(
 
 // NEW: Rule-based fallback matching
 async function performRuleBasedMatching(
-  userCluster: any[], 
+  userCluster: UserPreferences[], 
   jobs: JobWithFreshness[], 
   results: Map<string, JobMatch[]>
 ): Promise<void> {
@@ -478,27 +468,29 @@ function trackPerformance(): { startTime: number; getMetrics: () => PerformanceM
 }
 
 // Pre-filter jobs by user preferences to reduce AI load
-function preFilterJobsByUserPreferences(jobs: JobWithFreshness[], user: any): JobWithFreshness[] {
+function preFilterJobsByUserPreferences(jobs: JobWithFreshness[], user: UserPreferences): JobWithFreshness[] {
   // Basic filtering to reduce AI processing load
   let filteredJobs = jobs;
   
-  // Filter by location preference if specified
-  if (user.location_preference && user.location_preference !== 'anywhere') {
+  // Filter by target cities if specified
+  if (user.target_cities && user.target_cities.length > 0) {
     filteredJobs = filteredJobs.filter(job => 
-      job.location.toLowerCase().includes(user.location_preference.toLowerCase()) ||
-      job.location.toLowerCase().includes('remote')
+      user.target_cities.some(city => 
+        job.location.toLowerCase().includes(city.toLowerCase()) ||
+        job.location.toLowerCase().includes('remote')
+      )
     );
   }
   
   // Filter by experience level keywords in title
-  if (user.experience_level) {
+  if (user.entry_level_preference) {
     const experienceKeywords: Record<string, string[]> = {
       'entry': ['intern', 'internship', 'graduate', 'grad', 'entry', 'junior', 'trainee', 'associate'],
       'mid': ['analyst', 'specialist', 'coordinator', 'associate'],
       'senior': ['senior', 'lead', 'principal', 'manager', 'director']
     };
     
-    const keywords = experienceKeywords[user.experience_level as keyof typeof experienceKeywords] || experienceKeywords['entry'];
+    const keywords = experienceKeywords[user.entry_level_preference as keyof typeof experienceKeywords] || experienceKeywords['entry'];
     filteredJobs = filteredJobs.filter(job =>
       keywords.some(keyword => job.title.toLowerCase().includes(keyword))
     );
@@ -511,15 +503,15 @@ function preFilterJobsByUserPreferences(jobs: JobWithFreshness[], user: any): Jo
 // Initialize clients
 function getSupabaseClient() {
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 }
 
 function getOpenAIClient() {
   return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
+  apiKey: process.env.OPENAI_API_KEY,
+});
 }
 
 export async function POST(req: NextRequest) {
@@ -797,15 +789,15 @@ export async function POST(req: NextRequest) {
             const originalJob = distributedJobs.find(job => job.job_hash === match.job_hash);
             
             return {
-              user_email: user.email,
-              job_hash: match.job_hash,
-              match_score: match.match_score,
-              match_reason: match.match_reason,
-              match_quality: match.match_quality,
-              match_tags: match.match_tags,
+            user_email: user.email,
+            job_hash: match.job_hash,
+            match_score: match.match_score,
+            match_reason: match.match_reason,
+            match_quality: match.match_quality,
+            match_tags: match.match_tags,
               freshness_tier: originalJob?.freshness_tier || 'comprehensive',
               processing_method: matchType,
-              matched_at: new Date().toISOString(),
+            matched_at: new Date().toISOString(),
               created_at: new Date().toISOString()
             };
           });
