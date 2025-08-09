@@ -1,24 +1,8 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import crypto from 'crypto';
-
-interface Job {
-  title: string;
-  company: string;
-  location: string;
-  job_url: string;
-  description: string;
-  categories: string;
-  experience_required: string;
-  work_environment: string;
-  language_requirements: string;
-  source: string;
-  job_hash: string;
-  posted_at: string;
-  scraper_run_id: string;
-  company_profile_url: string;
-  created_at: string;
-}
+import { Job } from './types';
+import { atomicUpsertJobs, extractPostingDate } from '../Utils/jobMatching';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -180,6 +164,17 @@ async function processLeverJobElement(
   // Scrape job description
   const description = await scrapeLeverJobDescription(jobUrl, userAgent);
   
+  // Try to extract real posting date from the job page
+  const dateExtraction = extractPostingDate(
+    description, 
+    'lever', 
+    jobUrl
+  );
+  
+  const postedAt = dateExtraction.success && dateExtraction.date 
+    ? dateExtraction.date 
+    : new Date().toISOString();
+  
   // Analyze job content
   const analysis = analyzeLeverJobContent(title, description);
   
@@ -195,10 +190,17 @@ async function processLeverJobElement(
     language_requirements: analysis.languages.join(', '),
     source: 'lever',
     job_hash: crypto.createHash('md5').update(`${title}-${company.name}-${jobUrl}`).digest('hex'),
-    posted_at: new Date().toISOString(),
+    posted_at: postedAt,
     scraper_run_id: runId,
     company_profile_url: company.url,
     created_at: new Date().toISOString(),
+    extracted_posted_date: dateExtraction.success ? dateExtraction.date : undefined,
+    // Add missing required fields
+    professional_expertise: '',
+    start_date: '',
+    visa_status: '',
+    entry_level_preference: '',
+    career_path: '',
   };
 
   return job;

@@ -1,5 +1,14 @@
 // types.ts - Corrected to match your actual Supabase schema
 
+// Freshness tiers for job prioritization
+export enum FreshnessTier {
+  ULTRA_FRESH = 'ultra_fresh',    // < 24 hours
+  FRESH = 'fresh',                // 1-3 days
+  RECENT = 'recent',              // 3-7 days
+  STALE = 'stale',                // 7-30 days
+  OLD = 'old'                     // > 30 days
+}
+
 // Job structure matching your Supabase schema exactly
 export interface Job {
   id?: string;                          // uuid primary key (optional for inserts)
@@ -15,9 +24,37 @@ export interface Job {
   job_hash: string;                     // text field (deduplication key)
   posted_at: string;                    // timestamp
   language_requirements: string;        // text field
-  company_profile_url: string;          // text field
+  professional_expertise: string;       // text field
+  start_date: string;                   // text field
+  work_environment: string;             // text field
+  visa_status: string;                  // text field
+  entry_level_preference: string;       // text field
+  career_path: string;                  // text field
   created_at: string;                   // timestamp
-  scraper_run_id: string;              // uuid field
+  scraper_run_id: string;               // text field
+  company_profile_url: string;          // text field
+  freshness_tier?: FreshnessTier;       // calculated field for prioritization
+  extracted_posted_date?: string;       // real posting date if extracted
+  scrape_timestamp?: string;            // when we scraped it
+  last_seen_at?: string;                // when job was last seen (for lifecycle tracking)
+  is_active?: boolean;                  // whether job is still active
+}
+
+// Utility interface for atomic upserts
+export interface JobUpsertResult {
+  success: boolean;
+  inserted: number;
+  updated: number;
+  errors: string[];
+  jobs: Job[];
+}
+
+// Date extraction result
+export interface DateExtractionResult {
+  success: boolean;
+  date?: string;
+  confidence: 'high' | 'medium' | 'low';
+  source: string;
 }
 
 // User structure matching your Supabase schema exactly  

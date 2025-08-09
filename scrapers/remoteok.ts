@@ -1,35 +1,11 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import crypto from 'crypto';
-
-// Job interface matching your updated scrapers
-interface Job {
-  title: string;
-  company: string;
-  location: string;
-  job_url: string;
-  description: string;
-  categories: string;
-  experience_required: string;
-  work_environment: string;
-  language_requirements: string;
-  source: string;
-  job_hash: string;
-  posted_at: string;
-  scraper_run_id: string;
-  company_profile_url: string;
-  created_at: string;
-}
-
-// Initialize Supabase once, no duplicates
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { Job } from './types';
+import { atomicUpsertJobs, extractPostingDate } from '../Utils/jobMatching';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -110,6 +86,17 @@ export async function scrapeRemoteOK(runId: string): Promise<Job[]> {
         // Generate job hash for deduplication
         const job_hash = crypto.createHash('md5').update(`${title}-${company}-${jobUrl}`).digest('hex');
 
+        // Try to extract real posting date from the job element
+        const dateExtraction = extractPostingDate(
+          $el.html() || '', 
+          'remoteok', 
+          jobUrl
+        );
+        
+        const postedAt = dateExtraction.success && dateExtraction.date 
+          ? dateExtraction.date 
+          : new Date().toISOString();
+
         const job: Job = {
           title,
           company,
@@ -122,10 +109,17 @@ export async function scrapeRemoteOK(runId: string): Promise<Job[]> {
           language_requirements: analysis.languages.join(', '),
           source: 'remoteok',
           job_hash,
-          posted_at: new Date().toISOString(),
+          posted_at: postedAt,
           scraper_run_id: runId,
           company_profile_url: url, // RemoteOK main page as fallback
           created_at: new Date().toISOString(),
+          extracted_posted_date: dateExtraction.success ? dateExtraction.date : undefined,
+          // Add missing required fields
+          professional_expertise: '',
+          start_date: '',
+          visa_status: '',
+          entry_level_preference: '',
+          career_path: '',
         };
 
         jobs.push(job);
@@ -199,15 +193,13 @@ if (require.main === module) {
       return;
     }
 
-    // Insert jobs using the same pattern as your other scrapers
-    const { error } = await supabase.from('jobs').upsert(jobs, {
-      onConflict: 'job_hash',
-    });
+    // Use atomic upsert with unique constraint on job_hash
+    const result = await atomicUpsertJobs(jobs);
 
-    if (error) {
-      console.error('❌ Supabase insert failed:', error.message);
+    if (!result.success) {
+      console.error('❌ Atomic upsert failed:', result.errors);
     } else {
-      console.log(`✅ Inserted/Updated ${jobs.length} jobs into Supabase`);
+      console.log(`✅ Atomic upsert completed: ${result.inserted} inserted, ${result.updated} updated`);
     }
   })();
 }
