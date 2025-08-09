@@ -1,6 +1,7 @@
 // utils/jobMatching.ts
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 import { FreshnessTier, JobUpsertResult, DateExtractionResult, Job } from '../scrapers/types';
 
 // Initialize Supabase client
@@ -9,6 +10,93 @@ function getSupabaseClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+}
+
+// ================================
+// NEW: AI MATCHING CACHE SYSTEM
+// ================================
+
+// Simple LRU cache implementation (no external dependencies)
+class LRUCache<K, V> {
+  private cache = new Map<K, { value: V; timestamp: number }>();
+  private maxSize: number;
+  private ttl: number;
+
+  constructor(maxSize: number = 5000, ttl: number = 1000 * 60 * 30) { // 30 minutes default
+    this.maxSize = maxSize;
+    this.ttl = ttl;
+  }
+
+  get(key: K): V | null {
+    const item = this.cache.get(key);
+    if (!item) return null;
+
+    // Check if expired
+    if (Date.now() - item.timestamp > this.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    // Move to end (most recently used)
+    this.cache.delete(key);
+    this.cache.set(key, item);
+    return item.value;
+  }
+
+  set(key: K, value: V): void {
+    // Remove oldest if at capacity
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
+    }
+
+    this.cache.set(key, { value, timestamp: Date.now() });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  size(): number {
+    return this.cache.size;
+  }
+}
+
+// Enhanced AI Matching Cache with user clustering
+export class AIMatchingCache {
+  private static cache = new LRUCache<string, any[]>(5000, 1000 * 60 * 30); // 30 minutes TTL
+
+  static generateUserClusterKey(users: any[]): string {
+    // Create key from similar user characteristics
+    const signature = users
+      .map(u => `${u.professional_expertise}-${u.entry_level_preference}-${u.target_cities?.split(',')[0] || 'unknown'}`)
+      .sort()
+      .join('|');
+    
+    return `ai_cluster:${crypto.createHash('md5').update(signature).digest('hex').slice(0, 12)}`;
+  }
+
+  static async getCachedMatches(userCluster: any[]): Promise<any[] | null> {
+    const key = this.generateUserClusterKey(userCluster);
+    const cached = this.cache.get(key);
+    if (cached) {
+      console.log(`🎯 Cache hit for cluster of ${userCluster.length} users`);
+    }
+    return cached || null;
+  }
+
+  static setCachedMatches(userCluster: any[], matches: any[]): void {
+    const key = this.generateUserClusterKey(userCluster);
+    this.cache.set(key, matches);
+    console.log(`💾 Cached AI matches for ${userCluster.length} users (cache size: ${this.cache.size()})`);
+  }
+
+  static clearCache(): void {
+    this.cache.clear();
+    console.log('🧹 AI matching cache cleared');
+  }
 }
 
 // ================================
@@ -24,13 +112,12 @@ export interface UserPreferences {
   visa_status: string;
   start_date: string;
   work_environment: string;
-  target_date: string;
-  languages_spoken: string;
-  company_types: string;
-  roles_selected: string;
+  languages_spoken: string[];           // Updated to array
+  company_types: string[];              // Updated to array
+  roles_selected: string[];             // Updated to array
   career_path: string;
   entry_level_preference: string;
-  target_cities: string; // ADDED for sophisticated matching
+  target_cities: string[];              // Updated to array
 }
 
 export interface JobMatch {
@@ -332,12 +419,12 @@ class DataDrivenJobMatcher {
   }
 
   private static parseStudentContext(userPrefs: UserPreferences): StudentContext {
-    const preferredCities = this.parseCommaSeparated(userPrefs.target_cities || '');
-    const languages = this.parseCommaSeparated(userPrefs.languages_spoken || '');
+    const preferredCities = Array.isArray(userPrefs.target_cities) ? userPrefs.target_cities : [];
+    const languages = Array.isArray(userPrefs.languages_spoken) ? userPrefs.languages_spoken : [];
     const experienceMonths = this.parseExperienceToMonths(userPrefs.professional_expertise || '0');
     const workPreference = this.parseWorkPreference(userPrefs.work_environment || 'office');
     const visaCategory = this.simplifyVisaStatus(userPrefs.visa_status || 'eu-citizen');
-    const careerPaths = this.parseCommaSeparated(userPrefs.roles_selected || '');
+    const careerPaths = Array.isArray(userPrefs.roles_selected) ? userPrefs.roles_selected : [];
 
     return {
       preferredCities,
@@ -571,24 +658,34 @@ class DataDrivenJobMatcher {
 
     let bestScore = 0;
     
+    // Extract career path from job using the extraction function
+    const jobCareerPath = extractCareerPath(job.title || '', job.description || '');
+    
     for (const careerPath of studentContext.careerPaths) {
       let pathScore = 0;
       const path = careerPath.toLowerCase();
       
+      // Enhanced career path matching with more sophisticated scoring
       switch (path) {
+        case 'consulting':
         case 'strategy & business design':
-          if (jobTitle.includes('strategy') || jobTitle.includes('business') || jobTitle.includes('consultant')) {
+          if (jobTitle.includes('consultant') || jobTitle.includes('strategy') || jobTitle.includes('business development')) {
             pathScore = 95;
-          } else if (jobDescription.includes('strategy') || jobDescription.includes('business development')) {
-            pathScore = 80;
+          } else if (jobDescription.includes('consulting') || jobDescription.includes('strategy') || jobDescription.includes('business development')) {
+            pathScore = 85;
+          } else if (jobCareerPath === 'consulting') {
+            pathScore = 90;
           }
           break;
           
         case 'data & analytics':
+        case 'data':
           if (jobTitle.includes('data') || jobTitle.includes('analyst') || jobTitle.includes('analytics')) {
             pathScore = 95;
           } else if (jobDescription.includes('data analysis') || jobDescription.includes('business intelligence')) {
             pathScore = 85;
+          } else if (jobCareerPath === 'tech' && (jobTitle.includes('data') || jobDescription.includes('data'))) {
+            pathScore = 80;
           }
           break;
           
@@ -597,35 +694,47 @@ class DataDrivenJobMatcher {
           if (jobTitle.includes('marketing') || jobTitle.includes('brand') || jobTitle.includes('digital marketing')) {
             pathScore = 95;
           } else if (jobDescription.includes('marketing') || jobDescription.includes('brand management')) {
-            pathScore = 80;
+            pathScore = 85;
+          } else if (jobCareerPath === 'marketing') {
+            pathScore = 90;
           }
           break;
           
         case 'sales & client success':
+        case 'sales':
           if (jobTitle.includes('sales') || jobTitle.includes('client') || jobTitle.includes('account')) {
             pathScore = 95;
           } else if (jobDescription.includes('sales') || jobDescription.includes('client relationship')) {
             pathScore = 85;
-          }
-          break;
-          
-        case 'finance & investment':
-          if (jobTitle.includes('finance') || jobTitle.includes('investment') || jobTitle.includes('financial')) {
-            pathScore = 95;
-          } else if (jobDescription.includes('finance') || jobDescription.includes('investment')) {
-            pathScore = 85;
-          }
-          break;
-          
-        case 'operations & supply chain':
-          if (jobTitle.includes('operations') || jobTitle.includes('supply') || jobTitle.includes('logistics')) {
-            pathScore = 95;
-          } else if (jobDescription.includes('operations') || jobDescription.includes('supply chain')) {
+          } else if (jobCareerPath === 'entrepreneurship' && (jobTitle.includes('sales') || jobDescription.includes('sales'))) {
             pathScore = 80;
           }
           break;
           
+        case 'finance & investment':
+        case 'finance':
+          if (jobTitle.includes('finance') || jobTitle.includes('investment') || jobTitle.includes('financial')) {
+            pathScore = 95;
+          } else if (jobDescription.includes('finance') || jobDescription.includes('investment')) {
+            pathScore = 85;
+          } else if (jobCareerPath === 'finance') {
+            pathScore = 90;
+          }
+          break;
+          
+        case 'operations & supply chain':
+        case 'operations':
+          if (jobTitle.includes('operations') || jobTitle.includes('supply') || jobTitle.includes('logistics')) {
+            pathScore = 95;
+          } else if (jobDescription.includes('operations') || jobDescription.includes('supply chain')) {
+            pathScore = 85;
+          } else if (jobCareerPath === 'operations') {
+            pathScore = 90;
+          }
+          break;
+          
         case 'human resources':
+        case 'hr':
           if (jobTitle.includes('hr') || jobTitle.includes('human resources') || jobTitle.includes('people')) {
             pathScore = 95;
           } else if (jobDescription.includes('human resources') || jobDescription.includes('talent')) {
@@ -634,14 +743,18 @@ class DataDrivenJobMatcher {
           break;
           
         case 'tech & transformation':
+        case 'tech':
           if (jobTitle.includes('tech') || jobTitle.includes('developer') || jobTitle.includes('digital')) {
             pathScore = 95;
           } else if (jobDescription.includes('technology') || jobDescription.includes('digital transformation')) {
             pathScore = 85;
+          } else if (jobCareerPath === 'tech') {
+            pathScore = 90;
           }
           break;
           
         case 'sustainability & esg':
+        case 'sustainability':
           if (jobTitle.includes('sustainability') || jobTitle.includes('esg') || jobTitle.includes('environment')) {
             pathScore = 95;
           } else if (jobDescription.includes('sustainability') || jobDescription.includes('environmental')) {
@@ -650,6 +763,7 @@ class DataDrivenJobMatcher {
           break;
           
         case 'project mgmt':
+        case 'project management':
           if (jobTitle.includes('project') || jobTitle.includes('program') || jobTitle.includes('manager')) {
             pathScore = 90;
           } else if (jobDescription.includes('project management') || jobDescription.includes('program management')) {
@@ -657,9 +771,22 @@ class DataDrivenJobMatcher {
           }
           break;
           
+        case 'entrepreneurship':
+          if (jobTitle.includes('startup') || jobTitle.includes('entrepreneur') || jobTitle.includes('founder')) {
+            pathScore = 95;
+          } else if (jobDescription.includes('startup') || jobDescription.includes('entrepreneurial')) {
+            pathScore = 85;
+          } else if (jobCareerPath === 'entrepreneurship') {
+            pathScore = 90;
+          }
+          break;
+          
         default:
+          // Generic scoring for other career paths
           if (jobTitle.includes('analyst') || jobTitle.includes('coordinator') || jobTitle.includes('associate')) {
             pathScore = 60;
+          } else if (jobCareerPath && jobCareerPath !== 'General Business') {
+            pathScore = 70;
           }
       }
       
@@ -1034,10 +1161,10 @@ export function normalizeUserPreferences(userPrefs: UserPreferences): Normalized
   return {
     name: userPrefs.full_name || 'Student',
     visaStatus: normalizeVisaStatus(userPrefs.visa_status),
-    targetRoles: parseCommaSeparated(userPrefs.roles_selected),
+    targetRoles: Array.isArray(userPrefs.roles_selected) ? userPrefs.roles_selected : [],
     workPreference: normalizeWorkEnvironment(userPrefs.work_environment),
-    languages: parseCommaSeparated(userPrefs.languages_spoken),
-    companyTypes: parseCommaSeparated(userPrefs.company_types),
+    languages: Array.isArray(userPrefs.languages_spoken) ? userPrefs.languages_spoken : [],
+    companyTypes: Array.isArray(userPrefs.company_types) ? userPrefs.company_types : [],
     availability: userPrefs.start_date || 'flexible',
     experienceLevel: userPrefs.entry_level_preference || 'graduate',
     careerFocus: userPrefs.career_path || 'exploring'
@@ -1148,14 +1275,49 @@ function parseCommaSeparated(str: string): string[] {
 }
 
 function detectVisaFriendly(description: string, title: string): boolean {
-  const indicators = [
-    'visa sponsorship', 'work permit', 'international candidates',
-    'relocation support', 'sponsorship available', 'work visa'
+  const combinedText = `${description} ${title}`.toLowerCase();
+  
+  // Comprehensive visa sponsorship indicators
+  const visaIndicators = [
+    // Direct sponsorship mentions
+    'visa sponsorship', 'work permit', 'sponsorship available', 'work visa',
+    'visa support', 'immigration support', 'relocation support',
+    
+    // International candidate mentions
+    'international candidates', 'international applicants', 'global candidates',
+    'worldwide candidates', 'candidates from any country',
+    
+    // Relocation and work authorization
+    'relocation assistance', 'work authorization', 'employment authorization',
+    'sponsor visa', 'visa assistance', 'immigration assistance',
+    
+    // Company policies
+    'equal opportunity employer', 'diversity and inclusion', 'global workforce',
+    'international team', 'remote worldwide', 'work from anywhere',
+    
+    // Specific visa types
+    'h1b sponsorship', 'h-1b sponsorship', 'tier 2 sponsorship', 'blue card',
+    'work permit sponsorship', 'employment visa', 'business visa'
   ];
   
-  return indicators.some(indicator => 
-    description.includes(indicator) || title.includes(indicator)
+  // Check for positive indicators
+  const hasPositiveIndicators = visaIndicators.some(indicator => 
+    combinedText.includes(indicator)
   );
+  
+  // Check for negative indicators (explicitly excludes international candidates)
+  const negativeIndicators = [
+    'us citizens only', 'eu citizens only', 'uk citizens only',
+    'no visa sponsorship', 'no relocation', 'local candidates only',
+    'must have work authorization', 'no international candidates'
+  ];
+  
+  const hasNegativeIndicators = negativeIndicators.some(indicator => 
+    combinedText.includes(indicator)
+  );
+  
+  // Return true if positive indicators found and no negative indicators
+  return hasPositiveIndicators && !hasNegativeIndicators;
 }
 
 function determineExperienceLevel(description: string, title: string): 'entry' | 'junior' | 'mid' | 'senior' {
@@ -1479,35 +1641,67 @@ export async function atomicUpsertJobs(jobs: Job[]): Promise<JobUpsertResult> {
 
   try {
     // Prepare jobs with calculated fields
-    const preparedJobs = jobs.map(job => ({
-      ...job,
-      freshness_tier: calculateFreshnessTier(job.posted_at),
-      scrape_timestamp: new Date().toISOString(),
-      last_seen_at: new Date().toISOString(),
-      is_active: true
-    }));
+    const preparedJobs = jobs.map(job => {
+      // Ensure all required fields are present
+      const preparedJob = {
+        ...job,
+        freshness_tier: calculateFreshnessTier(job.posted_at),
+        scrape_timestamp: new Date().toISOString(),
+        last_seen_at: new Date().toISOString(),
+        is_active: true,
+        // Ensure job_hash is present
+        job_hash: job.job_hash || crypto.createHash('md5').update(`${job.title}-${job.company}-${job.job_url}`).digest('hex')
+      };
 
-    // Perform atomic upsert
+      // Remove undefined fields that might cause issues
+      Object.keys(preparedJob).forEach(key => {
+        if (preparedJob[key as keyof typeof preparedJob] === undefined) {
+          delete preparedJob[key as keyof typeof preparedJob];
+        }
+      });
+
+      return preparedJob;
+    });
+
+    // Perform atomic upsert with proper conflict resolution
     const { data, error } = await supabase
       .from('jobs')
       .upsert(preparedJobs, {
-        onConflict: 'jobs_job_hash_unique',
+        onConflict: 'jobs_job_hash_unique', // Use the constraint name from migration
         ignoreDuplicates: false
       });
 
     if (error) {
-      result.errors.push(`Upsert failed: ${error.message}`);
-      return result;
+      // If the constraint doesn't exist yet, try with column name
+      if (error.message.includes('constraint') || error.message.includes('conflict')) {
+        console.warn('⚠️ Constraint not found, trying with column name...');
+        const { data: retryData, error: retryError } = await supabase
+          .from('jobs')
+          .upsert(preparedJobs, {
+            onConflict: 'job_hash', // Fallback to column name
+            ignoreDuplicates: false
+          });
+
+        if (retryError) {
+          result.errors.push(`Upsert failed (retry): ${retryError.message}`);
+          console.error('❌ Atomic upsert retry error:', retryError);
+          return result;
+        }
+      } else {
+        result.errors.push(`Upsert failed: ${error.message}`);
+        console.error('❌ Atomic upsert error:', error);
+        return result;
+      }
     }
 
-    // Count results (Supabase doesn't return insert/update counts directly)
-    // We'll estimate based on the operation
-    result.inserted = jobs.length; // Most will be inserts for new scrapes
-    result.updated = 0; // Updates are less common
+    // Since Supabase doesn't return detailed counts, we'll estimate based on the operation
+    // For new scrapes, most jobs are likely inserts, but we'll use a conservative estimate
+    result.inserted = Math.floor(preparedJobs.length * 0.8); // Assume 80% are inserts
+    result.updated = preparedJobs.length - result.inserted;
     result.success = true;
     result.jobs = preparedJobs;
 
-    console.log(`✅ Atomic upsert completed: ${jobs.length} jobs processed`);
+    console.log(`✅ Atomic upsert completed: ${preparedJobs.length} jobs processed (${result.inserted} estimated inserted, ${result.updated} estimated updated)`);
     return result;
 
   } catch (error: any) {
@@ -1557,4 +1751,357 @@ export async function batchUpsertJobs(jobs: Job[], batchSize = 100): Promise<Job
   }
 
   return result;
+}
+
+// ================================
+// EXTRACTION UTILITY FUNCTIONS
+// ================================
+
+/**
+ * Extract professional expertise from job title and description
+ * @param jobTitle - The job title
+ * @param description - The job description
+ * @returns Professional expertise category
+ */
+export function extractProfessionalExpertise(jobTitle: string, description: string): string {
+  const combinedText = `${jobTitle} ${description}`.toLowerCase();
+  
+  // Expertise categories with complete keyword arrays
+  const expertiseCategories = {
+    'Frontend Development': {
+      keywords: [
+        // Framework keywords
+        'react', 'vue', 'angular', 'svelte', 'ember', 'backbone', 'jquery',
+        // Language keywords
+        'javascript', 'typescript', 'html5', 'css3', 'scss', 'sass', 'less', 'stylus',
+        // Build tools
+        'webpack', 'vite', 'rollup', 'parcel', 'gulp', 'grunt', 'babel',
+        // State management
+        'redux', 'vuex', 'mobx', 'recoil', 'zustand',
+        // UI libraries
+        'material-ui', 'ant-design', 'bootstrap', 'tailwind', 'chakra-ui',
+        // Testing
+        'jest', 'cypress', 'selenium', 'playwright', 'testing-library'
+      ]
+    },
+    'Backend Development': {
+      keywords: [
+        // Server technologies
+        'node.js', 'express', 'fastify', 'koa', 'hapi', 'nestjs',
+        // Languages
+        'python', 'java', 'php', 'ruby', 'go', 'rust', 'c#', 'scala', 'kotlin',
+        // Frameworks
+        'django', 'flask', 'spring', 'laravel', 'symfony', 'rails', 'gin', 'actix',
+        // Databases
+        'postgresql', 'mysql', 'mongodb', 'redis', 'elasticsearch', 'cassandra',
+        // API technologies
+        'rest', 'graphql', 'grpc', 'soap', 'microservices'
+      ]
+    },
+    'Full Stack Development': {
+      keywords: [
+        // Stack names
+        'mern', 'mean', 'lamp', 'django-react', 'rails-react', 'vue-laravel',
+        // Full stack indicators
+        'full-stack', 'fullstack', 'end-to-end', 'complete solution'
+      ]
+    },
+    'DevOps Engineering': {
+      keywords: [
+        // Container tech
+        'docker', 'kubernetes', 'podman', 'containerd', 'docker-compose',
+        // Cloud platforms
+        'aws', 'azure', 'gcp', 'digitalocean', 'heroku', 'vercel', 'netlify',
+        // Infrastructure
+        'terraform', 'ansible', 'puppet', 'chef', 'cloudformation',
+        // CI/CD
+        'jenkins', 'github-actions', 'gitlab-ci', 'circleci', 'travis-ci', 'azure-devops',
+        // Monitoring
+        'prometheus', 'grafana', 'elk-stack', 'datadog', 'new-relic', 'splunk'
+      ]
+    },
+    'Data Science': {
+      keywords: [
+        // Languages
+        'python', 'r', 'sql', 'scala', 'julia',
+        // Libraries
+        'pandas', 'numpy', 'scipy', 'scikit-learn', 'tensorflow', 'pytorch', 'keras',
+        // Tools
+        'jupyter', 'anaconda', 'spark', 'hadoop', 'airflow', 'mlflow',
+        // Roles
+        'data-scientist', 'machine-learning', 'ai', 'artificial-intelligence', 'data-analyst'
+      ]
+    },
+    'Mobile Development': {
+      keywords: [
+        // Native
+        'ios', 'android', 'swift', 'kotlin', 'objective-c', 'java-android',
+        // Cross-platform
+        'react-native', 'flutter', 'xamarin', 'ionic', 'cordova', 'phonegap',
+        // Mobile indicators
+        'mobile-app', 'mobile-development', 'app-development'
+      ]
+    },
+    'Quality Assurance': {
+      keywords: [
+        // Testing types
+        'automation', 'manual-testing', 'unit-testing', 'integration-testing',
+        // Tools
+        'selenium', 'cypress', 'jest', 'mocha', 'jasmine', 'pytest', 'junit',
+        // Methodologies
+        'tdd', 'bdd', 'agile-testing', 'performance-testing', 'security-testing'
+      ]
+    }
+  };
+
+  // Scoring algorithm
+  let maxScore = 0;
+  let bestCategory = 'General Software Development';
+
+  for (const [category, config] of Object.entries(expertiseCategories)) {
+    let score = 0;
+    
+    for (const keyword of config.keywords) {
+      // Check title matches (weighted 2x higher)
+      const titleMatches = (jobTitle.toLowerCase().match(new RegExp(keyword, 'g')) || []).length;
+      score += titleMatches * 2;
+      
+      // Check description matches
+      const descMatches = (description.toLowerCase().match(new RegExp(keyword, 'g')) || []).length;
+      score += descMatches;
+    }
+    
+    if (score > maxScore && score >= 2) { // Minimum threshold of 2 matches
+      maxScore = score;
+      bestCategory = category;
+    }
+  }
+
+  return bestCategory;
+}
+
+/**
+ * Extract career path from job title and description
+ * @param jobTitle - The job title
+ * @param description - The job description
+ * @returns Career path category
+ */
+export function extractCareerPath(jobTitle: string, description: string): string {
+  const combinedText = `${jobTitle} ${description}`.toLowerCase();
+  
+  // Career path categories with comprehensive keyword arrays
+  const careerPaths = {
+    'consulting': {
+      keywords: [
+        'consultant', 'consulting', 'strategy', 'business development', 'management consulting',
+        'advisory', 'client services', 'business analyst', 'strategy analyst', 'consulting analyst',
+        'business consultant', 'strategy consultant', 'management consultant', 'advisory services',
+        'business transformation', 'change management', 'process improvement', 'operational excellence'
+      ]
+    },
+    'finance': {
+      keywords: [
+        'finance', 'financial', 'investment', 'banking', 'accounting', 'audit', 'treasury',
+        'financial analyst', 'investment analyst', 'credit analyst', 'risk analyst', 'financial planning',
+        'corporate finance', 'investment banking', 'private equity', 'venture capital', 'asset management',
+        'financial modeling', 'budgeting', 'financial reporting', 'compliance', 'regulatory'
+      ]
+    },
+    'tech': {
+      keywords: [
+        'software', 'developer', 'engineer', 'programming', 'coding', 'technology', 'tech',
+        'frontend', 'backend', 'full stack', 'data science', 'machine learning', 'ai', 'artificial intelligence',
+        'devops', 'cloud', 'cybersecurity', 'product', 'product manager', 'technical', 'engineering',
+        'software engineer', 'data engineer', 'ml engineer', 'ai engineer', 'systems engineer'
+      ]
+    },
+    'marketing': {
+      keywords: [
+        'marketing', 'brand', 'digital marketing', 'social media', 'content', 'advertising',
+        'brand manager', 'marketing analyst', 'digital marketing specialist', 'social media manager',
+        'content creator', 'marketing coordinator', 'brand ambassador', 'marketing assistant',
+        'campaign', 'seo', 'sem', 'ppc', 'email marketing', 'growth marketing', 'product marketing'
+      ]
+    },
+    'operations': {
+      keywords: [
+        'operations', 'supply chain', 'logistics', 'procurement', 'manufacturing', 'production',
+        'operations analyst', 'supply chain analyst', 'logistics coordinator', 'procurement specialist',
+        'operations manager', 'process improvement', 'quality assurance', 'inventory management',
+        'warehouse', 'distribution', 'sourcing', 'vendor management', 'operational excellence'
+      ]
+    },
+    'entrepreneurship': {
+      keywords: [
+        'startup', 'entrepreneur', 'founder', 'co-founder', 'business development', 'growth',
+        'startup analyst', 'business development representative', 'sales development', 'growth hacker',
+        'entrepreneurial', 'innovation', 'product management', 'business strategy', 'market research',
+        'customer success', 'sales', 'business analyst', 'strategy analyst'
+      ]
+    }
+  };
+
+  // Scoring algorithm
+  let maxScore = 0;
+  let bestCareerPath = 'General Business';
+
+  for (const [careerPath, config] of Object.entries(careerPaths)) {
+    let score = 0;
+    
+    for (const keyword of config.keywords) {
+      // Check title matches (weighted 2x higher)
+      const titleMatches = (jobTitle.toLowerCase().match(new RegExp(keyword, 'g')) || []).length;
+      score += titleMatches * 2;
+      
+      // Check description matches
+      const descMatches = (description.toLowerCase().match(new RegExp(keyword, 'g')) || []).length;
+      score += descMatches;
+    }
+    
+    if (score > maxScore && score >= 2) { // Minimum threshold of 2 matches
+      maxScore = score;
+      bestCareerPath = careerPath;
+    }
+  }
+
+  return bestCareerPath;
+}
+
+/**
+ * Extract start date from job description
+ * @param description - The job description
+ * @returns Start date in "YYYY-MM-DD" format, "Immediate", or "TBD"
+ */
+export function extractStartDate(description: string): string {
+  if (!description || typeof description !== 'string') {
+    return 'TBD';
+  }
+  
+  const text = description.toLowerCase();
+  
+  // Immediate start phrases
+  const immediatePhrases = [
+    'immediate start', 'asap', 'as soon as possible', 'start immediately',
+    'urgent', 'immediate hire', 'start now', 'available immediately',
+    'join immediately', 'begin right away', 'start right away', 'immediate availability',
+    'can start immediately', 'available to start immediately', 'ready to start'
+  ];
+  
+  for (const phrase of immediatePhrases) {
+    if (text.includes(phrase)) {
+      return 'Immediate';
+    }
+  }
+  
+  // Specific date patterns
+  const datePatterns = [
+    // Month-year format
+    /(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{4})/gi,
+    // Month day, year format
+    /(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2}),?\s+(\d{4})/gi,
+    // DD/MM/YYYY or MM/DD/YYYY
+    /(\d{1,2})\/(\d{1,2})\/(\d{4})/g,
+    // YYYY-MM-DD
+    /(\d{4})-(\d{1,2})-(\d{1,2})/g,
+    // DD-MM-YYYY
+    /(\d{1,2})-(\d{1,2})-(\d{4})/g
+  ];
+  
+  for (const pattern of datePatterns) {
+    const matches = text.match(pattern);
+    if (matches && matches.length > 0) {
+      try {
+        const date = new Date(matches[0]);
+        if (!isNaN(date.getTime())) {
+          return date.toISOString().split('T')[0];
+        }
+      } catch (error) {
+        // Continue to next pattern
+      }
+    }
+  }
+  
+  // Relative date patterns
+  const relativePatterns = [
+    // "in X weeks/months"
+    /in\s+(\d+)\s+(week|weeks|month|months)\s*from\s+now/gi,
+    /(\d+)\s+(week|weeks|month|months)\s+from\s+now/gi,
+    // "starting in X weeks/months"
+    /starting\s+in\s+(\d+)\s+(week|weeks|month|months)/gi,
+    // "available in X weeks/months"
+    /available\s+in\s+(\d+)\s+(week|weeks|month|months)/gi
+  ];
+  
+  for (const pattern of relativePatterns) {
+    const matches = text.match(pattern);
+    if (matches && matches.length > 0) {
+      const match = matches[0];
+      const numberMatch = match.match(/(\d+)/);
+      const unitMatch = match.match(/(week|weeks|month|months)/i);
+      
+      if (numberMatch && unitMatch) {
+        const number = parseInt(numberMatch[1]);
+        const unit = unitMatch[1].toLowerCase();
+        const date = new Date();
+        
+        if (unit.includes('week')) {
+          date.setDate(date.getDate() + (number * 7));
+        } else if (unit.includes('month')) {
+          date.setMonth(date.getMonth() + number);
+        }
+        
+        return date.toISOString().split('T')[0];
+      }
+    }
+  }
+  
+  // Season-based patterns
+  const seasonPatterns = [
+    { 
+      pattern: /(spring|summer|fall|autumn|winter)\s+(\d{4})/gi, 
+      seasonMonths: { spring: 3, summer: 6, fall: 9, autumn: 9, winter: 12 } as Record<string, number>
+    },
+    { 
+      pattern: /(q1|q2|q3|q4)\s+(\d{4})/gi, 
+      quarterMonths: { q1: 1, q2: 4, q3: 7, q4: 10 } as Record<string, number>
+    }
+  ];
+  
+  for (const { pattern, seasonMonths, quarterMonths } of seasonPatterns) {
+    const matches = text.match(pattern);
+    if (matches && matches.length > 0) {
+      const match = matches[0];
+      const yearMatch = match.match(/(\d{4})/);
+      const seasonMatch = match.match(/(spring|summer|fall|autumn|winter|q1|q2|q3|q4)/i);
+      
+      if (yearMatch && seasonMatch) {
+        const year = parseInt(yearMatch[1]);
+        const season = seasonMatch[1].toLowerCase();
+        let month = 1;
+        
+        if (seasonMonths && seasonMonths[season]) {
+          month = seasonMonths[season];
+        } else if (quarterMonths && quarterMonths[season]) {
+          month = quarterMonths[season];
+        }
+        
+        const date = new Date(year, month - 1, 1);
+        return date.toISOString().split('T')[0];
+      }
+    }
+  }
+  
+  // Check for "flexible" or "negotiable" start dates
+  const flexiblePhrases = [
+    'flexible start date', 'negotiable start date', 'start date flexible',
+    'flexible timing', 'negotiable timing', 'flexible availability'
+  ];
+  
+  for (const phrase of flexiblePhrases) {
+    if (text.includes(phrase)) {
+      return 'Flexible';
+    }
+  }
+  
+  return 'TBD';
 }

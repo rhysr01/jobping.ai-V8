@@ -6,7 +6,13 @@ import {
   performEnhancedAIMatching,
   generateFallbackMatches,
   logMatchSession,
+  AIMatchingCache,
 } from '@/Utils/jobMatching';
+import { EnhancedRateLimiter } from '@/Utils/enhancedRateLimiter';
+import { PerformanceMonitor } from '@/Utils/performanceMonitor';
+import { AdvancedMonitoringOracle } from '@/Utils/advancedMonitoring';
+import { AutoScalingOracle } from '@/Utils/autoScaling';
+import { UserSegmentationOracle } from '@/Utils/userSegmentation';
 import type { JobMatch } from '@/Utils/jobMatching';
 
 // Enhanced monitoring and performance tracking
@@ -63,6 +69,220 @@ interface JobWithFreshness {
   freshness_tier: 'ultra_fresh' | 'fresh' | 'comprehensive' | null;
   original_posted_date: string | null;
   last_seen_at: string | null;
+}
+
+// NEW: Enhanced rate limiter instance
+const enhancedRateLimiter = new EnhancedRateLimiter();
+
+// NEW: User clustering functionality
+function clusterSimilarUsers(users: any[], maxClusterSize: number = 3): any[][] {
+  const clusters: any[][] = [];
+  const processed = new Set<number>();
+
+  for (let i = 0; i < users.length; i++) {
+    if (processed.has(i)) continue;
+
+    const cluster = [users[i]];
+    processed.add(i);
+
+    // Find similar users (same expertise + experience level)
+    for (let j = i + 1; j < users.length && cluster.length < maxClusterSize; j++) {
+      if (processed.has(j)) continue;
+
+      const user1 = users[i];
+      const user2 = users[j];
+      
+      if (user1.professional_expertise === user2.professional_expertise &&
+          user1.entry_level_preference === user2.entry_level_preference) {
+        cluster.push(user2);
+        processed.add(j);
+      }
+    }
+
+    clusters.push(cluster);
+  }
+
+  return clusters;
+}
+
+// NEW: Enhanced AI matching with clustering and caching
+async function performEnhancedAIMatchingWithCaching(
+  users: any[],
+  jobs: JobWithFreshness[],
+  openai: OpenAI,
+  isNewUser: boolean = false
+): Promise<Map<string, JobMatch[]>> {
+  console.log(`🤖 Starting enhanced AI matching for ${users.length} users with ${jobs.length} jobs`);
+
+  // Cluster users to reduce API calls
+  const userClusters = clusterSimilarUsers(users, 3);
+  console.log(`👥 Created ${userClusters.length} clusters from ${users.length} users`);
+
+  const results = new Map<string, JobMatch[]>();
+
+  for (const cluster of userClusters) {
+    try {
+      // Check cache first
+      const cachedMatches = await AIMatchingCache.getCachedMatches(cluster);
+      
+      if (cachedMatches && !isNewUser) {
+        console.log(`🎯 Using cached matches for cluster of ${cluster.length} users`);
+        await processCachedMatches(cluster, cachedMatches, jobs, results);
+        continue;
+      }
+
+      // Perform AI matching for the cluster
+      const matchingResults = await callOpenAIForCluster(cluster, jobs, openai);
+      
+      // Cache the results
+      AIMatchingCache.setCachedMatches(cluster, matchingResults);
+      
+      // Process matches for each user in the cluster
+      await processMatchingResults(cluster, matchingResults, results);
+      
+    } catch (error) {
+      console.error(`❌ Error processing cluster:`, error);
+      // Fallback logic
+      await performRuleBasedMatching(cluster, jobs, results);
+    }
+  }
+
+  return results;
+}
+
+// NEW: Helper function to call OpenAI for a cluster
+async function callOpenAIForCluster(userCluster: any[], jobs: JobWithFreshness[], openai: OpenAI): Promise<any[]> {
+  // Batch the OpenAI call for the entire cluster
+  const clusterPrompt = `
+    Analyze these ${userCluster.length} similar users and ${jobs.length} jobs.
+    Users: ${JSON.stringify(userCluster.map(u => ({
+      expertise: u.professional_expertise,
+      experience: u.entry_level_preference,
+      location: u.target_cities,
+      visa: u.visa_status,
+      email: u.email
+    })))}
+    
+    Jobs: ${JSON.stringify(jobs.slice(0, 50).map(j => ({
+      title: j.title,
+      company: j.company,
+      location: j.location,
+      description: j.description?.substring(0, 200)
+    })))}
+    
+    Return matches for each user with scores and reasoning in JSON format:
+    [
+      {
+        "user_email": "user@example.com",
+        "matches": [
+          {
+            "job_hash": "abc123",
+            "match_score": 8.5,
+            "match_reason": "Strong fit for...",
+            "match_quality": "excellent",
+            "match_tags": "remote,entry-level"
+          }
+        ]
+      }
+    ]
+  `;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4",
+    messages: [{ role: "user", content: clusterPrompt }],
+    max_tokens: 2000,
+    temperature: 0.3,
+  });
+
+  const content = completion.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error('No content in OpenAI response');
+  }
+
+  try {
+    return JSON.parse(content);
+  } catch (error) {
+    console.error('Failed to parse OpenAI response:', error);
+    throw new Error('Invalid response format from OpenAI');
+  }
+}
+
+// NEW: Process cached matches
+async function processCachedMatches(
+  userCluster: any[], 
+  cachedMatches: any[], 
+  allJobs: JobWithFreshness[], 
+  results: Map<string, JobMatch[]>
+): Promise<void> {
+  // Adapt cached matches to current job set
+  for (const clusterResult of cachedMatches) {
+    const userEmail = clusterResult.user_email;
+    const userMatches = clusterResult.matches || [];
+    
+    // Filter matches to jobs that still exist
+    const validMatches = userMatches.filter((match: any) => 
+      allJobs.some(job => job.job_hash === match.job_hash)
+    );
+
+    if (validMatches.length > 0) {
+      results.set(userEmail, validMatches);
+    }
+  }
+}
+
+// NEW: Process matching results for a cluster
+async function processMatchingResults(
+  userCluster: any[], 
+  matchingResults: any[], 
+  results: Map<string, JobMatch[]>
+): Promise<void> {
+  for (const clusterResult of matchingResults) {
+    const userEmail = clusterResult.user_email;
+    const userMatches = clusterResult.matches || [];
+    
+    if (userMatches.length > 0) {
+      results.set(userEmail, userMatches);
+    }
+  }
+}
+
+// NEW: Rule-based fallback matching
+async function performRuleBasedMatching(
+  userCluster: any[], 
+  jobs: JobWithFreshness[], 
+  results: Map<string, JobMatch[]>
+): Promise<void> {
+  for (const user of userCluster) {
+    // Convert JobWithFreshness to Job for compatibility
+    const jobCompatible = jobs.map(job => ({
+      id: parseInt(job.id) || undefined, // Convert string to number or undefined
+      job_hash: job.job_hash,
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      job_url: job.job_url,
+      description: job.description,
+      experience_required: '', // Default value for compatibility
+      work_environment: '', // Default value for compatibility
+      source: '', // Default value for compatibility
+      categories: '', // Default value for compatibility
+      company_profile_url: '', // Default value for compatibility
+      language_requirements: '', // Default value for compatibility
+      scrape_timestamp: new Date().toISOString(), // Default value for compatibility
+      original_posted_date: job.original_posted_date || new Date().toISOString(),
+      posted_at: job.original_posted_date || new Date().toISOString(),
+      last_seen_at: job.last_seen_at || new Date().toISOString(),
+      is_active: true, // Default value for compatibility
+      freshness_tier: job.freshness_tier || '',
+      scraper_run_id: '', // Default value for compatibility
+      created_at: job.created_at
+    }));
+    
+    const fallbackMatches = generateFallbackMatches(jobCompatible, user);
+    if (fallbackMatches.length > 0) {
+      results.set(user.email, fallbackMatches);
+    }
+  }
 }
 
 // Database schema validation
@@ -306,21 +526,33 @@ export async function POST(req: NextRequest) {
   const performanceTracker = trackPerformance();
   const reservationId = `batch_${Date.now()}`;
   
-  // Rate limiting
+  // ENHANCED: Use atomic rate limiting
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
             req.headers.get('x-real-ip') || 
             'unknown-ip';
   
-  if (isRateLimited(ip)) {
+  const rateLimitStart = Date.now();
+  const rateLimitResult = await enhancedRateLimiter.checkLimit(
+    `match-users:${ip}`,
+    RATE_LIMIT_MAX_REQUESTS,
+    RATE_LIMIT_WINDOW_MS
+  );
+  PerformanceMonitor.trackDuration('rate_limit_check', rateLimitStart);
+
+  if (!rateLimitResult.allowed) {
     console.warn(`Rate limit exceeded for IP: ${ip}`);
     return NextResponse.json(
       { 
         error: 'Rate limited. This endpoint processes expensive AI operations. Try again in 15 minutes.',
-        retryAfter: 900
+        retryAfter: 900,
+        remaining: rateLimitResult.remaining
       },
       { 
         status: 429,
-        headers: { 'Retry-After': '900' }
+        headers: { 
+          'Retry-After': '900',
+          'X-RateLimit-Remaining': rateLimitResult.remaining?.toString() || '0'
+        }
       }
     );
   }
@@ -339,11 +571,23 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
+    // ADVANCED: Check scaling needs before processing
+    const scalingRecommendations = await AutoScalingOracle.checkScalingNeeds();
+    if (scalingRecommendations.length > 0) {
+      console.log('🔧 Scaling recommendations detected:', scalingRecommendations);
+      // Implement critical recommendations automatically
+      for (const recommendation of scalingRecommendations.filter(r => r.priority === 'high')) {
+        await AutoScalingOracle.implementRecommendation(recommendation);
+      }
+    }
+
     // 1. Fetch active users
+    const userFetchStart = Date.now();
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select('*')
       .eq('active', true);
+    PerformanceMonitor.trackDuration('user_fetch', userFetchStart);
 
     if (usersError) {
       console.error('Failed to fetch users:', usersError);
@@ -356,6 +600,17 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(`Found ${users.length} active users to process`);
+
+    // ADVANCED: User segmentation analysis
+    const userSegmentationStart = Date.now();
+    const userSegments = await UserSegmentationOracle.analyzeUserBehavior(supabase);
+    PerformanceMonitor.trackDuration('user_segmentation', userSegmentationStart);
+
+    if (userSegments.error) {
+      console.warn('User segmentation failed:', userSegments.error);
+    } else {
+      console.log('👥 User segmentation completed:', userSegments.segmentDistribution);
+    }
 
     // 2. Fetch jobs with UTC-safe date calculation
     const jobFetchStart = Date.now();
@@ -385,6 +640,7 @@ export async function POST(req: NextRequest) {
       .limit(limit);
 
     const jobFetchTime = Date.now() - jobFetchStart;
+    PerformanceMonitor.trackDuration('job_fetch', jobFetchStart);
 
     if (jobsError) {
       console.error('Failed to fetch jobs:', jobsError);
@@ -425,8 +681,25 @@ export async function POST(req: NextRequest) {
       try {
         console.log(`Processing matches for ${user.email} (tier: ${user.tier || 'free'})`);
         
+        // ADVANCED: Get user analysis for personalized processing
+        const userAnalysisStart = Date.now();
+        const userAnalysis = await UserSegmentationOracle.getUserAnalysis(user.id, supabase);
+        PerformanceMonitor.trackDuration('user_analysis', userAnalysisStart);
+
+        if ('error' in userAnalysis) {
+          console.warn(`User analysis failed for ${user.email}:`, userAnalysis.error);
+        } else {
+          console.log(`📊 User analysis for ${user.email}:`, {
+            engagementScore: userAnalysis.engagementScore,
+            segments: userAnalysis.segments,
+            recommendations: userAnalysis.recommendations.length
+          });
+        }
+        
         // Pre-filter jobs to reduce AI processing load
+        const preFilterStart = Date.now();
         const preFilteredJobs = preFilterJobsByUserPreferences(jobs as JobWithFreshness[], user);
+        PerformanceMonitor.trackDuration('job_prefilter', preFilterStart);
         
         // Apply freshness distribution with fallback logic
         const tierDistributionStart = Date.now();
@@ -437,6 +710,7 @@ export async function POST(req: NextRequest) {
         );
         const tierDistributionTime = Date.now() - tierDistributionStart;
         totalTierDistributionTime += tierDistributionTime;
+        PerformanceMonitor.trackDuration('tier_distribution', tierDistributionStart);
 
         // AI matching with performance tracking
         let matches: JobMatch[] = [];
@@ -445,19 +719,77 @@ export async function POST(req: NextRequest) {
 
         try {
           const openai = getOpenAIClient();
-          matches = await performEnhancedAIMatching(distributedJobs, user, openai);
+          const matchesMap = await performEnhancedAIMatchingWithCaching(
+            [user], // Pass a single user for now, will be clustered later
+            distributedJobs,
+            openai,
+            true // Indicate this is a new user for caching
+          );
+          
+          // Extract matches for this user from the Map
+          matches = matchesMap.get(user.email) || [];
+          
           if (!matches || matches.length === 0) {
             matchType = 'fallback';
-            matches = generateFallbackMatches(distributedJobs, user);
+            // Convert JobWithFreshness to Job for compatibility
+            const jobCompatible = distributedJobs.map(job => ({
+              id: parseInt(job.id) || undefined,
+              job_hash: job.job_hash,
+              title: job.title,
+              company: job.company,
+              location: job.location,
+              job_url: job.job_url,
+              description: job.description,
+              experience_required: '',
+              work_environment: '',
+              source: '',
+              categories: '',
+              company_profile_url: '',
+              language_requirements: '',
+              scrape_timestamp: new Date().toISOString(),
+              original_posted_date: job.original_posted_date || new Date().toISOString(),
+              posted_at: job.original_posted_date || new Date().toISOString(),
+              last_seen_at: job.last_seen_at || new Date().toISOString(),
+              is_active: true,
+              freshness_tier: job.freshness_tier || '',
+              scraper_run_id: '',
+              created_at: job.created_at
+            }));
+            matches = generateFallbackMatches(jobCompatible, user);
           }
         } catch (err) {
           console.error(`AI matching failed for ${user.email}:`, err);
           matchType = 'ai_failed';
-          matches = generateFallbackMatches(distributedJobs, user);
+          // Convert JobWithFreshness to Job for compatibility
+          const jobCompatible = distributedJobs.map(job => ({
+            id: parseInt(job.id) || undefined,
+            job_hash: job.job_hash,
+            title: job.title,
+            company: job.company,
+            location: job.location,
+            job_url: job.job_url,
+            description: job.description,
+            experience_required: '',
+            work_environment: '',
+            source: '',
+            categories: '',
+            company_profile_url: '',
+            language_requirements: '',
+            scrape_timestamp: new Date().toISOString(),
+            original_posted_date: job.original_posted_date || new Date().toISOString(),
+            posted_at: job.original_posted_date || new Date().toISOString(),
+            last_seen_at: job.last_seen_at || new Date().toISOString(),
+            is_active: true,
+            freshness_tier: job.freshness_tier || '',
+            scraper_run_id: '',
+            created_at: job.created_at
+          }));
+          matches = generateFallbackMatches(jobCompatible, user);
         }
         
         const aiMatchingTime = Date.now() - aiMatchingStart;
         totalAIProcessingTime += aiMatchingTime;
+        PerformanceMonitor.trackDuration('ai_matching', aiMatchingStart);
 
         // Save matches with enhanced data
         if (matches && matches.length > 0) {
@@ -516,7 +848,12 @@ export async function POST(req: NextRequest) {
             pre_filter_reduction: preFilteredJobs.length / jobs.length
           },
           fallback_used: matchType !== 'ai_success',
-          processing_method: matchType
+          processing_method: matchType,
+          user_analysis: 'error' in userAnalysis ? null : {
+            engagementScore: userAnalysis.engagementScore,
+            segments: userAnalysis.segments,
+            recommendations: userAnalysis.recommendations
+          }
         });
 
       } catch (userError) {
@@ -532,50 +869,47 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Mark processed jobs as sent with atomic operation
-    if (jobs.length > 0) {
-      const { error: updateError } = await supabase
-        .from('jobs')
-        .update({ 
-          is_sent: true,
-          processed_at: new Date().toISOString()
-        })
-        .in('id', jobIds);
-      
-      if (updateError) {
-        console.error('Failed to mark jobs as sent:', updateError);
-      }
-    }
+    // ADVANCED: Generate comprehensive monitoring report
+    const monitoringStart = Date.now();
+    const monitoringReport = await AdvancedMonitoringOracle.generateDailyReport();
+    PerformanceMonitor.trackDuration('monitoring_report', monitoringStart);
 
-    // Calculate final performance metrics
-    const finalMetrics = performanceTracker.getMetrics();
-    finalMetrics.jobFetchTime = jobFetchTime;
-    finalMetrics.tierDistributionTime = totalTierDistributionTime;
-    finalMetrics.aiMatchingTime = totalAIProcessingTime;
+    // Log performance report
+    PerformanceMonitor.logPerformanceReport();
 
-    console.log(`Successfully processed ${users.length} users and ${jobs.length} jobs with tiered freshness system`);
-    console.log('Performance metrics:', finalMetrics);
+    const totalProcessingTime = Date.now() - performanceTracker.startTime;
+    const metrics = performanceTracker.getMetrics();
 
     return NextResponse.json({
       success: true,
-      users_processed: users.length,
-      jobs_processed: jobs.length,
-      freshness_distribution: globalTierCounts,
-      performance_metrics: finalMetrics,
-      cost_optimization: {
-        pre_filter_enabled: true,
-        max_jobs_per_user: MAX_JOBS_PER_USER,
-        estimated_ai_calls: results.reduce((sum, r) => sum + (r.matches_count || 0), 0)
+      message: `Processed ${users.length} users with ${jobs.length} jobs`,
+      results,
+      performance: {
+        total_processing_time: totalProcessingTime,
+        job_fetch_time: jobFetchTime,
+        total_tier_distribution_time: totalTierDistributionTime,
+        total_ai_processing_time: totalAIProcessingTime,
+        average_ai_matching_time: totalAIProcessingTime / users.length,
+        memory_usage: metrics.memoryUsage
       },
-      results
+      rate_limit: {
+        remaining: rateLimitResult.remaining,
+        reset_time: rateLimitResult.resetTime
+      },
+      advanced_insights: {
+        user_segmentation: userSegments.error ? null : userSegments.segmentDistribution,
+        scaling_recommendations: scalingRecommendations,
+        monitoring_report: monitoringReport,
+        system_health: monitoringReport.health
+      }
     });
 
-  } catch (error: unknown) {
-    console.error('Match users API error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown server error' }, 
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error('Match-users processing error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 

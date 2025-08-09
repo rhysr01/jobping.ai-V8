@@ -11,33 +11,27 @@ export enum FreshnessTier {
 
 // Job structure matching your Supabase schema exactly
 export interface Job {
-  id?: string;                          // uuid primary key (optional for inserts)
-  categories: string;                   // text field
-  title: string;                        // text field  
-  company: string;                      // text field
-  location: string;                     // text field
-  job_url: string;                      // text field (unique)
-  description: string;                  // text field
-  experience_required: string;          // text field
-  work_environment: string;             // text field
-  source: string;                       // text field ('greenhouse', 'lever', etc.)
-  job_hash: string;                     // text field (deduplication key)
-  posted_at: string;                    // timestamp
-  language_requirements: string;        // text field
-  professional_expertise: string;       // text field
-  start_date: string;                   // text field
-  work_environment: string;             // text field
-  visa_status: string;                  // text field
-  entry_level_preference: string;       // text field
-  career_path: string;                  // text field
-  created_at: string;                   // timestamp
-  scraper_run_id: string;               // text field
-  company_profile_url: string;          // text field
-  freshness_tier?: FreshnessTier;       // calculated field for prioritization
-  extracted_posted_date?: string;       // real posting date if extracted
-  scrape_timestamp?: string;            // when we scraped it
-  last_seen_at?: string;                // when job was last seen (for lifecycle tracking)
-  is_active?: boolean;                  // whether job is still active
+  id?: number;                          // int4 Identity column (auto-generated PK)
+  job_hash: string;                     // text Non-nullable, UNIQUE (jobs_job_hash_unique)
+  title: string;                        // text Non-nullable
+  company: string;                      // text Non-nullable
+  location: string;                     // text Non-nullable
+  job_url: string;                      // text Non-nullable
+  description: string;                  // text Non-nullable
+  experience_required: string;          // text Non-nullable
+  work_environment: string;             // text Non-nullable
+  source: string;                       // text Non-nullable
+  categories: string;                   // text Non-nullable (added)
+  company_profile_url: string;          // text Non-nullable (added)
+  language_requirements: string;        // text Non-nullable (added)
+  scrape_timestamp: string;             // timestamptz Non-nullable (renamed from scraped_at)
+  original_posted_date: string;         // timestamp Non-nullable
+  posted_at: string;                    // timestamp Non-nullable
+  last_seen_at: string;                 // timestamp Non-nullable (added for lifecycle tracking)
+  is_active: boolean;                   // boolean Non-nullable, default true (added for lifecycle)
+  freshness_tier?: string;              // varchar Nullable
+  scraper_run_id?: string;              // uuid Nullable
+  created_at: string;                   // timestamptz Non-nullable, default now()
 }
 
 // Utility interface for atomic upserts
@@ -57,48 +51,55 @@ export interface DateExtractionResult {
   source: string;
 }
 
-// User structure matching your Supabase schema exactly  
+// User structure matching your Supabase schema exactly
 export interface User {
-  email: string;                        // text primary key
-  full_name: string;                    // text field
-  professional_expertise: string;       // text field
-  start_date: string;                   // text field
-  work_environment: string;             // text field
-  visa_status: string;                  // text field
-  entry_level_preference: string;       // text field
-  career_path: string;                  // text field
-  created_at: string;                   // timestamp
-  updated_at: string;                   // timestamp
-  target_date: string;                  // text field
-  languages_spoken: string;             // text field
-  company_types: string;                // text field
-  roles_selected: string;               // text field
-  active?: boolean;                     // For your app logic
+  id?: string;                          // uuid Identity column (auto-generated PK)
+  email: string;                        // text Non-nullable
+  full_name: string;                    // text Non-nullable
+  professional_expertise: string;       // text Non-nullable
+  start_date: string;                   // date Non-nullable
+  work_environment: string;             // text Non-nullable
+  visa_status: string;                  // text Non-nullable
+  entry_level_preference: string;       // text Non-nullable
+  career_path: string;                  // text Non-nullable
+  cv_url: string;                       // text Non-nullable
+  linkedin_url: string;                 // text Non-nullable
+  languages_spoken: string[];           // text[] Non-nullable - Array of languages
+  company_types: string[];              // text[] Non-nullable - Array of company types
+  roles_selected: string[];             // text[] Non-nullable - Array of selected roles
+  target_cities: string[];              // text[] Non-nullable - Array of target cities
+  created_at: string;                   // timestamptz Non-nullable, default now()
+  updated_at: string;                   // timestamptz Non-nullable, default now()
 }
 
-// Match structure matching your Supabase schema
+// Match structure matching your Supabase schema exactly
 export interface Match {
-  user_email: string;                   // text (FK to users)
-  job_hash: string;                     // text (FK to jobs)
-  match_score: number;                  // float (relevance AI)
-  match_reason: string;                 // text (AI explanation)
-  match_quality: string;                // text ('high', 'med', etc.)
-  match_tags: string;                   // text field
-  matched_at: string;                   // timestamp
-  created_at: string;                   // timestamp
+  id?: number;                          // int4 Identity column (PK)
+  user_email: string;                   // text Non-nullable
+  job_hash: string;                     // text Non-nullable
+  match_score: number;                  // numeric Non-nullable
+  match_reason: string;                 // text Non-nullable
+  match_quality: string;                // text Non-nullable
+  match_tags: string;                   // text Non-nullable
+  matched_at: string;                   // timestamptz Non-nullable
+  created_at: string;                   // timestamptz Non-nullable
 }
 
-// Match logs structure matching your Supabase schema
+// Match logs structure matching your Supabase schema exactly
 export interface MatchLog {
-  user_email: string;                   // text (FK to users)
-  job_batch_id: string;                 // text field
-  success: boolean;                     // bool field
-  fallback_used: boolean;               // bool field
-  jobs_processed: number;               // int field
-  user_career_stage: string;            // text field
-  user_experience_lvl: string;          // text field
-  user_work_preference: string;         // text field
-  timestamp: string;                    // timestamp field
+  id?: number;                          // int4 Identity column (PK)
+  job_batch_id: string;                 // text Non-nullable
+  matches_generated: number;            // int4 Non-nullable
+  error_message?: string;               // text Nullable
+  match_type?: string;                  // text Nullable
+  user_email: string;                   // text Non-nullable
+  success: boolean;                     // boolean Non-nullable
+  fallback_used: boolean;               // boolean Non-nullable
+  jobs_processed: number;               // int4 Non-nullable
+  user_career_stage: string;            // text Non-nullable
+  user_experience_level: string;        // text Non-nullable
+  user_work_preference: string;         // text Non-nullable
+  timestamp: string;                    // timestamp Non-nullable
 }
 
 // Tally form field mapping (based on your form)
@@ -116,7 +117,6 @@ export interface TallyFormData {
   career_path: string;                 // "What's your preferred career path?"
   
   // Location & Timing
-  target_date: string;                 // "When are you looking to start?"
   start_date: string;                  // "How soon can you start?"
   
   // Skills & Requirements
@@ -181,13 +181,14 @@ export function mapTallyDataToUser(tallyData: TallyFormData): User {
     visa_status: tallyData.visa_status,
     entry_level_preference: tallyData.entry_level_preference,
     career_path: tallyData.career_path,
-    target_date: tallyData.target_date,
-    languages_spoken: tallyData.languages_spoken,
-    company_types: tallyData.company_types,
-    roles_selected: tallyData.roles_selected,
+    cv_url: '', // Default empty - will be updated later
+    linkedin_url: '', // Default empty - will be updated later
+    languages_spoken: tallyData.languages_spoken.split(',').map(lang => lang.trim()),
+    company_types: tallyData.company_types.split(',').map(type => type.trim()),
+    roles_selected: tallyData.roles_selected.split(',').map(role => role.trim()),
+    target_cities: tallyData.target_cities.split(',').map(city => city.trim()),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    active: true
   };
 }
 
@@ -224,10 +225,6 @@ export function extractTallyFormData(payload: TallyWebhookPayload): TallyFormDat
         break;
       case 'career_path':
         userData.career_path = value;
-        break;
-      case 'target_date':
-      case 'graduation_date':
-        userData.target_date = value;
         break;
       case 'start_date':
       case 'availability':

@@ -9,6 +9,7 @@ import {
   type UserPreferences,
 } from '@/Utils/jobMatching';
 import { sendMatchedJobsEmail, sendWelcomeEmail } from '@/Utils/emailUtils';
+import { EmailVerificationOracle } from '@/Utils/emailVerification';
 
 // Validation Schema
 const TallyWebhookSchema = z.object({
@@ -49,49 +50,64 @@ function getOpenAIClient() {
 
 // Extract user data with business rules
 function extractUserData(fields: TallyWebhookData['data']['fields']) {
-  const userData: Record<string, string | boolean> = { 
+  const userData: Record<string, string | string[] | boolean> = { 
     email: '',
     active: true
   };
   
-  fields.forEach(field => {
+  fields.forEach((field: any) => {
     if (!field.value) return;
     
     const key = field.key.toLowerCase();
-    let value = Array.isArray(field.value) ? field.value.join(', ') : field.value;
     
     // Apply business rules
     if (key.includes('cities') || key.includes('location')) {
-      // Max 3 cities
+      // Handle target cities as array
       if (Array.isArray(field.value)) {
-        value = field.value.slice(0, 3).join(', ');
+        userData.target_cities = field.value.slice(0, 3); // Max 3 cities
+      } else {
+        userData.target_cities = [field.value];
       }
-      userData.target_cities = value;
     } else if (key.includes('career_path') || key.includes('career')) {
       // Single career path
-      userData.career_path = Array.isArray(field.value) ? field.value[0] : value;
+      userData.career_path = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('email')) {
-      userData.email = value;
+      userData.email = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('name') && key.includes('full')) {
-      userData.full_name = value;
+      userData.full_name = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('expertise') || key.includes('background')) {
-      userData.professional_expertise = value;
+      userData.professional_expertise = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('start_date') || key.includes('availability')) {
-      userData.start_date = value;
+      userData.start_date = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('work_environment') || key.includes('work_preference')) {
-      userData.work_environment = value;
+      userData.work_environment = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('visa')) {
-      userData.visa_status = value;
+      userData.visa_status = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('entry_level') || key.includes('experience_level')) {
-      userData.entry_level_preference = value;
+      userData.entry_level_preference = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('target_date') || key.includes('graduation')) {
-      userData.target_date = value;
+      userData.target_date = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('languages')) {
-      userData.languages_spoken = value;
+      // Handle languages as array
+      if (Array.isArray(field.value)) {
+        userData.languages_spoken = field.value;
+      } else {
+        userData.languages_spoken = [field.value];
+      }
     } else if (key.includes('company')) {
-      userData.company_types = value;
+      // Handle company types as array
+      if (Array.isArray(field.value)) {
+        userData.company_types = field.value;
+      } else {
+        userData.company_types = [field.value];
+      }
     } else if (key.includes('roles') || key.includes('target_roles')) {
-      userData.roles_selected = value;
+      // Handle roles as array
+      if (Array.isArray(field.value)) {
+        userData.roles_selected = field.value;
+      } else {
+        userData.roles_selected = [field.value];
+      }
     }
   });
 
@@ -120,7 +136,7 @@ export async function POST(req: NextRequest) {
     // Check if user exists
     const { data: existingUser, error: fetchError } = await supabase
       .from('users')
-      .select('email, created_at')
+      .select('email, created_at, email_verified, verification_token')
       .eq('email', userData.email)
       .single();
 
@@ -130,27 +146,83 @@ export async function POST(req: NextRequest) {
       throw fetchError;
     }
 
+    // If user exists and is already verified, skip verification
+    if (existingUser && existingUser.email_verified) {
+      console.log(`User ${userData.email} already verified, skipping verification`);
+    }
+
+    // Generate verification token for new users
+    let verificationToken = null;
+    if (isNewUser) {
+      verificationToken = EmailVerificationOracle.generateVerificationToken();
+      console.log(`Generated verification token for new user: ${userData.email}`);
+    }
+
     // Upsert user
     const now = new Date().toISOString();
-    const userRecord = {
+    const userRecord: any = {
       ...userData,
+      // Ensure arrays are properly formatted for Supabase
+      languages_spoken: Array.isArray(userData.languages_spoken) ? userData.languages_spoken : [userData.languages_spoken || ''],
+      company_types: Array.isArray(userData.company_types) ? userData.company_types : [userData.company_types || ''],
+      roles_selected: Array.isArray(userData.roles_selected) ? userData.roles_selected : [userData.roles_selected || ''],
+      target_cities: Array.isArray(userData.target_cities) ? userData.target_cities : [userData.target_cities || ''],
       updated_at: now,
+      // NEW: Email verification fields
+      email_verified: isNewUser ? false : (existingUser?.email_verified || false),
+      verification_token: isNewUser ? verificationToken : (existingUser?.verification_token || null),
       ...(isNewUser && { created_at: now })
     };
+
+    console.log('Upserting user with data:', {
+      email: userRecord.email,
+      email_verified: userRecord.email_verified,
+      languages_spoken: userRecord.languages_spoken,
+      company_types: userRecord.company_types,
+      roles_selected: userRecord.roles_selected,
+      target_cities: userRecord.target_cities
+    });
 
     const { error: upsertError } = await supabase
       .from('users')
       .upsert(userRecord, { onConflict: 'email' });
 
-    if (upsertError) throw upsertError;
+    if (upsertError) {
+      console.error('User upsert failed:', upsertError);
+      throw upsertError;
+    }
 
-    // Generate matches for new users
+    // Send verification email for new users
+    if (isNewUser && verificationToken) {
+      try {
+        await EmailVerificationOracle.sendVerificationEmail(
+          userData.email as string,
+          verificationToken,
+          userData.full_name as string || 'there'
+        );
+        
+        console.log(`📧 Verification email sent to: ${userData.email}`);
+        
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Please check your email to verify your account',
+          email: userData.email,
+          requiresVerification: true
+        });
+      } catch (emailError) {
+        console.error(`❌ Verification email failed for ${userData.email}:`, emailError);
+        // Continue with the process even if email fails
+      }
+    }
+
+    // Generate matches for verified users only
     let matches: any[] = [];
     let matchType: 'ai_success' | 'fallback' | 'ai_failed' | 'skipped' = 'skipped';
     let jobs: any[] = [];
 
-    if (isNewUser) {
-      console.log(`New user: ${userData.email}. Generating matches...`);
+    // Only generate matches for verified users or if this is a verification callback
+    if ((existingUser && existingUser.email_verified) || !isNewUser) {
+      console.log(`Verified user: ${userData.email}. Generating matches...`);
       
       const threeDaysAgo = new Date();
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
@@ -198,8 +270,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Send emails for new users with matches
-    if (isNewUser && matches.length > 0) {
+    // Send emails for verified users with matches
+    if ((existingUser && existingUser.email_verified) && matches.length > 0) {
       try {
         await sendWelcomeEmail({
           to: String(userData.email),
@@ -226,21 +298,15 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      message: isNewUser ? 'New user registered' : 'User updated',
-      user: userData.email,
-      is_new_user: isNewUser,
-      welcome_matches: matches.length,
-      fallback_used: matchType === 'fallback' || matchType === 'ai_failed'
+      message: isNewUser ? 'Verification email sent' : 'User updated successfully',
+      email: userData.email,
+      requiresVerification: isNewUser,
+      matchesGenerated: matches.length
     });
 
-  } catch (error: unknown) {
-    if (error instanceof z.ZodError) {
-      console.error('Validation error:', error.errors);
-      return NextResponse.json({ error: 'Invalid request data' }, { status: 400 });
-    }
-
-    console.error('Webhook error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  } catch (error) {
+    console.error('❌ Webhook error:', error);
+    return NextResponse.json({ error: 'Registration failed' }, { status: 500 });
   }
 }
 

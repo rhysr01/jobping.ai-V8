@@ -2,7 +2,8 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 import { Job } from './types';
-import { atomicUpsertJobs, extractPostingDate } from '../Utils/jobMatching';
+import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
+import { PerformanceMonitor } from '../Utils/performanceMonitor';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -10,6 +11,53 @@ const USER_AGENTS = [
 ];
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// NEW: Simple Browser Pool for enhanced scraping
+class SimpleBrowserPool {
+  private static browsers: any[] = [];
+  private static maxSize = 3;
+
+  static async getBrowser() {
+    if (this.browsers.length > 0) {
+      const browser = this.browsers.pop();
+      console.log(`🔄 Reusing browser (${this.browsers.length} remaining)`);
+      return browser;
+    }
+
+    console.log('🆕 Creating new browser');
+    try {
+      const puppeteer = require('puppeteer');
+      return await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-dev-shm-usage']
+      });
+    } catch (error) {
+      console.log('⚠️ Puppeteer not available, falling back to axios');
+      return null;
+    }
+  }
+
+  static async returnBrowser(browser: any) {
+    if (!browser) return;
+    
+    if (this.browsers.length < this.maxSize) {
+      try {
+        // Reset browser state
+        const pages = await browser.pages();
+        for (const page of pages.slice(1)) {
+          await page.close();
+        }
+        this.browsers.push(browser);
+        console.log(`✅ Browser returned to pool`);
+      } catch (error) {
+        console.log('⚠️ Error returning browser to pool, closing instead');
+        await browser.close();
+      }
+    } else {
+      await browser.close();
+    }
+  }
+}
 
 async function backoffRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
   let attempt = 0;
@@ -37,22 +85,39 @@ export async function scrapeGreenhouse(company: {
 }, runId: string): Promise<Job[]> {
   const jobs: Job[] = [];
   const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+  const browser = await SimpleBrowserPool.getBrowser();
+  const scrapeStart = Date.now();
   
   try {
     await sleep(500 + Math.random() * 1500);
 
-    const { data: html } = await backoffRetry(() =>
-      axios.get(company.url, {
-        headers: {
-          'User-Agent': userAgent,
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Accept-Encoding': 'gzip, deflate',
-          'Cache-Control': 'no-cache',
-        },
-        timeout: 15000,
-      })
-    );
+    let html: string;
+    
+    if (browser) {
+      // Use browser pool for enhanced scraping
+      console.log(`🌐 Using browser pool for ${company.name} scraping`);
+      const page = await browser.newPage();
+      await page.setUserAgent(userAgent);
+      await page.goto(company.url, { waitUntil: 'networkidle2', timeout: 15000 });
+      html = await page.content();
+      await page.close();
+    } else {
+      // Fallback to axios
+      console.log(`📡 Using axios fallback for ${company.name} scraping`);
+      const { data } = await backoffRetry(() =>
+        axios.get(company.url, {
+          headers: {
+            'User-Agent': userAgent,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Cache-Control': 'no-cache',
+          },
+          timeout: 15000,
+        })
+      );
+      html = data;
+    }
 
     const $ = cheerio.load(html);
     
@@ -93,11 +158,18 @@ export async function scrapeGreenhouse(company: {
     const validJobs = processedJobs.filter((job): job is Job => job !== null);
     console.log(`✅ Scraped ${validJobs.length} graduate jobs from ${company.name}`);
     
+    // Track performance
+    PerformanceMonitor.trackDuration(`greenhouse_scraping_${company.name}`, scrapeStart);
+    
     return validJobs;
     
   } catch (error: any) {
     console.error(`❌ Greenhouse scrape failed for ${company.name}:`, error.message);
+    PerformanceMonitor.trackDuration(`greenhouse_scraping_${company.name}`, scrapeStart);
     return [];
+  } finally {
+    // Return browser to pool
+    await SimpleBrowserPool.returnBrowser(browser);
   }
 }
 
@@ -177,14 +249,12 @@ async function processJobElement(
     posted_at: postedAt,
     scraper_run_id: runId,
     company_profile_url: company.url,
+    scrape_timestamp: new Date().toISOString(),
+    original_posted_date: postedAt,
+    last_seen_at: new Date().toISOString(),
+    is_active: true,
+    freshness_tier: undefined,
     created_at: new Date().toISOString(),
-    extracted_posted_date: dateExtraction.success ? dateExtraction.date : undefined,
-    // Add missing required fields
-    professional_expertise: '',
-    start_date: '',
-    visa_status: '',
-    entry_level_preference: '',
-    career_path: '',
   };
 
   return job;
@@ -272,11 +342,23 @@ function analyzeJobContent(title: string, description: string) {
   const level = experienceLevel === 'internship' ? 'internship' : 
                 experienceLevel === 'graduate' ? 'graduate' : 'entry-level';
   
+  // Extract professional expertise using the new function
+  const professionalExpertise = extractProfessionalExpertise(title, description);
+  
+  // Extract career path using the new function
+  const careerPath = extractCareerPath(title, description);
+  
+  // Extract start date using the new function
+  const startDate = extractStartDate(description);
+  
   return {
     experienceLevel,
     workEnv,
     languages,
-    level
+    level,
+    professionalExpertise,
+    careerPath,
+    startDate
   };
 }
 

@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 import { Job } from './types';
-import { atomicUpsertJobs, extractPostingDate } from '../Utils/jobMatching';
+import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -284,14 +284,12 @@ async function processWorkdayJob(post: any, company: any, runId: string, userAge
     posted_at: postedAt,
     scraper_run_id: runId,
     company_profile_url: company.url,
+    scrape_timestamp: new Date().toISOString(),
+    original_posted_date: post.postedDate || post.datePosted || postedAt,
+    last_seen_at: new Date().toISOString(),
+    is_active: true,
+    freshness_tier: undefined,
     created_at: new Date().toISOString(),
-    extracted_posted_date: post.postedDate || post.datePosted,
-    // Add missing required fields
-    professional_expertise: '',
-    start_date: '',
-    visa_status: '',
-    entry_level_preference: '',
-    career_path: '',
   };
 
   return job;
@@ -365,14 +363,12 @@ async function processWorkdayHTMLElement(
     posted_at: postedAt,
     scraper_run_id: runId,
     company_profile_url: company.url,
+    scrape_timestamp: new Date().toISOString(),
+    original_posted_date: dateExtraction.success && dateExtraction.date ? dateExtraction.date : postedAt,
+    last_seen_at: new Date().toISOString(),
+    is_active: true,
+    freshness_tier: undefined,
     created_at: new Date().toISOString(),
-    extracted_posted_date: dateExtraction.success ? dateExtraction.date : undefined,
-    // Add missing required fields
-    professional_expertise: '',
-    start_date: '',
-    visa_status: '',
-    entry_level_preference: '',
-    career_path: '',
   };
 }
 
@@ -456,11 +452,23 @@ function analyzeWorkdayJobContent(title: string, description: string, apiData?: 
   const level = experienceLevel === 'internship' ? 'internship' : 
                 experienceLevel === 'graduate' ? 'graduate' : 'entry-level';
   
+  // Extract professional expertise using the new function
+  const professionalExpertise = extractProfessionalExpertise(title, description);
+  
+  // Extract career path using the new function
+  const careerPath = extractCareerPath(title, description);
+  
+  // Extract start date using the new function
+  const startDate = extractStartDate(description);
+  
   return {
     experienceLevel,
     workEnv,
     languages,
-    level
+    level,
+    professionalExpertise,
+    careerPath,
+    startDate
   };
 }
 

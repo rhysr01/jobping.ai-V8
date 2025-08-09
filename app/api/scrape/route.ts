@@ -4,27 +4,11 @@ import { scrapeLever } from '../../../scrapers/lever';
 import { scrapeWorkday } from '../../../scrapers/workday';
 import { scrapeRemoteOK } from '../../../scrapers/remoteok';
 import { atomicUpsertJobs } from '../../../Utils/jobMatching';
+import { SecurityMiddleware, addSecurityHeaders, extractUserData, extractRateLimit } from '../../../Utils/securityMiddleware';
 import crypto from 'crypto';
 
-// Rate limiting for scraping endpoints
-const scrapeRateLimit = new Map<string, { count: number; resetTime: number }>();
-
-function isScrapeRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const limit = scrapeRateLimit.get(ip);
-  
-  if (!limit || now > limit.resetTime) {
-    scrapeRateLimit.set(ip, { count: 1, resetTime: now + 60000 }); // 1 minute window
-    return false;
-  }
-  
-  if (limit.count >= 5) { // Max 5 scrape requests per minute
-    return true;
-  }
-  
-  limit.count++;
-  return false;
-}
+// Initialize security middleware
+const securityMiddleware = new SecurityMiddleware();
 
 // Company configurations for different platforms
 const COMPANIES = {
@@ -45,28 +29,26 @@ const COMPANIES = {
 };
 
 export async function POST(req: NextRequest) {
-  // Rate limiting
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
-            req.headers.get('x-real-ip') || 
-            'unknown-ip';
-  
-  if (isScrapeRateLimited(ip)) {
-    return NextResponse.json(
-      { error: 'Rate limited. Too many scrape requests.' },
-      { status: 429 }
-    );
-  }
-
-  // Security: Check for API key
-  const apiKey = req.headers.get('x-api-key');
-  if (!apiKey || apiKey !== process.env.SCRAPE_API_KEY) {
-    return NextResponse.json(
-      { error: 'Unauthorized. Valid API key required.' },
-      { status: 401 }
-    );
-  }
-
   try {
+    // Enhanced authentication and rate limiting
+    const authResult = await securityMiddleware.authenticate(req);
+    
+    if (!authResult.success) {
+      const response = securityMiddleware.createErrorResponse(
+        authResult.error || 'Authentication failed',
+        authResult.status || 401,
+        authResult.rateLimit ? { retryAfter: authResult.rateLimit.retryAfter } : undefined
+      );
+      return addSecurityHeaders(response);
+    }
+
+    // Extract user data and rate limit info
+    const userData = authResult.userData;
+    const rateLimit = authResult.rateLimit;
+
+    // Log the scrape request
+    console.log(`🚀 Scrape request from user ${userData?.userId || 'unknown'} (tier: ${userData?.tier || 'unknown'})`);
+
     const { platforms = ['all'], companies = [] } = await req.json();
     const runId = crypto.randomUUID();
     const results: any = {};
@@ -182,30 +164,66 @@ export async function POST(req: NextRequest) {
 
     console.log(`✅ Scrape run ${runId} completed`);
 
-    return NextResponse.json({
+    // Create success response with rate limit headers
+    const response = securityMiddleware.createSuccessResponse({
       success: true,
       runId,
       timestamp: new Date().toISOString(),
-      results
-    });
+      results,
+      user: {
+        tier: userData?.tier || 'unknown',
+        userId: userData?.userId || 'unknown'
+      }
+    }, rateLimit);
+
+    return addSecurityHeaders(response);
 
   } catch (error: any) {
     console.error('❌ Scrape endpoint error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
+    const response = securityMiddleware.createErrorResponse(
+      'Internal server error',
+      500,
+      { details: error.message }
     );
+    return addSecurityHeaders(response);
   }
 }
 
-export async function GET() {
-  return NextResponse.json({
-    message: 'Scrape API active',
-    endpoints: {
-      POST: 'Trigger scraping for specified platforms',
-      GET: 'API status'
-    },
-    platforms: ['remoteok', 'greenhouse', 'lever', 'workday', 'all'],
-    timestamp: new Date().toISOString()
-  });
+export async function GET(req: NextRequest) {
+  try {
+    // Enhanced authentication and rate limiting
+    const authResult = await securityMiddleware.authenticate(req);
+    
+    if (!authResult.success) {
+      const response = securityMiddleware.createErrorResponse(
+        authResult.error || 'Authentication failed',
+        authResult.status || 401
+      );
+      return addSecurityHeaders(response);
+    }
+
+    const response = securityMiddleware.createSuccessResponse({
+      message: 'Scrape API active',
+      endpoints: {
+        POST: 'Trigger scraping for specified platforms',
+        GET: 'API status'
+      },
+      platforms: ['remoteok', 'greenhouse', 'lever', 'workday', 'all'],
+      timestamp: new Date().toISOString(),
+      user: {
+        tier: authResult.userData?.tier || 'unknown',
+        userId: authResult.userData?.userId || 'unknown'
+      }
+    }, authResult.rateLimit);
+
+    return addSecurityHeaders(response);
+  } catch (error: any) {
+    console.error('❌ Scrape GET endpoint error:', error);
+    const response = securityMiddleware.createErrorResponse(
+      'Internal server error',
+      500,
+      { details: error.message }
+    );
+    return addSecurityHeaders(response);
+  }
 }
