@@ -492,13 +492,13 @@ function preFilterJobsByUserPreferences(jobs: JobWithFreshness[], user: any): Jo
   
   // Filter by experience level keywords in title
   if (user.experience_level) {
-    const experienceKeywords = {
+    const experienceKeywords: Record<string, string[]> = {
       'entry': ['intern', 'internship', 'graduate', 'grad', 'entry', 'junior', 'trainee', 'associate'],
       'mid': ['analyst', 'specialist', 'coordinator', 'associate'],
       'senior': ['senior', 'lead', 'principal', 'manager', 'director']
     };
     
-    const keywords = experienceKeywords[user.experience_level] || experienceKeywords['entry'];
+    const keywords = experienceKeywords[user.experience_level as keyof typeof experienceKeywords] || experienceKeywords['entry'];
     filteredJobs = filteredJobs.filter(job =>
       keywords.some(keyword => job.title.toLowerCase().includes(keyword))
     );
@@ -974,8 +974,8 @@ export async function GET(req: NextRequest) {
         const tierMatches = groupedMatches[tier];
         acc[tier] = {
           total_matches: tierMatches.length,
-          avg_match_score: tierMatches.reduce((sum, m) => sum + (m.match_score || 0), 0) / tierMatches.length,
-          match_quality_distribution: tierMatches.reduce((dist, m) => {
+          avg_match_score: tierMatches.reduce((sum: number, m: any) => sum + (m.match_score || 0), 0) / tierMatches.length,
+          match_quality_distribution: tierMatches.reduce((dist: Record<string, number>, m: any) => {
             const quality = m.match_quality || 'unknown';
             dist[quality] = (dist[quality] || 0) + 1;
             return dist;

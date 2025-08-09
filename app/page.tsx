@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Script from 'next/script';
 import Head from 'next/head';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { GraduationCap, Sparkles, Zap, Target, ArrowRight, Users, CheckCircle2, Star, Loader2, ChevronDown, ChevronUp, Menu, X, Accessibility, TrendingUp } from 'lucide-react';
+import { GraduationCap, Sparkles, Zap, Target, ArrowRight, Users, CheckCircle2, Star, Loader2, ChevronDown, ChevronUp, Menu, X, Accessibility } from 'lucide-react';
 import PricingSelector from './priceselector';
 import MagneticButton from './components/MagneticButton';
 
@@ -37,11 +37,11 @@ export default function Home() {
   const parallaxY = useTransform(scrollY, [0, 1000], [0, -200]);
 
   // Analytics tracking
-  const trackEvent = useCallback((event: string, properties?: Record<string, any>) => {
+  const trackEvent = useCallback((event: string, properties?: Record<string, unknown>) => {
     if (typeof window !== 'undefined') {
       // Google Analytics
-      if ((window as any).gtag) {
-        (window as any).gtag('event', event, properties);
+      if ((window as unknown as { gtag?: (command: string, event: string, properties?: Record<string, unknown>) => void }).gtag) {
+        (window as unknown as { gtag?: (command: string, event: string, properties?: Record<string, unknown>) => void }).gtag?.('event', event, properties);
       }
       // Custom tracking
       console.log('Track:', event, properties);
@@ -633,7 +633,7 @@ export default function Home() {
                     <div className="text-gray-500 text-sm">{testimonial.role} at {testimonial.company}</div>
                   </div>
                 </div>
-                <p className="text-gray-300 italic mb-4">"{testimonial.quote}"</p>
+                <p className="text-gray-300 italic mb-4">&quot;{testimonial.quote}&quot;</p>
                 <div className="flex gap-1">
                   {[...Array(testimonial.rating)].map((_, j) => (
                     <Star key={j} className="w-4 h-4 fill-yellow-400 text-yellow-400" />

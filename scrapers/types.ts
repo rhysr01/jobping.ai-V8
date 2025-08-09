@@ -124,6 +124,7 @@ export interface TallyFormData {
   visa_status: string;                 // "What's your visa/work authorization status?"
   entry_level_preference: string;      // "What level of experience are you looking for?"
   company_types: string;               // "What types of companies interest you?" (comma-separated)
+  target_cities?: string;              // "What cities are you targeting?" (comma-separated)
 }
 
 // Enhanced company structure for your 50-company list
@@ -186,7 +187,7 @@ export function mapTallyDataToUser(tallyData: TallyFormData): User {
     languages_spoken: tallyData.languages_spoken.split(',').map(lang => lang.trim()),
     company_types: tallyData.company_types.split(',').map(type => type.trim()),
     roles_selected: tallyData.roles_selected.split(',').map(role => role.trim()),
-    target_cities: tallyData.target_cities.split(',').map(city => city.trim()),
+    target_cities: tallyData.target_cities?.split(',').map(city => city.trim()) || [],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -244,6 +245,9 @@ export function extractTallyFormData(payload: TallyWebhookPayload): TallyFormDat
       case 'company_types':
       case 'company_preference':
         userData.company_types = value;
+        break;
+      case 'target_cities':
+        userData.target_cities = value;
         break;
     }
   });

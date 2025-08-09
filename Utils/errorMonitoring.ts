@@ -1,4 +1,4 @@
-xport class ErrorMonitoringOracle {
+export class ErrorMonitoringOracle {
     private static errors: any[] = [];
     private static readonly MAX_ERRORS = 1000;
   

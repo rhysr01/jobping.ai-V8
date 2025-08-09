@@ -1,11 +1,10 @@
 'use client';
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircleIcon, Sparkles, Zap, Users, Crown } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Crown, Users } from 'lucide-react';
 
 const FeatureItem = ({ text, highlight = false }: { text: string; highlight?: boolean }) => (
   <li className={`flex items-start gap-3 text-base ${highlight ? 'text-white' : 'text-white/70'}`}>
-    <CheckCircleIcon className={`w-5 h-5 ${highlight ? 'text-white' : 'text-white/50'} flex-shrink-0 mt-0.5`} />
     <span className={highlight ? 'font-medium' : 'font-normal'}>{text}</span>
   </li>
 );
@@ -30,7 +29,6 @@ interface PricingSelectorProps {
 
 export default function PricingSelector({ onSelect }: PricingSelectorProps = {}) {
   const [activeTab, setActiveTab] = useState<'free' | 'premium'>('premium');
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   const plans = {
     free: {
@@ -132,93 +130,87 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
         </motion.div>
 
         {/* Pricing Cards */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
-          >
-            {activeTab === 'free' ? (
-              // Free Plan - Single Card
-              <div className="max-w-md mx-auto">
-                <motion.div
-                  className="pricing-card p-8 text-center relative"
-                  whileHover={{ y: -6 }}
-                  onHoverStart={() => setHoveredCard('free')}
-                  onHoverEnd={() => setHoveredCard(null)}
-                >
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-bold text-white mb-2">{plans.free.name}</h3>
-                    <p className="text-white/60 text-sm mb-4">{plans.free.tagline}</p>
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+        >
+          {activeTab === 'free' ? (
+            // Free Plan - Single Card
+            <div className="max-w-md mx-auto">
+              <motion.div
+                className="pricing-card p-8 text-center relative"
+                whileHover={{ y: -6 }}
+              >
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-white mb-2">{plans.free.name}</h3>
+                  <p className="text-white/60 text-sm mb-4">{plans.free.tagline}</p>
+                </div>
+
+                <div className="mb-8">
+                  <div className="text-4xl font-bold text-white mb-1">
+                    {plans.free.price}
+                    <span className="text-lg font-normal text-white/60 ml-1">/{plans.free.period}</span>
                   </div>
+                  <p className="text-white/50 text-sm">{plans.free.description}</p>
+                </div>
 
-                  <div className="mb-8">
-                    <div className="text-4xl font-bold text-white mb-1">
-                      {plans.free.price}
-                      <span className="text-lg font-normal text-white/60 ml-1">/{plans.free.period}</span>
-                    </div>
-                    <p className="text-white/50 text-sm">{plans.free.description}</p>
+                <ul className="space-y-4 text-left mb-8">
+                  {plans.free.features.map((feature, index) => (
+                    <FeatureItem key={index} text={feature} />
+                  ))}
+                </ul>
+
+                <button className="w-full glass-button py-4 text-base font-semibold">
+                  {plans.free.cta}
+                </button>
+              </motion.div>
+            </div>
+          ) : (
+            // Premium Plan - Single Card (expand as needed)
+            <div className="max-w-md mx-auto">
+              <motion.div
+                className="pricing-card pricing-card-premium p-8 text-center relative"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                whileHover={{ y: -8, scale: 1.02 }}
+              >
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <Badge variant="popular">
+                    <Users className="w-3 h-3" />
+                    MOST POPULAR
+                  </Badge>
+                </div>
+
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-white mb-2">{plans.premium.name}</h3>
+                  <p className="text-white/60 text-sm mb-4">{plans.premium.tagline}</p>
+                </div>
+
+                <div className="mb-8">
+                  <div className="text-4xl font-bold text-white mb-1">
+                    {plans.premium.price}
+                    <span className="text-lg font-normal text-white/60 ml-1">/{plans.premium.period}</span>
                   </div>
+                  <p className="text-white/50 text-sm">{plans.premium.description}</p>
+                </div>
 
-                  <ul className="space-y-4 text-left mb-8">
-                    {plans.free.features.map((feature, index) => (
-                      <FeatureItem key={index} text={feature} />
-                    ))}
-                  </ul>
+                <ul className="space-y-4 text-left mb-8">
+                  {plans.premium.features.map((feature, index) => (
+                    <FeatureItem key={index} text={feature} />
+                  ))}
+                </ul>
 
-                  <button className="w-full glass-button py-4 text-base font-semibold">
-                    {plans.free.cta}
-                  </button>
-                </motion.div>
-              </div>
-            ) : (
-              // Premium Plan - Single Card (expand as needed)
-              <div className="max-w-md mx-auto">
-                <motion.div
-                  className="pricing-card pricing-card-premium p-8 text-center relative"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 }}
-                  whileHover={{ y: -8, scale: 1.02 }}
-                  onHoverStart={() => setHoveredCard('monthly')}
-                  onHoverEnd={() => setHoveredCard(null)}
-                >
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge variant="popular">
-                      <Users className="w-3 h-3" />
-                      MOST POPULAR
-                    </Badge>
-                  </div>
-
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-bold text-white mb-2">{plans.premium.name}</h3>
-                    <p className="text-white/60 text-sm mb-4">{plans.premium.tagline}</p>
-                  </div>
-
-                  <div className="mb-8">
-                    <div className="text-4xl font-bold text-white mb-1">
-                      {plans.premium.price}
-                      <span className="text-lg font-normal text-white/60 ml-1">/{plans.premium.period}</span>
-                    </div>
-                    <p className="text-white/50 text-sm">{plans.premium.description}</p>
-                  </div>
-
-                  <ul className="space-y-4 text-left mb-8">
-                    {plans.premium.features.map((feature, index) => (
-                      <FeatureItem key={index} text={feature} />
-                    ))}
-                  </ul>
-
-                  <button className="w-full glass-button py-4 text-base font-semibold">
-                    {plans.premium.cta}
-                  </button>
-                </motion.div>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+                <button className="w-full glass-button py-4 text-base font-semibold">
+                  {plans.premium.cta}
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </motion.div>
       </div>
     </section>
   );
