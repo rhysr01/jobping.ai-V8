@@ -72,9 +72,9 @@ export class RateLimiter {
       
       if (currentCount >= limit) {
         // Get oldest request time for reset calculation
-        // FIXED: Redis v4 compatible zRange
+        // FIXED: Redis v4 compatible zRange with null safety
         const oldestRequest = await this.redis.zRangeWithScores(key, 0, 0);
-        const resetTime = oldestRequest.length > 0 
+        const resetTime = oldestRequest && oldestRequest.length > 0 && oldestRequest[0] && typeof oldestRequest[0].score === 'number'
           ? oldestRequest[0].score + windowMs 
           : now + windowMs;
 

@@ -54,7 +54,7 @@ function getOpenAIClient() {
   });
 }
 
-// Extract user data with business rules
+// Extract user data with business rules - FIXED VERSION
 function extractUserData(fields: NonNullable<TallyWebhookData['data']>['fields']) {
   const userData: Record<string, string | string[] | boolean> = { 
     email: ''
@@ -78,10 +78,10 @@ function extractUserData(fields: NonNullable<TallyWebhookData['data']>['fields']
       userData.career_path = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('email')) {
       userData.email = Array.isArray(field.value) ? field.value[0] : field.value;
-    } else if (key.includes('name') && key.includes('full')) {
+    } else if (key.includes('name')) {  // 🔥 FIXED: Removed "&& key.includes('full')"
       userData.full_name = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('expertise') || key.includes('background')) {
-      userData.professional_experience = Array.isArray(field.value) ? field.value[0] : field.value;
+      userData.professional_expertise = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('start_date') || key.includes('availability')) {
       userData.start_date = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('work_environment') || key.includes('work_preference')) {
@@ -191,6 +191,7 @@ export async function POST(req: NextRequest) {
 
     console.log('Upserting user with data:', {
       email: userRecord.email,
+      full_name: userRecord.full_name,
       email_verified: userRecord.email_verified,
       languages_spoken: userRecord.languages_spoken,
       company_types: userRecord.company_types,

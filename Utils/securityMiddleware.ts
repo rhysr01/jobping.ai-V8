@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { APIKeyManager, APIKeyUsageTracker } from './apiKeyManager';
 import { rateLimiter } from './rateLimiter';
+import { simpleRateLimiter } from './simpleRateLimiter';
 
 /**
  * Enhanced security middleware with comprehensive protection
@@ -170,7 +171,7 @@ export class SecurityMiddleware {
   createSuccessResponse(data: any, rateLimit?: any): NextResponse {
     const response = NextResponse.json(data);
     
-    if (rateLimit) {
+    if (rateLimit && rateLimit.remaining !== undefined && rateLimit.resetTime !== undefined) {
       response.headers.set('X-RateLimit-Remaining', rateLimit.remaining.toString());
       response.headers.set('X-RateLimit-Reset', rateLimit.resetTime.toString());
       response.headers.set('X-RateLimit-Limit', '100'); // Example limit

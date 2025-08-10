@@ -18,7 +18,8 @@
     "test:pilot": "node scripts/pilot-testing.js",
     "test:verification": "node scripts/pilot-testing.js --verification-only",
     "test:health": "node scripts/pilot-testing.js --health-only",
-    "test:api-full": "node api-health-check.js"
+    "test:api-full": "node api-health-check.js",
+    "test:rls": "node apply_rls_fix.js"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.6",

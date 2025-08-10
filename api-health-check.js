@@ -76,7 +76,7 @@ class APIHealthChecker {
     console.log('🔍 Testing System Health (GET endpoints)...');
     
     const healthChecks = [
-      { name: 'Scrape API Status', url: `${CONFIG.BASE_URL}/api/scrape`, method: 'GET' },
+      { name: 'Scrape API Status', url: `${CONFIG.BASE_URL}/api/scrape`, method: 'GET', requiresAuth: true },
       { name: 'Match Users API', url: `${CONFIG.BASE_URL}/api/match-users?email=test@example.com`, method: 'GET' },
       { name: 'Webhook Endpoint', url: `${CONFIG.BASE_URL}/api/webhook-tally`, method: 'GET' },
       { name: 'Verify Email Endpoint', url: `${CONFIG.BASE_URL}/api/verify-email`, method: 'GET' },
@@ -86,11 +86,18 @@ class APIHealthChecker {
 
     for (const check of healthChecks) {
       try {
-        const response = await axios({
+        const requestConfig = {
           method: check.method,
           url: check.url,
           timeout: CONFIG.TIMEOUT
-        });
+        };
+        
+        // Add API key header if authentication is required
+        if (check.requiresAuth) {
+          requestConfig.headers = { 'x-api-key': CONFIG.API_KEY };
+        }
+        
+        const response = await axios(requestConfig);
         
         this.results.push({
           test: 'System Health',
