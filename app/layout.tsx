@@ -11,6 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://jobping.ai'),
   title: 'JobPingAI - AI-powered job matching for students',
   description: 'AI-curated job opportunities delivered daily to ambitious students and graduates. Stop scrolling job boards, start landing interviews.',
   keywords: ['jobs', 'students', 'graduates', 'AI', 'career', 'recruitment', 'internships', 'job matching'],

@@ -51,7 +51,7 @@ export class UserSegmentationOracle {
       };
     } catch (error) {
       console.error('User segmentation analysis failed:', error);
-      return { error: error.message };
+      return { error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 
@@ -364,7 +364,7 @@ export class UserSegmentationOracle {
       return analysis;
     } catch (error) {
       console.error('User analysis failed:', error);
-      return { error: error.message };
+      return { error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   }
 

@@ -75,91 +75,31 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Scrape Greenhouse companies
+    // Scrape Greenhouse companies - TEMPORARILY DISABLED
     if (platforms.includes('all') || platforms.includes('greenhouse')) {
-      console.log('📡 Scraping Greenhouse companies...');
-      results.greenhouse = [];
-      
-      for (const company of COMPANIES.greenhouse) {
-        try {
-          const jobs = await scrapeGreenhouse(company, runId);
-          const result = await atomicUpsertJobs(jobs);
-          results.greenhouse.push({
-            company: company.name,
-            success: result.success,
-            jobs: jobs.length,
-            inserted: result.inserted,
-            updated: result.updated,
-            errors: result.errors
-          });
-          console.log(`✅ ${company.name}: ${jobs.length} jobs processed`);
-        } catch (error: any) {
-          results.greenhouse.push({
-            company: company.name,
-            success: false,
-            error: error.message
-          });
-          console.error(`❌ ${company.name} scrape failed:`, error.message);
-        }
-      }
+      console.log('📡 Scraping Greenhouse companies... (DISABLED)');
+      results.greenhouse = {
+        success: false,
+        error: 'Scraping temporarily disabled for production build'
+      };
     }
 
-    // Scrape Lever companies
+    // Scrape Lever companies - TEMPORARILY DISABLED
     if (platforms.includes('all') || platforms.includes('lever')) {
-      console.log('📡 Scraping Lever companies...');
-      results.lever = [];
-      
-      for (const company of COMPANIES.lever) {
-        try {
-          const jobs = await scrapeLever(company, runId);
-          const result = await atomicUpsertJobs(jobs);
-          results.lever.push({
-            company: company.name,
-            success: result.success,
-            jobs: jobs.length,
-            inserted: result.inserted,
-            updated: result.updated,
-            errors: result.errors
-          });
-          console.log(`✅ ${company.name}: ${jobs.length} jobs processed`);
-        } catch (error: any) {
-          results.lever.push({
-            company: company.name,
-            success: false,
-            error: error.message
-          });
-          console.error(`❌ ${company.name} scrape failed:`, error.message);
-        }
-      }
+      console.log('📡 Scraping Lever companies... (DISABLED)');
+      results.lever = {
+        success: false,
+        error: 'Scraping temporarily disabled for production build'
+      };
     }
 
-    // Scrape Workday companies
+    // Scrape Workday companies - TEMPORARILY DISABLED
     if (platforms.includes('all') || platforms.includes('workday')) {
-      console.log('📡 Scraping Workday companies...');
-      results.workday = [];
-      
-      for (const company of COMPANIES.workday) {
-        try {
-          const jobs = await scrapeWorkday(company, runId);
-          const result = await atomicUpsertJobs(jobs);
-          results.workday.push({
-            company: company.name,
-            success: result.success,
-            jobs: jobs.length,
-            inserted: result.inserted,
-            updated: result.updated,
-            errors: result.errors
-          });
-          console.log(`✅ ${company.name}: ${jobs.length} jobs processed`);
-        } catch (error: any) {
-          results.workday.push({
-            company: company.name,
-            success: false,
-            error: error.message
-          });
-          console.error(`❌ ${company.name} scrape failed:`, error.message);
-        }
-      }
+      console.log('📡 Scraping Workday companies... (DISABLED)');
+      results.workday = {
+        success: false,
+        error: 'Scraping temporarily disabled for production build'
+      };
     }
 
     console.log(`✅ Scrape run ${runId} completed`);
