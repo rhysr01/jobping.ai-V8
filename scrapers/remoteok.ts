@@ -21,23 +21,9 @@ class SimpleBrowserPool {
   private static maxSize = 3;
 
   static async getBrowser() {
-    if (this.browsers.length > 0) {
-      const browser = this.browsers.pop();
-      console.log(`🔄 Reusing browser (${this.browsers.length} remaining)`);
-      return browser;
-    }
-
-    console.log('🆕 Creating new browser');
-    try {
-      const puppeteer = require('puppeteer');
-      return await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-dev-shm-usage']
-      });
-    } catch (error) {
-      console.log('⚠️ Puppeteer not available, falling back to axios');
-      return null;
-    }
+    // Puppeteer not installed - falling back to axios
+    console.log('⚠️ Puppeteer not available, using axios only');
+    return null;
   }
 
   static async returnBrowser(browser: any) {
@@ -84,7 +70,7 @@ export async function scrapeRemoteOK(runId: string): Promise<Job[]> {
   const jobs: Job[] = [];
   const url = 'https://remoteok.com/';
   const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-  const browser = await SimpleBrowserPool.getBrowser();
+  const browser: any = await SimpleBrowserPool.getBrowser();
   const scrapeStart = Date.now();
 
   try {

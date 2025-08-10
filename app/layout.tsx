@@ -5,15 +5,15 @@ import { Inter } from 'next/font/google';
 
 const inter = Inter({
   subsets: ['latin'],
-  weight: ['200', '300', '400', '500', '600', '700'],
+  weight: ['200', '300', '400', '500', '600', '700', '800', '900'],
   display: 'swap',
   variable: '--font-inter'
 });
 
 export const metadata: Metadata = {
-  title: 'JobPingAI - AI-powered roles for graduates',
-  description: 'AI-curated job opportunities delivered daily to ambitious graduates. Join 10,000+ students finding their dream careers.',
-  keywords: ['jobs', 'graduates', 'AI', 'career', 'recruitment', 'internships'],
+  title: 'JobPingAI - AI-powered job matching for students',
+  description: 'AI-curated job opportunities delivered daily to ambitious students and graduates. Stop scrolling job boards, start landing interviews.',
+  keywords: ['jobs', 'students', 'graduates', 'AI', 'career', 'recruitment', 'internships', 'job matching'],
   authors: [{ name: 'JobPingAI Team' }],
   creator: 'JobPingAI',
   publisher: 'JobPingAI',
@@ -23,8 +23,8 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: 'JobPingAI - AI-powered roles for graduates',
-    description: 'AI-curated job opportunities delivered daily to ambitious graduates. Join 10,000+ students finding their dream careers.',
+    title: 'JobPingAI - AI-powered job matching for students',
+    description: 'AI-curated job opportunities delivered daily to ambitious students and graduates. Stop scrolling job boards, start landing interviews.',
     url: 'https://www.jobping.ai',
     siteName: 'JobPingAI',
     images: [
@@ -40,8 +40,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'JobPingAI - AI-powered roles for graduates',
-    description: 'AI-curated job opportunities delivered daily to ambitious graduates.',
+    title: 'JobPingAI - AI-powered job matching for students',
+    description: 'AI-curated job opportunities delivered daily to ambitious students and graduates.',
     images: ['/og-image.png'],
   },
   icons: {
@@ -74,15 +74,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <meta name="theme-color" content="#000000" />
-        <meta name="color-scheme" content="dark" />
+        <meta name="color-scheme" content="light" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
-      <body className="bg-black text-white overflow-x-hidden font-inter selection:bg-white/20">
-        <div className="grain-overlay" />
-        <div className="noise-overlay" />
+      <body className="bg-white text-black overflow-x-hidden font-inter selection:bg-black selection:text-white">
         {children}
       </body>
     </html>
   );
 }
-
-export {};

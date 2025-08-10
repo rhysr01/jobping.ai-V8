@@ -8,7 +8,30 @@ import { PerformanceMonitor } from '../Utils/performanceMonitor';
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0',
 ];
+
+// Enhanced anti-detection headers
+const getRandomHeaders = (userAgent: string) => ({
+  'User-Agent': userAgent,
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,fr;q=0.7,de;q=0.6',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'Cache-Control': 'no-cache',
+  'Pragma': 'no-cache',
+  'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+  'Sec-Ch-Ua-Mobile': '?0',
+  'Sec-Ch-Ua-Platform': '"macOS"',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'none',
+  'Sec-Fetch-User': '?1',
+  'Upgrade-Insecure-Requests': '1',
+  'DNT': '1',
+});
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -106,13 +129,7 @@ export async function scrapeGreenhouse(company: {
       console.log(`📡 Using axios fallback for ${company.name} scraping`);
       const { data } = await backoffRetry(() =>
         axios.get(company.url, {
-          headers: {
-            'User-Agent': userAgent,
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
-            'Cache-Control': 'no-cache',
-          },
+          headers: getRandomHeaders(userAgent),
           timeout: 15000,
         })
       );
@@ -190,11 +207,47 @@ async function processJobElement(
 
   if (!title) return null;
 
-  // Early career filter
+  // Enhanced early career filter with more comprehensive patterns
   const titleLower = title.toLowerCase();
-  const isEarlyCareer = /\b(intern|graduate|entry|junior|trainee|early.?career|new.?grad|recent.?graduate|0[-‒–—]?[12].?years?)\b/.test(titleLower);
-  
-  if (!isEarlyCareer) return null;
+  const isEarlyCareer = /\b(intern|graduate|entry|junior|trainee|early.?career|new.?grad|recent.?graduate|0[-‒–—]?[12].?years?|associate|apprentice|student|co.?op|coop|rotational|development.?program|leadership.?program|accelerator|fellowship|scholarship)\b/.test(titleLower);
+
+  // Additional filtering for experience levels
+  const experienceLevels = [
+    'entry level', 'entry-level', 'entrylevel',
+    'junior', 'jr', 'jr.',
+    'associate', 'assoc',
+    'trainee', 'training',
+    'intern', 'internship',
+    'graduate', 'grad',
+    'new grad', 'new graduate',
+    'recent graduate', 'recent grad',
+    'early career', 'early-career',
+    '0 years', '0-1 years', '0-2 years', '1 year', '1-2 years',
+    'no experience', 'no prior experience',
+    'first role', 'first job',
+    'student', 'student program',
+    'co-op', 'coop', 'cooperative',
+    'rotational', 'rotation',
+    'development program', 'leadership program',
+    'accelerator', 'fellowship'
+  ];
+
+  const hasEarlyCareerKeywords = experienceLevels.some(level => 
+    titleLower.includes(level.toLowerCase())
+  );
+
+  // Enhanced filtering logic
+  if (!isEarlyCareer && !hasEarlyCareerKeywords) {
+    // Additional check for description keywords
+    const description = $el.text().toLowerCase();
+    const descriptionHasEarlyCareer = experienceLevels.some(level => 
+      description.includes(level.toLowerCase())
+    );
+    
+    if (!descriptionHasEarlyCareer) {
+      return null;
+    }
+  }
 
   // Extract URL with better handling
   let jobUrl = $el.find('a').first().attr('href') || '';

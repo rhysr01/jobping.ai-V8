@@ -117,7 +117,7 @@ class PilotTester {
     console.log('🏥 Testing System Health...');
     
     const healthChecks = [
-      { name: 'API Endpoint', url: `${CONFIG.BASE_URL}/api/match-users` },
+      { name: 'API Endpoint', url: `${CONFIG.BASE_URL}/api/match-users?email=test@example.com` },
       { name: 'Webhook Endpoint', url: `${CONFIG.BASE_URL}/api/webhook-tally` },
       { name: 'Verification Endpoint', url: `${CONFIG.BASE_URL}/api/verify-email` }
     ];
@@ -426,25 +426,22 @@ class PilotTester {
       eventId: crypto.randomUUID(),
       eventType: 'FORM_RESPONSE',
       createdAt: new Date().toISOString(),
+      formId: 'pilot-test-form',
+      responseId: crypto.randomUUID(),
       data: {
-        responseId: crypto.randomUUID(),
-        submissionId: crypto.randomUUID(),
-        formId: 'pilot-test-form',
-        formName: 'JobPingAI Pilot Registration',
-        createdAt: new Date().toISOString(),
         fields: [
           { key: 'full_name', label: 'Full Name', type: 'text', value: user.full_name },
           { key: 'email', label: 'Email', type: 'email', value: user.email },
           { key: 'professional_expertise', label: 'Professional Expertise', type: 'text', value: user.professional_expertise },
           { key: 'entry_level_preference', label: 'Entry Level Preference', type: 'text', value: user.entry_level_preference },
-          { key: 'target_cities', label: 'Target Cities', type: 'text', value: user.target_cities },
-          { key: 'languages_spoken', label: 'Languages Spoken', type: 'text', value: user.languages_spoken },
-          { key: 'company_types', label: 'Company Types', type: 'text', value: user.company_types },
-          { key: 'roles_selected', label: 'Roles Selected', type: 'text', value: user.roles_selected },
-          { key: 'career_path', label: 'Career Path', type: 'text', value: user.career_path },
+          { key: 'target_cities', label: 'Target Cities', type: 'text', value: Array.isArray(user.target_cities) ? user.target_cities : [user.target_cities] },
+          { key: 'languages_spoken', label: 'Languages Spoken', type: 'text', value: Array.isArray(user.languages_spoken) ? user.languages_spoken : [user.languages_spoken] },
+          { key: 'company_types', label: 'Company Types', type: 'text', value: Array.isArray(user.company_types) ? user.company_types : [user.company_types] },
+          { key: 'roles_selected', label: 'Roles Selected', type: 'text', value: Array.isArray(user.roles_selected) ? user.roles_selected : [user.roles_selected] },
+          { key: 'career_path', label: 'Career Path', type: 'text', value: Array.isArray(user.career_path) ? user.career_path : [user.career_path] },
           { key: 'start_date', label: 'Start Date', type: 'date', value: user.start_date },
-          { key: 'work_environment', label: 'Work Environment', type: 'text', value: user.work_environment },
-          { key: 'visa_status', label: 'Visa Status', type: 'text', value: user.visa_status }
+          { key: 'work_environment', label: 'Work Environment', type: 'text', value: Array.isArray(user.work_environment) ? user.work_environment : [user.work_environment] },
+          { key: 'visa_status', label: 'Visa Status', type: 'text', value: Array.isArray(user.visa_status) ? user.visa_status : [user.visa_status] }
         ]
       }
     };

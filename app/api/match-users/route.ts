@@ -575,10 +575,24 @@ export async function POST(req: NextRequest) {
 
     // 1. Fetch active users
     const userFetchStart = Date.now();
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('active', true);
+    let usersQuery = supabase.from('users').select('*');
+    
+    // Check if email_verified column exists, if not use a fallback
+    let users: any[] = [];
+    let usersError: any = null;
+    
+    try {
+      const result = await usersQuery.eq('email_verified', true);
+      users = result.data || [];
+      usersError = result.error;
+    } catch (error: any) {
+      // Fallback: fetch all users if email_verified column doesn't exist
+      console.log('email_verified column not found, fetching all users');
+      const result = await supabase.from('users').select('*');
+      users = result.data || [];
+      usersError = result.error;
+    }
+    
     PerformanceMonitor.trackDuration('user_fetch', userFetchStart);
 
     if (usersError) {
@@ -587,11 +601,21 @@ export async function POST(req: NextRequest) {
     }
 
     if (!users || users.length === 0) {
-      console.log('No active users found');
-      return NextResponse.json({ message: 'No active users found' });
+      console.log('No users found');
+      return NextResponse.json({ message: 'No users found' });
     }
 
     console.log(`Found ${users.length} active users to process`);
+
+    // Transform user data to match expected format (handle TEXT[] arrays from your schema)
+    const transformedUsers = users.map((user: any) => ({
+      ...user,
+      target_cities: Array.isArray(user.target_cities) ? user.target_cities : (user.target_cities ? [user.target_cities] : []),
+      languages_spoken: Array.isArray(user.languages_spoken) ? user.languages_spoken : (user.languages_spoken ? [user.languages_spoken] : []),
+      company_types: Array.isArray(user.company_types) ? user.company_types : (user.company_types ? [user.company_types] : []),
+      roles_selected: Array.isArray(user.roles_selected) ? user.roles_selected : (user.roles_selected ? [user.roles_selected] : []),
+      professional_expertise: user.professional_experience || '',
+    }));
 
     // ADVANCED: User segmentation analysis
     const userSegmentationStart = Date.now();
@@ -669,7 +693,7 @@ export async function POST(req: NextRequest) {
     let totalAIProcessingTime = 0;
     let totalTierDistributionTime = 0;
     
-    for (const user of users) {
+    for (const user of transformedUsers) {
       try {
         console.log(`Processing matches for ${user.email} (tier: ${user.tier || 'free'})`);
         
@@ -968,7 +992,7 @@ export async function GET(req: NextRequest) {
           total_matches: tierMatches.length,
           avg_match_score: tierMatches.reduce((sum: number, m: any) => sum + (m.match_score || 0), 0) / tierMatches.length,
           match_quality_distribution: tierMatches.reduce((dist: Record<string, number>, m: any) => {
-            const quality = m.match_quality || 'unknown';s
+            const quality = m.match_quality || 'unknown';
             dist[quality] = (dist[quality] || 0) + 1;
             return dist;
           }, {} as Record<string, number>)

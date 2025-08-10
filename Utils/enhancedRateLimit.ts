@@ -153,7 +153,7 @@ export class EnhancedRateLimiter {
     const now = Date.now();
 
     try {
-      let result: any[];
+      let result: any;
 
       if (this.scriptSha) {
         // Use cached script SHA for better performance
@@ -169,7 +169,9 @@ export class EnhancedRateLimiter {
         });
       }
 
-      const [allowed, remaining, resetTime] = result;
+      // Ensure result is an array
+      const resultArray = Array.isArray(result) ? result : [result];
+      const [allowed, remaining, resetTime] = resultArray;
 
       const responseTime = Date.now() - startTime;
       this.metrics.responseTimes.push(responseTime);

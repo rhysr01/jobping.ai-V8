@@ -35,3 +35,11 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function GET() {
+  return NextResponse.json({ 
+    message: 'Email verification endpoint active',
+    method: 'POST',
+    required: { token: 'string' }
+  });
+}

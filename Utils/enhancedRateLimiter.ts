@@ -30,7 +30,6 @@ export class EnhancedRateLimiter {
       url: process.env.REDIS_URL || 'redis://localhost:6379',
       socket: {
         connectTimeout: 10000,
-        lazyConnect: true,
         reconnectStrategy: (retries) => {
           if (retries > this.maxRetries) {
             console.error(`❌ Redis connection failed after ${this.maxRetries} retries`);
@@ -129,12 +128,18 @@ export class EnhancedRateLimiter {
       return true;
     }
 
+    // Check if Redis URL is configured
+    if (!process.env.REDIS_URL && !process.env.REDIS_HOST) {
+      console.log('ℹ️ Redis not configured, skipping rate limiting');
+      return false;
+    }
+
     if (this.connectionPromise) {
       try {
         await this.connectionPromise;
         return this.isConnected;
       } catch (error) {
-        console.error('❌ Redis connection failed:', error);
+        console.log('ℹ️ Redis connection failed, continuing without rate limiting');
         return false;
       }
     }
@@ -145,7 +150,7 @@ export class EnhancedRateLimiter {
       await this.connectionPromise;
       return this.isConnected;
     } catch (error) {
-      console.error('❌ Redis connection failed:', error);
+      console.log('ℹ️ Redis connection failed, continuing without rate limiting');
       return false;
     } finally {
       this.connectionPromise = null;
@@ -158,9 +163,9 @@ export class EnhancedRateLimiter {
         await this.redis.connect();
       }
     } catch (error) {
-      console.error('❌ Failed to connect to Redis for enhanced rate limiter:', error);
+      console.log('ℹ️ Redis not available, continuing without rate limiting');
       this.isConnected = false;
-      throw error;
+      // Don't throw error, just return
     }
   }
 
@@ -480,7 +485,7 @@ export class EnhancedRateLimiter {
         status: 'unhealthy',
         details: { 
           connection: false, 
-          error: error.message,
+          error: error instanceof Error ? error.message : 'Unknown error',
           metrics 
         }
       };

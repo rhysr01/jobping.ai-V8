@@ -253,7 +253,7 @@ export class RateLimiter {
     } catch (error) {
       return {
         status: 'unhealthy',
-        details: { connection: false, error: error.message }
+        details: { connection: false, error: error instanceof Error ? error.message : 'Unknown error' }
       };
     }
   }

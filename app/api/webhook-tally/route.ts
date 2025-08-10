@@ -16,20 +16,16 @@ const TallyWebhookSchema = z.object({
   eventId: z.string(),
   eventType: z.literal('FORM_RESPONSE'),
   createdAt: z.string(),
+  formId: z.string(),
+  responseId: z.string(),
   data: z.object({
-    responseId: z.string(),
-    submissionId: z.string(),
-    respondentId: z.string().optional(),
-    formId: z.string(),
-    formName: z.string(),
-    createdAt: z.string(),
     fields: z.array(z.object({
       key: z.string(),
       label: z.string(),
       type: z.string(),
       value: z.union([z.string(), z.array(z.string()), z.null()]).optional()
     })).min(1)
-  })
+  }).optional()
 });
 
 type TallyWebhookData = z.infer<typeof TallyWebhookSchema>;
@@ -59,10 +55,9 @@ function getOpenAIClient() {
 }
 
 // Extract user data with business rules
-function extractUserData(fields: TallyWebhookData['data']['fields']) {
+function extractUserData(fields: NonNullable<TallyWebhookData['data']>['fields']) {
   const userData: Record<string, string | string[] | boolean> = { 
-    email: '',
-    active: true
+    email: ''
   };
   
   fields.forEach((field: any) => {
@@ -86,7 +81,7 @@ function extractUserData(fields: TallyWebhookData['data']['fields']) {
     } else if (key.includes('name') && key.includes('full')) {
       userData.full_name = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('expertise') || key.includes('background')) {
-      userData.professional_expertise = Array.isArray(field.value) ? field.value[0] : field.value;
+      userData.professional_experience = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('start_date') || key.includes('availability')) {
       userData.start_date = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('work_environment') || key.includes('work_preference')) {
@@ -128,6 +123,16 @@ export async function POST(req: NextRequest) {
   try {
     // Parse and validate
     const rawPayload = await req.json();
+    
+    // Handle cases where data might be undefined
+    if (!rawPayload || !rawPayload.data) {
+      console.warn('Webhook received without data field:', rawPayload);
+      return NextResponse.json({ 
+        message: 'Webhook received but no data field found',
+        received: rawPayload 
+      }, { status: 400 });
+    }
+    
     const payload = TallyWebhookSchema.parse(rawPayload);
     
     if (payload.eventType !== 'FORM_RESPONSE') {
@@ -135,7 +140,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = getSupabaseClient();
-    const userData = extractUserData(payload.data.fields);
+    const userData = extractUserData(payload.data?.fields || []);
     
     if (!userData.email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -157,7 +162,7 @@ export async function POST(req: NextRequest) {
     }
 
     // If user exists and is already verified, skip verification
-    if (existingUser && existingUser.email_verified) {
+    if (existingUser && (existingUser as any).email_verified) {
       console.log(`User ${userData.email} already verified, skipping verification`);
     }
 
@@ -172,15 +177,15 @@ export async function POST(req: NextRequest) {
     const now = new Date().toISOString();
     const userRecord: any = {
       ...userData,
-      // Ensure arrays are properly formatted for Supabase
-      languages_spoken: Array.isArray(userData.languages_spoken) ? userData.languages_spoken : [userData.languages_spoken || ''],
-      company_types: Array.isArray(userData.company_types) ? userData.company_types : [userData.company_types || ''],
-      roles_selected: Array.isArray(userData.roles_selected) ? userData.roles_selected : [userData.roles_selected || ''],
-      target_cities: Array.isArray(userData.target_cities) ? userData.target_cities : [userData.target_cities || ''],
+      // Keep arrays as arrays since your schema has TEXT[] columns
+      languages_spoken: Array.isArray(userData.languages_spoken) ? userData.languages_spoken : (userData.languages_spoken ? [userData.languages_spoken] : []),
+      company_types: Array.isArray(userData.company_types) ? userData.company_types : (userData.company_types ? [userData.company_types] : []),
+      roles_selected: Array.isArray(userData.roles_selected) ? userData.roles_selected : (userData.roles_selected ? [userData.roles_selected] : []),
+      target_cities: Array.isArray(userData.target_cities) ? userData.target_cities : (userData.target_cities ? [userData.target_cities] : []),
       updated_at: now,
-      // NEW: Email verification fields
-      email_verified: isNewUser ? false : (existingUser?.email_verified || false),
-      verification_token: isNewUser ? verificationToken : (existingUser?.verification_token || null),
+      email_verified: isNewUser ? false : ((existingUser as any)?.email_verified || false),
+      verification_token: isNewUser ? verificationToken : ((existingUser as any)?.verification_token || null),
+      active: true,
       ...(isNewUser && { created_at: now })
     };
 
@@ -227,11 +232,11 @@ export async function POST(req: NextRequest) {
 
     // Generate matches for verified users only
     let matches: any[] = [];
-    let matchType: 'ai_success' | 'fallback' | 'ai_failed' | 'skipped' = 'skipped';
+    let matchType: 'ai_success' | 'fallback' | 'ai_failed' = 'ai_failed';
     let jobs: any[] = [];
 
     // Only generate matches for verified users or if this is a verification callback
-    if ((existingUser && existingUser.email_verified) || !isNewUser) {
+    if ((existingUser && (existingUser as any).email_verified) || !isNewUser) {
       console.log(`Verified user: ${userData.email}. Generating matches...`);
       
       const threeDaysAgo = new Date();
@@ -256,67 +261,78 @@ export async function POST(req: NextRequest) {
             matchType = 'fallback';
             matches = generateFallbackMatches(jobs, userData as unknown as UserPreferences);
           }
-        } catch (err) {
-          console.error(`AI matching failed for ${userData.email}:`, err);
+        } catch (aiError) {
+          console.error(`❌ AI matching failed for ${userData.email}:`, aiError);
           matchType = 'ai_failed';
           matches = generateFallbackMatches(jobs, userData as unknown as UserPreferences);
-        }
-
-        if (matches.length > 0) {
-          const matchEntries = matches.map(match => ({
-            user_email: String(userData.email),
-            job_hash: match.job_hash,
-            match_score: match.match_score,
-            match_reason: match.match_reason,
-            match_quality: match.match_quality,
-            match_tags: match.match_tags,
-            matched_at: now,
-            created_at: now
-          }));
-
-          await supabase.from('matches').insert(matchEntries);
-          await logMatchSession(String(userData.email), matchType, jobs.length, matches.length);
         }
       }
     }
 
-    // Send emails for verified users with matches
-    if ((existingUser && existingUser.email_verified) && matches.length > 0) {
+    // Log match session
+    await logMatchSession(
+      userData.email as string,
+      matchType,
+      jobs.length,
+      matches.length
+    );
+
+    // Send welcome email for new users
+    if (isNewUser) {
       try {
         await sendWelcomeEmail({
-          to: String(userData.email),
-          userName: userData.full_name as string || 'there',
-          matchCount: matches.length,
+          to: userData.email as string,
+          userName: userData.full_name as string,
+          matchCount: matches.length
         });
-
-        const jobDetails = matches.map(match => {
-          const job = jobs.find((j: any) => j.job_hash === match.job_hash);
-          return { ...job, match_reason: match.match_reason };
-        });
-
-        await sendMatchedJobsEmail({
-          to: String(userData.email),
-          jobs: jobDetails,
-          userName: userData.full_name as string || 'there',
-        });
-
-        console.log(`Emails sent to ${userData.email}`);
+        console.log(`📧 Welcome email sent to: ${userData.email}`);
       } catch (emailError) {
-        console.error(`Email failed for ${userData.email}:`, emailError);
+        console.error(`❌ Welcome email failed for ${userData.email}:`, emailError);
+      }
+    }
+
+    // Send matched jobs email if matches were generated
+    if (matches.length > 0) {
+      try {
+        await sendMatchedJobsEmail({
+          to: userData.email as string,
+          jobs: matches,
+          userName: userData.full_name as string
+        });
+        console.log(`📧 Matched jobs email sent to: ${userData.email}`);
+      } catch (emailError) {
+        console.error(`❌ Matched jobs email failed for ${userData.email}:`, emailError);
       }
     }
 
     return NextResponse.json({ 
       success: true, 
-      message: isNewUser ? 'Verification email sent' : 'User updated successfully',
+      message: isNewUser ? 'User registered successfully' : 'User updated successfully',
       email: userData.email,
-      requiresVerification: isNewUser,
-      matchesGenerated: matches.length
+      matchesGenerated: matches.length,
+      requiresVerification: isNewUser && !((existingUser as any)?.email_verified || false)
     });
 
-  } catch (error) {
-    console.error('❌ Webhook error:', error);
-    return NextResponse.json({ error: 'Registration failed' }, { status: 500 });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      console.error('❌ Tally webhook validation error:', error.errors);
+      return NextResponse.json({
+        error: 'Invalid webhook payload structure',
+        details: error.errors
+      }, { status: 400 });
+    }
+    
+    console.error('❌ Tally webhook internal error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      cause: error.cause
+    });
+    
+    return NextResponse.json({
+      error: 'Registration failed',
+      details: error instanceof Error ? error.message : JSON.stringify(error)
+    }, { status: 500 });
   }
 }
 
