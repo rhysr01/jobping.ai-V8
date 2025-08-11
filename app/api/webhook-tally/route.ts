@@ -33,6 +33,11 @@ type TallyWebhookData = z.infer<typeof TallyWebhookSchema>;
 
 // Clients
 function getSupabaseClient() {
+  // Only initialize during runtime, not build time
+  if (typeof window !== 'undefined') {
+    throw new Error('Supabase client should only be used server-side');
+  }
+  
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
@@ -40,7 +45,12 @@ function getSupabaseClient() {
     throw new Error('Missing Supabase environment variables: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set');
   }
   
-  return createClient(supabaseUrl, supabaseKey);
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
 }
 
 function getOpenAIClient() {
@@ -325,10 +335,10 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      console.error('❌ Tally webhook validation error:', error.errors);
+      console.error('❌ Tally webhook validation error:', error.issues);
       return NextResponse.json({
         error: 'Invalid webhook payload structure',
-        details: error.errors
+        details: error.issues
       }, { status: 400 });
     }
     

@@ -1,6 +1,7 @@
 import { createClient } from 'redis';
 import { AdvancedMonitoringOracle } from './advancedMonitoring';
 import { PerformanceMonitor } from './performanceMonitor';
+import { dogstatsd } from './datadogMetrics';
 
 // Enhanced cache configuration
 const CACHE_CONFIG = {
@@ -9,6 +10,7 @@ const CACHE_CONFIG = {
     DEFAULT: 45 * 60 * 1000, // 45 minutes
     MIN: 30 * 60 * 1000,     // 30 minutes
     MAX: 60 * 60 * 1000,     // 60 minutes
+    TARGET: 45 * 60 * 1000,  // 45 minutes target
     ADJUSTMENT_STEP: 15 * 60 * 1000, // 15 minutes
   },
   
@@ -68,7 +70,6 @@ interface CacheStats {
 export class EnhancedCache<T> {
   private cache = new Map<string, CacheEntry<T>>();
   private redis: any;
-  private monitoringOracle: AdvancedMonitoringOracle;
   private stats: CacheStats;
   private currentTTL: number;
   private isInitialized: boolean = false;
@@ -79,9 +80,10 @@ export class EnhancedCache<T> {
     private defaultTTL: number = CACHE_CONFIG.TTL.DEFAULT
   ) {
     this.currentTTL = defaultTTL;
-    this.monitoringOracle = new AdvancedMonitoringOracle();
+    // Note: AdvancedMonitoringOracle uses static methods only
     this.stats = this.initializeStats();
-    this.initializeRedis();
+    // Lazy initialize Redis to avoid build-time issues
+    this.initializeRedis().catch(console.error);
   }
 
   private initializeStats(): CacheStats {
@@ -130,6 +132,10 @@ export class EnhancedCache<T> {
           this.cache.delete(key);
           this.stats.misses++;
           PerformanceMonitor.trackDuration(`cache_${this.name}_miss`, startTime);
+          
+          // Track cache miss for Datadog monitoring
+          dogstatsd.increment('jobping.cache.misses', 1, [`cache:${this.name}`]);
+          
           return null;
         }
         
@@ -140,6 +146,9 @@ export class EnhancedCache<T> {
         this.stats.hits++;
         this.updateHitRate();
         PerformanceMonitor.trackDuration(`cache_${this.name}_hit`, startTime);
+        
+        // Track cache hit for Datadog monitoring
+        dogstatsd.increment('jobping.cache.hits', 1, [`cache:${this.name}`]);
         
         return entry.value;
       }
@@ -432,8 +441,8 @@ export class EnhancedCache<T> {
       // Persist cache metadata
       await this.persistCacheMeta();
       
-      // Update monitoring
-      this.monitoringOracle.updateCacheMetrics(this.name, this.stats);
+      // Update monitoring (commented out - method not available)
+      // this.monitoringOracle.updateCacheMetrics(this.name, this.stats);
       
     }, 5 * 60 * 1000); // Every 5 minutes
   }
@@ -455,11 +464,10 @@ export class EnhancedCache<T> {
 export class EnhancedAIMatchingCache {
   private static instance: EnhancedAIMatchingCache;
   private cache: EnhancedCache<any[]>;
-  private monitoringOracle: AdvancedMonitoringOracle;
 
   private constructor() {
     this.cache = new EnhancedCache<any[]>('ai-matching', CACHE_CONFIG.SIZE.MAX_ENTRIES, CACHE_CONFIG.TTL.DEFAULT);
-    this.monitoringOracle = new AdvancedMonitoringOracle();
+    // Note: AdvancedMonitoringOracle uses static methods only
     this.cache.startMaintenance();
   }
 

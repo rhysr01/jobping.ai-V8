@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { enhancedAIMatchingCache } from '@/Utils/enhancedCache';
-import { securityMiddleware } from '@/Utils/securityMiddleware';
+import { SecurityMiddleware } from '@/Utils/securityMiddleware';
 import { addSecurityHeaders } from '@/Utils/securityMiddleware';
+
+const securityMiddleware = new SecurityMiddleware();
 
 export async function GET(req: NextRequest) {
   try {
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest) {
 
     // Default: return cache info
     const stats = enhancedAIMatchingCache.getStats();
-    const size = enhancedAIMatchingCache.size();
+    const size = stats.size || 0;
 
     const response = securityMiddleware.createSuccessResponse({
       success: true,

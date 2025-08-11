@@ -388,7 +388,7 @@ export class JobQueueManager {
           
         } catch (error) {
           console.error(`Error processing user ${user.id}:`, error);
-          results.push({ userId: user.id, success: false, error: error.message });
+          results.push({ userId: user.id, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
         }
       }
       
@@ -399,7 +399,7 @@ export class JobQueueManager {
       return {
         success: true,
         processed: results.length,
-        errors: results.filter(r => !r.success).map(r => r.error),
+        errors: results.filter(r => !r.success).map(r => r.error).filter((error): error is string => error !== undefined),
         duration,
         cacheHits,
         cacheMisses
@@ -429,7 +429,7 @@ export class JobQueueManager {
           results.push({ success: true, to: email.to });
         } catch (error) {
           console.error(`Error sending email to ${email.to}:`, error);
-          results.push({ success: false, to: email.to, error: error.message });
+          results.push({ success: false, to: email.to, error: error instanceof Error ? error.message : 'Unknown error' });
         }
       }
       
@@ -440,7 +440,7 @@ export class JobQueueManager {
       return {
         success: true,
         processed: results.length,
-        errors: results.filter(r => !r.success).map(r => r.error),
+        errors: results.filter(r => !r.success).map(r => r.error).filter((error): error is string => error !== undefined),
         duration
       };
       
@@ -475,7 +475,7 @@ export class JobQueueManager {
           }
         } catch (error) {
           console.error(`Error scraping ${platform}:`, error);
-          results.push({ platform, success: false, error: error.message });
+          results.push({ platform, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
         }
       }
       
@@ -486,7 +486,7 @@ export class JobQueueManager {
       return {
         success: true,
         processed: results.length,
-        errors: results.filter(r => !r.success).map(r => r.error),
+        errors: results.filter(r => !r.success).map(r => r.error).filter((error): error is string => error !== undefined),
         duration
       };
       
@@ -558,7 +558,7 @@ export class JobQueueManager {
 
   // Get queue statistics
   async getQueueStats(): Promise<any> {
-    const stats = {};
+    const stats: Record<string, any> = {};
     
     for (const [jobType, queue] of this.queues) {
       const [waiting, active, completed, failed] = await Promise.all([
@@ -568,7 +568,7 @@ export class JobQueueManager {
         queue.getFailed()
       ]);
       
-      stats[jobType] = {
+      stats[jobType as string] = {
         waiting: waiting.length,
         active: active.length,
         completed: completed.length,

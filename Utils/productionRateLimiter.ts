@@ -69,7 +69,9 @@ class ProductionRateLimiter {
       if (process.env.REDIS_URL) {
         this.redis = createClient({
           url: process.env.REDIS_URL,
-          retry_strategy: (times) => Math.min(times * 50, 2000)
+          socket: {
+            reconnectStrategy: (times) => Math.min(times * 50, 2000)
+          }
         });
 
         this.redis.on('error', (err: any) => {
@@ -198,9 +200,8 @@ class ProductionRateLimiter {
    * Get client identifier from request (IP + User-Agent fingerprint)
    */
   getClientIdentifier(req: NextRequest): string {
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
-              req.headers.get('x-real-ip') || 
-              req.ip ||
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0] ||
+              req.headers.get('x-real-ip') ||
               'unknown-ip';
     
     const userAgent = req.headers.get('user-agent') || 'unknown-ua';

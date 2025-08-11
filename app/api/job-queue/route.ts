@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jobQueueManager, JobType } from '@/Utils/jobQueue';
-import { securityMiddleware } from '@/Utils/securityMiddleware';
+import { SecurityMiddleware } from '@/Utils/securityMiddleware';
 import { addSecurityHeaders } from '@/Utils/securityMiddleware';
+
+const securityMiddleware = new SecurityMiddleware();
 
 export async function POST(req: NextRequest) {
   try {

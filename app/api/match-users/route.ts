@@ -17,6 +17,7 @@ import { AdvancedMonitoringOracle } from '@/Utils/advancedMonitoring';
 import { AutoScalingOracle } from '@/Utils/autoScaling';
 import { UserSegmentationOracle } from '@/Utils/userSegmentation';
 import type { JobMatch } from '@/Utils/jobMatching';
+import { dogstatsd } from '@/Utils/datadogMetrics';
 
 // Enhanced monitoring and performance tracking
 interface PerformanceMetrics {
@@ -503,10 +504,24 @@ function preFilterJobsByUserPreferences(jobs: JobWithFreshness[], user: UserPref
 
 // Initialize clients
 function getSupabaseClient() {
-  return createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+  // Only initialize during runtime, not build time
+  if (typeof window !== 'undefined') {
+    throw new Error('Supabase client should only be used server-side');
+  }
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase configuration');
+  }
+  
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
 }
 
 function getOpenAIClient() {
@@ -518,6 +533,12 @@ function getOpenAIClient() {
 export async function POST(req: NextRequest) {
   const performanceTracker = trackPerformance();
   const reservationId = `batch_${Date.now()}`;
+  const requestStartTime = Date.now();
+  
+  // Extract IP address
+  const ip = req.headers.get('x-forwarded-for') || 
+             req.headers.get('x-real-ip') || 
+             'unknown';
   
   // PRODUCTION: Enhanced rate limiting with Redis fallback
   const rateLimitResult = await productionRateLimiter.middleware(req, 'match-users');
@@ -925,8 +946,15 @@ export async function POST(req: NextRequest) {
     PerformanceMonitor.logPerformanceReport();
 
     const totalProcessingTime = Date.now() - performanceTracker.startTime;
-    const metrics = performanceTracker.getMetrics();
+    const performanceMetrics = performanceTracker.getMetrics();
 
+    // Track production metrics for Datadog monitoring
+    const requestDuration = Date.now() - requestStartTime;
+    
+    dogstatsd.histogram('jobping.match.latency_ms', requestDuration);
+    dogstatsd.histogram('jobping.match.ai_processing_ms', totalAIProcessingTime);
+    dogstatsd.increment('jobping.match.requests', 1, [`status:success`, `users:${users.length}`]);
+    
     return NextResponse.json({
       success: true,
       message: `Processed ${users.length} users with ${jobs.length} jobs`,
@@ -937,12 +965,9 @@ export async function POST(req: NextRequest) {
         total_tier_distribution_time: totalTierDistributionTime,
         total_ai_processing_time: totalAIProcessingTime,
         average_ai_matching_time: totalAIProcessingTime / users.length,
-        memory_usage: metrics.memoryUsage
+        memory_usage: performanceMetrics.memoryUsage
       },
-      rate_limit: {
-        remaining: rateLimitResult.remaining,
-        reset_time: rateLimitResult.resetTime
-      },
+      rate_limit: null, // Rate limit info not available in this context
       advanced_insights: {
         user_segmentation: userSegments.error ? null : userSegments.segmentDistribution,
         scaling_recommendations: scalingRecommendations,

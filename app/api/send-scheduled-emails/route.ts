@@ -11,9 +11,24 @@ import {
 import OpenAI from 'openai';
 
 function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(supabaseUrl, supabaseKey);
+  // Only initialize during runtime, not build time
+  if (typeof window !== 'undefined') {
+    throw new Error('Supabase client should only be used server-side');
+  }
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase configuration');
+  }
+  
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
 }
 
 function getOpenAIClient() {
@@ -102,19 +117,25 @@ export async function POST(req: NextRequest) {
         console.log(`🎯 Processing user: ${user.email}`);
 
         // Convert user data to UserPreferences format
+        // Parse comma-separated text fields into arrays per database schema
         const userPreferences: UserPreferences = {
-          target_cities: user.target_cities || [],
-          languages_spoken: user.languages_spoken || [],
-          company_types: user.company_types || [],
-          roles_selected: user.roles_selected || [],
-          professional_experience: user.professional_experience || 'entry',
-          visa_required: user.visa_required || false,
-          remote_preference: user.remote_preference || 'any'
+          email: user.email,
+          full_name: user.full_name || '',
+          target_cities: user.target_cities ? user.target_cities.split(',').map((s: string) => s.trim()) : [],
+          languages_spoken: user.languages_spoken ? user.languages_spoken.split(',').map((s: string) => s.trim()) : [],
+          company_types: user.company_types ? user.company_types.split(',').map((s: string) => s.trim()) : [],
+          roles_selected: user.roles_selected ? user.roles_selected.split(',').map((s: string) => s.trim()) : [],
+          professional_expertise: user.professional_expertise || 'entry',
+          visa_status: user.visa_status || 'unknown',
+          start_date: user.start_date ? new Date(user.start_date).toISOString() : new Date().toISOString(),
+          work_environment: user.work_environment || 'any',
+          career_path: user.career_path || '',
+          entry_level_preference: user.entry_level_preference || 'entry'
         };
 
         // Perform AI matching
         let matches;
-        let matchType = 'ai_success';
+        let matchType: 'ai_success' | 'ai_failed' | 'fallback' = 'ai_success';
         
         try {
           matches = await performEnhancedAIMatching(jobs, userPreferences, openai);

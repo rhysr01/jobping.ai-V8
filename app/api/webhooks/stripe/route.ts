@@ -5,9 +5,24 @@ import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
 function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(supabaseUrl, supabaseKey);
+  // Only initialize during runtime, not build time
+  if (typeof window !== 'undefined') {
+    throw new Error('Supabase client should only be used server-side');
+  }
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase configuration');
+  }
+  
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -121,7 +136,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription, supa
     .update({
       subscription_tier: 'premium',
       subscription_active: true,
-      subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+      subscription_expires_at: new Date((subscription as any).current_period_end * 1000).toISOString(),
       stripe_customer_id: subscription.customer as string,
       stripe_subscription_id: subscription.id,
     })
@@ -143,7 +158,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription, supa
   console.log(`🔄 Subscription updated for user: ${email}`);
 
   const isActive = subscription.status === 'active';
-  const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
+  const expiresAt = new Date((subscription as any).current_period_end * 1000).toISOString();
 
   // Update user subscription status
   const { error } = await supabase
@@ -186,15 +201,15 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, supa
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice, supabase: any) {
-  if (!invoice.subscription) return;
+  if (!(invoice as any).subscription) return;
 
-  console.log(`✅ Payment succeeded for subscription: ${invoice.subscription}`);
+  console.log(`✅ Payment succeeded for subscription: ${(invoice as any).subscription}`);
 
   // Get subscription details
   const { data: subscription } = await supabase
     .from('users')
     .select('email')
-    .eq('stripe_subscription_id', invoice.subscription)
+    .eq('stripe_subscription_id', (invoice as any).subscription)
     .single();
 
   if (subscription) {
@@ -203,15 +218,15 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice, supabase: any) {
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice, supabase: any) {
-  if (!invoice.subscription) return;
+  if (!(invoice as any).subscription) return;
 
-  console.log(`❌ Payment failed for subscription: ${invoice.subscription}`);
+  console.log(`❌ Payment failed for subscription: ${(invoice as any).subscription}`);
 
   // Get subscription details and potentially downgrade user
   const { data: subscription, error } = await supabase
     .from('users')
     .select('email')
-    .eq('stripe_subscription_id', invoice.subscription)
+    .eq('stripe_subscription_id', (invoice as any).subscription)
     .single();
 
   if (subscription) {
