@@ -86,7 +86,7 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
-            Tailored matches: skills, visa, CV—delivered to your inbox daily. 
+            Tailored matches: skills, visa, CV—delivered to your inbox every 48 hours. 
             Stop scrolling job boards, start landing interviews.
           </motion.p>
           
@@ -148,7 +148,7 @@ export default function Hero() {
                     <Mail className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-black">Daily Job Matches</h3>
+                    <h3 className="text-xl font-bold text-black">Job Matches Every 48 Hours</h3>
                     <p className="text-sm text-gray-600">AI-curated for you</p>
                   </div>
                 </div>

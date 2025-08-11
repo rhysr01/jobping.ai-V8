@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { EmailVerificationOracle } from '@/Utils/emailVerification';
+import { productionRateLimiter } from '@/Utils/productionRateLimiter';
 
 function getSupabaseClient() {
   return createClient(
@@ -10,6 +11,15 @@ function getSupabaseClient() {
 }
 
 export async function POST(request: NextRequest) {
+  // PRODUCTION: Rate limiting for email verification (prevent abuse)
+  const rateLimitResult = await productionRateLimiter.middleware(request, 'default', {
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    maxRequests: 10 // 10 verification attempts per 5 minutes
+  });
+  if (rateLimitResult) {
+    return rateLimitResult;
+  }
+
   try {
     const { token } = await request.json();
     

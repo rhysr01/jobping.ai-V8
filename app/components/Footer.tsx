@@ -43,7 +43,7 @@ export function Footer() {
                 href="#features" 
                 className="hover:text-black hover:underline transition-all duration-150"
               >
-                Daily Delivery
+                48-Hour Delivery
               </a>
             </li>
           </ul>

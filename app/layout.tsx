@@ -13,7 +13,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL('https://jobping.ai'),
   title: 'JobPingAI - AI-powered job matching for students',
-  description: 'AI-curated job opportunities delivered daily to ambitious students and graduates. Stop scrolling job boards, start landing interviews.',
+        description: 'AI-curated job opportunities delivered every 48 hours to ambitious students and graduates. Stop scrolling job boards, start landing interviews.',
   keywords: ['jobs', 'students', 'graduates', 'AI', 'career', 'recruitment', 'internships', 'job matching'],
   authors: [{ name: 'JobPingAI Team' }],
   creator: 'JobPingAI',
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'JobPingAI - AI-powered job matching for students',
-    description: 'AI-curated job opportunities delivered daily to ambitious students and graduates. Stop scrolling job boards, start landing interviews.',
+    description: 'AI-curated job opportunities delivered every 48 hours to ambitious students and graduates. Stop scrolling job boards, start landing interviews.',
     url: 'https://www.jobping.ai',
     siteName: 'JobPingAI',
     images: [
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'JobPingAI - AI-powered job matching for students',
-    description: 'AI-curated job opportunities delivered daily to ambitious students and graduates.',
+    description: 'AI-curated job opportunities delivered every 48 hours to ambitious students and graduates.',
     images: ['/og-image.png'],
   },
   icons: {

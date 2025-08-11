@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { productionRateLimiter } from '@/Utils/productionRateLimiter';
 
 function getSupabaseClient() {
   return createClient(
@@ -9,6 +10,15 @@ function getSupabaseClient() {
 }
 
 export async function GET(req: NextRequest) {
+  // PRODUCTION: Rate limiting for user matches endpoint
+  const rateLimitResult = await productionRateLimiter.middleware(req, 'default', {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 30 // 30 requests per minute for user queries
+  });
+  if (rateLimitResult) {
+    return rateLimitResult;
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const email = searchParams.get('email');

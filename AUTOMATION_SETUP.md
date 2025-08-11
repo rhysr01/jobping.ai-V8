@@ -119,8 +119,11 @@ curl https://your-domain.com/api/cleanup-jobs \
 crontab -e
 
 # Add these lines:
-# Scrape every 4 hours
+# Scrape jobs every 4 hours
 0 */4 * * * cd /path/to/your/project && SCRAPE_API_KEY=your-key node scripts/schedule-scraping.js
+
+# Send scheduled emails every 48 hours (9 AM every 2 days)
+0 9 */2 * * cd /path/to/your/project && curl -X POST https://your-domain.com/api/send-scheduled-emails -H "x-api-key: your-api-key"
 
 # Cleanup daily at 2 AM
 0 2 * * * cd /path/to/your/project && SCRAPE_API_KEY=your-key node scripts/schedule-scraping.js cleanup
@@ -145,6 +148,10 @@ Add to your `vercel.json`:
     {
       "path": "/api/scrape",
       "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/send-scheduled-emails",
+      "schedule": "0 9 */2 * *"
     },
     {
       "path": "/api/cleanup-jobs",

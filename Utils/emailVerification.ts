@@ -20,7 +20,7 @@ export class EmailVerificationOracle {
         html: `
           <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
             <h2>Welcome to JobPing, ${userName}! 🚀</h2>
-            <p>You're one step away from receiving daily personalized job matches!</p>
+            <p>You're one step away from receiving personalized job matches every 48 hours!</p>
             
             <div style="text-align: center; margin: 30px 0;">
               <a href="${verificationUrl}" 

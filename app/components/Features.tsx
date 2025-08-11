@@ -24,8 +24,8 @@ const features = [
   },
   {
     icon: Zap,
-    title: 'Daily Delivery',
-    description: 'Fresh job matches delivered to your inbox every morning, ready to apply',
+    title: '48-Hour Delivery',
+    description: 'Fresh job matches delivered to your inbox every 48 hours, ready to apply',
     color: 'text-black'
   },
   {

@@ -78,7 +78,7 @@ export default function Home() {
           <Hero />
         </section>
         
-        {/* Daily Job Matches Preview */}
+        {/* Job Matches Every 48 Hours Preview */}
         <section className="py-40 bg-gradient-to-b from-white to-gray-50/50 relative">
           <div className="max-w-6xl mx-auto px-6">
             <motion.div
@@ -99,7 +99,7 @@ export default function Home() {
                 AI-Curated Matches
               </motion.div>
               <h2 className="text-5xl font-bold text-black mb-8 tracking-tight">
-                Your Daily Job Matches
+                Your Job Matches Every 48 Hours
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
                 See what AI-curated opportunities look like in your inbox. 

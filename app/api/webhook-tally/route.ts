@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { z } from 'zod';
+import { productionRateLimiter } from '@/Utils/productionRateLimiter';
 import {
   performEnhancedAIMatching,
   generateFallbackMatches,
@@ -120,6 +121,12 @@ function extractUserData(fields: NonNullable<TallyWebhookData['data']>['fields']
 }
 
 export async function POST(req: NextRequest) {
+  // PRODUCTION: Rate limiting for webhook endpoint
+  const rateLimitResult = await productionRateLimiter.middleware(req, 'webhook-tally');
+  if (rateLimitResult) {
+    return rateLimitResult;
+  }
+
   try {
     // Parse and validate
     const rawPayload = await req.json();
@@ -128,7 +135,7 @@ export async function POST(req: NextRequest) {
     if (!rawPayload || !rawPayload.data) {
       console.warn('Webhook received without data field:', rawPayload);
       return NextResponse.json({ 
-        message: 'Webhook received but no data field found',
+        error: 'Invalid webhook payload: missing data field',
         received: rawPayload 
       }, { status: 400 });
     }
@@ -298,7 +305,9 @@ export async function POST(req: NextRequest) {
         await sendMatchedJobsEmail({
           to: userData.email as string,
           jobs: matches,
-          userName: userData.full_name as string
+          userName: userData.full_name as string,
+          subscriptionTier: 'free', // New users start as free
+          isSignupEmail: true
         });
         console.log(`📧 Matched jobs email sent to: ${userData.email}`);
       } catch (emailError) {
@@ -339,7 +348,6 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({ 
-    message: 'Tally webhook active',
-    timestamp: new Date().toISOString()
-  });
+    error: 'Method not allowed. This endpoint is designed for POST requests only.'
+  }, { status: 405 });
 }

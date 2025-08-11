@@ -190,6 +190,7 @@ jest.mock('@/Utils/enhancedRateLimiter', () => ({
 jest.mock('@/Utils/performanceMonitor', () => ({
   PerformanceMonitor: {
     trackDuration: jest.fn(),
+    logPerformanceReport: jest.fn(),
   },
 }));
 
@@ -197,12 +198,14 @@ jest.mock('@/Utils/performanceMonitor', () => ({
 jest.mock('@/Utils/advancedMonitoring', () => ({
   AdvancedMonitoringOracle: {
     analyzeSystemHealth: jest.fn(() => Promise.resolve({ status: 'healthy' })),
+    generateDailyReport: jest.fn(() => Promise.resolve({ health: { overall: 'healthy' } })),
   },
 }));
 
 // Mock AutoScaling
 jest.mock('@/Utils/autoScaling', () => ({
   AutoScalingOracle: {
+    checkScalingNeeds: jest.fn(() => Promise.resolve([])),
     implementRecommendation: jest.fn(() => Promise.resolve()),
   },
 }));
@@ -211,6 +214,7 @@ jest.mock('@/Utils/autoScaling', () => ({
 jest.mock('@/Utils/userSegmentation', () => ({
   UserSegmentationOracle: {
     analyzeUserBehavior: jest.fn(() => Promise.resolve({ segmentDistribution: {} })),
+    getUserAnalysis: jest.fn(() => Promise.resolve({ engagementScore: 0.5, segments: [], recommendations: [] })),
   },
 }));
 

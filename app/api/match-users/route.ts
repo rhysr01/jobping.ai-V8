@@ -1,6 +1,7 @@
 // app/api/match-users/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { productionRateLimiter } from '@/Utils/productionRateLimiter';
 import OpenAI from 'openai';
 import {
   generateFallbackMatches,
@@ -518,43 +519,48 @@ export async function POST(req: NextRequest) {
   const performanceTracker = trackPerformance();
   const reservationId = `batch_${Date.now()}`;
   
-  // ENHANCED: Use atomic rate limiting - TEMPORARILY DISABLED FOR TESTS
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
-            req.headers.get('x-real-ip') || 
-            'unknown-ip';
+  // PRODUCTION: Enhanced rate limiting with Redis fallback
+  const rateLimitResult = await productionRateLimiter.middleware(req, 'match-users');
   
-  // TEMPORARILY DISABLED: const rateLimitResult = await enhancedRateLimiter.checkLimit(
-  //   `match-users:${ip}`,
-  //   RATE_LIMIT_MAX_REQUESTS,
-  //   RATE_LIMIT_WINDOW_MS
-  // );
-  
-  // TEMPORARY: Simple rate limiting for tests
-  const rateLimitResult = { allowed: true, remaining: 999, resetTime: Date.now() + RATE_LIMIT_WINDOW_MS };
-  PerformanceMonitor.trackDuration('rate_limit_check', Date.now());
-
-  if (!rateLimitResult.allowed) {
-    console.warn(`Rate limit exceeded for IP: ${ip}`);
-    return NextResponse.json(
-      { 
-        error: 'Rate limited. This endpoint processes expensive AI operations. Try again in 15 minutes.',
-        retryAfter: 900,
-        remaining: rateLimitResult.remaining
-      },
-      { 
-        status: 429,
-        headers: { 
-          'Retry-After': '900',
-          'X-RateLimit-Remaining': rateLimitResult.remaining?.toString() || '0'
-        }
-      }
-    );
+  if (rateLimitResult) {
+    // Rate limit exceeded, return the 429 response
+    return rateLimitResult;
   }
+  PerformanceMonitor.trackDuration('rate_limit_check', Date.now());
 
   try {
     console.log(`Processing match-users request from IP: ${ip}`);
     
-    const { limit = 1000, forceReprocess = false } = await req.json();
+    // Validate request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      return NextResponse.json({ 
+        error: 'Invalid JSON in request body',
+        details: parseError instanceof Error ? parseError.message : 'Unknown parsing error'
+      }, { status: 400 });
+    }
+
+    // Validate request body structure
+    if (requestBody && typeof requestBody === 'object') {
+      // Validate field types
+      if (requestBody.limit !== undefined && (typeof requestBody.limit !== 'number' || requestBody.limit < 1)) {
+        return NextResponse.json({ 
+          error: 'Invalid limit parameter. Must be a positive number.',
+          received: requestBody.limit
+        }, { status: 400 });
+      }
+      
+      if (requestBody.forceReprocess !== undefined && typeof requestBody.forceReprocess !== 'boolean') {
+        return NextResponse.json({ 
+          error: 'Invalid forceReprocess parameter. Must be a boolean.',
+          received: requestBody.forceReprocess
+        }, { status: 400 });
+      }
+    }
+
+    const { limit = 1000, forceReprocess = false } = requestBody || {};
     const supabase = getSupabaseClient();
     
     // Validate database schema before proceeding
@@ -566,13 +572,18 @@ export async function POST(req: NextRequest) {
     }
 
     // ADVANCED: Check scaling needs before processing
-    const scalingRecommendations = await AutoScalingOracle.checkScalingNeeds();
-    if (scalingRecommendations.length > 0) {
-      console.log('🔧 Scaling recommendations detected:', scalingRecommendations);
-      // Implement critical recommendations automatically
-      for (const recommendation of scalingRecommendations.filter(r => r.priority === 'high')) {
-        await AutoScalingOracle.implementRecommendation(recommendation);
+    let scalingRecommendations: any[] = [];
+    try {
+      scalingRecommendations = await AutoScalingOracle.checkScalingNeeds();
+      if (scalingRecommendations.length > 0) {
+        console.log('🔧 Scaling recommendations detected:', scalingRecommendations);
+        // Implement critical recommendations automatically
+        for (const recommendation of scalingRecommendations.filter(r => r.priority === 'high')) {
+          await AutoScalingOracle.implementRecommendation(recommendation);
+        }
       }
+    } catch (error) {
+      console.warn('Scaling check failed:', error);
     }
 
     // 1. Fetch active users
@@ -621,13 +632,19 @@ export async function POST(req: NextRequest) {
 
     // ADVANCED: User segmentation analysis
     const userSegmentationStart = Date.now();
-    const userSegments = await UserSegmentationOracle.analyzeUserBehavior(supabase);
-    PerformanceMonitor.trackDuration('user_segmentation', userSegmentationStart);
+    let userSegments: any = { error: 'Not available' };
+    try {
+      userSegments = await UserSegmentationOracle.analyzeUserBehavior(supabase);
+      PerformanceMonitor.trackDuration('user_segmentation', userSegmentationStart);
 
-    if (userSegments.error) {
-      console.warn('User segmentation failed:', userSegments.error);
-    } else {
-      console.log('👥 User segmentation completed:', userSegments.segmentDistribution);
+      if (userSegments.error) {
+        console.warn('User segmentation failed:', userSegments.error);
+      } else {
+        console.log('👥 User segmentation completed:', userSegments.segmentDistribution);
+      }
+    } catch (error) {
+      console.warn('User segmentation failed:', error);
+      PerformanceMonitor.trackDuration('user_segmentation', userSegmentationStart);
     }
 
     // 2. Fetch jobs with UTC-safe date calculation
@@ -701,17 +718,23 @@ export async function POST(req: NextRequest) {
         
         // ADVANCED: Get user analysis for personalized processing
         const userAnalysisStart = Date.now();
-        const userAnalysis = await UserSegmentationOracle.getUserAnalysis(user.id, supabase);
-        PerformanceMonitor.trackDuration('user_analysis', userAnalysisStart);
+        let userAnalysis: any = { error: 'Not available' };
+        try {
+          userAnalysis = await UserSegmentationOracle.getUserAnalysis(user.id, supabase);
+          PerformanceMonitor.trackDuration('user_analysis', userAnalysisStart);
 
-        if ('error' in userAnalysis) {
-          console.warn(`User analysis failed for ${user.email}:`, userAnalysis.error);
-        } else {
-          console.log(`📊 User analysis for ${user.email}:`, {
-            engagementScore: userAnalysis.engagementScore,
-            segments: userAnalysis.segments,
-            recommendations: userAnalysis.recommendations.length
-          });
+          if ('error' in userAnalysis) {
+            console.warn(`User analysis failed for ${user.email}:`, userAnalysis.error);
+          } else {
+            console.log(`📊 User analysis for ${user.email}:`, {
+              engagementScore: userAnalysis.engagementScore,
+              segments: userAnalysis.segments,
+              recommendations: userAnalysis.recommendations.length
+            });
+          }
+        } catch (error) {
+          console.warn(`User analysis failed for ${user.email}:`, error);
+          PerformanceMonitor.trackDuration('user_analysis', userAnalysisStart);
         }
         
         // Pre-filter jobs to reduce AI processing load
@@ -889,8 +912,14 @@ export async function POST(req: NextRequest) {
 
     // ADVANCED: Generate comprehensive monitoring report
     const monitoringStart = Date.now();
-    const monitoringReport = await AdvancedMonitoringOracle.generateDailyReport();
-    PerformanceMonitor.trackDuration('monitoring_report', monitoringStart);
+    let monitoringReport: any = { health: { overall: 'unknown' } };
+    try {
+      monitoringReport = await AdvancedMonitoringOracle.generateDailyReport();
+      PerformanceMonitor.trackDuration('monitoring_report', monitoringStart);
+    } catch (error) {
+      console.warn('Monitoring report generation failed:', error);
+      PerformanceMonitor.trackDuration('monitoring_report', monitoringStart);
+    }
 
     // Log performance report
     PerformanceMonitor.logPerformanceReport();
@@ -933,91 +962,8 @@ export async function POST(req: NextRequest) {
 
 // Enhanced GET endpoint with tier analytics
 export async function GET(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
-            req.headers.get('x-real-ip') || 
-            'unknown-ip';
-  
-  const getLastCall = rateLimitMap.get(`get_${ip}`) || 0;
-  const now = Date.now();
-  
-  if (now - getLastCall < 60000) {
-    return NextResponse.json(
-      { error: 'Rate limited. Try again in 1 minute.' },
-      { status: 429, headers: { 'Retry-After': '60' } }
-    );
-  }
-  
-  rateLimitMap.set(`get_${ip}`, now);
-  
-  const { searchParams } = new URL(req.url);
-  const userEmail = searchParams.get('email');
-  const analytics = searchParams.get('analytics') === 'true';
-  
-  if (!userEmail) {
-    return NextResponse.json({ error: 'Email parameter required' }, { status: 400 });
-  }
-
-  try {
-    console.log(`GET request for user matches: ${userEmail} from IP: ${ip}`);
-    
-    const supabase = getSupabaseClient();
-    
-    // Get user's recent matches with performance tracking
-    const { data: matches, error } = await supabase
-      .from('matches')
-      .select(`
-        *,
-        jobs!inner(*)
-      `)
-      .eq('user_email', userEmail)
-      .gte('matched_at', new Date(Date.now() - 48*60*60*1000).toISOString())
-      .order('match_score', { ascending: false });
-
-    if (error) {
-      console.error('Failed to fetch user matches:', error);
-      throw error;
-    }
-
-    // Group matches by freshness tier
-    const groupedMatches = (matches || []).reduce((acc, match) => {
-      const tier = match.freshness_tier || 'comprehensive';
-      if (!acc[tier]) acc[tier] = [];
-      acc[tier].push(match);
-      return acc;
-    }, {} as Record<string, any[]>);
-
-    // Calculate tier performance analytics
-    const tierAnalytics = analytics ? {
-      application_rates: Object.keys(groupedMatches).reduce((acc, tier) => {
-        const tierMatches = groupedMatches[tier];
-        acc[tier] = {
-          total_matches: tierMatches.length,
-          avg_match_score: tierMatches.reduce((sum: number, m: any) => sum + (m.match_score || 0), 0) / tierMatches.length,
-          match_quality_distribution: tierMatches.reduce((dist: Record<string, number>, m: any) => {
-            const quality = m.match_quality || 'unknown';
-            dist[quality] = (dist[quality] || 0) + 1;
-            return dist;
-          }, {} as Record<string, number>)
-        };
-        return acc;
-      }, {} as Record<string, any>)
-    } : null;
-
-    console.log(`Found ${matches?.length || 0} matches for ${userEmail}, grouped by freshness`);
-
-    return NextResponse.json({ 
-      matches: matches || [],
-      grouped_by_freshness: groupedMatches,
-      tier_counts: Object.keys(groupedMatches).reduce((acc, tier) => {
-        acc[tier] = groupedMatches[tier].length;
-        return acc;
-      }, {} as Record<string, number>),
-      analytics: tierAnalytics
-    });
-  } catch (error: unknown) {
-    console.error('GET matches error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    }, { status: 500 });
-  }
+  // Return 405 for GET method as this endpoint is primarily for POST
+  return NextResponse.json({ 
+    error: 'Method not allowed. This endpoint is designed for POST requests only.' 
+  }, { status: 405 });
 }

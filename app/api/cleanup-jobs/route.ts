@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { productionRateLimiter } from '@/Utils/productionRateLimiter';
 
 // Initialize Supabase client
 function getSupabaseClient() {
@@ -9,37 +10,14 @@ function getSupabaseClient() {
   );
 }
 
-// Rate limiting for cleanup endpoint
-const cleanupRateLimit = new Map<string, { count: number; resetTime: number }>();
-
-function isCleanupRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const limit = cleanupRateLimit.get(ip);
-  
-  if (!limit || now > limit.resetTime) {
-    cleanupRateLimit.set(ip, { count: 1, resetTime: now + 300000 }); // 5 minute window
-    return false;
-  }
-  
-  if (limit.count >= 2) { // Max 2 cleanup requests per 5 minutes
-    return true;
-  }
-  
-  limit.count++;
-  return false;
-}
-
 export async function POST(req: NextRequest) {
-  // Rate limiting
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
-            req.headers.get('x-real-ip') || 
-            'unknown-ip';
-  
-  if (isCleanupRateLimited(ip)) {
-    return NextResponse.json(
-      { error: 'Rate limited. Too many cleanup requests.' },
-      { status: 429 }
-    );
+  // PRODUCTION: Rate limiting for cleanup endpoint (automation use)
+  const rateLimitResult = await productionRateLimiter.middleware(req, 'default', {
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    maxRequests: 2 // Max 2 cleanup requests per 5 minutes
+  });
+  if (rateLimitResult) {
+    return rateLimitResult;
   }
 
   // Security: Check for API key

@@ -14,33 +14,64 @@ const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0',
 ];
 
-// Enhanced anti-detection headers
-const getRandomHeaders = (userAgent: string) => ({
-  'User-Agent': userAgent,
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-  'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,fr;q=0.7,de;q=0.6',
-  'Accept-Encoding': 'gzip, deflate, br',
-  'Cache-Control': 'no-cache',
-  'Pragma': 'no-cache',
-  'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-  'Sec-Ch-Ua-Mobile': '?0',
-  'Sec-Ch-Ua-Platform': '"macOS"',
-  'Sec-Fetch-Dest': 'document',
-  'Sec-Fetch-Mode': 'navigate',
-  'Sec-Fetch-Site': 'none',
-  'Sec-Fetch-User': '?1',
-  'Upgrade-Insecure-Requests': '1',
-  'DNT': '1',
-});
+// Enhanced anti-detection headers with rotating IP simulation
+const getRandomHeaders = (userAgent: string) => {
+  const referrers = [
+    'https://www.google.com/',
+    'https://www.linkedin.com/jobs/',
+    'https://www.glassdoor.com/',
+    'https://www.indeed.com/',
+    'https://www.ziprecruiter.com/',
+    'https://www.simplyhired.com/',
+    'https://www.dice.com/',
+    'https://www.angel.co/jobs',
+    'https://www.wellfound.com/',
+    'https://www.otta.com/'
+  ];
+
+  const languages = [
+    'en-US,en;q=0.9,es;q=0.8,fr;q=0.7,de;q=0.6',
+    'en-GB,en;q=0.9',
+    'en-CA,en;q=0.9,fr;q=0.8',
+    'en-AU,en;q=0.9',
+    'en-US,en;q=0.9,zh;q=0.8,ja;q=0.7'
+  ];
+
+  return {
+    'User-Agent': userAgent,
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': languages[Math.floor(Math.random() * languages.length)],
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"macOS"',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'cross-site',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1',
+    'DNT': '1',
+    'Referer': referrers[Math.floor(Math.random() * referrers.length)],
+    'X-Forwarded-For': `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+    'X-Real-IP': `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+  };
+};
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// NEW: Simple Browser Pool for enhanced scraping
+// Enhanced Browser Pool with connection pooling and health checks
 class SimpleBrowserPool {
   private static browsers: any[] = [];
-  private static maxSize = 3;
+  private static maxSize = 5;
+  private static healthCheckInterval = 300000; // 5 minutes
+  private static lastHealthCheck = 0;
 
   static async getBrowser() {
+    // Health check all browsers periodically
+    await this.performHealthCheck();
+    
     if (this.browsers.length > 0) {
       const browser = this.browsers.pop();
       console.log(`🔄 Reusing browser (${this.browsers.length} remaining)`);
@@ -50,10 +81,42 @@ class SimpleBrowserPool {
     console.log('🆕 Creating new browser');
     try {
       const puppeteer = require('puppeteer');
-      return await puppeteer.launch({
+      const browser = await puppeteer.launch({
         headless: true,
-        args: ['--no-sandbox', '--disable-dev-shm-usage']
+        args: [
+          '--no-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-extensions',
+          '--disable-plugins',
+          '--disable-images',
+          '--disable-javascript',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-field-trial-config',
+          '--disable-ipc-flooding-protection',
+          '--no-first-run',
+          '--no-default-browser-check',
+          '--disable-default-apps',
+          '--disable-sync',
+          '--disable-translate',
+          '--hide-scrollbars',
+          '--mute-audio',
+          '--no-zygote',
+          '--single-process'
+        ]
       });
+      
+      // Set up browser event handlers
+      browser.on('disconnected', () => {
+        console.log('⚠️ Browser disconnected unexpectedly');
+        this.removeBrowser(browser);
+      });
+      
+      return browser;
     } catch (error) {
       console.log('⚠️ Puppeteer not available, falling back to axios');
       return null;
@@ -70,30 +133,142 @@ class SimpleBrowserPool {
         for (const page of pages.slice(1)) {
           await page.close();
         }
+        
+        // Clear cookies and cache
+        const context = browser.defaultBrowserContext();
+        await context.clearPermissionOverrides();
+        
         this.browsers.push(browser);
-        console.log(`✅ Browser returned to pool`);
+        console.log(`✅ Browser returned to pool (${this.browsers.length}/${this.maxSize})`);
       } catch (error) {
         console.log('⚠️ Error returning browser to pool, closing instead');
-        await browser.close();
+        await this.closeBrowser(browser);
       }
     } else {
+      await this.closeBrowser(browser);
+    }
+  }
+
+  private static async performHealthCheck() {
+    const now = Date.now();
+    if (now - this.lastHealthCheck < this.healthCheckInterval) {
+      return;
+    }
+    
+    this.lastHealthCheck = now;
+    console.log('🏥 Performing browser pool health check...');
+    
+    const healthyBrowsers = [];
+    for (const browser of this.browsers) {
+      try {
+        const pages = await browser.pages();
+        if (pages.length > 0) {
+          healthyBrowsers.push(browser);
+        } else {
+          await this.closeBrowser(browser);
+        }
+      } catch (error) {
+        console.log('⚠️ Unhealthy browser detected, removing from pool');
+        await this.closeBrowser(browser);
+      }
+    }
+    
+    this.browsers = healthyBrowsers;
+    console.log(`🏥 Health check complete: ${this.browsers.length} healthy browsers`);
+  }
+
+  private static async closeBrowser(browser: any) {
+    try {
       await browser.close();
+    } catch (error) {
+      console.log('⚠️ Error closing browser:', error);
+    }
+  }
+
+  private static removeBrowser(browser: any) {
+    const index = this.browsers.indexOf(browser);
+    if (index > -1) {
+      this.browsers.splice(index, 1);
+    }
+  }
+
+  static async cleanup() {
+    console.log('🧹 Cleaning up browser pool...');
+    for (const browser of this.browsers) {
+      await this.closeBrowser(browser);
+    }
+    this.browsers = [];
+  }
+}
+
+// Circuit breaker pattern for robust error handling
+class CircuitBreaker {
+  private failures = 0;
+  private lastFailureTime = 0;
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+  private readonly failureThreshold = 5;
+  private readonly resetTimeout = 60000; // 1 minute
+
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === 'OPEN') {
+      if (Date.now() - this.lastFailureTime > this.resetTimeout) {
+        this.state = 'HALF_OPEN';
+      } else {
+        throw new Error('Circuit breaker is OPEN');
+      }
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  private onSuccess(): void {
+    this.failures = 0;
+    this.state = 'CLOSED';
+  }
+
+  private onFailure(): void {
+    this.failures++;
+    this.lastFailureTime = Date.now();
+    
+    if (this.failures >= this.failureThreshold) {
+      this.state = 'OPEN';
     }
   }
 }
 
-async function backoffRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+// Enhanced retry with jitter and circuit breaker
+async function backoffRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
+  const circuitBreaker = new CircuitBreaker();
   let attempt = 0;
+  
   while (attempt <= maxRetries) {
     try {
-      return await fn();
+      return await circuitBreaker.execute(fn);
     } catch (err: any) {
       attempt++;
-      if (attempt > maxRetries || ![429, 403, 503].includes(err?.response?.status)) {
+      
+      // Don't retry on certain errors
+      if (err?.response?.status === 404 || err?.response?.status === 401) {
         throw err;
       }
-      const delay = Math.min(1000 * Math.pow(2, attempt), 10000) + Math.random() * 1000;
-      console.warn(`🔁 Retrying ${err?.response?.status} in ${delay}ms (attempt ${attempt})`);
+      
+      if (attempt > maxRetries) {
+        throw err;
+      }
+      
+      // Exponential backoff with jitter
+      const baseDelay = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
+      const jitter = Math.random() * 1000;
+      const delay = baseDelay + jitter;
+      
+      console.warn(`🔁 Retrying ${err?.response?.status || 'unknown error'} in ${Math.round(delay)}ms (attempt ${attempt}/${maxRetries})`);
       await sleep(delay);
     }
   }

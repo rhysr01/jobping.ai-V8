@@ -7,22 +7,127 @@ import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, ext
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0',
 ];
+
+// Enhanced anti-detection headers with rotating IP simulation
+const getRandomHeaders = (userAgent: string) => {
+  const referrers = [
+    'https://www.google.com/',
+    'https://www.linkedin.com/jobs/',
+    'https://www.glassdoor.com/',
+    'https://www.indeed.com/',
+    'https://www.ziprecruiter.com/',
+    'https://www.simplyhired.com/',
+    'https://www.dice.com/',
+    'https://www.angel.co/jobs',
+    'https://www.wellfound.com/',
+    'https://www.otta.com/'
+  ];
+
+  const languages = [
+    'en-US,en;q=0.9,es;q=0.8,fr;q=0.7,de;q=0.6',
+    'en-GB,en;q=0.9',
+    'en-CA,en;q=0.9,fr;q=0.8',
+    'en-AU,en;q=0.9',
+    'en-US,en;q=0.9,zh;q=0.8,ja;q=0.7'
+  ];
+
+  return {
+    'User-Agent': userAgent,
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': languages[Math.floor(Math.random() * languages.length)],
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"macOS"',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'cross-site',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1',
+    'DNT': '1',
+    'Referer': referrers[Math.floor(Math.random() * referrers.length)],
+    'X-Forwarded-For': `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+    'X-Real-IP': `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+  };
+};
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function backoffRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+// Circuit breaker pattern for robust error handling
+class CircuitBreaker {
+  private failures = 0;
+  private lastFailureTime = 0;
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+  private readonly failureThreshold = 5;
+  private readonly resetTimeout = 60000; // 1 minute
+
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === 'OPEN') {
+      if (Date.now() - this.lastFailureTime > this.resetTimeout) {
+        this.state = 'HALF_OPEN';
+      } else {
+        throw new Error('Circuit breaker is OPEN');
+      }
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  private onSuccess(): void {
+    this.failures = 0;
+    this.state = 'CLOSED';
+  }
+
+  private onFailure(): void {
+    this.failures++;
+    this.lastFailureTime = Date.now();
+    
+    if (this.failures >= this.failureThreshold) {
+      this.state = 'OPEN';
+    }
+  }
+}
+
+// Enhanced retry with jitter and circuit breaker
+async function backoffRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
+  const circuitBreaker = new CircuitBreaker();
   let attempt = 0;
+  
   while (attempt <= maxRetries) {
     try {
-      return await fn();
+      return await circuitBreaker.execute(fn);
     } catch (err: any) {
       attempt++;
-      if (attempt > maxRetries || ![429, 403, 503].includes(err?.response?.status)) {
+      
+      // Don't retry on certain errors
+      if (err?.response?.status === 404 || err?.response?.status === 401) {
         throw err;
       }
-      const delay = Math.min(1000 * Math.pow(2, attempt), 10000) + Math.random() * 1000;
-      console.warn(`🔁 Workday retrying ${err?.response?.status} in ${delay}ms (attempt ${attempt})`);
+      
+      if (attempt > maxRetries) {
+        throw err;
+      }
+      
+      // Exponential backoff with jitter
+      const baseDelay = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
+      const jitter = Math.random() * 1000;
+      const delay = baseDelay + jitter;
+      
+      console.warn(`🔁 Workday retrying ${err?.response?.status || 'unknown error'} in ${Math.round(delay)}ms (attempt ${attempt}/${maxRetries})`);
       await sleep(delay);
     }
   }
@@ -60,11 +165,7 @@ async function scrapeWorkdayJSON(company: any, runId: string, userAgent: string)
   try {
     const { data, headers } = await backoffRetry(() =>
       axios.get(company.url, {
-        headers: {
-          'User-Agent': userAgent,
-          'Accept': 'application/json, text/html, */*',
-          'Accept-Language': 'en-US,en;q=0.9',
-        },
+        headers: getRandomHeaders(userAgent),
         timeout: 15000,
       })
     );

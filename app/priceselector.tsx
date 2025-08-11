@@ -41,10 +41,10 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
       name: 'Free',
       price: '$0',
       period: 'forever',
-      tagline: 'Perfect for exploring daily job opportunity alerts',
+      tagline: 'Perfect for exploring job opportunity alerts every 48 hours',
       description: 'Everything you need to kick start your job search journey.',
       features: [
-        '5 AI-curated job matches daily',
+        '5 AI-curated job matches every 48 hours',
         'Email delivery to your inbox',
         'Basic location filtering',
         'Graduate-focused opportunities',
@@ -60,7 +60,7 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
       tagline: 'Built for ambitious job seekers',
       description: 'Advanced AI matching with premium features for serious candidates.',
       features: [
-        '15 AI-curated job matches DAILY',
+        '15 AI-curated job matches every 48 hours',
         'Priority AI matching algorithm',
         'Advanced filtering & preferences',
         'Direct company contact info',
