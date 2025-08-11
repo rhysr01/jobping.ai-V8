@@ -102,6 +102,106 @@ export async function POST(req: NextRequest) {
       };
     }
 
+    // Scrape GraduateJobs - NEW EU SCRAPER
+    if (platforms.includes('graduatejobs') || platforms.includes('all')) {
+      try {
+        console.log('🎓 Scraping GraduateJobs...');
+        const { scrapeGraduateJobs } = await import('@/scrapers/graduatejobs');
+        const graduateJobs = await scrapeGraduateJobs(runId);
+        results.graduatejobs = {
+          success: true,
+          jobs: graduateJobs.length,
+          inserted: graduateJobs.length,
+          updated: 0,
+          errors: []
+        };
+        console.log(`✅ GraduateJobs: ${graduateJobs.length} jobs processed`);
+      } catch (error: any) {
+        results.graduatejobs = { success: false, error: error.message };
+        console.error('❌ GraduateJobs scrape failed:', error.message);
+      }
+    }
+
+    // Scrape Graduateland - NEW EU SCRAPER
+    if (platforms.includes('graduateland') || platforms.includes('all')) {
+      try {
+        console.log('🎓 Scraping Graduateland...');
+        const { scrapeGraduateland } = await import('@/scrapers/graduateland');
+        const graduatelandJobs = await scrapeGraduateland(runId);
+        results.graduateland = {
+          success: true,
+          jobs: graduatelandJobs.length,
+          inserted: graduatelandJobs.length,
+          updated: 0,
+          errors: []
+        };
+        console.log(`✅ Graduateland: ${graduatelandJobs.length} jobs processed`);
+      } catch (error: any) {
+        results.graduateland = { success: false, error: error.message };
+        console.error('❌ Graduateland scrape failed:', error.message);
+      }
+    }
+
+    // Scrape iAgora - NEW EU SCRAPER
+    if (platforms.includes('iagora') || platforms.includes('all')) {
+      try {
+        console.log('🌍 Scraping iAgora...');
+        const { scrapeIAgora } = await import('@/scrapers/iagora');
+        const iagoraJobs = await scrapeIAgora(runId);
+        results.iagora = {
+          success: true,
+          jobs: iagoraJobs.length,
+          inserted: iagoraJobs.length,
+          updated: 0,
+          errors: []
+        };
+        console.log(`✅ iAgora: ${iagoraJobs.length} jobs processed`);
+      } catch (error: any) {
+        results.iagora = { success: false, error: error.message };
+        console.error('❌ iAgora scrape failed:', error.message);
+      }
+    }
+
+    // Scrape SmartRecruiters - NEW EU SCRAPER
+    if (platforms.includes('smartrecruiters') || platforms.includes('all')) {
+      try {
+        console.log('🏢 Scraping SmartRecruiters...');
+        const { scrapeSmartRecruiters } = await import('@/scrapers/smartrecruiters');
+        const smartRecruitersJobs = await scrapeSmartRecruiters(runId);
+        results.smartrecruiters = {
+          success: true,
+          jobs: smartRecruitersJobs.length,
+          inserted: smartRecruitersJobs.length,
+          updated: 0,
+          errors: []
+        };
+        console.log(`✅ SmartRecruiters: ${smartRecruitersJobs.length} jobs processed`);
+      } catch (error: any) {
+        results.smartrecruiters = { success: false, error: error.message };
+        console.error('❌ SmartRecruiters scrape failed:', error.message);
+      }
+    }
+
+    // Scrape Wellfound - NEW EU SCRAPER
+    if (platforms.includes('wellfound') || platforms.includes('all')) {
+      try {
+        console.log('🚀 Scraping Wellfound...');
+        const { scrapeWellfound } = await import('@/scrapers/wellfound');
+        const wellfoundJobs = await scrapeWellfound(runId);
+        results.wellfound = {
+          success: true,
+          jobs: wellfoundJobs.length,
+          inserted: wellfoundJobs.length,
+          updated: 0,
+          errors: []
+        };
+        console.log(`✅ Wellfound: ${wellfoundJobs.length} jobs processed`);
+      } catch (error: any) {
+        results.wellfound = { success: false, error: error.message };
+        console.error('❌ Wellfound scrape failed:', error.message);
+      }
+    }
+
     console.log(`✅ Scrape run ${runId} completed`);
 
     // Create success response with rate limit headers
@@ -148,7 +248,7 @@ export async function GET(req: NextRequest) {
         POST: 'Trigger scraping for specified platforms',
         GET: 'API status'
       },
-      platforms: ['remoteok', 'greenhouse', 'lever', 'workday', 'all'],
+      platforms: ['remoteok', 'greenhouse', 'lever', 'workday', 'graduatejobs', 'graduateland', 'iagora', 'smartrecruiters', 'wellfound', 'all'],
       timestamp: new Date().toISOString(),
       user: {
         tier: authResult.userData?.tier || 'unknown',

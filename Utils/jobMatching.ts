@@ -99,6 +99,9 @@ export class AIMatchingCache {
   }
 }
 
+// Enhanced AI Matching Cache with Redis persistence (new implementation)
+export { EnhancedAIMatchingCache, enhancedAIMatchingCache } from './enhancedCache';
+
 // ================================
 // ORIGINAL TYPES + target_cities ADDED
 // ================================
