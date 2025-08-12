@@ -3,7 +3,9 @@ import { Resend } from 'resend';
 import crypto from 'crypto';
 
 export class EmailVerificationOracle {
-  private static resend = new Resend(process.env.RESEND_API_KEY);
+  private static getResendClient() {
+    return new Resend(process.env.RESEND_API_KEY);
+  }
 
   static generateVerificationToken(): string {
     return crypto.randomBytes(32).toString('hex');
@@ -13,7 +15,8 @@ export class EmailVerificationOracle {
     const verificationUrl = `${process.env.NEXT_PUBLIC_URL}/verify-email?token=${token}`;
     
     try {
-      await this.resend.emails.send({
+      const resend = this.getResendClient();
+      await resend.emails.send({
         from: 'JobPing <noreply@jobping.ai>',
         to: [email],
         subject: '🎯 Verify your JobPing account',
@@ -114,7 +117,8 @@ export class EmailVerificationOracle {
   }
 
   private static async sendWelcomeEmail(user: any) {
-    await this.resend.emails.send({
+    const resend = this.getResendClient();
+    await resend.emails.send({
       from: 'JobPing <noreply@jobping.ai>',
       to: [user.email],
       subject: '🎉 Welcome to JobPing - Your job hunt starts now!',

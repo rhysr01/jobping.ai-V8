@@ -1,6 +1,8 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export async function sendMatchedJobsEmail({
     to,
@@ -427,6 +429,7 @@ export async function sendMatchedJobsEmail({
         }
       };
 
+      const resend = getResendClient();
       const { data, error } = await resend.emails.send({
         from: 'JobPingAI <noreply@jobpingai.com>', // Update with your verified domain
         to: [to],
@@ -500,6 +503,7 @@ export async function sendWelcomeEmail({
   `;
 
   try {
+    const resend = getResendClient();
     const { data, error } = await resend.emails.send({
       from: 'JobPingAI <noreply@jobpingai.com>', // Update with your verified domain
       to: [to],
