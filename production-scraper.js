@@ -1,0 +1,334 @@
+#!/usr/bin/env node
+
+// 🚀 PRODUCTION SCRAPER SYSTEM
+// Bulletproof, reliable, high-volume job scraping for JobPing
+
+require('dotenv').config();
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+
+// Configuration
+const CONFIG = {
+  SCRAPING_INTERVAL_MINUTES: process.env.SCRAPING_INTERVAL_MINUTES || 60,
+  MAX_CONCURRENT_SCRAPERS: process.env.MAX_CONCURRENT_SCRAPERS || 3,
+  REQUEST_TIMEOUT_MS: process.env.REQUEST_TIMEOUT_MS || 20000,
+  ENABLE_PROXY: process.env.ENABLE_PROXY === 'true',
+  LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+  ENABLE_MONITORING: process.env.ENABLE_MONITORING === 'true',
+  API_BASE_URL: process.env.NEXT_PUBLIC_URL || 'http://localhost:3000',
+  API_KEY: process.env.JOBPING_API_KEY || 'test-api-key'
+};
+
+// Logging system
+const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
+const currentLogLevel = LOG_LEVELS[CONFIG.LOG_LEVEL] || 1;
+
+function log(level, message, data = null) {
+  if (LOG_LEVELS[level] >= currentLogLevel) {
+    const timestamp = new Date().toISOString();
+    const prefix = {
+      debug: '🔍',
+      info: '📊',
+      warn: '⚠️',
+      error: '❌'
+    }[level];
+    
+    console.log(`[${timestamp}] ${prefix} ${message}`);
+    if (data && level === 'debug') {
+      console.log(JSON.stringify(data, null, 2));
+    }
+  }
+}
+
+// Production-grade scraper orchestrator
+class ProductionScraperOrchestrator {
+  constructor() {
+    this.stats = {
+      totalRuns: 0,
+      successfulRuns: 0,
+      failedRuns: 0,
+      totalJobsFound: 0,
+      lastRunTime: null,
+      uptime: Date.now()
+    };
+    
+    this.isRunning = false;
+    this.intervalId = null;
+  }
+
+  async start() {
+    log('info', '🚀 Starting Production Scraper System');
+    log('info', `📋 Config: ${CONFIG.SCRAPING_INTERVAL_MINUTES}min intervals, ${CONFIG.MAX_CONCURRENT_SCRAPERS} concurrent`);
+    
+    // Run once immediately
+    await this.runScrapingCycle();
+    
+    // Schedule regular runs
+    if (!process.argv.includes('--once')) {
+      this.intervalId = setInterval(() => {
+        this.runScrapingCycle();
+      }, CONFIG.SCRAPING_INTERVAL_MINUTES * 60 * 1000);
+      
+      log('info', `⏰ Scheduled scraping every ${CONFIG.SCRAPING_INTERVAL_MINUTES} minutes`);
+    } else {
+      log('info', '🎯 Single run mode - exiting after completion');
+      process.exit(0);
+    }
+  }
+
+  async runScrapingCycle() {
+    if (this.isRunning) {
+      log('warn', '⏸️ Scraping cycle already running, skipping...');
+      return;
+    }
+
+    this.isRunning = true;
+    this.stats.totalRuns++;
+    this.stats.lastRunTime = new Date().toISOString();
+    
+    log('info', `🔄 Starting scraping cycle #${this.stats.totalRuns}`);
+    
+    try {
+      const results = await this.runReliableScrapers();
+      
+      if (results.success) {
+        this.stats.successfulRuns++;
+        this.stats.totalJobsFound += results.totalJobs;
+        
+        log('info', `✅ Cycle completed: ${results.totalJobs} jobs found`);
+        this.logStats();
+      } else {
+        this.stats.failedRuns++;
+        log('error', `❌ Cycle failed: ${results.error}`);
+      }
+      
+    } catch (error) {
+      this.stats.failedRuns++;
+      log('error', `💥 Cycle crashed: ${error.message}`);
+    } finally {
+      this.isRunning = false;
+    }
+  }
+
+  async runReliableScrapers() {
+    log('info', '📡 Executing reliable scrapers...');
+    
+    try {
+      const response = await axios.post(`${CONFIG.API_BASE_URL}/api/scrape`, {
+        platforms: ['reliable']
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': CONFIG.API_KEY
+        },
+        timeout: CONFIG.REQUEST_TIMEOUT_MS
+      });
+
+      if (response.data.success) {
+        const reliableResults = response.data.results.reliable;
+        
+        if (reliableResults.success) {
+          return {
+            success: true,
+            totalJobs: reliableResults.jobs,
+            inserted: reliableResults.inserted,
+            updated: reliableResults.updated
+          };
+        } else {
+          return {
+            success: false,
+            error: `Reliable scraper failed: ${reliableResults.errors?.join(', ') || 'Unknown error'}`
+          };
+        }
+      } else {
+        return {
+          success: false,
+          error: 'API request failed'
+        };
+      }
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  logStats() {
+    const uptime = Math.floor((Date.now() - this.stats.uptime) / 1000 / 60); // minutes
+    const successRate = this.stats.totalRuns > 0 
+      ? Math.round((this.stats.successfulRuns / this.stats.totalRuns) * 100) 
+      : 0;
+    
+    log('info', `📊 Stats: ${this.stats.totalJobsFound} total jobs, ${successRate}% success rate, ${uptime}min uptime`);
+    
+    // Write stats to file for monitoring
+    if (CONFIG.ENABLE_MONITORING) {
+      const statsFile = path.join(__dirname, 'scraper-stats.json');
+      fs.writeFileSync(statsFile, JSON.stringify({
+        ...this.stats,
+        uptime: uptime,
+        successRate: successRate,
+        lastUpdated: new Date().toISOString()
+      }, null, 2));
+    }
+  }
+
+  async healthCheck() {
+    try {
+      const response = await axios.get(`${CONFIG.API_BASE_URL}/api/health`, {
+        timeout: 5000
+      });
+      return response.status === 200;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  stop() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+    log('info', '🛑 Production scraper stopped');
+  }
+}
+
+// Enhanced monitoring and alerts
+class ProductionMonitor {
+  constructor(orchestrator) {
+    this.orchestrator = orchestrator;
+    this.alertThresholds = {
+      maxFailures: 3,
+      maxResponseTime: 30000,
+      minSuccessRate: 50
+    };
+  }
+
+  checkHealth() {
+    const stats = this.orchestrator.stats;
+    const successRate = stats.totalRuns > 0 
+      ? (stats.successfulRuns / stats.totalRuns) * 100 
+      : 100;
+
+    // Critical alerts
+    if (stats.failedRuns >= this.alertThresholds.maxFailures) {
+      this.sendAlert('🔴 CRITICAL', `${stats.failedRuns} consecutive failures`);
+    }
+    
+    // Warning alerts  
+    if (successRate < this.alertThresholds.minSuccessRate && stats.totalRuns >= 5) {
+      this.sendAlert('🟡 WARNING', `Success rate dropped to ${successRate.toFixed(1)}%`);
+    }
+    
+    // Healthy status
+    if (successRate >= 90 && stats.totalJobsFound > 0) {
+      log('debug', '🟢 All systems healthy');
+    }
+  }
+
+  sendAlert(level, message) {
+    log('warn', `${level}: ${message}`);
+    
+    // In production, send to Slack/email/monitoring service
+    if (CONFIG.ENABLE_MONITORING) {
+      // TODO: Integrate with your monitoring service
+      console.log(`ALERT: ${level} - ${message}`);
+    }
+  }
+}
+
+// Anti-detection and proxy management
+class ProxyManager {
+  constructor() {
+    this.proxies = [
+      // Add your proxy URLs here
+      process.env.BRIGHTDATA_PROXY_URL,
+      // Add more proxy services as needed
+    ].filter(Boolean);
+    
+    this.currentProxyIndex = 0;
+  }
+
+  getNextProxy() {
+    if (this.proxies.length === 0) return null;
+    
+    const proxy = this.proxies[this.currentProxyIndex];
+    this.currentProxyIndex = (this.currentProxyIndex + 1) % this.proxies.length;
+    
+    return proxy;
+  }
+
+  getRandomUserAgent() {
+    const userAgents = [
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/121.0'
+    ];
+    
+    return userAgents[Math.floor(Math.random() * userAgents.length)];
+  }
+}
+
+// Main execution
+async function main() {
+  log('info', '🎯 JobPing Production Scraper v1.0');
+  log('info', `📋 Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  try {
+    const orchestrator = new ProductionScraperOrchestrator();
+    const monitor = new ProductionMonitor(orchestrator);
+    const proxyManager = new ProxyManager();
+    
+    // Health check before starting
+    const isHealthy = await orchestrator.healthCheck();
+    if (!isHealthy) {
+      log('error', '💔 API health check failed - cannot start scraper');
+      process.exit(1);
+    }
+    
+    log('info', '💚 API health check passed');
+    
+    // Start monitoring
+    if (CONFIG.ENABLE_MONITORING) {
+      setInterval(() => {
+        monitor.checkHealth();
+      }, 5 * 60 * 1000); // Check every 5 minutes
+    }
+    
+    // Graceful shutdown
+    process.on('SIGINT', () => {
+      log('info', '📪 Received SIGINT - shutting down gracefully...');
+      orchestrator.stop();
+      process.exit(0);
+    });
+    
+    process.on('SIGTERM', () => {
+      log('info', '📪 Received SIGTERM - shutting down gracefully...');
+      orchestrator.stop();
+      process.exit(0);
+    });
+    
+    // Start the production scraper
+    await orchestrator.start();
+    
+  } catch (error) {
+    log('error', '💥 Failed to start scraper:', error);
+    process.exit(1);
+  }
+}
+
+// Only run if this file is executed directly
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  ProductionScraperOrchestrator,
+  ProductionMonitor,
+  ProxyManager
+};

@@ -15,7 +15,11 @@
     "clean": "rm -rf .next out",
     "analyze": "ANALYZE=true npm run build",
     "postinstall": "next telemetry disable",
-    "vercel-install": "npm install --legacy-peer-deps"
+    "vercel-install": "npm install --legacy-peer-deps",
+    "scrape:once": "node production-scraper.js --once",
+    "scrape:start": "node production-scraper.js",
+    "scrape:dev": "nodemon production-scraper.js --once",
+    "scrape:test": "node test-reliable-scrapers.js"
   },
   "dependencies": {
     "@stripe/stripe-js": "^7.8.0",
