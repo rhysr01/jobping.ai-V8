@@ -3,7 +3,12 @@ import { createCheckoutSession, STRIPE_CONFIG } from '@/Utils/stripe';
 import { productionRateLimiter } from '@/Utils/productionRateLimiter';
 import { createClient } from '@supabase/supabase-js';
 
+let _supabaseClient: any = null;
+
 function getSupabaseClient() {
+  // Lazy initialization to prevent build-time execution
+  if (_supabaseClient) return _supabaseClient;
+  
   // Only initialize during runtime, not build time
   if (typeof window !== 'undefined') {
     throw new Error('Supabase client should only be used server-side');
@@ -16,12 +21,14 @@ function getSupabaseClient() {
     throw new Error('Missing Supabase configuration');
   }
   
-  return createClient(supabaseUrl, supabaseKey, {
+  _supabaseClient = createClient(supabaseUrl, supabaseKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
     }
   });
+  
+  return _supabaseClient;
 }
 
 export async function POST(req: NextRequest) {

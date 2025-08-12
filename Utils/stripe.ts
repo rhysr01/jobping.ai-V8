@@ -1,8 +1,30 @@
 import Stripe from 'stripe';
 
-// Initialize Stripe with secret key
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-07-30.basil',
+// Lazy initialization to prevent build-time execution
+let _stripe: Stripe | null = null;
+
+function getStripeClient(): Stripe {
+  if (_stripe) return _stripe;
+  
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeKey) {
+    throw new Error('Missing STRIPE_SECRET_KEY environment variable');
+  }
+  
+  _stripe = new Stripe(stripeKey, {
+    apiVersion: '2025-07-30.basil',
+  });
+  
+  return _stripe;
+}
+
+// Export the lazy-loaded stripe client
+export const stripe = new Proxy({} as Stripe, {
+  get(target, prop) {
+    const client = getStripeClient();
+    const value = (client as any)[prop];
+    return typeof value === 'function' ? value.bind(client) : value;
+  }
 });
 
 // Stripe configuration
