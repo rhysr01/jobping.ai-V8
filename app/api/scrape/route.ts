@@ -75,31 +75,97 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Scrape Greenhouse companies - TEMPORARILY DISABLED
+    // Scrape Greenhouse companies
     if (platforms.includes('all') || platforms.includes('greenhouse')) {
-      console.log('📡 Scraping Greenhouse companies... (DISABLED)');
-      results.greenhouse = {
-        success: false,
-        error: 'Scraping temporarily disabled for production build'
-      };
+      console.log('📡 Scraping Greenhouse companies...');
+      try {
+        let allGreenhouseJobs: any[] = [];
+        
+        for (const company of COMPANIES.greenhouse) {
+          try {
+            const companyJobs = await scrapeGreenhouse(company, runId);
+            allGreenhouseJobs = allGreenhouseJobs.concat(companyJobs);
+            console.log(`🏢 ${company.name}: ${companyJobs.length} jobs found`);
+          } catch (error: any) {
+            console.error(`❌ ${company.name} failed:`, error.message);
+          }
+        }
+        
+        const result = await atomicUpsertJobs(allGreenhouseJobs);
+        results.greenhouse = {
+          success: result.success,
+          jobs: allGreenhouseJobs.length,
+          inserted: result.inserted,
+          updated: result.updated,
+          errors: result.errors
+        };
+        console.log(`✅ Greenhouse: ${allGreenhouseJobs.length} jobs processed`);
+      } catch (error: any) {
+        results.greenhouse = { success: false, error: error.message };
+        console.error('❌ Greenhouse scrape failed:', error.message);
+      }
     }
 
-    // Scrape Lever companies - TEMPORARILY DISABLED
+    // Scrape Lever companies
     if (platforms.includes('all') || platforms.includes('lever')) {
-      console.log('📡 Scraping Lever companies... (DISABLED)');
-      results.lever = {
-        success: false,
-        error: 'Scraping temporarily disabled for production build'
-      };
+      console.log('📡 Scraping Lever companies...');
+      try {
+        let allLeverJobs: any[] = [];
+        
+        for (const company of COMPANIES.lever) {
+          try {
+            const companyJobs = await scrapeLever(company, runId);
+            allLeverJobs = allLeverJobs.concat(companyJobs);
+            console.log(`🏢 ${company.name}: ${companyJobs.length} jobs found`);
+          } catch (error: any) {
+            console.error(`❌ ${company.name} failed:`, error.message);
+          }
+        }
+        
+        const result = await atomicUpsertJobs(allLeverJobs);
+        results.lever = {
+          success: result.success,
+          jobs: allLeverJobs.length,
+          inserted: result.inserted,
+          updated: result.updated,
+          errors: result.errors
+        };
+        console.log(`✅ Lever: ${allLeverJobs.length} jobs processed`);
+      } catch (error: any) {
+        results.lever = { success: false, error: error.message };
+        console.error('❌ Lever scrape failed:', error.message);
+      }
     }
 
-    // Scrape Workday companies - TEMPORARILY DISABLED
+    // Scrape Workday companies
     if (platforms.includes('all') || platforms.includes('workday')) {
-      console.log('📡 Scraping Workday companies... (DISABLED)');
-      results.workday = {
-        success: false,
-        error: 'Scraping temporarily disabled for production build'
-      };
+      console.log('📡 Scraping Workday companies...');
+      try {
+        let allWorkdayJobs: any[] = [];
+        
+        for (const company of COMPANIES.workday) {
+          try {
+            const companyJobs = await scrapeWorkday(company, runId);
+            allWorkdayJobs = allWorkdayJobs.concat(companyJobs);
+            console.log(`🏢 ${company.name}: ${companyJobs.length} jobs found`);
+          } catch (error: any) {
+            console.error(`❌ ${company.name} failed:`, error.message);
+          }
+        }
+        
+        const result = await atomicUpsertJobs(allWorkdayJobs);
+        results.workday = {
+          success: result.success,
+          jobs: allWorkdayJobs.length,
+          inserted: result.inserted,
+          updated: result.updated,
+          errors: result.errors
+        };
+        console.log(`✅ Workday: ${allWorkdayJobs.length} jobs processed`);
+      } catch (error: any) {
+        results.workday = { success: false, error: error.message };
+        console.error('❌ Workday scrape failed:', error.message);
+      }
     }
 
     // Scrape GraduateJobs - NEW EU SCRAPER
