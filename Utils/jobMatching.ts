@@ -1690,7 +1690,8 @@ export async function atomicUpsertJobs(jobs: Job[]): Promise<JobUpsertResult> {
 
     if (error) {
       // If the constraint doesn't exist yet, try with column name
-      if (error.message.includes('constraint') || error.message.includes('conflict')) {
+      if (error.message.includes('constraint') || error.message.includes('conflict') || 
+          error.message.includes('does not exist') || error.message.includes('jobs_job_hash_unique')) {
         console.warn('⚠️ Constraint not found, trying with column name...');
         const { data: retryData, error: retryError } = await supabase
           .from('jobs')
