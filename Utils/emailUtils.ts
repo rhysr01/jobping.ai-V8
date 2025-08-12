@@ -18,7 +18,7 @@ export async function sendMatchedJobsEmail({
     isSignupEmail?: boolean,
   }) {
     const isPremium = subscriptionTier === 'premium';
-    const jobLimit = isPremium ? 15 : 5;
+    const jobLimit = isPremium ? 15 : 6; // Updated: Free tier now gets 6 matches per week instead of 5 every 48h
     const emailTypeText = isSignupEmail ? 'Welcome! Here are your first' : 'Your fresh';
     
     const html = `
@@ -316,7 +316,7 @@ export async function sendMatchedJobsEmail({
                 font-size: 16px;
                 line-height: 1.5;
               ">
-                Premium members get <strong style="color: #000000;">15 jobs every 48 hours</strong><br>
+                Premium members get <strong style="color: #000000;">~45 jobs per week</strong><br>
                 + detailed match insights + priority support
               </p>
               <a href="${process.env.NEXT_PUBLIC_BASE_URL}/pricing" style="
@@ -351,7 +351,7 @@ export async function sendMatchedJobsEmail({
                 color: #000000;
                 font-weight: 600;
               ">
-                You'll get <strong>${jobLimit} ${isPremium ? 'premium ' : ''}jobs every 48 hours</strong>
+                You'll get <strong>${isPremium ? jobLimit + ' premium jobs every 48 hours' : jobLimit + ' jobs per week'}</strong>
               </p>
               <p style="
                 margin: 0;

@@ -1,50 +1,21 @@
 'use client';
-import { useState } from 'react';
+
 import { motion } from 'framer-motion';
-import { Crown, Zap, Check, Sparkles } from 'lucide-react';
-
-const FeatureItem = ({ text, highlight = false }: { text: string; highlight?: boolean }) => (
-  <li className={`flex items-start gap-4 text-base ${highlight ? 'text-black' : 'text-gray-600'}`}>
-    <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
-      highlight ? 'bg-black text-white' : 'bg-gray-200 text-gray-600'
-    }`}>
-      <Check className="w-3 h-3" />
-    </div>
-    <span className={highlight ? 'font-medium' : 'font-normal'}>{text}</span>
-  </li>
-);
-
-const Badge = ({ children, variant = 'default' }: { children: React.ReactNode; variant?: 'default' | 'premium' | 'popular' }) => {
-  const variants = {
-    default: 'bg-gray-100 text-gray-600 border-gray-200',
-    premium: 'bg-black text-white border-black',
-    popular: 'bg-gradient-to-r from-black to-gray-800 text-white font-semibold shadow-xl'
-  };
-
-  return (
-    <span className={`inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm border transition-all duration-300 ${variants[variant]}`}>
-      {variant === 'popular' && <Sparkles className="w-4 h-4" />}
-      {children}
-    </span>
-  );
-};
+import { Zap, Crown, Check } from 'lucide-react';
 
 interface PricingSelectorProps {
   onSelect?: (plan: 'free' | 'premium') => void;
 }
 
 export default function PricingSelector({ onSelect }: PricingSelectorProps = {}) {
-  const [activeTab, setActiveTab] = useState<'free' | 'premium'>('premium');
-
   const plans = {
     free: {
       name: 'Free',
-      price: '$0',
+      price: '€0',
       period: 'forever',
-      tagline: 'Perfect for exploring job opportunity alerts every 48 hours',
-      description: 'Everything you need to kick start your job search journey.',
+      tagline: 'Perfect for exploring job opportunities at your own pace',
       features: [
-        '5 AI-curated job matches every 48 hours',
+        '6 AI-curated jobs per week',
         'Email delivery to your inbox',
         'Basic location filtering',
         'Graduate-focused opportunities',
@@ -55,16 +26,16 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
     },
     premium: {
       name: 'Premium',
-      price: '$9',
+      price: '€15',
       period: 'month',
       tagline: 'Built for ambitious job seekers',
-      description: 'Advanced AI matching with premium features for serious candidates.',
       features: [
-        '15 AI-curated job matches every 48 hours',
+        '15 AI-curated jobs every 48 hours',
         'Priority AI matching algorithm',
         'Advanced filtering & preferences',
         'Direct company contact info',
-        'Full access to all features'
+        'Salary range transparency',
+        'Visa sponsorship verification'
       ],
       cta: 'Start Premium',
       icon: Crown
@@ -72,145 +43,129 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6">
-      {/* Plan Toggle */}
-      <motion.div
-        className="flex justify-center mb-24"
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8, delay: 0.1 }}
-      >
-        <div className="relative p-2 rounded-2xl bg-gray-100 border border-gray-200 shadow-lg">
-          <div className="relative flex">
-            <button
-              onClick={() => {
-                setActiveTab('free');
-                onSelect?.('free');
-              }}
-              className={`relative px-12 py-4 rounded-xl text-sm font-semibold transition-all duration-300 z-10 ${
-                activeTab === 'free'
-                  ? 'text-black bg-white shadow-xl'
-                  : 'text-gray-600 hover:text-black'
-              }`}
-            >
-              Free
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('premium');
-                onSelect?.('premium');
-              }}
-              className={`relative px-12 py-4 rounded-xl text-sm font-semibold transition-all duration-300 z-10 ${
-                activeTab === 'premium'
-                  ? 'text-black bg-white shadow-xl'
-                  : 'text-gray-600 hover:text-black'
-              }`}
-            >
-              Premium
-            </button>
-          </div>
+    <section id="pricing" className="py-20 px-6 bg-gradient-to-b from-[#0B0B0F] to-[#151519]">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-[#F8F9FA] font-bold text-4xl lg:text-5xl mb-6 tracking-tight"
+          >
+            Choose Your Plan
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-[#9CA3AF] text-xl max-w-2xl mx-auto leading-relaxed"
+          >
+            Start free and upgrade when you're ready. No contracts, cancel anytime.
+          </motion.p>
         </div>
-      </motion.div>
 
-      {/* Pricing Cards */}
-      <motion.div
-        className="grid grid-cols-1 lg:grid-cols-2 gap-16 max-w-6xl mx-auto"
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-      >
-        {/* Free Plan */}
-        <motion.div
-          className={`relative p-16 rounded-3xl border transition-all duration-500 ${
-            activeTab === 'free'
-              ? 'bg-white border-black shadow-2xl'
-              : 'bg-gray-50 border-gray-200 opacity-60'
-          }`}
-          whileHover={{ y: -16 }}
-        >
-          <div className="text-center mb-16">
-            <div className="flex justify-center mb-8">
-              <div className="w-20 h-20 bg-black rounded-3xl flex items-center justify-center">
-                <plans.free.icon className="w-10 h-10 text-white" />
-              </div>
-            </div>
-            <h3 className="text-4xl font-bold text-black mb-6">{plans.free.name}</h3>
-            <div className="flex items-baseline justify-center gap-3 mb-8">
-              <span className="text-7xl font-black text-black">{plans.free.price}</span>
-              <span className="text-2xl text-gray-600">/{plans.free.period}</span>
-            </div>
-            <p className="text-gray-600 text-xl">{plans.free.tagline}</p>
-          </div>
-          <ul className="space-y-8 mb-16">
-            {plans.free.features.map((feature, index) => (
-              <FeatureItem key={index} text={feature} />
-            ))}
-          </ul>
-          <motion.button
-            onClick={() => onSelect?.('free')}
-            className="w-full py-8 px-8 border-2 border-black text-black rounded-2xl font-semibold text-xl hover:bg-black hover:text-white transition-all duration-300"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+        {/* Pricing Cards Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          
+          {/* Free Plan Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="pricing-free card"
           >
-            {plans.free.cta}
-          </motion.button>
-        </motion.div>
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#4B5563] to-[#6B7280] rounded-2xl mb-6">
+                <plans.free.icon className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-[#F8F9FA] font-bold text-2xl mb-2">{plans.free.name}</h3>
+              <div className="mb-4">
+                <span className="text-[#F8F9FA] font-black text-5xl">{plans.free.price}</span>
+                <span className="text-[#6B7280] text-lg ml-2">/{plans.free.period}</span>
+              </div>
+              <p className="text-[#9CA3AF] leading-relaxed">
+                {plans.free.tagline}
+              </p>
+            </div>
+            
+            <ul className="space-y-4 mb-8">
+              {plans.free.features.map((feature, index) => (
+                <li key={index} className="feature-item">
+                  <div className="feature-check">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span className="feature-text">{feature}</span>
+                </li>
+              ))}
+            </ul>
+            
+            <button 
+              onClick={() => onSelect?.('free')}
+              className="btn-secondary w-full py-4 text-lg font-semibold"
+            >
+              {plans.free.cta}
+            </button>
+          </motion.div>
 
-        {/* Premium Plan */}
-        <motion.div
-          className={`relative p-16 rounded-3xl border transition-all duration-500 ${
-            activeTab === 'premium'
-              ? 'bg-black border-black shadow-2xl text-white'
-              : 'bg-gray-900 border-gray-800 opacity-60 text-white'
-          }`}
-          whileHover={{ y: -16 }}
-        >
-          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
-            <Badge variant="popular">Most Popular</Badge>
-          </div>
-          <div className="text-center mb-16">
-            <div className="flex justify-center mb-8">
-              <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center">
-                <plans.premium.icon className="w-10 h-10 text-black" />
-              </div>
-            </div>
-            <h3 className="text-4xl font-bold text-white mb-6">{plans.premium.name}</h3>
-            <div className="flex items-baseline justify-center gap-3 mb-8">
-              <span className="text-7xl font-black text-white">{plans.premium.price}</span>
-              <span className="text-2xl text-white/60">/{plans.premium.period}</span>
-            </div>
-            <p className="text-white/60 text-xl">{plans.premium.tagline}</p>
-          </div>
-          <ul className="space-y-8 mb-16">
-            {plans.premium.features.map((feature, index) => (
-              <FeatureItem key={index} text={feature} highlight={index < 2} />
-            ))}
-          </ul>
-          <motion.button
-            onClick={() => onSelect?.('premium')}
-            className="w-full py-8 px-8 bg-white text-black rounded-2xl font-semibold text-xl hover:bg-gray-100 transition-all duration-300 shadow-xl"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          {/* Premium Plan Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="pricing-premium card-premium relative"
           >
-            {plans.premium.cta}
-          </motion.button>
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl mb-6">
+                <plans.premium.icon className="w-8 h-8 text-black" />
+              </div>
+              <h3 className="text-[#F8F9FA] font-bold text-2xl mb-2">{plans.premium.name}</h3>
+              <div className="mb-4">
+                <span className="text-[#F8F9FA] font-black text-5xl">{plans.premium.price}</span>
+                <span className="text-[#9CA3AF] text-lg ml-2">/{plans.premium.period}</span>
+              </div>
+              <p className="text-[#9CA3AF] leading-relaxed">
+                {plans.premium.tagline}
+              </p>
+            </div>
+            
+            <ul className="space-y-4 mb-8">
+              {plans.premium.features.map((feature, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-black" />
+                  </div>
+                  <span className="text-[#D1D5DB] font-medium">{feature}</span>
+                </li>
+              ))}
+            </ul>
+            
+            <button 
+              onClick={() => onSelect?.('premium')}
+              className="btn-primary w-full py-4 text-lg font-semibold"
+            >
+              {plans.premium.cta}
+            </button>
+          </motion.div>
+        </div>
+
+        {/* Trust Indicators */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="text-center mt-16"
+        >
+          <p className="text-[#6B7280] text-lg">
+            No credit card required • Cancel anytime • GDPR compliant
+          </p>
         </motion.div>
-      </motion.div>
-      
-      {/* Trust Indicators */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8, delay: 0.4 }}
-        className="text-center mt-24"
-      >
-        <p className="text-lg text-gray-500">
-          Trusted by 10,000+ students • No credit card required • Cancel anytime
-        </p>
-      </motion.div>
-    </div>
+      </div>
+    </section>
   );
 }

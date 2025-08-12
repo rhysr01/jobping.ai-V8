@@ -20,7 +20,7 @@ const testScrapers = async () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': 'test-key' // Replace with your actual API key
+          'x-api-key': 'test-api-key' // Development test key
         },
         body: JSON.stringify({
           platforms: [scraper.endpoint]
@@ -63,7 +63,7 @@ const testAllScrapers = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': 'test-key' // Replace with your actual API key
+        'x-api-key': 'test-api-key' // Development test key
       },
       body: JSON.stringify({
         platforms: ['graduatejobs', 'graduateland', 'iagora', 'smartrecruiters', 'wellfound']

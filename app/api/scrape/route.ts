@@ -13,18 +13,18 @@ const securityMiddleware = new SecurityMiddleware();
 // Company configurations for different platforms
 const COMPANIES = {
   greenhouse: [
-    { name: 'Stripe', url: 'https://stripe.com/jobs', platform: 'greenhouse' as const },
-    { name: 'Notion', url: 'https://notion.so/careers', platform: 'greenhouse' as const },
-    { name: 'Figma', url: 'https://figma.com/careers', platform: 'greenhouse' as const },
+    { name: 'Stripe', url: 'https://boards.greenhouse.io/stripe', platform: 'greenhouse' as const },
+    { name: 'Airbnb', url: 'https://boards.greenhouse.io/airbnb', platform: 'greenhouse' as const },
+    { name: 'Shopify', url: 'https://boards.greenhouse.io/shopify', platform: 'greenhouse' as const },
   ],
   lever: [
-    { name: 'Linear', url: 'https://linear.app/careers', platform: 'lever' as const },
-    { name: 'Vercel', url: 'https://vercel.com/careers', platform: 'lever' as const },
-    { name: 'Railway', url: 'https://railway.app/careers', platform: 'lever' as const },
+    { name: 'Netflix', url: 'https://jobs.lever.co/netflix', platform: 'lever' as const },
+    { name: 'Uber', url: 'https://jobs.lever.co/uber', platform: 'lever' as const },
+    { name: 'Postmates', url: 'https://jobs.lever.co/postmates', platform: 'lever' as const },
   ],
   workday: [
-    { name: 'Google', url: 'https://careers.google.com/jobs', platform: 'workday' as const },
-    { name: 'Microsoft', url: 'https://careers.microsoft.com/jobs', platform: 'workday' as const },
+    { name: 'Coinbase', url: 'https://coinbase.wd12.myworkdayjobs.com/External', platform: 'workday' as const },
+    { name: 'Tesla', url: 'https://tesla.wd12.myworkdayjobs.com/External', platform: 'workday' as const },
   ]
 };
 

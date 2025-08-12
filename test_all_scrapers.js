@@ -5,7 +5,7 @@
 // Run with: node test_all_scrapers.js
 
 const BASE_URL = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
-const API_KEY = process.env.JOBPING_API_KEY || 'test-key';
+const API_KEY = process.env.JOBPING_API_KEY || 'test-api-key';
 
 const colors = {
   reset: '\x1b[0m',

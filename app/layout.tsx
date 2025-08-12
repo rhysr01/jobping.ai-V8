@@ -74,11 +74,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <meta name="theme-color" content="#000000" />
-        <meta name="color-scheme" content="light" />
+        <meta name="theme-color" content="#0B0B0F" />
+        <meta name="color-scheme" content="dark" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
-      <body className="bg-white text-black overflow-x-hidden font-inter selection:bg-black selection:text-white">
+      <body className="bg-[#0B0B0F] text-white overflow-x-hidden font-inter selection:bg-white selection:text-black">
         {children}
       </body>
     </html>

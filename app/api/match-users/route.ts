@@ -46,7 +46,7 @@ const MAX_JOBS_PER_USER = {
 const TIER_DISTRIBUTION = {
   free: {
     ultra_fresh: 2,
-    fresh: 2,
+    fresh: 3, // Updated: Changed from 2 to 3 to total 6 matches per week (2+3+1=6)
     comprehensive: 1,
     fallback_order: ['fresh', 'comprehensive', 'ultra_fresh'] // If tier is empty, try these
   },
