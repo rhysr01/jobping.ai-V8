@@ -4,6 +4,7 @@ import { scrapeLever } from '../../../scrapers/lever';
 import { scrapeWorkday } from '../../../scrapers/workday';
 import { scrapeRemoteOK } from '../../../scrapers/remoteok';
 import { atomicUpsertJobs } from '../../../Utils/jobMatching';
+import { runReliableScrapers } from '../../../Utils/reliableScrapers';
 import { SecurityMiddleware, addSecurityHeaders, extractUserData, extractRateLimit } from '../../../Utils/securityMiddleware';
 import crypto from 'crypto';
 
@@ -54,6 +55,26 @@ export async function POST(req: NextRequest) {
     const results: any = {};
 
     console.log(`🚀 Starting scrape run ${runId} for platforms: ${platforms.join(', ')}`);
+
+    // NEW: Reliable Scrapers System (fast, no hanging)
+    if (platforms.includes('all') || platforms.includes('reliable')) {
+      console.log('🎯 Running reliable scraper system...');
+      try {
+        const reliableJobs = await runReliableScrapers(runId);
+        const result = await atomicUpsertJobs(reliableJobs);
+        results.reliable = {
+          success: result.success,
+          jobs: reliableJobs.length,
+          inserted: result.inserted,
+          updated: result.updated,
+          errors: result.errors
+        };
+        console.log(`✅ Reliable scrapers: ${reliableJobs.length} jobs processed`);
+      } catch (error: any) {
+        results.reliable = { success: false, error: error.message };
+        console.error('❌ Reliable scrapers failed:', error.message);
+      }
+    }
 
     // Scrape RemoteOK (always included)
     if (platforms.includes('all') || platforms.includes('remoteok')) {
@@ -314,7 +335,7 @@ export async function GET(req: NextRequest) {
         POST: 'Trigger scraping for specified platforms',
         GET: 'API status'
       },
-      platforms: ['remoteok', 'greenhouse', 'lever', 'workday', 'graduatejobs', 'graduateland', 'iagora', 'smartrecruiters', 'wellfound', 'all'],
+      platforms: ['reliable', 'remoteok', 'greenhouse', 'lever', 'workday', 'graduatejobs', 'graduateland', 'iagora', 'smartrecruiters', 'wellfound', 'all'],
       timestamp: new Date().toISOString(),
       user: {
         tier: authResult.userData?.tier || 'unknown',
