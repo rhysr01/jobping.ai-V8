@@ -16,8 +16,8 @@ const http = require('http');
 // Configuration
 const CONFIG = {
   // API endpoints
-  scrapeUrl: process.env.SCRAPE_API_URL || 'https://your-domain.com/api/scrape',
-  cleanupUrl: process.env.CLEANUP_API_URL || 'https://your-domain.com/api/cleanup-jobs',
+  scrapeUrl: process.env.SCRAPE_API_URL || 'http://localhost:3002/api/scrape',
+  cleanupUrl: process.env.CLEANUP_API_URL || 'http://localhost:3002/api/cleanup-jobs',
   
   // API key for authentication
   apiKey: process.env.SCRAPE_API_KEY,

@@ -16,7 +16,7 @@ const CONFIG = {
   ENABLE_PROXY: process.env.ENABLE_PROXY === 'true',
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   ENABLE_MONITORING: process.env.ENABLE_MONITORING === 'true',
-  API_BASE_URL: process.env.NEXT_PUBLIC_URL || 'http://localhost:3000',
+  API_BASE_URL: process.env.NEXT_PUBLIC_URL || 'http://localhost:3002',
   API_KEY: process.env.JOBPING_API_KEY || 'test-api-key'
 };
 
@@ -87,25 +87,58 @@ class ProductionScraperOrchestrator {
     this.stats.totalRuns++;
     this.stats.lastRunTime = new Date().toISOString();
     
+    const cycleStart = Date.now();
+    const memoryBefore = process.memoryUsage();
+    
     log('info', `🔄 Starting scraping cycle #${this.stats.totalRuns}`);
     
     try {
       const results = await this.runReliableScrapers();
       
+      const cycleDuration = Date.now() - cycleStart;
+      const memoryAfter = process.memoryUsage();
+      
       if (results.success) {
         this.stats.successfulRuns++;
         this.stats.totalJobsFound += results.totalJobs;
         
-        log('info', `✅ Cycle completed: ${results.totalJobs} jobs found`);
+        log('info', `✅ Cycle completed: ${results.totalJobs} jobs found in ${cycleDuration}ms`);
+        log('debug', `Memory usage: ${Math.round(memoryAfter.heapUsed / 1024 / 1024)}MB heap`);
+        
         this.logStats();
+        
+        // Log performance metrics
+        this.logPerformanceMetrics({
+          duration: cycleDuration,
+          jobsFound: results.totalJobs,
+          memoryUsed: memoryAfter.heapUsed,
+          success: true
+        });
       } else {
         this.stats.failedRuns++;
         log('error', `❌ Cycle failed: ${results.error}`);
+        
+        this.logPerformanceMetrics({
+          duration: cycleDuration,
+          jobsFound: 0,
+          memoryUsed: memoryAfter.heapUsed,
+          success: false,
+          error: results.error
+        });
       }
       
     } catch (error) {
       this.stats.failedRuns++;
+      const cycleDuration = Date.now() - cycleStart;
       log('error', `💥 Cycle crashed: ${error.message}`);
+      
+      this.logPerformanceMetrics({
+        duration: cycleDuration,
+        jobsFound: 0,
+        memoryUsed: process.memoryUsage().heapUsed,
+        success: false,
+        error: error.message
+      });
     } finally {
       this.isRunning = false;
     }
@@ -176,6 +209,38 @@ class ProductionScraperOrchestrator {
     }
   }
 
+  logPerformanceMetrics(metrics) {
+    const timestamp = new Date().toISOString();
+    
+    // Log to console in debug mode
+    if (CONFIG.LOG_LEVEL === 'debug') {
+      log('debug', `Performance: ${metrics.duration}ms, ${metrics.jobsFound} jobs, ${Math.round(metrics.memoryUsed / 1024 / 1024)}MB`);
+    }
+    
+    // Write detailed metrics to file
+    if (CONFIG.ENABLE_MONITORING) {
+      const metricsFile = path.join(__dirname, 'performance-metrics.jsonl');
+      const metricsEntry = JSON.stringify({
+        timestamp,
+        ...metrics,
+        memoryUsedMB: Math.round(metrics.memoryUsed / 1024 / 1024)
+      }) + '\n';
+      
+      try {
+        fs.appendFileSync(metricsFile, metricsEntry);
+        
+        // Rotate metrics file if it gets too large (>5MB)
+        const stats = fs.statSync(metricsFile);
+        if (stats.size > 5 * 1024 * 1024) {
+          const archiveFile = metricsFile.replace('.jsonl', `-${timestamp.replace(/[:.]/g, '-')}.jsonl`);
+          fs.renameSync(metricsFile, archiveFile);
+        }
+      } catch (error) {
+        log('warn', `Failed to write performance metrics: ${error.message}`);
+      }
+    }
+  }
+
   async healthCheck() {
     try {
       const response = await axios.get(`${CONFIG.API_BASE_URL}/api/health`, {
@@ -205,6 +270,8 @@ class ProductionMonitor {
       maxResponseTime: 30000,
       minSuccessRate: 50
     };
+    this.healthChecks = [];
+    this.lastHealthCheck = 0;
   }
 
   checkHealth() {

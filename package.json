@@ -19,7 +19,9 @@
     "scrape:once": "node production-scraper.js --once",
     "scrape:start": "node production-scraper.js",
     "scrape:dev": "nodemon production-scraper.js --once",
-    "scrape:test": "node test-reliable-scrapers.js"
+    "scrape:test": "node test-reliable-scrapers.js",
+    "railway:start": "node railway-server.js",
+    "railway:dev": "nodemon railway-server.js"
   },
   "dependencies": {
     "@stripe/stripe-js": "^7.8.0",
@@ -30,12 +32,16 @@
     "bull": "^4.16.5",
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.1",
+    "express": "^4.18.2",
     "framer-motion": "^12.23.7",
     "hot-shots": "^11.1.1",
     "lucide-react": "^0.525.0",
     "next": "15.4.3",
+    "node-cron": "^3.0.3",
     "openai": "^4.20.1",
     "puppeteer": "^24.16.0",
+    "puppeteer-extra": "3.3.6",
+    "puppeteer-extra-plugin-stealth": "2.11.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "redis": "^4.6.10",

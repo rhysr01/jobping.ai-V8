@@ -6,6 +6,7 @@ import { scrapeRemoteOK } from '../../../scrapers/remoteok';
 import { atomicUpsertJobs } from '../../../Utils/jobMatching';
 import { runReliableScrapers } from '../../../Utils/reliableScrapers';
 import { SecurityMiddleware, addSecurityHeaders, extractUserData, extractRateLimit } from '../../../Utils/securityMiddleware';
+import { getActiveCompaniesForPlatform } from '../../../Utils/dynamicCompanyDiscovery';
 import crypto from 'crypto';
 
 // Initialize security middleware
@@ -19,9 +20,9 @@ const COMPANIES = {
     { name: 'Shopify', url: 'https://boards.greenhouse.io/shopify', platform: 'greenhouse' as const },
   ],
   lever: [
-    { name: 'Netflix', url: 'https://jobs.lever.co/netflix', platform: 'lever' as const },
-    { name: 'Uber', url: 'https://jobs.lever.co/uber', platform: 'lever' as const },
-    { name: 'Postmates', url: 'https://jobs.lever.co/postmates', platform: 'lever' as const },
+    { name: 'Spotify', url: 'https://jobs.lever.co/spotify', platform: 'lever' as const },
+    { name: 'Discord', url: 'https://jobs.lever.co/discord', platform: 'lever' as const },
+    { name: 'Reddit', url: 'https://jobs.lever.co/reddit', platform: 'lever' as const },
   ],
   workday: [
     { name: 'Coinbase', url: 'https://coinbase.wd12.myworkdayjobs.com/External', platform: 'workday' as const },
@@ -96,15 +97,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Scrape Greenhouse companies
+    // Scrape Greenhouse companies with dynamic discovery
     if (platforms.includes('all') || platforms.includes('greenhouse')) {
-      console.log('📡 Scraping Greenhouse companies...');
+      console.log('📡 Discovering active Greenhouse companies with early-career jobs...');
       try {
         let allGreenhouseJobs: any[] = [];
         
-        for (const company of COMPANIES.greenhouse) {
+        // Get active companies dynamically focused on early-career roles
+        const activeCompanies = await getActiveCompaniesForPlatform('greenhouse', 5);
+        console.log(`🎯 Found ${activeCompanies.length} companies with early-career openings`);
+        
+        for (const company of activeCompanies) {
           try {
-            const companyJobs = await scrapeGreenhouse(company, runId);
+            const companyJobs = await scrapeGreenhouse({ ...company, platform: 'greenhouse' as const }, runId);
             allGreenhouseJobs = allGreenhouseJobs.concat(companyJobs);
             console.log(`🏢 ${company.name}: ${companyJobs.length} jobs found`);
           } catch (error: any) {
@@ -127,15 +132,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Scrape Lever companies
+    // Scrape Lever companies with dynamic discovery
     if (platforms.includes('all') || platforms.includes('lever')) {
-      console.log('📡 Scraping Lever companies...');
+      console.log('📡 Discovering active Lever companies with early-career jobs...');
       try {
         let allLeverJobs: any[] = [];
         
-        for (const company of COMPANIES.lever) {
+        // Get active companies dynamically focused on early-career roles
+        const activeCompanies = await getActiveCompaniesForPlatform('lever', 5);
+        console.log(`🎯 Found ${activeCompanies.length} companies with early-career openings`);
+        
+        for (const company of activeCompanies) {
           try {
-            const companyJobs = await scrapeLever(company, runId);
+            const companyJobs = await scrapeLever({ ...company, platform: 'lever' as const }, runId);
             allLeverJobs = allLeverJobs.concat(companyJobs);
             console.log(`🏢 ${company.name}: ${companyJobs.length} jobs found`);
           } catch (error: any) {
@@ -209,23 +218,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Scrape Graduateland - NEW EU SCRAPER
-    if (platforms.includes('graduateland') || platforms.includes('all')) {
+    // Scrape JobTeaser - replaces Graduateland
+    if (platforms.includes('jobteaser') || platforms.includes('all')) {
       try {
-        console.log('🎓 Scraping Graduateland...');
-        const { scrapeGraduateland } = await import('@/scrapers/graduateland');
-        const graduatelandJobs = await scrapeGraduateland(runId);
-        results.graduateland = {
+        console.log('🎓 Scraping JobTeaser...');
+        const { scrapeJobTeaser } = await import('@/scrapers/jobteaser');
+        const jobteaserJobs = await scrapeJobTeaser(runId);
+        results.jobteaser = {
           success: true,
-          jobs: graduatelandJobs.length,
-          inserted: graduatelandJobs.length,
+          jobs: jobteaserJobs.length,
+          inserted: jobteaserJobs.length,
           updated: 0,
           errors: []
         };
-        console.log(`✅ Graduateland: ${graduatelandJobs.length} jobs processed`);
+        console.log(`✅ JobTeaser: ${jobteaserJobs.length} jobs processed`);
       } catch (error: any) {
-        results.graduateland = { success: false, error: error.message };
-        console.error('❌ Graduateland scrape failed:', error.message);
+        results.jobteaser = { success: false, error: error.message };
+        console.error('❌ JobTeaser scrape failed:', error.message);
       }
     }
 
@@ -289,6 +298,112 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Scrape Milkround - NEW EU SCRAPER
+    if (platforms.includes('milkround') || platforms.includes('all')) {
+      try {
+        console.log('🥛 Scraping Milkround...');
+        const { scrapeMilkround } = await import('@/scrapers/milkround');
+        const milkroundJobs = await scrapeMilkround(runId);
+        results.milkround = {
+          success: true,
+          jobs: milkroundJobs.length,
+          inserted: milkroundJobs.length,
+          updated: 0,
+          errors: []
+        };
+        console.log(`✅ Milkround: ${milkroundJobs.length} jobs processed`);
+      } catch (error: any) {
+        results.milkround = { success: false, error: error.message };
+        console.error('❌ Milkround scrape failed:', error.message);
+      }
+    }
+
+    // Scrape EURES - NEW EU SCRAPER
+    if (platforms.includes('eures') || platforms.includes('all')) {
+      try {
+        console.log('🇪🇺 Scraping EURES...');
+        const { scrapeEures } = await import('@/scrapers/eures');
+        const euresJobs = await scrapeEures(runId);
+        results.eures = {
+          success: true,
+          jobs: euresJobs.length,
+          inserted: euresJobs.length,
+          updated: 0,
+          errors: []
+        };
+        console.log(`✅ EURES: ${euresJobs.length} jobs processed`);
+      } catch (error: any) {
+        results.eures = { success: false, error: error.message };
+        console.error('❌ EURES scrape failed:', error.message);
+      }
+    }
+
+    // Scrape Trinity Dublin - UNIVERSITY CAREER PORTAL (requires login on some endpoints)
+    if ((platforms.includes('trinity-dublin') || platforms.includes('all')) && process.env.ENABLE_UNI_SCRAPERS === 'true') {
+      try {
+        console.log('🎓 Scraping Trinity Dublin...');
+        const { scrapeTrinityDublin } = await import('@/scrapers/trinity-dublin');
+        const trinityJobs = await scrapeTrinityDublin(runId);
+        results['trinity-dublin'] = {
+          success: true,
+          jobs: trinityJobs.length,
+          inserted: trinityJobs.length,
+          updated: 0,
+          errors: []
+        };
+        console.log(`✅ Trinity Dublin: ${trinityJobs.length} jobs processed`);
+      } catch (error: any) {
+        results['trinity-dublin'] = { success: false, error: error.message };
+        console.error('❌ Trinity Dublin scrape failed:', error.message);
+      }
+    } else if (platforms.includes('trinity-dublin')) {
+      results['trinity-dublin'] = { success: false, error: 'Disabled: requires login. Set ENABLE_UNI_SCRAPERS=true to enable if you have access.' };
+    }
+
+    // Scrape TU Delft - UNIVERSITY CAREER PORTAL (may require login)
+    if ((platforms.includes('tu-delft') || platforms.includes('all')) && process.env.ENABLE_UNI_SCRAPERS === 'true') {
+      try {
+        console.log('🇳🇱 Scraping TU Delft...');
+        const { scrapeTUDelft } = await import('@/scrapers/tu-delft');
+        const tuDelftJobs = await scrapeTUDelft(runId);
+        results['tu-delft'] = {
+          success: true,
+          jobs: tuDelftJobs.length,
+          inserted: tuDelftJobs.length,
+          updated: 0,
+          errors: []
+        };
+        console.log(`✅ TU Delft: ${tuDelftJobs.length} jobs processed`);
+      } catch (error: any) {
+        results['tu-delft'] = { success: false, error: error.message };
+        console.error('❌ TU Delft scrape failed:', error.message);
+      }
+    } else if (platforms.includes('tu-delft')) {
+      results['tu-delft'] = { success: false, error: 'Disabled: requires login. Set ENABLE_UNI_SCRAPERS=true to enable if you have access.' };
+    }
+
+    // Scrape ETH Zurich - UNIVERSITY CAREER PORTAL (may require login)
+    if ((platforms.includes('eth-zurich') || platforms.includes('all')) && process.env.ENABLE_UNI_SCRAPERS === 'true') {
+      try {
+        console.log('🇨🇭 Scraping ETH Zurich...');
+        const { scrapeETHZurich } = await import('@/scrapers/eth-zurich');
+        const ethJobs = await scrapeETHZurich(runId);
+        results['eth-zurich'] = {
+          success: true,
+          jobs: ethJobs.length,
+          inserted: ethJobs.length,
+          updated: 0,
+          errors: []
+        };
+        console.log(`✅ ETH Zurich: ${ethJobs.length} jobs processed`);
+      } catch (error: any) {
+        results['eth-zurich'] = { success: false, error: error.message };
+        console.error('❌ ETH Zurich scrape failed:', error.message);
+      }
+    } else if (platforms.includes('eth-zurich')) {
+      results['eth-zurich'] = { success: false, error: 'Disabled: requires login. Set ENABLE_UNI_SCRAPERS=true to enable if you have access.' };
+    }
+
     console.log(`✅ Scrape run ${runId} completed`);
 
     // Create success response with rate limit headers
@@ -335,7 +450,7 @@ export async function GET(req: NextRequest) {
         POST: 'Trigger scraping for specified platforms',
         GET: 'API status'
       },
-      platforms: ['reliable', 'remoteok', 'greenhouse', 'lever', 'workday', 'graduatejobs', 'graduateland', 'iagora', 'smartrecruiters', 'wellfound', 'all'],
+      platforms: ['reliable', 'remoteok', 'greenhouse', 'lever', 'workday', 'graduatejobs', 'jobteaser', 'milkround', 'eures', 'iagora', 'smartrecruiters', 'wellfound', 'all'],
       timestamp: new Date().toISOString(),
       user: {
         tier: authResult.userData?.tier || 'unknown',

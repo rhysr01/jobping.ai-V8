@@ -55,10 +55,106 @@ export const RATE_LIMIT_CONFIG = {
   }
 } as const;
 
+// Platform-specific scraper rate limits (critical for avoiding blocks)
+export const SCRAPER_RATE_LIMITS = {
+  // Enterprise platforms (strict limits)
+  'greenhouse': {
+    requestsPerHour: 45, // Under 50/hour limit
+    minDelayMs: 2000,    // 2-second minimum between requests
+    maxDelayMs: 8000,    // Up to 8 seconds when throttling
+    burstLimit: 3,       // Max 3 rapid requests
+    adaptiveThrottle: true
+  },
+  'lever': {
+    requestsPerHour: 40,
+    minDelayMs: 2500,
+    maxDelayMs: 10000,
+    burstLimit: 2,
+    adaptiveThrottle: true
+  },
+  'workday': {
+    requestsPerHour: 18, // Under 20/hour aggressive limit
+    minDelayMs: 3000,    // 3-second minimum
+    maxDelayMs: 15000,   // Up to 15 seconds when blocked
+    burstLimit: 2,
+    adaptiveThrottle: true
+  },
+  // Graduate sites (very conservative)
+  'graduatejobs': {
+    requestsPerHour: 30,
+    minDelayMs: 3000,
+    maxDelayMs: 12000,
+    burstLimit: 2,
+    adaptiveThrottle: true
+  },
+  'graduateland': {
+    requestsPerHour: 25,
+    minDelayMs: 4000,
+    maxDelayMs: 15000,
+    burstLimit: 2,
+    adaptiveThrottle: true
+  },
+  'iagora': {
+    requestsPerHour: 20,
+    minDelayMs: 5000,
+    maxDelayMs: 20000,
+    burstLimit: 1,
+    adaptiveThrottle: true
+  },
+  // Fast platforms
+  'remoteok': {
+    requestsPerHour: 60,
+    minDelayMs: 1000,
+    maxDelayMs: 5000,
+    burstLimit: 5,
+    adaptiveThrottle: true
+  },
+  'wellfound': {
+    requestsPerHour: 35,
+    minDelayMs: 2000,
+    maxDelayMs: 8000,
+    burstLimit: 3,
+    adaptiveThrottle: true
+  },
+  'smartrecruiters': {
+    requestsPerHour: 30,
+    minDelayMs: 2500,
+    maxDelayMs: 10000,
+    burstLimit: 2,
+    adaptiveThrottle: true
+  },
+  // Newly added job boards
+  'jobteaser': {
+    requestsPerHour: 25,
+    minDelayMs: 3000,
+    maxDelayMs: 12000,
+    burstLimit: 2,
+    adaptiveThrottle: true
+  },
+  'milkround': {
+    requestsPerHour: 30,
+    minDelayMs: 2500,
+    maxDelayMs: 10000,
+    burstLimit: 2,
+    adaptiveThrottle: true
+  },
+  'eures': {
+    requestsPerHour: 20,
+    minDelayMs: 4000,
+    maxDelayMs: 15000,
+    burstLimit: 1,
+    adaptiveThrottle: true
+  }
+} as const;
+
 class ProductionRateLimiter {
   private redis: any = null;
   private fallbackMap: Map<string, { count: number; resetTime: number }> = new Map();
   private isRedisConnected = false;
+  
+  // Scraper-specific tracking
+  private scraperRequestTimes: Map<string, number[]> = new Map();
+  private scraperThrottleLevel: Map<string, number> = new Map();
 
   constructor() {
     this.initializeRedis();
@@ -305,6 +401,136 @@ class ProductionRateLimiter {
         memoryKeys: this.fallbackMap.size
       };
     }
+  }
+
+  /**
+   * Intelligent scraper rate limiting with adaptive throttling
+   */
+  async getScraperDelay(platform: string, wasBlocked: boolean = false): Promise<number> {
+    const config = SCRAPER_RATE_LIMITS[platform as keyof typeof SCRAPER_RATE_LIMITS];
+    if (!config) {
+      return 2000; // Default 2-second delay
+    }
+
+    const now = Date.now();
+    const platformKey = `scraper:${platform}`;
+    
+    // Track request times
+    const requestTimes = this.scraperRequestTimes.get(platformKey) || [];
+    requestTimes.push(now);
+    
+    // Keep only last hour of requests
+    const oneHourAgo = now - (60 * 60 * 1000);
+    const recentRequests = requestTimes.filter(time => time > oneHourAgo);
+    this.scraperRequestTimes.set(platformKey, recentRequests);
+
+    // Check if we're exceeding hourly limit
+    if (recentRequests.length >= config.requestsPerHour) {
+      console.warn(`⚠️ ${platform}: Approaching hourly limit (${recentRequests.length}/${config.requestsPerHour})`);
+      return config.maxDelayMs;
+    }
+
+    // Adaptive throttling based on blocks
+    let currentThrottleLevel = this.scraperThrottleLevel.get(platformKey) || 0;
+    
+    if (wasBlocked) {
+      // Increase throttle level on block
+      currentThrottleLevel = Math.min(currentThrottleLevel + 1, 5);
+      this.scraperThrottleLevel.set(platformKey, currentThrottleLevel);
+      console.warn(`🚨 ${platform}: Block detected! Throttle level: ${currentThrottleLevel}`);
+    } else if (currentThrottleLevel > 0) {
+      // Gradually reduce throttle level on success
+      currentThrottleLevel = Math.max(currentThrottleLevel - 0.1, 0);
+      this.scraperThrottleLevel.set(platformKey, currentThrottleLevel);
+    }
+
+    // Calculate delay with throttling
+    const baseDelay = config.minDelayMs;
+    const throttleMultiplier = 1 + (currentThrottleLevel * 0.5);
+    const calculatedDelay = baseDelay * throttleMultiplier;
+    
+    // Add jitter for human-like behavior
+    const jitter = Math.random() * 1000;
+    const finalDelay = Math.min(calculatedDelay + jitter, config.maxDelayMs);
+
+    return Math.round(finalDelay);
+  }
+
+  /**
+   * Check if scraper should pause due to rate limits
+   */
+  shouldScraperPause(platform: string): boolean {
+    const config = SCRAPER_RATE_LIMITS[platform as keyof typeof SCRAPER_RATE_LIMITS];
+    if (!config) return false;
+
+    const platformKey = `scraper:${platform}`;
+    const requestTimes = this.scraperRequestTimes.get(platformKey) || [];
+    
+    // Check burst limit
+    const now = Date.now();
+    const lastMinute = now - 60000;
+    const recentBurstRequests = requestTimes.filter(time => time > lastMinute).length;
+    
+    if (recentBurstRequests >= config.burstLimit) {
+      console.warn(`⏸️ ${platform}: Burst limit reached (${recentBurstRequests}/${config.burstLimit})`);
+      return true;
+    }
+
+    // Check hourly limit
+    const oneHourAgo = now - (60 * 60 * 1000);
+    const hourlyRequests = requestTimes.filter(time => time > oneHourAgo).length;
+    
+    if (hourlyRequests >= config.requestsPerHour) {
+      console.warn(`⏸️ ${platform}: Hourly limit reached (${hourlyRequests}/${config.requestsPerHour})`);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Detect if response indicates a block/rate limit
+   */
+  detectBlock(status: number, responseText: string): boolean {
+    // Common block indicators
+    const blockStatuses = [429, 403, 503, 509];
+    if (blockStatuses.includes(status)) return true;
+    
+    // Text-based detection
+    const blockKeywords = [
+      'rate limit', 'too many requests', 'blocked', 'captcha',
+      'temporarily unavailable', 'access denied', 'suspicious activity',
+      'bot detection', 'please wait', 'try again later'
+    ];
+    
+    const text = responseText.toLowerCase();
+    return blockKeywords.some(keyword => text.includes(keyword));
+  }
+
+  /**
+   * Get scraper statistics for monitoring
+   */
+  getScraperStats(): Record<string, any> {
+    const stats: Record<string, any> = {};
+    
+    for (const [platform, config] of Object.entries(SCRAPER_RATE_LIMITS)) {
+      const platformKey = `scraper:${platform}`;
+      const requestTimes = this.scraperRequestTimes.get(platformKey) || [];
+      const throttleLevel = this.scraperThrottleLevel.get(platformKey) || 0;
+      
+      const now = Date.now();
+      const oneHourAgo = now - (60 * 60 * 1000);
+      const hourlyRequests = requestTimes.filter(time => time > oneHourAgo).length;
+      
+      stats[platform] = {
+        hourlyRequests,
+        hourlyLimit: config.requestsPerHour,
+        throttleLevel: throttleLevel.toFixed(1),
+        utilizationPercent: Math.round((hourlyRequests / config.requestsPerHour) * 100)
+      };
+    }
+    
+    return stats;
   }
 
   async close() {
