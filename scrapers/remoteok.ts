@@ -285,11 +285,21 @@ export async function scrapeRemoteOK(runId: string): Promise<Job[]> {
 
         if (!title || !company || !jobUrl) return;
 
-        // Early-career relevance filter
+        // Relaxed relevance filter - include more job types
         const titleLower = title.toLowerCase();
-        const isEarlyCareer = /\b(intern|internship|graduate|grad|entry.?level|junior|trainee|early.?career|new.?grad|recent.?graduate|associate|0[-‒–—]?[12].?years?|entry.?position)\b/.test(titleLower);
+        const descLower = description.toLowerCase();
+        const content = `${titleLower} ${descLower}`;
         
-        if (!isEarlyCareer) return;
+        // Skip only clearly senior/management positions
+        const isSenior = /\b(senior|sr\.|lead|principal|staff|director|manager|mgr|head.of|chief|vp|vice.president|architect|expert|specialist.*(5|6|7|8|9|10)\+?.years)\b/.test(content);
+        
+        if (isSenior) return;
+
+        // Skip remote jobs - focus on local/hybrid opportunities for better early-career prospects
+        const isRemoteOnly = /\b(remote|100%\s*remote|fully\s*remote|remote\s*only)\b/i.test(content) && 
+                           !/\b(hybrid|on-site|office|in-person)\b/i.test(content);
+        
+        if (isRemoteOnly) return;
 
         // Analyze job content (using same pattern as your other scrapers)
         const analysis = analyzeRemoteOKJobContent(title, description);
@@ -316,9 +326,9 @@ export async function scrapeRemoteOK(runId: string): Promise<Job[]> {
           job_url: jobUrl,
           description,
           experience_required: analysis.experienceLevel,
-          work_environment: analysis.workEnvironment,
+          work_environment: analysis.workEnvironment === 'office' ? 'on-site' : analysis.workEnvironment,
           source: 'remoteok',
-          categories: analysis.categories.join(', '),
+          categories: analysis.categories,
           company_profile_url: '',
           language_requirements: analysis.languages.join(', '),
           scrape_timestamp: new Date().toISOString(),

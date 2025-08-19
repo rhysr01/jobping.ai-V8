@@ -82,7 +82,7 @@ describe('Job Matching Utils', () => {
     experience_required: 'Entry level',
     work_environment: 'Hybrid',
     source: 'greenhouse',
-    categories: 'Engineering',
+    categories: ['Engineering'],
     company_profile_url: 'https://example.com/company',
     language_requirements: 'English',
     created_at: '2024-01-01T00:00:00Z',

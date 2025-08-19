@@ -220,11 +220,21 @@ async function processLeverJobElement(
 
   if (!title) return null;
 
-  // Enhanced early career filter
+  // Relaxed relevance filter - include more job types
   const titleLower = title.toLowerCase();
-  const isEarlyCareer = /\b(intern|internship|graduate|grad|entry.?level|junior|trainee|early.?career|new.?grad|recent.?graduate|associate|0[-‒–—]?[12].?years?|entry.?position)\b/.test(titleLower);
+  const descLower = $el.text().toLowerCase();
+  const content = `${titleLower} ${descLower}`;
   
-  if (!isEarlyCareer) return null;
+  // Skip only clearly senior/management positions
+  const isSenior = /\b(senior|sr\.|lead|principal|staff|director|manager|mgr|head.of|chief|vp|vice.president|architect|expert|specialist.*(5|6|7|8|9|10)\+?.years)\b/.test(content);
+  
+  if (isSenior) return null;
+
+  // Skip remote-only jobs - focus on local/hybrid opportunities for better early-career prospects
+  const isRemoteOnly = /\b(remote|100%\s*remote|fully\s*remote|remote\s*only)\b/i.test(content) && 
+                     !/\b(hybrid|on-site|office|in-person)\b/i.test(content);
+  
+  if (isRemoteOnly) return null;
 
   // Extract URL with better handling
   let jobUrl = $el.find('a').first().attr('href') || '';
@@ -281,7 +291,7 @@ async function processLeverJobElement(
     location,
     job_url: jobUrl,
     description: description.slice(0, 2000),
-    categories: [department, analysis.level, analysis.workEnv].filter(Boolean).join(', '),
+    categories: [department, analysis.level, analysis.workEnv].filter(Boolean),
     experience_required: analysis.experienceLevel,
     work_environment: analysis.workEnv,
     language_requirements: analysis.languages.join(', '),
@@ -404,7 +414,7 @@ function analyzeLeverJobContent(title: string, description: string) {
   // Determine work environment
   let workEnv = 'hybrid';
   if (/\b(remote|distributed|work.from.home|fully.remote)\b/.test(content)) workEnv = 'remote';
-  else if (/\b(on.?site|office|in.person|onsite)\b/.test(content)) workEnv = 'office';
+  else if (/\b(on.?site|office|in.person|onsite)\b/.test(content)) workEnv = 'on-site';
   else if (/\b(hybrid|flexible)\b/.test(content)) workEnv = 'hybrid';
   
   // Extract language requirements
@@ -483,7 +493,7 @@ async function tryLeverAPI(company: any, runId: string, userAgent: string): Prom
         location: job.categories?.location || 'Location not specified',
         job_url: job.hostedUrl || job.applyUrl,
         description: job.description || 'Description not available',
-        categories: [job.categories?.team || 'General'].join(', '),
+        categories: [job.categories?.team || 'General'],
         experience_required: 'entry-level',
         work_environment: 'hybrid',
         language_requirements: '',

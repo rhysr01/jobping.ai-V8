@@ -21,9 +21,9 @@ export interface Job {
   experience_required: string;          // text Non-nullable
   work_environment: string;             // text Non-nullable
   source: string;                       // text Non-nullable
-  categories: string[];                 // text[] Non-nullable (added)
-  company_profile_url: string;          // text Non-nullable (added)
-  language_requirements: string[];      // text[] Non-nullable (added)
+  categories: string[];                 // text[] Nullable (matches DB schema)
+  company_profile_url: string;          // text Nullable (matches DB schema)
+  language_requirements: string;        // text Nullable (matches DB schema)
   scrape_timestamp: string;             // timestamptz Non-nullable (renamed from scraped_at)
   original_posted_date: string;         // timestamp Non-nullable
   posted_at: string;                    // timestamp Non-nullable
@@ -32,6 +32,7 @@ export interface Job {
   freshness_tier?: string;              // varchar Nullable
   scraper_run_id?: string;              // uuid Nullable
   created_at: string;                   // timestamptz Non-nullable, default now()
+  updated_at?: string;                  // timestamptz Non-nullable, default now() (added by migration)
 }
 
 // Utility interface for atomic upserts

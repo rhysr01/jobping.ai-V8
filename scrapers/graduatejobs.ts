@@ -333,7 +333,7 @@ async function scrapeCityJobs(city: string, runId: string, userAgent: string): P
       description: `Graduate software engineering position in ${city}. Perfect for new graduates looking to start their tech career.`,
       experience_required: 'Entry Level',
       work_environment: 'hybrid',
-      categories: 'technology,graduate,software',
+      categories: ['technology', 'graduate', 'software'],
       language_requirements: 'English'
     },
     {
@@ -343,7 +343,7 @@ async function scrapeCityJobs(city: string, runId: string, userAgent: string): P
       description: `12-month graduate programme for data analysts in ${city}. Training provided for recent graduates.`,
       experience_required: 'Graduate',
       work_environment: 'office',
-      categories: 'data,analytics,graduate',
+      categories: ['data', 'analytics', 'graduate'],
       language_requirements: 'English'
     },
     {
@@ -353,7 +353,7 @@ async function scrapeCityJobs(city: string, runId: string, userAgent: string): P
       description: `6-month internship opportunity in marketing for students and recent graduates in ${city}.`,
       experience_required: 'Internship',
       work_environment: 'hybrid',
-      categories: 'marketing,internship,graduate',
+      categories: ['marketing', 'internship', 'graduate'],
       language_requirements: 'English'
     }
   ];

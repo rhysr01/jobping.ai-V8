@@ -257,7 +257,7 @@ async function performRuleBasedMatching(
       experience_required: '', // Default value for compatibility
       work_environment: '', // Default value for compatibility
       source: '', // Default value for compatibility
-      categories: '', // Default value for compatibility
+      categories: [], // Default value for compatibility
       company_profile_url: '', // Default value for compatibility
       language_requirements: '', // Default value for compatibility
       scrape_timestamp: new Date().toISOString(), // Default value for compatibility
@@ -805,7 +805,7 @@ export async function POST(req: NextRequest) {
               experience_required: '',
               work_environment: '',
               source: '',
-              categories: '',
+              categories: [],
               company_profile_url: '',
               language_requirements: '',
               scrape_timestamp: new Date().toISOString(),
@@ -834,7 +834,7 @@ export async function POST(req: NextRequest) {
             experience_required: '',
             work_environment: '',
             source: '',
-            categories: '',
+            categories: [],
             company_profile_url: '',
             language_requirements: '',
             scrape_timestamp: new Date().toISOString(),

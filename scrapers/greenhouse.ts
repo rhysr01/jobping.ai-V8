@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
 import { PerformanceMonitor } from '../Utils/performanceMonitor';
+import { productionRateLimiter } from '../Utils/productionRateLimiter';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -287,7 +288,10 @@ export async function scrapeGreenhouse(company: {
   const scrapeStart = Date.now();
   
   try {
-    await sleep(500 + Math.random() * 1500);
+    // Intelligent platform-specific rate limiting
+    const delay = await productionRateLimiter.getScraperDelay('greenhouse');
+    console.log(`⏱️ Greenhouse: Waiting ${delay}ms before scraping ${company.name}`);
+    await sleep(delay);
 
     let html: string;
     
@@ -302,13 +306,20 @@ export async function scrapeGreenhouse(company: {
     } else {
       // Fallback to axios
       console.log(`📡 Using axios fallback for ${company.name} scraping`);
-      const { data } = await backoffRetry(() =>
+      const response = await backoffRetry(() =>
         axios.get(company.url, {
           headers: getRandomHeaders(userAgent),
           timeout: 15000,
         })
       );
-      html = data;
+      html = response.data;
+      
+      // Check for blocks/rate limits
+      const wasBlocked = productionRateLimiter.detectBlock(response.status, html);
+      if (wasBlocked) {
+        console.warn(`🚨 Block detected for ${company.name}! Adaptive throttling enabled.`);
+        await productionRateLimiter.getScraperDelay('greenhouse', true);
+      }
     }
 
     const $ = cheerio.load(html);
@@ -382,46 +393,24 @@ async function processJobElement(
 
   if (!title) return null;
 
-  // Enhanced early career filter with more comprehensive patterns
+  // Relaxed relevance filter - include more job types
   const titleLower = title.toLowerCase();
-  const isEarlyCareer = /\b(intern|graduate|entry|junior|trainee|early.?career|new.?grad|recent.?graduate|0[-‒–—]?[12].?years?|associate|apprentice|student|co.?op|coop|rotational|development.?program|leadership.?program|accelerator|fellowship|scholarship)\b/.test(titleLower);
+  const descLower = $el.text().toLowerCase();
+  const content = `${titleLower} ${descLower}`;
+  
+  // Skip only clearly senior/management positions
+  const isSenior = /\b(senior|sr\.|lead|principal|staff|director|manager|mgr|head.of|chief|vp|vice.president|architect|expert|specialist.*(5|6|7|8|9|10)\+?.years)\b/.test(content);
+  
+  if (isSenior) {
+    return null;
+  }
 
-  // Additional filtering for experience levels
-  const experienceLevels = [
-    'entry level', 'entry-level', 'entrylevel',
-    'junior', 'jr', 'jr.',
-    'associate', 'assoc',
-    'trainee', 'training',
-    'intern', 'internship',
-    'graduate', 'grad',
-    'new grad', 'new graduate',
-    'recent graduate', 'recent grad',
-    'early career', 'early-career',
-    '0 years', '0-1 years', '0-2 years', '1 year', '1-2 years',
-    'no experience', 'no prior experience',
-    'first role', 'first job',
-    'student', 'student program',
-    'co-op', 'coop', 'cooperative',
-    'rotational', 'rotation',
-    'development program', 'leadership program',
-    'accelerator', 'fellowship'
-  ];
-
-  const hasEarlyCareerKeywords = experienceLevels.some(level => 
-    titleLower.includes(level.toLowerCase())
-  );
-
-  // Enhanced filtering logic
-  if (!isEarlyCareer && !hasEarlyCareerKeywords) {
-    // Additional check for description keywords
-    const description = $el.text().toLowerCase();
-    const descriptionHasEarlyCareer = experienceLevels.some(level => 
-      description.includes(level.toLowerCase())
-    );
-    
-    if (!descriptionHasEarlyCareer) {
-      return null;
-    }
+  // Skip remote-only jobs - focus on local/hybrid opportunities for better early-career prospects
+  const isRemoteOnly = /\b(remote|100%\s*remote|fully\s*remote|remote\s*only)\b/i.test(content) && 
+                     !/\b(hybrid|on-site|office|in-person)\b/i.test(content);
+  
+  if (isRemoteOnly) {
+    return null;
   }
 
   // Extract URL with better handling
@@ -468,9 +457,9 @@ async function processJobElement(
     location,
     job_url: jobUrl,
     description: description.slice(0, 2000), // Limit description length
-    categories: [department, analysis.level, analysis.workEnv].filter(Boolean).join(', '),
+    categories: [department, analysis.level, analysis.workEnv].filter(Boolean),
     experience_required: analysis.experienceLevel,
-    work_environment: analysis.workEnv,
+    work_environment: analysis.workEnv === 'office' ? 'on-site' : analysis.workEnv,
     language_requirements: analysis.languages.join(', '),
     source: 'greenhouse',
     job_hash: crypto.createHash('md5').update(`${title}-${company.name}-${jobUrl}`).digest('hex'),
@@ -617,7 +606,7 @@ async function tryGreenhouseAPI(company: any, runId: string, userAgent: string):
           location: job.location?.name || 'Location not specified',
           job_url: job.absolute_url,
           description: job.content || 'Description not available',
-          categories: [job.departments?.[0]?.name || 'General'].join(', '),
+          categories: [job.departments?.[0]?.name || 'General'],
           experience_required: 'entry-level',
           work_environment: 'hybrid',
           language_requirements: '',

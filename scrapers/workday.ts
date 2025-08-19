@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
+import { productionRateLimiter } from '../Utils/productionRateLimiter';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -144,7 +145,16 @@ export async function scrapeWorkday(company: {
   const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 
   try {
-    await sleep(500 + Math.random() * 1500);
+    // Check if we should pause due to rate limits
+    if (productionRateLimiter.shouldScraperPause('workday')) {
+      console.warn(`⏸️ Workday: Rate limit pause required for ${company.name}`);
+      await sleep(30000); // 30 second pause
+    }
+
+    // Intelligent platform-specific rate limiting (Workday is most aggressive)
+    const delay = await productionRateLimiter.getScraperDelay('workday');
+    console.log(`⏱️ Workday: Waiting ${delay}ms before scraping ${company.name}`);
+    await sleep(delay);
 
     // Try JSON API first
     const jsonJobs = await scrapeWorkdayJSON(company, runId, userAgent);
@@ -163,12 +173,22 @@ export async function scrapeWorkday(company: {
 
 async function scrapeWorkdayJSON(company: any, runId: string, userAgent: string): Promise<Job[]> {
   try {
-    const { data, headers } = await backoffRetry(() =>
+    const response = await backoffRetry(() =>
       axios.get(company.url, {
         headers: getRandomHeaders(userAgent),
         timeout: 15000,
       })
     );
+    
+    const { data, headers } = response;
+    
+    // Check for blocks/rate limits
+    const wasBlocked = productionRateLimiter.detectBlock(response.status, JSON.stringify(data));
+    if (wasBlocked) {
+      console.warn(`🚨 Block detected for Workday ${company.name}! Adaptive throttling enabled.`);
+      await productionRateLimiter.getScraperDelay('workday', true);
+      throw new Error('Rate limit detected, will retry with throttling');
+    }
 
     // Handle different Workday JSON response structures
     let jobArray = [];
@@ -303,11 +323,21 @@ async function processWorkdayJob(post: any, company: any, runId: string, userAge
 
   if (!title) return null;
 
-  // Enhanced early career filter
+  // Relaxed relevance filter - include more job types
   const titleLower = title.toLowerCase();
-  const isEarlyCareer = /\b(intern|internship|graduate|grad|entry.?level|junior|trainee|early.?career|new.?grad|recent.?graduate|associate|0[-‒–—]?[12].?years?|entry.?position|campus|university)\b/.test(titleLower);
+  const descLower = (post.summary || post.description || '').toLowerCase();
+  const content = `${titleLower} ${descLower}`;
   
-  if (!isEarlyCareer) return null;
+  // Skip only clearly senior/management positions
+  const isSenior = /\b(senior|sr\.|lead|principal|staff|director|manager|mgr|head.of|chief|vp|vice.president|architect|expert|specialist.*(5|6|7|8|9|10)\+?.years)\b/.test(content);
+  
+  if (isSenior) return null;
+
+  // Skip remote-only jobs - focus on local/hybrid opportunities for better early-career prospects
+  const isRemoteOnly = /\b(remote|100%\s*remote|fully\s*remote|remote\s*only)\b/i.test(content) && 
+                     !/\b(hybrid|on-site|office|in-person)\b/i.test(content);
+  
+  if (isRemoteOnly) return null;
 
   // Extract location from various fields
   const location = (
@@ -376,7 +406,7 @@ async function processWorkdayJob(post: any, company: any, runId: string, userAge
     location,
     job_url: jobUrl,
     description: description.slice(0, 2000),
-    categories: [department, analysis.level, analysis.workEnv].filter(Boolean).join(', '),
+    categories: [department, analysis.level, analysis.workEnv].filter(Boolean),
     experience_required: analysis.experienceLevel,
     work_environment: analysis.workEnv,
     language_requirements: analysis.languages.join(', '),
@@ -414,9 +444,19 @@ async function processWorkdayHTMLElement(
   if (!title) return null;
 
   const titleLower = title.toLowerCase();
-  const isEarlyCareer = /\b(intern|graduate|entry|junior|trainee|early.?career)\b/.test(titleLower);
+  const descLower = $el.text().toLowerCase();
+  const content = `${titleLower} ${descLower}`;
   
-  if (!isEarlyCareer) return null;
+  // Skip only clearly senior/management positions
+  const isSenior = /\b(senior|sr\.|lead|principal|staff|director|manager|mgr|head.of|chief|vp|vice.president|architect|expert|specialist.*(5|6|7|8|9|10)\+?.years)\b/.test(content);
+  
+  if (isSenior) return null;
+
+  // Skip remote-only jobs - focus on local/hybrid opportunities for better early-career prospects
+  const isRemoteOnly = /\b(remote|100%\s*remote|fully\s*remote|remote\s*only)\b/i.test(content) && 
+                     !/\b(hybrid|on-site|office|in-person)\b/i.test(content);
+  
+  if (isRemoteOnly) return null;
 
   // Extract URL
   let jobUrl = $el.find('a').first().attr('href') || '';
@@ -455,7 +495,7 @@ async function processWorkdayHTMLElement(
     location,
     job_url: jobUrl,
     description: description.slice(0, 2000),
-    categories: [analysis.level, analysis.workEnv].filter(Boolean).join(', '),
+    categories: [analysis.level, analysis.workEnv].filter(Boolean),
     experience_required: analysis.experienceLevel,
     work_environment: analysis.workEnv,
     language_requirements: analysis.languages.join(', '),
