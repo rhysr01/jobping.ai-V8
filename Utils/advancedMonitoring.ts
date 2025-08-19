@@ -3,7 +3,7 @@
 // ================================
 
 import { PerformanceMonitor } from './performanceMonitor';
-import { AIMatchingCache } from './jobMatching';
+// Note: Import removed to prevent circular dependency
 import { EnhancedRateLimiter } from './enhancedRateLimiter';
 import { createClient } from '@supabase/supabase-js';
 
@@ -78,7 +78,7 @@ export class AdvancedMonitoringOracle {
    */
   static async getCacheMetrics() {
     try {
-      const cacheSize = AIMatchingCache['cache']?.size() || 0;
+      const cacheSize = 0; // Cache size monitoring disabled to prevent circular dependency
       const cacheStats = PerformanceMonitor.getStats('ai_matching') || { count: 0, average: 0 };
       
       // Calculate hit rate based on cache usage patterns

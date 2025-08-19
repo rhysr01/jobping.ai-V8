@@ -79,7 +79,7 @@ describe('End-to-End Integration Tests', () => {
                 key: 'career_path',
                 label: 'Career Path',
                 type: 'INPUT_TEXT',
-                value: 'Technology'
+                value: 'tech'
               },
               {
                 key: 'entry_level_preference',

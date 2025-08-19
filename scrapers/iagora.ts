@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
 import { PerformanceMonitor } from '../Utils/performanceMonitor';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -280,10 +281,11 @@ const EU_COUNTRIES = [
   { code: 'CH', name: 'Switzerland' }
 ];
 
-export async function scrapeIAgora(runId: string): Promise<Job[]> {
+export async function scrapeIAgora(runId: string): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
   const startTime = Date.now();
   const circuitBreaker = new CircuitBreaker();
   const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+  const telemetry = new FunnelTelemetryTracker();
   
   console.log('🌍 Starting iAgora scraping...');
   
@@ -311,18 +313,50 @@ export async function scrapeIAgora(runId: string): Promise<Job[]> {
       }
     }
     
+    // Track telemetry for all jobs found
+    for (let i = 0; i < allJobs.length; i++) {
+      telemetry.recordRaw();
+      telemetry.recordEligibility();
+      telemetry.recordCareerTagging();
+      telemetry.recordLocationTagging();
+      telemetry.addSampleTitle(allJobs[i].title);
+    }
+    
     const duration = Date.now() - startTime;
     console.log(`🌍 iAgora scraping completed: ${allJobs.length} jobs in ${duration}ms`);
     
     // Use atomicUpsertJobs for database insertion
-    const result = await atomicUpsertJobs(allJobs);
-    console.log(`💾 iAgora database result: ${result.inserted} inserted, ${result.updated} updated`);
+    if (allJobs.length > 0) {
+      try {
+        const result = await atomicUpsertJobs(allJobs);
+        console.log(`💾 iAgora database result: ${result.inserted} inserted, ${result.updated} updated`);
+        
+        // Track upsert results
+        for (let i = 0; i < result.inserted; i++) telemetry.recordInserted();
+        for (let i = 0; i < result.updated; i++) telemetry.recordUpdated();
+        
+        if (result.errors.length > 0) {
+          result.errors.forEach(error => telemetry.recordError(error));
+        }
+      } catch (error: any) {
+        const errorMsg = error instanceof Error ? error.message : 'Database error';
+        console.error(`❌ iAgora database error:`, errorMsg);
+        telemetry.recordError(errorMsg);
+      }
+    }
     
-    return allJobs;
+    // Log standardized funnel metrics
+    logFunnelMetrics('iagora', telemetry.getTelemetry());
+    
+    return telemetry.getTelemetry();
     
   } catch (error) {
-    console.error('❌ iAgora scraping failed:', error);
-    throw error;
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ iAgora scraping failed:', errorMsg);
+    telemetry.recordError(errorMsg);
+    
+    logFunnelMetrics('iagora', telemetry.getTelemetry());
+    return telemetry.getTelemetry();
   } finally {
     await SimpleBrowserPool.cleanup();
   }
@@ -427,6 +461,14 @@ async function processJobElement(page: any, element: any, country: { code: strin
     // Extract posting date
     const dateResult = extractPostingDate(description, 'iagora', jobUrl);
     
+    // Check early-career eligibility before creating job
+    const eligibility = isEarlyCareerEligible(title, description);
+    
+    // Only create job if eligible (permissive filter)
+    if (!eligibility.eligible) {
+      return null;
+    }
+    
     const job: Job = {
       title: title,
       company: company,
@@ -435,9 +477,9 @@ async function processJobElement(page: any, element: any, country: { code: strin
       description: description,
       experience_required: analysis.experienceLevel,
       work_environment: analysis.workEnv,
-      language_requirements: analysis.languages.join(', '),
+      language_requirements: analysis.languages,
       source: 'iagora',
-      categories: ['International Jobs'],
+      categories: 'International Jobs',
       company_profile_url: '',
       scrape_timestamp: new Date().toISOString(),
       original_posted_date: dateResult.success ? dateResult.date! : new Date().toISOString(),
@@ -477,6 +519,14 @@ function processJobElementCheerio($: cheerio.CheerioAPI, $el: cheerio.Cheerio<an
     // Create job hash
     const jobHash = crypto.createHash('md5').update(`${title}-${company}-${jobUrl}`).digest('hex');
     
+    // Check early-career eligibility before creating job
+    const eligibility = isEarlyCareerEligible(title, description);
+    
+    // Only create job if eligible (permissive filter)
+    if (!eligibility.eligible) {
+      return null;
+    }
+    
     const job: Job = {
       title: title,
       company: company,
@@ -485,9 +535,9 @@ function processJobElementCheerio($: cheerio.CheerioAPI, $el: cheerio.Cheerio<an
       description: description,
       experience_required: analysis.experienceLevel,
       work_environment: analysis.workEnv,
-      language_requirements: analysis.languages.join(', '),
+      language_requirements: analysis.languages,
       source: 'iagora',
-      categories: ['International Jobs'],
+      categories: 'International Jobs',
       company_profile_url: '',
       scrape_timestamp: new Date().toISOString(),
       original_posted_date: new Date().toISOString(),

@@ -79,9 +79,9 @@ export class UserSegmentationOracle {
       user.target_cities?.includes('London') ||
       user.target_cities?.includes('New York') ||
       user.target_cities?.includes('San Francisco') ||
-      user.career_path?.includes('Strategy') ||
-      user.career_path?.includes('Product') ||
-      user.career_path?.includes('Data Science') ||
+      user.career_path?.includes('strategy') ||
+      user.career_path?.includes('product') ||
+      user.career_path?.includes('data-analytics') ||
       user.professional_expertise?.includes('Engineering') ||
       user.professional_expertise?.includes('Computer Science')
     ];
@@ -108,7 +108,7 @@ export class UserSegmentationOracle {
     return user.entry_level_preference?.includes('Graduate') ||
            user.entry_level_preference?.includes('Internship') ||
            user.entry_level_preference?.includes('Entry Level') ||
-           user.career_path?.includes('Graduate') ||
+           user.career_path?.includes('graduate') ||
            this.getDaysSinceCreated(user.created_at) < 30;
   }
 

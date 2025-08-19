@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -84,9 +85,10 @@ const EU_COMPANIES = [
   { name: 'Booking.com', url: 'https://jobs.smartrecruiters.com/Bookingcom' }
 ];
 
-export async function scrapeSmartRecruiters(runId: string): Promise<Job[]> {
+export async function scrapeSmartRecruiters(runId: string): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
   const startTime = Date.now();
   const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+  const telemetry = new FunnelTelemetryTracker();
   
   console.log('🏢 Starting SmartRecruiters scraping...');
   
@@ -111,18 +113,50 @@ export async function scrapeSmartRecruiters(runId: string): Promise<Job[]> {
       }
     }
     
+    // Track telemetry for all jobs found
+    for (let i = 0; i < allJobs.length; i++) {
+      telemetry.recordRaw();
+      telemetry.recordEligibility();
+      telemetry.recordCareerTagging();
+      telemetry.recordLocationTagging();
+      telemetry.addSampleTitle(allJobs[i].title);
+    }
+    
     const duration = Date.now() - startTime;
     console.log(`🏢 SmartRecruiters scraping completed: ${allJobs.length} jobs in ${duration}ms`);
     
     // Use atomicUpsertJobs for database insertion
-    const result = await atomicUpsertJobs(allJobs);
-    console.log(`💾 SmartRecruiters database result: ${result.inserted} inserted, ${result.updated} updated`);
+    if (allJobs.length > 0) {
+      try {
+        const result = await atomicUpsertJobs(allJobs);
+        console.log(`💾 SmartRecruiters database result: ${result.inserted} inserted, ${result.updated} updated`);
+        
+        // Track upsert results
+        for (let i = 0; i < result.inserted; i++) telemetry.recordInserted();
+        for (let i = 0; i < result.updated; i++) telemetry.recordUpdated();
+        
+        if (result.errors.length > 0) {
+          result.errors.forEach(error => telemetry.recordError(error));
+        }
+      } catch (error: any) {
+        const errorMsg = error instanceof Error ? error.message : 'Database error';
+        console.error(`❌ SmartRecruiters database error:`, errorMsg);
+        telemetry.recordError(errorMsg);
+      }
+    }
     
-    return allJobs;
+    // Log standardized funnel metrics
+    logFunnelMetrics('smartrecruiters', telemetry.getTelemetry());
+    
+    return telemetry.getTelemetry();
     
   } catch (error) {
-    console.error('❌ SmartRecruiters scraping failed:', error);
-    throw error;
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ SmartRecruiters scraping failed:', errorMsg);
+    telemetry.recordError(errorMsg);
+    
+    logFunnelMetrics('smartrecruiters', telemetry.getTelemetry());
+    return telemetry.getTelemetry();
   }
 }
 
@@ -210,6 +244,14 @@ function processJobElement($: cheerio.CheerioAPI, $el: cheerio.Cheerio<any>, com
     // Extract posting date
     const dateResult = extractPostingDate(description, 'smartrecruiters', jobUrl);
     
+    // Check early-career eligibility before creating job
+    const eligibility = isEarlyCareerEligible(title, description);
+    
+    // Only create job if eligible (permissive filter)
+    if (!eligibility.eligible) {
+      return null;
+    }
+    
     const job: Job = {
       title: title,
       company: company.name,
@@ -259,6 +301,14 @@ function processJobElementAlt($: cheerio.CheerioAPI, $el: cheerio.Cheerio<any>, 
     
     // Create job hash
     const jobHash = crypto.createHash('md5').update(`${title}-${company.name}-${jobUrl}`).digest('hex');
+    
+    // Check early-career eligibility before creating job
+    const eligibility = isEarlyCareerEligible(title, description);
+    
+    // Only create job if eligible (permissive filter)
+    if (!eligibility.eligible) {
+      return null;
+    }
     
     const job: Job = {
       title: title,

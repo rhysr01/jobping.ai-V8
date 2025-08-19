@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
 import { PerformanceMonitor } from '../Utils/performanceMonitor';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -271,10 +272,11 @@ async function backoffRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T>
 // EU Cities for GraduateJobs
 const EU_CITIES = ['London', 'Madrid', 'Berlin', 'Amsterdam', 'Paris', 'Dublin', 'Stockholm', 'Zurich', 'Barcelona', 'Munich'];
 
-export async function scrapeGraduateJobs(runId: string): Promise<Job[]> {
+export async function scrapeGraduateJobs(runId: string): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
   const startTime = Date.now();
   const circuitBreaker = new CircuitBreaker();
   const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+  const telemetry = new FunnelTelemetryTracker();
   
   console.log('🎓 Starting GraduateJobs scraping...');
   
@@ -291,13 +293,25 @@ export async function scrapeGraduateJobs(runId: string): Promise<Job[]> {
         });
         
         allJobs.push(...cityJobs);
+        
+        // Track telemetry for this city
+        for (let i = 0; i < cityJobs.length; i++) {
+          telemetry.recordRaw();
+          telemetry.recordEligibility();
+          telemetry.recordCareerTagging();
+          telemetry.recordLocationTagging();
+          telemetry.addSampleTitle(cityJobs[i].title);
+        }
+        
         console.log(`✅ ${city}: ${cityJobs.length} jobs found`);
         
         // Rate limiting between cities
         await sleep(2000 + Math.random() * 3000);
         
       } catch (error) {
-        console.error(`❌ Failed to scrape ${city}:`, error);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`❌ Failed to scrape ${city}:`, errorMsg);
+        telemetry.recordError(errorMsg);
         continue;
       }
     }
@@ -306,14 +320,37 @@ export async function scrapeGraduateJobs(runId: string): Promise<Job[]> {
     console.log(`🎓 GraduateJobs scraping completed: ${allJobs.length} jobs in ${duration}ms`);
     
     // Use atomicUpsertJobs for database insertion
-    const result = await atomicUpsertJobs(allJobs);
-    console.log(`💾 GraduateJobs database result: ${result.inserted} inserted, ${result.updated} updated`);
+    if (allJobs.length > 0) {
+      try {
+        const result = await atomicUpsertJobs(allJobs);
+        console.log(`💾 GraduateJobs database result: ${result.inserted} inserted, ${result.updated} updated`);
+        
+        // Track upsert results
+        for (let i = 0; i < result.inserted; i++) telemetry.recordInserted();
+        for (let i = 0; i < result.updated; i++) telemetry.recordUpdated();
+        
+        if (result.errors.length > 0) {
+          result.errors.forEach(error => telemetry.recordError(error));
+        }
+      } catch (error: any) {
+        const errorMsg = error instanceof Error ? error.message : 'Database error';
+        console.error(`❌ GraduateJobs database error:`, errorMsg);
+        telemetry.recordError(errorMsg);
+      }
+    }
     
-    return allJobs;
+    // Log standardized funnel metrics
+    logFunnelMetrics('graduatejobs', telemetry.getTelemetry());
+    
+    return telemetry.getTelemetry();
     
   } catch (error) {
-    console.error('❌ GraduateJobs scraping failed:', error);
-    throw error;
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ GraduateJobs scraping failed:', errorMsg);
+    telemetry.recordError(errorMsg);
+    
+    logFunnelMetrics('graduatejobs', telemetry.getTelemetry());
+    return telemetry.getTelemetry();
   } finally {
     await SimpleBrowserPool.cleanup();
   }
@@ -334,7 +371,7 @@ async function scrapeCityJobs(city: string, runId: string, userAgent: string): P
       experience_required: 'Entry Level',
       work_environment: 'hybrid',
       categories: ['technology', 'graduate', 'software'],
-      language_requirements: 'English'
+      language_requirements: ['English']
     },
     {
       title: `Data Analyst Graduate Programme - ${city}`,
@@ -344,7 +381,7 @@ async function scrapeCityJobs(city: string, runId: string, userAgent: string): P
       experience_required: 'Graduate',
       work_environment: 'office',
       categories: ['data', 'analytics', 'graduate'],
-      language_requirements: 'English'
+      language_requirements: ['English']
     },
     {
       title: `Marketing Intern - ${city}`,
@@ -354,35 +391,41 @@ async function scrapeCityJobs(city: string, runId: string, userAgent: string): P
       experience_required: 'Internship',
       work_environment: 'hybrid',
       categories: ['marketing', 'internship', 'graduate'],
-      language_requirements: 'English'
+      language_requirements: ['English']
     }
   ];
 
   // Convert sample jobs to proper Job format
   for (const sampleJob of sampleJobs) {
-    const job: Job = {
-      job_hash: crypto.createHash('md5').update(`${sampleJob.title}-${sampleJob.company}-${city}-${runId}`).digest('hex'),
-      title: sampleJob.title,
-      company: sampleJob.company,
-      location: sampleJob.location,
-      job_url: `https://graduatejobs.com/jobs/${sampleJob.title.toLowerCase().replace(/\s+/g, '-')}`,
-      description: sampleJob.description,
-      experience_required: sampleJob.experience_required,
-      work_environment: sampleJob.work_environment,
-      source: 'graduatejobs',
-      categories: sampleJob.categories,
-      company_profile_url: `https://graduatejobs.com/companies/${sampleJob.company.toLowerCase().replace(/\s+/g, '-')}`,
-      language_requirements: sampleJob.language_requirements,
-      scrape_timestamp: new Date().toISOString(),
-      original_posted_date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-      posted_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-      last_seen_at: new Date().toISOString(),
-      is_active: true,
-      freshness_tier: 'fresh',
-      scraper_run_id: runId,
-      created_at: new Date().toISOString()
-    };
-    jobs.push(job);
+    // Check early-career eligibility before creating job
+    const eligibility = isEarlyCareerEligible(sampleJob.title, sampleJob.description);
+    
+    // Only add job if eligible (permissive filter)
+    if (eligibility.eligible) {
+      const job: Job = {
+        job_hash: crypto.createHash('md5').update(`${sampleJob.title}-${sampleJob.company}-${city}-${runId}`).digest('hex'),
+        title: sampleJob.title,
+        company: sampleJob.company,
+        location: sampleJob.location,
+        job_url: `https://graduatejobs.com/jobs/${sampleJob.title.toLowerCase().replace(/\s+/g, '-')}`,
+        description: sampleJob.description,
+        experience_required: sampleJob.experience_required,
+        work_environment: sampleJob.work_environment,
+        source: 'graduatejobs',
+        categories: sampleJob.categories,
+        company_profile_url: `https://graduatejobs.com/companies/${sampleJob.company.toLowerCase().replace(/\s+/g, '-')}`,
+        language_requirements: sampleJob.language_requirements,
+        scrape_timestamp: new Date().toISOString(),
+        original_posted_date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        posted_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        last_seen_at: new Date().toISOString(),
+        is_active: true,
+        freshness_tier: 'fresh',
+        scraper_run_id: runId,
+        created_at: new Date().toISOString()
+      };
+      jobs.push(job);
+    }
   }
 
   console.log(`✅ Generated ${jobs.length} sample graduate jobs for ${city}`);

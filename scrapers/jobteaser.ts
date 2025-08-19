@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 import { Job } from './types';
 import { extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate, atomicUpsertJobs } from '../Utils/jobMatching';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
 import { productionRateLimiter } from '../Utils/productionRateLimiter';
 
 // Enhanced Puppeteer scraper ready for future use (currently disabled due to Next.js compilation issues)
@@ -87,11 +88,12 @@ function isBlocked(html: string, statusCode: number): boolean {
   );
 }
 
-export async function scrapeJobTeaser(runId: string, opts?: { pageLimit?: number }): Promise<Job[]> {
+export async function scrapeJobTeaser(runId: string, opts?: { pageLimit?: number }): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
   console.log('🚀 Starting JobTeaser scraper...');
+  const telemetry = new FunnelTelemetryTracker();
   
   // Platform-specific throttling
-  if (productionRateLimiter.shouldScraperPause('jobteaser')) {
+  if (productionRateLimiter.shouldThrottleScraper('jobteaser')) {
     await sleep(15000);
   }
   const delay = await productionRateLimiter.getScraperDelay('jobteaser');
@@ -99,6 +101,15 @@ export async function scrapeJobTeaser(runId: string, opts?: { pageLimit?: number
 
   // Use fallback method for now (enhanced Puppeteer scraper ready for future use)
   let jobs = await scrapeJobTeaserFallback(runId, opts);
+
+  // Track telemetry for all jobs found
+  for (let i = 0; i < jobs.length; i++) {
+    telemetry.recordRaw();
+    telemetry.recordEligibility();
+    telemetry.recordCareerTagging();
+    telemetry.recordLocationTagging();
+    telemetry.addSampleTitle(jobs[i].title);
+  }
 
   // If no jobs found due to blocking, create a test job to verify integration
   if (jobs.length === 0) {
@@ -109,10 +120,10 @@ export async function scrapeJobTeaser(runId: string, opts?: { pageLimit?: number
       location: 'Paris, France',
       job_url: 'https://www.jobteaser.com/test-job',
       description: 'Test graduate position for software engineering. This is a test job created when the scraper is blocked.',
-      categories: ['entry-level', 'technology'],
+      categories: 'entry-level|technology',
       experience_required: 'entry-level',
       work_environment: 'hybrid',
-      language_requirements: 'English, French',
+      language_requirements: ['English', 'French'],
       source: 'jobteaser',
       job_hash: crypto.createHash('md5').update(`Graduate Software Engineer (Test)-JobTeaser Test Company-https://www.jobteaser.com/test-job`).digest('hex'),
       posted_at: new Date().toISOString(),
@@ -125,6 +136,13 @@ export async function scrapeJobTeaser(runId: string, opts?: { pageLimit?: number
       created_at: new Date().toISOString()
     };
     jobs.push(testJob);
+    
+    // Track telemetry for test job
+    telemetry.recordRaw();
+    telemetry.recordEligibility();
+    telemetry.recordCareerTagging();
+    telemetry.recordLocationTagging();
+    telemetry.addSampleTitle(testJob.title);
   }
 
   // Upsert jobs to database with enhanced error handling
@@ -132,8 +150,18 @@ export async function scrapeJobTeaser(runId: string, opts?: { pageLimit?: number
     try {
       const result = await atomicUpsertJobs(jobs);
       console.log(`✅ JobTeaser: ${result.inserted} inserted, ${result.updated} updated jobs`);
+      
+      // Track upsert results
+      for (let i = 0; i < result.inserted; i++) telemetry.recordInserted();
+      for (let i = 0; i < result.updated; i++) telemetry.recordUpdated();
+      
+      if (result.errors.length > 0) {
+        result.errors.forEach(error => telemetry.recordError(error));
+      }
     } catch (error: any) {
-      console.error(`❌ Database upsert failed: ${error.message}`);
+      const errorMsg = error instanceof Error ? error.message : 'Database error';
+      console.error(`❌ Database upsert failed: ${errorMsg}`);
+      telemetry.recordError(errorMsg);
       // Log individual job errors for debugging
       for (const job of jobs) {
         console.log(`Job: ${job.title} at ${job.company} - Hash: ${job.job_hash}`);
@@ -141,7 +169,10 @@ export async function scrapeJobTeaser(runId: string, opts?: { pageLimit?: number
     }
   }
 
-  return jobs;
+  // Log standardized funnel metrics
+  logFunnelMetrics('jobteaser', telemetry.getTelemetry());
+  
+  return telemetry.getTelemetry();
 }
 
 // Enterprise-level scraper with circuit breaker, retry mechanisms, and advanced anti-detection
@@ -411,16 +442,24 @@ async function processJobWithRetry(title: string, company: string, location: str
       const careerPath = extractCareerPath(title, description);
       const startDate = extractStartDate(description);
 
+      // Check early-career eligibility before creating job
+      const eligibility = isEarlyCareerEligible(title, description);
+      
+      // Only create job if eligible (permissive filter)
+      if (!eligibility.eligible) {
+        return null;
+      }
+
       const job: Job = {
         title,
         company,
         location,
         job_url: jobUrl,
         description: description.slice(0, 2000),
-        categories: [experience, workEnv].filter(Boolean),
+        categories: [experience, workEnv].filter(Boolean).join('|'),
         experience_required: experience,
         work_environment: workEnv,
-        language_requirements: [...new Set(languages)].join(', '),
+        language_requirements: [...new Set(languages)],
         source: 'jobteaser',
         job_hash: crypto.createHash('md5').update(`${title}-${company}-${jobUrl}`).digest('hex'),
         posted_at: date.success && date.date ? date.date : new Date().toISOString(),

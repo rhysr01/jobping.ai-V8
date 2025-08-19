@@ -463,6 +463,13 @@ export class JobQueueManager {
       
       for (const platform of platforms) {
         try {
+          // Skip problematic Puppeteer-based scrapers in production build
+          if (platform === 'jobteaser-puppeteer') {
+            console.warn(`⚠️ Skipping ${platform} - Puppeteer not supported in Edge runtime`);
+            results.push({ platform, success: false, error: 'Puppeteer not supported in Edge runtime' });
+            continue;
+          }
+
           // Import and call the appropriate scraper
           const scraperModule = await import(`../scrapers/${platform}`);
           const scraperFunction = scraperModule[`scrape${platform.charAt(0).toUpperCase() + platform.slice(1)}`];

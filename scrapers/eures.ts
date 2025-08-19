@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 import { Job } from './types';
 import { extractPostingDate, atomicUpsertJobs } from '../Utils/jobMatching';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
 import { productionRateLimiter } from '../Utils/productionRateLimiter';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
@@ -61,15 +62,60 @@ function isBlocked(html: string, statusCode: number): boolean {
   );
 }
 
-export async function scrapeEures(runId: string, opts?: { pageLimit?: number }): Promise<Job[]> {
+export async function scrapeEures(runId: string, opts?: { pageLimit?: number }): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
   const pageLimit = Math.max(1, Math.min(opts?.pageLimit ?? 3, 15));
-  return await scrapeEuresHTML(runId, pageLimit);
+  const telemetry = new FunnelTelemetryTracker();
+  
+  try {
+    const jobs = await scrapeEuresHTML(runId, pageLimit);
+    
+    // Track telemetry for all jobs found
+    for (let i = 0; i < jobs.length; i++) {
+      telemetry.recordRaw();
+      telemetry.recordEligibility();
+      telemetry.recordCareerTagging();
+      telemetry.recordLocationTagging();
+      telemetry.addSampleTitle(jobs[i].title);
+    }
+    
+    // Upsert jobs to database
+    if (jobs.length > 0) {
+      try {
+        const result = await atomicUpsertJobs(jobs);
+        console.log(`💾 EURES database result: ${result.inserted} inserted, ${result.updated} updated`);
+        
+        // Track upsert results
+        for (let i = 0; i < result.inserted; i++) telemetry.recordInserted();
+        for (let i = 0; i < result.updated; i++) telemetry.recordUpdated();
+        
+        if (result.errors.length > 0) {
+          result.errors.forEach(error => telemetry.recordError(error));
+        }
+      } catch (error: any) {
+        const errorMsg = error instanceof Error ? error.message : 'Database error';
+        console.error(`❌ EURES database error:`, errorMsg);
+        telemetry.recordError(errorMsg);
+      }
+    }
+    
+    // Log standardized funnel metrics
+    logFunnelMetrics('eures', telemetry.getTelemetry());
+    
+    return telemetry.getTelemetry();
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ EURES scraping failed:', errorMsg);
+    telemetry.recordError(errorMsg);
+    
+    logFunnelMetrics('eures', telemetry.getTelemetry());
+    return telemetry.getTelemetry();
+  }
 }
 
 async function scrapeEuresHTML(runId: string, pageLimit: number): Promise<Job[]> {
   const jobs: Job[] = [];
   for (let page = 1; page <= pageLimit; page++) {
-    if (productionRateLimiter.shouldScraperPause('eures')) {
+    if (productionRateLimiter.shouldThrottleScraper('eures')) {
       await sleep(15000);
     }
     const delay = await productionRateLimiter.getScraperDelay('eures');
@@ -185,6 +231,14 @@ async function scrapeEuresHTML(runId: string, pageLimit: number): Promise<Job[]>
       const workEnv = /\bremote\b/.test(content) ? 'remote' : /\b(on.?site|office|in.person|onsite)\b/.test(content) ? 'on-site' : 'hybrid';
       const experience = /\b(intern|internship)\b/.test(content) ? 'internship' : /\b(graduate|junior|entry|trainee)\b/.test(content) ? 'entry-level' : 'entry-level';
 
+      // Check early-career eligibility before creating job
+      const eligibility = isEarlyCareerEligible(title, description);
+      
+      // Only create job if eligible (permissive filter)
+      if (!eligibility.eligible) {
+        return null;
+      }
+
       const job: Job = {
         title,
         company,
@@ -194,7 +248,7 @@ async function scrapeEuresHTML(runId: string, pageLimit: number): Promise<Job[]>
         categories: [experience, workEnv].filter(Boolean),
         experience_required: experience,
         work_environment: workEnv,
-        language_requirements: '',
+        language_requirements: [],
         source: 'eures',
         job_hash: crypto.createHash('md5').update(`${title}-${company}-${jobUrl}`).digest('hex'),
         posted_at: date.success && date.date ? date.date : new Date().toISOString(),
@@ -225,7 +279,7 @@ async function scrapeEuresHTML(runId: string, pageLimit: number): Promise<Job[]>
       categories: ['entry-level', 'eu-program'],
       experience_required: 'entry-level',
       work_environment: 'hybrid',
-      language_requirements: 'English, French, German',
+      language_requirements: ['English', 'French', 'German'],
       source: 'eures',
       job_hash: crypto.createHash('md5').update(`EU Graduate Program (Test)-EURES Test Company-https://ec.europa.eu/eures/public/test-job`).digest('hex'),
       posted_at: new Date().toISOString(),

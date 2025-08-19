@@ -1,11 +1,12 @@
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 dotenv.config();
 
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
+import { createJobCategories } from './types';
 import { PerformanceMonitor } from '../Utils/performanceMonitor';
 
 const USER_AGENTS = [
@@ -232,12 +233,24 @@ async function backoffRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T>
   throw new Error('Max retries exceeded');
 }
 
-export async function scrapeRemoteOK(runId: string): Promise<Job[]> {
+export async function scrapeRemoteOK(runId: string): Promise<{ jobs: Job[], funnel: any }> {
   const jobs: Job[] = [];
   const url = 'https://remoteok.com/';
   const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
   const browser: any = await SimpleBrowserPool.getBrowser();
   const scrapeStart = Date.now();
+  
+  // Initialize standardized funnel tracking
+  const funnel = {
+    raw: 0,
+    eligible: 0,
+    careerTagged: 0,
+    locationTagged: 0,
+    inserted: 0,
+    updated: 0,
+    errors: [] as string[],
+    samples: [] as string[]
+  };
 
   try {
     await sleep(500 + Math.random() * 1500);
@@ -269,6 +282,8 @@ export async function scrapeRemoteOK(runId: string): Promise<Job[]> {
     // Process each job posting
     $('tr.job').each((_, el) => {
       try {
+        funnel.raw++; // Track raw jobs
+        
         const $el = $(el);
         const rawTitle = $el.find('.company_and_position [itemprop="title"]').text().trim();
         const rawCompany = $el.find('.company_and_position [itemprop="name"]').text().trim();
@@ -285,21 +300,18 @@ export async function scrapeRemoteOK(runId: string): Promise<Job[]> {
 
         if (!title || !company || !jobUrl) return;
 
-        // Relaxed relevance filter - include more job types
-        const titleLower = title.toLowerCase();
-        const descLower = description.toLowerCase();
-        const content = `${titleLower} ${descLower}`;
+        // Use standardized early-career eligibility check
+        const { isEarlyCareerEligible } = require('../Utils/robustJobCreation');
+        const eligibility = isEarlyCareerEligible(title, description);
         
-        // Skip only clearly senior/management positions
-        const isSenior = /\b(senior|sr\.|lead|principal|staff|director|manager|mgr|head.of|chief|vp|vice.president|architect|expert|specialist.*(5|6|7|8|9|10)\+?.years)\b/.test(content);
+        if (!eligibility.eligible) return;
         
-        if (isSenior) return;
+        funnel.eligible++; // Track eligible jobs
 
-        // Skip remote jobs - focus on local/hybrid opportunities for better early-career prospects
-        const isRemoteOnly = /\b(remote|100%\s*remote|fully\s*remote|remote\s*only)\b/i.test(content) && 
-                           !/\b(hybrid|on-site|office|in-person)\b/i.test(content);
-        
-        if (isRemoteOnly) return;
+        // DISABLED: Skip remote jobs - this is RemoteOK, a REMOTE job board!
+        // const isRemoteOnly = /\b(remote|100%\s*remote|fully\s*remote|remote\s*only)\b/i.test(content) && 
+        //                    !/\b(hybrid|on-site|office|in-person)\b/i.test(content);
+        // if (isRemoteOnly) return;
 
         // Analyze job content (using same pattern as your other scrapers)
         const analysis = analyzeRemoteOKJobContent(title, description);
@@ -318,6 +330,22 @@ export async function scrapeRemoteOK(runId: string): Promise<Job[]> {
           ? dateExtraction.date 
           : new Date().toISOString();
 
+        // Create job with proper categories
+        const categories = createJobCategories(analysis.careerPath, analysis.categories);
+        
+        // Track career and location tagging
+        if (categories && categories.includes('career:') && !categories.includes('career:unknown')) {
+          funnel.careerTagged++;
+        }
+        if (categories && categories.includes('loc:') && !categories.includes('loc:unknown')) {
+          funnel.locationTagged++;
+        }
+        
+        // Add sample titles (up to 5)
+        if (funnel.samples.length < 5) {
+          funnel.samples.push(title);
+        }
+        
         const job: Job = {
           job_hash,
           title,
@@ -328,9 +356,9 @@ export async function scrapeRemoteOK(runId: string): Promise<Job[]> {
           experience_required: analysis.experienceLevel,
           work_environment: analysis.workEnvironment === 'office' ? 'on-site' : analysis.workEnvironment,
           source: 'remoteok',
-          categories: analysis.categories,
+          categories,
           company_profile_url: '',
-          language_requirements: analysis.languages.join(', '),
+          language_requirements: analysis.languages,
           scrape_timestamp: new Date().toISOString(),
           original_posted_date: postedAt,
           posted_at: postedAt,
@@ -347,17 +375,43 @@ export async function scrapeRemoteOK(runId: string): Promise<Job[]> {
       }
     });
 
+    console.log(`📊 REMOTEOK FUNNEL: Raw=${$('tr.job').length}, Filtered=${jobs.length}`);
+    if (jobs.length > 0) {
+      console.log(`📊 SAMPLE TITLES: ${jobs.slice(0, 3).map(j => j.title).join(', ')}`);
+    }
+    
+    // CRITICAL: Insert jobs into database
+    if (jobs.length > 0) {
+      try {
+        const result = await atomicUpsertJobs(jobs);
+        console.log(`✅ RemoteOK DATABASE: ${result.inserted} inserted, ${result.updated} updated, ${result.errors.length} errors`);
+        if (result.errors.length > 0) {
+          console.error('❌ RemoteOK upsert errors:', result.errors.slice(0, 3));
+        }
+      } catch (error: any) {
+        console.error(`❌ RemoteOK database upsert failed:`, error.message);
+      }
+    }
+    
     console.log(`✅ Scraped ${jobs.length} graduate jobs from RemoteOK`);
     
     // Track performance
     PerformanceMonitor.trackDuration('remoteok_scraping', scrapeStart);
     
-    return jobs;
+    // Log standardized funnel metrics
+    const { logFunnelMetrics } = require('../Utils/robustJobCreation');
+    logFunnelMetrics('remoteok', funnel);
+    
+    return { jobs, funnel };
     
   } catch (error: any) {
     console.error(`❌ RemoteOK scrape failed:`, error.message);
     PerformanceMonitor.trackDuration('remoteok_scraping', scrapeStart);
-    return [];
+    
+    // Add error to funnel
+    funnel.errors.push(error instanceof Error ? error.message : 'Unknown error');
+    
+    return { jobs: [], funnel };
   } finally {
     // Return browser to pool
     await SimpleBrowserPool.returnBrowser(browser);
@@ -403,7 +457,7 @@ function analyzeRemoteOKJobContent(title: string, description: string) {
   const workEnvironment = 'remote';
   
   // Extract categories
-  const categories: string[] = ['Remote'];
+  const categories: string[] = ['remote'];
   if (experienceLevel === 'internship') categories.push('Internship');
   if (experienceLevel === 'graduate') categories.push('Graduate');
   if (experienceLevel === 'entry-level') categories.push('Entry-Level');

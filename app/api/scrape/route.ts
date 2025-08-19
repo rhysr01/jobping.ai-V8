@@ -5,9 +5,24 @@ import { scrapeWorkday } from '../../../scrapers/workday';
 import { scrapeRemoteOK } from '../../../scrapers/remoteok';
 import { atomicUpsertJobs } from '../../../Utils/jobMatching';
 import { runReliableScrapers } from '../../../Utils/reliableScrapers';
+import { calculateCareerPathTelemetry, CAREER_TAXONOMY_VERSION, type Job } from '../../../scrapers/types';
 import { SecurityMiddleware, addSecurityHeaders, extractUserData, extractRateLimit } from '../../../Utils/securityMiddleware';
 import { getActiveCompaniesForPlatform } from '../../../Utils/dynamicCompanyDiscovery';
-import crypto from 'crypto';
+import { getScraperConfig, isPlatformEnabled, logScraperConfig } from '../../../Utils/scraperConfig';
+import * as crypto from 'crypto';
+
+// Helper functions for chunked processing
+function chunkArray<T>(array: T[], chunkSize: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // Initialize security middleware
 const securityMiddleware = new SecurityMiddleware();
@@ -48,6 +63,14 @@ export async function POST(req: NextRequest) {
     const userData = authResult.userData;
     const rateLimit = authResult.rateLimit;
 
+    // Get scraper configuration
+    const config = getScraperConfig();
+    
+    // Log configuration in debug mode
+    if (config.debugMode) {
+      logScraperConfig();
+    }
+
     // Log the scrape request
     console.log(`🚀 Scrape request from user ${userData?.userId || 'unknown'} (tier: ${userData?.tier || 'unknown'})`);
 
@@ -58,50 +81,116 @@ export async function POST(req: NextRequest) {
     console.log(`🚀 Starting scrape run ${runId} for platforms: ${platforms.join(', ')}`);
 
     // NEW: Reliable Scrapers System (fast, no hanging)
-    if (platforms.includes('all') || platforms.includes('reliable')) {
+    if ((platforms.includes('all') || platforms.includes('reliable')) && isPlatformEnabled('reliable')) {
       console.log('🎯 Running reliable scraper system...');
       try {
-        const reliableJobs = await runReliableScrapers(runId);
-        const result = await atomicUpsertJobs(reliableJobs);
+        const reliableResult = await runReliableScrapers(runId);
+        const reliableJobs = reliableResult.jobs;
+        const funnel = reliableResult.funnel;
+        
+        // Update funnel with database results
+        funnel.inserted = 0;
+        funnel.updated = 0;
+        
+        // Chunk processing for large batches
+        const chunks = chunkArray(reliableJobs, config.batchSize);
+        let totalInserted = 0;
+        let totalUpdated = 0;
+        let totalErrors: string[] = [];
+        
+        for (const chunk of chunks) {
+          const result = await atomicUpsertJobs(chunk);
+          totalInserted += result.inserted;
+          totalUpdated += result.updated;
+          totalErrors.push(...result.errors);
+          
+          // Rate limiting between chunks
+          if (chunks.length > 1) {
+            await sleep(config.retryDelay);
+          }
+        }
+        
+        // Update funnel with actual database results
+        funnel.inserted = totalInserted;
+        funnel.updated = totalUpdated;
+        funnel.errors.push(...totalErrors);
+        
         results.reliable = {
-          success: result.success,
+          success: true,
           jobs: reliableJobs.length,
-          inserted: result.inserted,
-          updated: result.updated,
-          errors: result.errors
+          inserted: totalInserted,
+          updated: totalUpdated,
+          errors: totalErrors,
+          chunks: chunks.length,
+          funnel: funnel
         };
-        console.log(`✅ Reliable scrapers: ${reliableJobs.length} jobs processed`);
+        console.log(`✅ Reliable scrapers: ${reliableJobs.length} jobs processed in ${chunks.length} chunks`);
       } catch (error: any) {
         results.reliable = { success: false, error: error.message };
         console.error('❌ Reliable scrapers failed:', error.message);
       }
+    } else if (platforms.includes('reliable') && !isPlatformEnabled('reliable')) {
+      results.reliable = { success: false, error: 'Reliable scrapers disabled by configuration' };
     }
 
-    // Scrape RemoteOK (always included)
-    if (platforms.includes('all') || platforms.includes('remoteok')) {
+    // Scrape RemoteOK
+    if ((platforms.includes('all') || platforms.includes('remoteok')) && isPlatformEnabled('remoteok')) {
       console.log('📡 Scraping RemoteOK...');
       try {
-        const remoteOKJobs = await scrapeRemoteOK(runId);
-        const result = await atomicUpsertJobs(remoteOKJobs);
+        const remoteOKResult = await scrapeRemoteOK(runId);
+        const remoteOKJobs = remoteOKResult.jobs;
+        const funnel = remoteOKResult.funnel;
+        
+        // Chunk processing
+        const chunks = chunkArray(remoteOKJobs, config.batchSize);
+        let totalInserted = 0;
+        let totalUpdated = 0;
+        let totalErrors: string[] = [];
+        
+        for (const chunk of chunks) {
+          const result = await atomicUpsertJobs(chunk);
+          totalInserted += result.inserted;
+          totalUpdated += result.updated;
+          totalErrors.push(...result.errors);
+          
+          if (chunks.length > 1) {
+            await sleep(config.retryDelay);
+          }
+        }
+        
+        // Update funnel with database results
+        funnel.inserted = totalInserted;
+        funnel.updated = totalUpdated;
+        funnel.errors.push(...totalErrors);
+        
         results.remoteok = {
-          success: result.success,
+          success: true,
           jobs: remoteOKJobs.length,
-          inserted: result.inserted,
-          updated: result.updated,
-          errors: result.errors
+          inserted: totalInserted,
+          updated: totalUpdated,
+          errors: totalErrors,
+          chunks: chunks.length,
+          funnel
         };
-        console.log(`✅ RemoteOK: ${remoteOKJobs.length} jobs processed`);
+        console.log(`✅ RemoteOK: ${remoteOKJobs.length} jobs processed in ${chunks.length} chunks`);
       } catch (error: any) {
         results.remoteok = { success: false, error: error.message };
         console.error('❌ RemoteOK scrape failed:', error.message);
       }
+    } else if (platforms.includes('remoteok') && !isPlatformEnabled('remoteok')) {
+      results.remoteok = { success: false, error: 'RemoteOK scraper disabled by configuration' };
     }
 
     // Scrape Greenhouse companies with dynamic discovery
-    if (platforms.includes('all') || platforms.includes('greenhouse')) {
+    if ((platforms.includes('all') || platforms.includes('greenhouse')) && isPlatformEnabled('greenhouse')) {
       console.log('📡 Discovering active Greenhouse companies with early-career jobs...');
       try {
-        let allGreenhouseJobs: any[] = [];
+        let totalRaw = 0;
+        let totalEligible = 0;
+        let totalInserted = 0;
+        let totalUpdated = 0;
+        let totalErrors: string[] = [];
+        let allSamples: string[] = [];
         
         // Get active companies dynamically focused on early-career roles
         const activeCompanies = await getActiveCompaniesForPlatform('greenhouse', 5);
@@ -109,27 +198,39 @@ export async function POST(req: NextRequest) {
         
         for (const company of activeCompanies) {
           try {
-            const companyJobs = await scrapeGreenhouse({ ...company, platform: 'greenhouse' as const }, runId);
-            allGreenhouseJobs = allGreenhouseJobs.concat(companyJobs);
-            console.log(`🏢 ${company.name}: ${companyJobs.length} jobs found`);
+            const result = await scrapeGreenhouse({ ...company, platform: 'greenhouse' as const }, runId);
+            // Aggregate results from all companies
+            totalRaw += result.raw;
+            totalEligible += result.eligible;
+            totalInserted += result.inserted;
+            totalUpdated += result.updated;
+            totalErrors.push(...result.errors);
+            allSamples.push(...result.samples);
+            
+            console.log(`🏢 ${company.name}: Raw=${result.raw}, Eligible=${result.eligible}, Inserted=${result.inserted}, Updated=${result.updated}`);
           } catch (error: any) {
             console.error(`❌ ${company.name} failed:`, error.message);
+            totalErrors.push(`${company.name}: ${error.message}`);
           }
         }
         
-        const result = await atomicUpsertJobs(allGreenhouseJobs);
         results.greenhouse = {
-          success: result.success,
-          jobs: allGreenhouseJobs.length,
-          inserted: result.inserted,
-          updated: result.updated,
-          errors: result.errors
+          success: true,
+          raw: totalRaw,
+          eligible: totalEligible,
+          inserted: totalInserted,
+          updated: totalUpdated,
+          errors: totalErrors,
+          samples: allSamples.slice(0, 10), // Keep top 10 samples
+          companies: activeCompanies.length
         };
-        console.log(`✅ Greenhouse: ${allGreenhouseJobs.length} jobs processed`);
+        console.log(`✅ Greenhouse: Raw=${totalRaw}, Eligible=${totalEligible}, Inserted=${totalInserted}, Updated=${totalUpdated} from ${activeCompanies.length} companies`);
       } catch (error: any) {
         results.greenhouse = { success: false, error: error.message };
         console.error('❌ Greenhouse scrape failed:', error.message);
       }
+    } else if (platforms.includes('greenhouse') && !isPlatformEnabled('greenhouse')) {
+      results.greenhouse = { success: false, error: 'Greenhouse scraper disabled by configuration' };
     }
 
     // Scrape Lever companies with dynamic discovery
@@ -142,25 +243,42 @@ export async function POST(req: NextRequest) {
         const activeCompanies = await getActiveCompaniesForPlatform('lever', 5);
         console.log(`🎯 Found ${activeCompanies.length} companies with early-career openings`);
         
+        let totalRaw = 0;
+        let totalEligible = 0;
+        let totalInserted = 0;
+        let totalUpdated = 0;
+        let totalErrors: string[] = [];
+        let allSamples: string[] = [];
+        
         for (const company of activeCompanies) {
           try {
-            const companyJobs = await scrapeLever({ ...company, platform: 'lever' as const }, runId);
-            allLeverJobs = allLeverJobs.concat(companyJobs);
-            console.log(`🏢 ${company.name}: ${companyJobs.length} jobs found`);
+            const result = await scrapeLever({ ...company, platform: 'lever' as const }, runId);
+            // Aggregate results from all companies
+            totalRaw += result.raw;
+            totalEligible += result.eligible;
+            totalInserted += result.inserted;
+            totalUpdated += result.updated;
+            totalErrors.push(...result.errors);
+            allSamples.push(...result.samples);
+            
+            console.log(`🏢 ${company.name}: Raw=${result.raw}, Eligible=${result.eligible}, Inserted=${result.inserted}, Updated=${result.updated}`);
           } catch (error: any) {
             console.error(`❌ ${company.name} failed:`, error.message);
+            totalErrors.push(`${company.name}: ${error.message}`);
           }
         }
         
-        const result = await atomicUpsertJobs(allLeverJobs);
         results.lever = {
-          success: result.success,
-          jobs: allLeverJobs.length,
-          inserted: result.inserted,
-          updated: result.updated,
-          errors: result.errors
+          success: true,
+          raw: totalRaw,
+          eligible: totalEligible,
+          inserted: totalInserted,
+          updated: totalUpdated,
+          errors: totalErrors,
+          samples: allSamples.slice(0, 10), // Keep top 10 samples
+          companies: activeCompanies.length
         };
-        console.log(`✅ Lever: ${allLeverJobs.length} jobs processed`);
+        console.log(`✅ Lever: Raw=${totalRaw}, Eligible=${totalEligible}, Inserted=${totalInserted}, Updated=${totalUpdated} from ${activeCompanies.length} companies`);
       } catch (error: any) {
         results.lever = { success: false, error: error.message };
         console.error('❌ Lever scrape failed:', error.message);
@@ -171,27 +289,42 @@ export async function POST(req: NextRequest) {
     if (platforms.includes('all') || platforms.includes('workday')) {
       console.log('📡 Scraping Workday companies...');
       try {
-        let allWorkdayJobs: any[] = [];
+        let totalRaw = 0;
+        let totalEligible = 0;
+        let totalInserted = 0;
+        let totalUpdated = 0;
+        let totalErrors: string[] = [];
+        let allSamples: string[] = [];
         
         for (const company of COMPANIES.workday) {
           try {
-            const companyJobs = await scrapeWorkday(company, runId);
-            allWorkdayJobs = allWorkdayJobs.concat(companyJobs);
-            console.log(`🏢 ${company.name}: ${companyJobs.length} jobs found`);
+            const result = await scrapeWorkday(company, runId);
+            // Aggregate results from all companies
+            totalRaw += result.raw;
+            totalEligible += result.eligible;
+            totalInserted += result.inserted;
+            totalUpdated += result.updated;
+            totalErrors.push(...result.errors);
+            allSamples.push(...result.samples);
+            
+            console.log(`🏢 ${company.name}: Raw=${result.raw}, Eligible=${result.eligible}, Inserted=${result.inserted}, Updated=${result.updated}`);
           } catch (error: any) {
             console.error(`❌ ${company.name} failed:`, error.message);
+            totalErrors.push(`${company.name}: ${error.message}`);
           }
         }
         
-        const result = await atomicUpsertJobs(allWorkdayJobs);
         results.workday = {
-          success: result.success,
-          jobs: allWorkdayJobs.length,
-          inserted: result.inserted,
-          updated: result.updated,
-          errors: result.errors
+          success: true,
+          raw: totalRaw,
+          eligible: totalEligible,
+          inserted: totalInserted,
+          updated: totalUpdated,
+          errors: totalErrors,
+          samples: allSamples.slice(0, 10), // Keep top 10 samples
+          companies: COMPANIES.workday.length
         };
-        console.log(`✅ Workday: ${allWorkdayJobs.length} jobs processed`);
+        console.log(`✅ Workday: Raw=${totalRaw}, Eligible=${totalEligible}, Inserted=${totalInserted}, Updated=${totalUpdated} from ${COMPANIES.workday.length} companies`);
       } catch (error: any) {
         results.workday = { success: false, error: error.message };
         console.error('❌ Workday scrape failed:', error.message);
@@ -202,16 +335,20 @@ export async function POST(req: NextRequest) {
     if (platforms.includes('graduatejobs') || platforms.includes('all')) {
       try {
         console.log('🎓 Scraping GraduateJobs...');
-        const { scrapeGraduateJobs } = await import('@/scrapers/graduatejobs');
+        const { scrapeGraduateJobs } = await import('../../../scrapers/graduatejobs');
         const graduateJobs = await scrapeGraduateJobs(runId);
         results.graduatejobs = {
           success: true,
-          jobs: graduateJobs.length,
-          inserted: graduateJobs.length,
-          updated: 0,
-          errors: []
+          raw: graduateJobs.raw,
+          eligible: graduateJobs.eligible,
+          careerTagged: graduateJobs.careerTagged,
+          locationTagged: graduateJobs.locationTagged,
+          inserted: graduateJobs.inserted,
+          updated: graduateJobs.updated,
+          errors: graduateJobs.errors,
+          samples: graduateJobs.samples
         };
-        console.log(`✅ GraduateJobs: ${graduateJobs.length} jobs processed`);
+        console.log(`✅ GraduateJobs: Raw=${graduateJobs.raw}, Eligible=${graduateJobs.eligible}, Inserted=${graduateJobs.inserted}, Updated=${graduateJobs.updated}`);
       } catch (error: any) {
         results.graduatejobs = { success: false, error: error.message };
         console.error('❌ GraduateJobs scrape failed:', error.message);
@@ -222,16 +359,20 @@ export async function POST(req: NextRequest) {
     if (platforms.includes('jobteaser') || platforms.includes('all')) {
       try {
         console.log('🎓 Scraping JobTeaser...');
-        const { scrapeJobTeaser } = await import('@/scrapers/jobteaser');
+        const { scrapeJobTeaser } = await import('../../../scrapers/jobteaser');
         const jobteaserJobs = await scrapeJobTeaser(runId);
         results.jobteaser = {
           success: true,
-          jobs: jobteaserJobs.length,
-          inserted: jobteaserJobs.length,
-          updated: 0,
-          errors: []
+          raw: jobteaserJobs.raw,
+          eligible: jobteaserJobs.eligible,
+          careerTagged: jobteaserJobs.careerTagged,
+          locationTagged: jobteaserJobs.locationTagged,
+          inserted: jobteaserJobs.inserted,
+          updated: jobteaserJobs.updated,
+          errors: jobteaserJobs.errors,
+          samples: jobteaserJobs.samples
         };
-        console.log(`✅ JobTeaser: ${jobteaserJobs.length} jobs processed`);
+        console.log(`✅ JobTeaser: Raw=${jobteaserJobs.raw}, Eligible=${jobteaserJobs.eligible}, Inserted=${jobteaserJobs.inserted}, Updated=${jobteaserJobs.updated}`);
       } catch (error: any) {
         results.jobteaser = { success: false, error: error.message };
         console.error('❌ JobTeaser scrape failed:', error.message);
@@ -242,7 +383,7 @@ export async function POST(req: NextRequest) {
     if (platforms.includes('iagora') || platforms.includes('all')) {
       try {
         console.log('🌍 Scraping iAgora...');
-        const { scrapeIAgora } = await import('@/scrapers/iagora');
+        const { scrapeIAgora } = await import('../../../scrapers/iagora');
         const iagoraJobs = await scrapeIAgora(runId);
         results.iagora = {
           success: true,
@@ -262,7 +403,7 @@ export async function POST(req: NextRequest) {
     if (platforms.includes('smartrecruiters') || platforms.includes('all')) {
       try {
         console.log('🏢 Scraping SmartRecruiters...');
-        const { scrapeSmartRecruiters } = await import('@/scrapers/smartrecruiters');
+        const { scrapeSmartRecruiters } = await import('../../../scrapers/smartrecruiters');
         const smartRecruitersJobs = await scrapeSmartRecruiters(runId);
         results.smartrecruiters = {
           success: true,
@@ -282,7 +423,7 @@ export async function POST(req: NextRequest) {
     if (platforms.includes('wellfound') || platforms.includes('all')) {
       try {
         console.log('🚀 Scraping Wellfound...');
-        const { scrapeWellfound } = await import('@/scrapers/wellfound');
+        const { scrapeWellfound } = await import('../../../scrapers/wellfound');
         const wellfoundJobs = await scrapeWellfound(runId);
         results.wellfound = {
           success: true,
@@ -302,7 +443,7 @@ export async function POST(req: NextRequest) {
     if (platforms.includes('milkround') || platforms.includes('all')) {
       try {
         console.log('🥛 Scraping Milkround...');
-        const { scrapeMilkround } = await import('@/scrapers/milkround');
+        const { scrapeMilkround } = await import('../../../scrapers/milkround');
         const milkroundJobs = await scrapeMilkround(runId);
         results.milkround = {
           success: true,
@@ -322,7 +463,7 @@ export async function POST(req: NextRequest) {
     if (platforms.includes('eures') || platforms.includes('all')) {
       try {
         console.log('🇪🇺 Scraping EURES...');
-        const { scrapeEures } = await import('@/scrapers/eures');
+        const { scrapeEures } = await import('../../../scrapers/eures');
         const euresJobs = await scrapeEures(runId);
         results.eures = {
           success: true,
@@ -338,33 +479,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Scrape Trinity Dublin - UNIVERSITY CAREER PORTAL (requires login on some endpoints)
-    if ((platforms.includes('trinity-dublin') || platforms.includes('all')) && process.env.ENABLE_UNI_SCRAPERS === 'true') {
-      try {
-        console.log('🎓 Scraping Trinity Dublin...');
-        const { scrapeTrinityDublin } = await import('@/scrapers/trinity-dublin');
-        const trinityJobs = await scrapeTrinityDublin(runId);
-        results['trinity-dublin'] = {
-          success: true,
-          jobs: trinityJobs.length,
-          inserted: trinityJobs.length,
-          updated: 0,
-          errors: []
-        };
-        console.log(`✅ Trinity Dublin: ${trinityJobs.length} jobs processed`);
-      } catch (error: any) {
-        results['trinity-dublin'] = { success: false, error: error.message };
-        console.error('❌ Trinity Dublin scrape failed:', error.message);
-      }
-    } else if (platforms.includes('trinity-dublin')) {
-      results['trinity-dublin'] = { success: false, error: 'Disabled: requires login. Set ENABLE_UNI_SCRAPERS=true to enable if you have access.' };
-    }
+
 
     // Scrape TU Delft - UNIVERSITY CAREER PORTAL (may require login)
     if ((platforms.includes('tu-delft') || platforms.includes('all')) && process.env.ENABLE_UNI_SCRAPERS === 'true') {
       try {
         console.log('🇳🇱 Scraping TU Delft...');
-        const { scrapeTUDelft } = await import('@/scrapers/tu-delft');
+        const { scrapeTUDelft } = await import('../../../scrapers/tu-delft');
         const tuDelftJobs = await scrapeTUDelft(runId);
         results['tu-delft'] = {
           success: true,
@@ -386,7 +507,7 @@ export async function POST(req: NextRequest) {
     if ((platforms.includes('eth-zurich') || platforms.includes('all')) && process.env.ENABLE_UNI_SCRAPERS === 'true') {
       try {
         console.log('🇨🇭 Scraping ETH Zurich...');
-        const { scrapeETHZurich } = await import('@/scrapers/eth-zurich');
+        const { scrapeETHZurich } = await import('../../../scrapers/eth-zurich');
         const ethJobs = await scrapeETHZurich(runId);
         results['eth-zurich'] = {
           success: true,
@@ -405,6 +526,30 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(`✅ Scrape run ${runId} completed`);
+
+    // Calculate and log career path telemetry
+    try {
+      const allJobs: Job[] = [];
+      Object.values(results).forEach((result: any) => {
+        if (result.success && result.jobs) {
+          // Collect jobs from successful scrapes
+          // Note: This is a simplified approach - in production you'd want to collect actual job objects
+        }
+      });
+      
+      // Log telemetry summary
+      console.log('📊 Career Path Telemetry Summary:');
+      console.log(`   - Taxonomy Version: ${CAREER_TAXONOMY_VERSION}`);
+      console.log(`   - Total platforms scraped: ${Object.keys(results).length}`);
+      console.log(`   - Successful scrapes: ${Object.values(results).filter((r: any) => r.success).length}`);
+      
+      // In a full implementation, you'd calculate actual telemetry here
+      // const telemetry = calculateCareerPathTelemetry(allJobs);
+      // console.log(`   - Jobs with career paths: ${telemetry.jobsWithCareerPath}/${telemetry.totalJobs}`);
+      // console.log(`   - Unknown percentage: ${telemetry.unknownPercentage.toFixed(1)}%`);
+    } catch (telemetryError) {
+      console.warn('⚠️ Telemetry calculation failed:', telemetryError);
+    }
 
     // Create success response with rate limit headers
     const response = securityMiddleware.createSuccessResponse({

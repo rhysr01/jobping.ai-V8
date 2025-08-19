@@ -1,62 +1,19 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
+import { createJobCategories } from './types';
 import { productionRateLimiter } from '../Utils/productionRateLimiter';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
+import { RobotsCompliance, RespectfulRateLimiter, JOBPING_USER_AGENT } from '../Utils/robotsCompliance';
 
-const USER_AGENTS = [
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0',
-];
+// Use JobPing-specific user agent for ethical scraping
+const USER_AGENTS = [JOBPING_USER_AGENT];
 
-// Enhanced anti-detection headers with rotating IP simulation
+// Use JobPing-specific headers for ethical scraping
 const getRandomHeaders = (userAgent: string) => {
-  const referrers = [
-    'https://www.google.com/',
-    'https://www.linkedin.com/jobs/',
-    'https://www.glassdoor.com/',
-    'https://www.indeed.com/',
-    'https://www.ziprecruiter.com/',
-    'https://www.simplyhired.com/',
-    'https://www.dice.com/',
-    'https://www.angel.co/jobs',
-    'https://www.wellfound.com/',
-    'https://www.otta.com/'
-  ];
-
-  const languages = [
-    'en-US,en;q=0.9,es;q=0.8,fr;q=0.7,de;q=0.6',
-    'en-GB,en;q=0.9',
-    'en-CA,en;q=0.9,fr;q=0.8',
-    'en-AU,en;q=0.9',
-    'en-US,en;q=0.9,zh;q=0.8,ja;q=0.7'
-  ];
-
-  return {
-    'User-Agent': userAgent,
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-    'Accept-Language': languages[Math.floor(Math.random() * languages.length)],
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Cache-Control': 'no-cache',
-    'Pragma': 'no-cache',
-    'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-    'Sec-Ch-Ua-Mobile': '?0',
-    'Sec-Ch-Ua-Platform': '"macOS"',
-    'Sec-Fetch-Dest': 'document',
-    'Sec-Fetch-Mode': 'navigate',
-    'Sec-Fetch-Site': 'cross-site',
-    'Sec-Fetch-User': '?1',
-    'Upgrade-Insecure-Requests': '1',
-    'DNT': '1',
-    'Referer': referrers[Math.floor(Math.random() * referrers.length)],
-    'X-Forwarded-For': `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-    'X-Real-IP': `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-  };
+  return RobotsCompliance.getJobPingHeaders();
 };
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -140,16 +97,14 @@ export async function scrapeWorkday(company: {
   url: string;
   platform: 'workday';
   tags?: string[];
-}, runId: string): Promise<Job[]> {
+}, runId: string): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
   const jobs: Job[] = [];
   const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+  const telemetry = new FunnelTelemetryTracker();
 
   try {
-    // Check if we should pause due to rate limits
-    if (productionRateLimiter.shouldScraperPause('workday')) {
-      console.warn(`⏸️ Workday: Rate limit pause required for ${company.name}`);
-      await sleep(30000); // 30 second pause
-    }
+    // Skip pause check - method not available in current rate limiter
+    // Rate limiting is handled by getScraperDelay below
 
     // Intelligent platform-specific rate limiting (Workday is most aggressive)
     const delay = await productionRateLimiter.getScraperDelay('workday');
@@ -157,21 +112,28 @@ export async function scrapeWorkday(company: {
     await sleep(delay);
 
     // Try JSON API first
-    const jsonJobs = await scrapeWorkdayJSON(company, runId, userAgent);
-    if (jsonJobs.length > 0) {
-      return jsonJobs;
+    const jsonResult = await scrapeWorkdayJSON(company, runId, userAgent, telemetry);
+    if (jsonResult.raw > 0) {
+      logFunnelMetrics('workday', jsonResult);
+      return jsonResult;
     }
 
     // Fallback to HTML scraping
-    return await scrapeWorkdayHTML(company, runId, userAgent);
+    const htmlResult = await scrapeWorkdayHTML(company, runId, userAgent, telemetry);
+    logFunnelMetrics('workday', htmlResult);
+    return htmlResult;
 
   } catch (error: any) {
-    console.error(`❌ Workday scrape failed for ${company.name}:`, error.message);
-    return [];
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`❌ Workday scrape failed for ${company.name}:`, errorMsg);
+    telemetry.recordError(errorMsg);
+    
+    logFunnelMetrics('workday', telemetry.getTelemetry());
+    return telemetry.getTelemetry();
   }
 }
 
-async function scrapeWorkdayJSON(company: any, runId: string, userAgent: string): Promise<Job[]> {
+async function scrapeWorkdayJSON(company: any, runId: string, userAgent: string, telemetry: FunnelTelemetryTracker): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
   try {
     const response = await backoffRetry(() =>
       axios.get(company.url, {
@@ -182,10 +144,9 @@ async function scrapeWorkdayJSON(company: any, runId: string, userAgent: string)
     
     const { data, headers } = response;
     
-    // Check for blocks/rate limits
-    const wasBlocked = productionRateLimiter.detectBlock(response.status, JSON.stringify(data));
-    if (wasBlocked) {
-      console.warn(`🚨 Block detected for Workday ${company.name}! Adaptive throttling enabled.`);
+    // Check for blocks/rate limits (simplified)
+    if (response.status === 429 || response.status === 403) {
+      console.warn(`🚨 Block detected for Workday ${company.name}! Status: ${response.status}`);
       await productionRateLimiter.getScraperDelay('workday', true);
       throw new Error('Rate limit detected, will retry with throttling');
     }
@@ -231,29 +192,65 @@ async function scrapeWorkdayJSON(company: any, runId: string, userAgent: string)
 
     if (!Array.isArray(jobArray) || jobArray.length === 0) {
       console.warn(`⚠️ No valid job array found in Workday JSON for ${company.name}`);
-      return [];
+      return telemetry.getTelemetry();
+    }
+
+    // Track raw jobs found
+    for (let i = 0; i < jobArray.length; i++) {
+      telemetry.recordRaw();
     }
 
     const jobs = [];
     for (const post of jobArray) {
       try {
         const job = await processWorkdayJob(post, company, runId, userAgent);
-        if (job) jobs.push(job);
+        if (job) {
+          jobs.push(job);
+          telemetry.recordEligibility();
+          telemetry.recordCareerTagging();
+          telemetry.recordLocationTagging();
+          telemetry.addSampleTitle(job.title);
+        }
       } catch (err) {
-        console.warn(`⚠️ Failed to process Workday job from ${company.name}:`, err);
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+        console.warn(`⚠️ Failed to process Workday job from ${company.name}:`, errorMsg);
+        telemetry.recordError(errorMsg);
       }
     }
-
+    
+    // CRITICAL: Insert jobs into database
+    if (jobs.length > 0) {
+      try {
+        const result = await atomicUpsertJobs(jobs);
+        console.log(`✅ Workday JSON DATABASE (${company.name}): ${result.inserted} inserted, ${result.updated} updated, ${result.errors.length} errors`);
+        
+        // Track upsert results
+        for (let i = 0; i < result.inserted; i++) telemetry.recordInserted();
+        for (let i = 0; i < result.updated; i++) telemetry.recordUpdated();
+        
+        if (result.errors.length > 0) {
+          console.error('❌ Workday JSON upsert errors:', result.errors.slice(0, 3));
+          result.errors.forEach(error => telemetry.recordError(error));
+        }
+      } catch (error: any) {
+        const errorMsg = error instanceof Error ? error.message : 'Database error';
+        console.error(`❌ Workday JSON database upsert failed for ${company.name}:`, errorMsg);
+        telemetry.recordError(errorMsg);
+      }
+    }
+    
     console.log(`✅ Scraped ${jobs.length} graduate jobs from Workday JSON at ${company.name}`);
-    return jobs;
+    return telemetry.getTelemetry();
 
   } catch (error: any) {
-    console.warn(`Workday JSON scraping failed for ${company.name}, trying HTML fallback`);
-    throw error;
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`Workday JSON scraping failed for ${company.name}, trying HTML fallback:`, errorMsg);
+    telemetry.recordError(errorMsg);
+    return telemetry.getTelemetry();
   }
 }
 
-async function scrapeWorkdayHTML(company: any, runId: string, userAgent: string): Promise<Job[]> {
+async function scrapeWorkdayHTML(company: any, runId: string, userAgent: string, telemetry: FunnelTelemetryTracker): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
   try {
     const { data: html } = await backoffRetry(() =>
       axios.get(company.url, {
@@ -288,25 +285,61 @@ async function scrapeWorkdayHTML(company: any, runId: string, userAgent: string)
 
     if (jobElements.length === 0) {
       console.warn(`⚠️ No jobs found in Workday HTML for ${company.name}`);
-      return [];
+      return telemetry.getTelemetry();
+    }
+
+    // Track raw jobs found
+    for (let i = 0; i < jobElements.length; i++) {
+      telemetry.recordRaw();
     }
 
     const jobs = [];
     for (let i = 0; i < jobElements.length; i++) {
       try {
         const job = await processWorkdayHTMLElement($, jobElements.eq(i), company, runId, userAgent);
-        if (job) jobs.push(job);
+        if (job) {
+          jobs.push(job);
+          telemetry.recordEligibility();
+          telemetry.recordCareerTagging();
+          telemetry.recordLocationTagging();
+          telemetry.addSampleTitle(job.title);
+        }
       } catch (err) {
-        console.warn(`⚠️ Failed to process HTML job element:`, err);
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+        console.warn(`⚠️ Failed to process HTML job element:`, errorMsg);
+        telemetry.recordError(errorMsg);
       }
     }
 
+    // CRITICAL: Insert jobs into database
+    if (jobs.length > 0) {
+      try {
+        const result = await atomicUpsertJobs(jobs);
+        console.log(`✅ Workday HTML DATABASE (${company.name}): ${result.inserted} inserted, ${result.updated} updated, ${result.errors.length} errors`);
+        
+        // Track upsert results
+        for (let i = 0; i < result.inserted; i++) telemetry.recordInserted();
+        for (let i = 0; i < result.updated; i++) telemetry.recordUpdated();
+        
+        if (result.errors.length > 0) {
+          console.error('❌ Workday HTML upsert errors:', result.errors.slice(0, 3));
+          result.errors.forEach(error => telemetry.recordError(error));
+        }
+      } catch (error: any) {
+        const errorMsg = error instanceof Error ? error.message : 'Database error';
+        console.error(`❌ Workday HTML database upsert failed for ${company.name}:`, errorMsg);
+        telemetry.recordError(errorMsg);
+      }
+    }
+    
     console.log(`✅ Scraped ${jobs.length} graduate jobs from Workday HTML at ${company.name}`);
-    return jobs;
+    return telemetry.getTelemetry();
 
   } catch (error: any) {
-    console.error(`Workday HTML scraping failed for ${company.name}:`, error.message);
-    return [];
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`Workday HTML scraping failed for ${company.name}:`, errorMsg);
+    telemetry.recordError(errorMsg);
+    return telemetry.getTelemetry();
   }
 }
 
@@ -329,7 +362,7 @@ async function processWorkdayJob(post: any, company: any, runId: string, userAge
   const content = `${titleLower} ${descLower}`;
   
   // Skip only clearly senior/management positions
-  const isSenior = /\b(senior|sr\.|lead|principal|staff|director|manager|mgr|head.of|chief|vp|vice.president|architect|expert|specialist.*(5|6|7|8|9|10)\+?.years)\b/.test(content);
+  const isSenior = /\b(senior\s+|sr\.\s+|lead\s+|principal\s+|director|head\s+of|chief|vp|vice\s+president|(5|6|7|8|9|10)\+?\s*years|experienced\s+.*(5|6|7|8|9|10))\b/.test(content);
   
   if (isSenior) return null;
 
@@ -400,16 +433,24 @@ async function processWorkdayJob(post: any, company: any, runId: string, userAge
     'General'
   );
 
+  // Check early-career eligibility before creating job
+  const eligibility = isEarlyCareerEligible(title, description);
+  
+  // Only create job if eligible (permissive filter)
+  if (!eligibility.eligible) {
+    return null;
+  }
+
   const job: Job = {
     title,
     company: company.name,
     location,
     job_url: jobUrl,
     description: description.slice(0, 2000),
-    categories: [department, analysis.level, analysis.workEnv].filter(Boolean),
+    categories: createJobCategories(analysis.careerPath, [department, analysis.level, analysis.workEnv].filter(Boolean)),
     experience_required: analysis.experienceLevel,
     work_environment: analysis.workEnv,
-    language_requirements: analysis.languages.join(', '),
+    language_requirements: analysis.languages,
     source: 'workday',
     job_hash: crypto.createHash('md5').update(`${title}-${company.name}-${jobUrl}`).digest('hex'),
     posted_at: postedAt,
@@ -448,7 +489,7 @@ async function processWorkdayHTMLElement(
   const content = `${titleLower} ${descLower}`;
   
   // Skip only clearly senior/management positions
-  const isSenior = /\b(senior|sr\.|lead|principal|staff|director|manager|mgr|head.of|chief|vp|vice.president|architect|expert|specialist.*(5|6|7|8|9|10)\+?.years)\b/.test(content);
+  const isSenior = /\b(senior\s+|sr\.\s+|lead\s+|principal\s+|director|head\s+of|chief|vp|vice\s+president|(5|6|7|8|9|10)\+?\s*years|experienced\s+.*(5|6|7|8|9|10))\b/.test(content);
   
   if (isSenior) return null;
 
@@ -495,10 +536,10 @@ async function processWorkdayHTMLElement(
     location,
     job_url: jobUrl,
     description: description.slice(0, 2000),
-    categories: [analysis.level, analysis.workEnv].filter(Boolean),
+            categories: createJobCategories('unknown', [analysis.level, analysis.workEnv].filter(Boolean)),
     experience_required: analysis.experienceLevel,
     work_environment: analysis.workEnv,
-    language_requirements: analysis.languages.join(', '),
+    language_requirements: analysis.languages,
     source: 'workday',
     job_hash: crypto.createHash('md5').update(`${title}-${company.name}-${jobUrl}`).digest('hex'),
     posted_at: postedAt,
@@ -623,16 +664,14 @@ if (require.main === module) {
   };
 
   scrapeWorkday(testCompany, 'test-run-123')
-    .then((jobs) => {
-      if (jobs.length === 0) throw new Error('🛑 No jobs returned');
-      console.log(`🧪 Test: ${jobs.length} jobs`);
-      jobs.slice(0, 2).forEach(job => {
-        console.log(`- ${job.title} at ${job.company}`);
-        console.log(`  Location: ${job.location}`);
-        console.log(`  Experience: ${job.experience_required}`);
-        console.log(`  Work: ${job.work_environment}`);
-        console.log('---');
-      });
+    .then((result) => {
+      if (result.inserted + result.updated === 0) throw new Error('🛑 No jobs processed');
+      console.log(`🧪 Test: ${result.inserted + result.updated} jobs processed`);
+      console.log(`📊 WORKDAY TEST FUNNEL: Raw=${result.raw}, Eligible=${result.eligible}, Inserted=${result.inserted}, Updated=${result.updated}`);
+      if (result.samples.length > 0) {
+        console.log(`📝 Sample titles: ${result.samples.join(' | ')}`);
+      }
+      console.log('---');
     })
     .catch(err => console.error('🛑 Test failed:', err));
 }

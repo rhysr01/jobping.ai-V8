@@ -25,15 +25,17 @@ interface PlatformConfig {
 const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
   greenhouse: {
     baseUrl: 'https://boards.greenhouse.io',
-    jobSelectors: ['.opening', 'div[data-qa="opening"]', '.section-wrapper .opening', 'a[href*="job_app"]'],
-    searchPatterns: ['job_app?id=', 'data-qa="opening"'],
+    jobSelectors: ['.style_result__abf_o', 'li[data-object-id]', '.styles_card__59ahF', 'a[aria-label]'],
+    searchPatterns: ['data-object-id=', 'style_result__'],
     commonCompanies: [
-      // Companies known for strong graduate/intern programs
+      // Companies that actually use Greenhouse for job hosting
+      'gitlab', 'figma', 'discord', 'airtable', 'elastic', 'twilio',
+      'mongodb', 'datadog', 'lever', 'greenhouse', 'intercom',
+      'notion', 'vercel', 'supabase', 'linear', 'framer',
+      // Legacy - some may redirect
       'google', 'microsoft', 'meta', 'amazon', 'apple', 'netflix',
       'salesforce', 'oracle', 'ibm', 'intel', 'nvidia', 'adobe',
-      // Tech companies with active early-career hiring
-      'stripe', 'shopify', 'square', 'twilio', 'mongodb', 'datadog',
-      'snowflake', 'databricks', 'elastic', 'hashicorp', 'gitlab',
+      'stripe', 'shopify', 'square', 'snowflake', 'databricks', 'hashicorp',
       // Fintech (heavy grad hiring)
       'plaid', 'robinhood', 'coinbase', 'affirm', 'chime', 'klarna',
       // Consulting/Enterprise (large grad programs)
@@ -49,14 +51,34 @@ const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     jobSelectors: ['.posting', '.posting-btn', '.postings-group .posting'],
     commonCompanies: [
       // Known graduate-friendly Lever companies
-      'spotify', 'discord', 'reddit', 'canva', 'linear', 'notion',
+      'spotify', 'discord', 'reddit', 'canva', 'linear', 'notion', 'figma',
       // Startups with intern programs
-      'segment', 'mixpanel', 'amplitude', 'heap', 'superhuman',
+      'segment', 'mixpanel', 'amplitude', 'heap', 'superhuman', 'postman', 'retool',
       // Growing tech companies
-      'cloudflare', 'vercel', 'planetscale', 'railway', 'supabase',
-      'clerk', 'resend', 'cal', 'prisma', 'turborepo',
+      'cloudflare', 'vercel', 'planetscale', 'railway', 'supabase', 'hashicorp',
+      'clerk', 'resend', 'cal', 'prisma', 'turborepo', 'temporal', 'checkr',
       // AI/ML companies (hot market for grads)
-      'anthropic', 'openai', 'huggingface', 'replicate', 'modal'
+      'anthropic', 'openai', 'huggingface', 'replicate', 'modal', 'scale',
+      // Fintech & Crypto
+      'ripple', 'consensys', 'chainalysis', 'messari', 'anchorage', 'alchemy',
+      // Major tech companies that use Lever
+      'dropbox', 'grammarly', 'instacart', 'oscar', 'lime', 'github',
+      // Healthcare tech
+      'flatiron', 'tempus', 'moderna', 'guardant', 'veracyte',
+      // Media & Content
+      'buzzfeed', 'vimeo', 'coursera', 'udemy', 'duolingo', 'masterclass',
+      // E-commerce & Marketplaces
+      'etsy', 'poshmark', 'mercari', 'reverb', 'stockx', 'faire',
+      // DevTools & Infrastructure
+      'docker', 'elastic', 'mongodb', 'databricks', 'snowflake', 'datadog',
+      // Social & Communication
+      'whatsapp', 'telegram', 'signal', 'zoom', 'miro', 'loom',
+      // Transportation & Logistics
+      'waymo', 'cruise', 'bird', 'getaround', 'flexport', 'convoy',
+      // Real Estate & PropTech
+      'compass', 'opendoor', 'zillow', 'redfin', 'apartmentlist',
+      // Food & Delivery
+      'doordash', 'gopuff', 'getir', 'gorillas', 'flink'
     ]
   }
 };
@@ -69,7 +91,7 @@ class DynamicCompanyDiscovery {
   /**
    * Get active companies for a platform with caching
    */
-  async getActiveCompanies(platform: 'greenhouse' | 'lever', limit: number = 5): Promise<Company[]> {
+  async getActiveCompanies(platform: 'greenhouse' | 'lever', limit: number = 15): Promise<Company[]> {
     const cacheKey = `${platform}-${limit}`;
     const now = Date.now();
     
@@ -150,18 +172,48 @@ class DynamicCompanyDiscovery {
    */
   private async checkCompanyJobCount(url: string, selectors: string[]): Promise<number> {
     try {
-      const { data: html } = await axios.get(url, {
+      const response = await axios.get(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.9'
         },
-        timeout: 8000
+        timeout: 8000,
+        maxRedirects: 5
       });
+      
+      // Check if redirected away from Greenhouse completely
+      const finalUrl = response.request.res.responseUrl || url;
+      if (!finalUrl.includes('greenhouse.io')) {
+        console.log(`⚠️ ${url} redirects away from Greenhouse to ${finalUrl}`);
+        return 0;
+      }
+      
+      // If redirected to job-boards.greenhouse.io, update the URL for parsing
+      const html = response.data;
 
       const $ = cheerio.load(html);
       
-      // Find all job elements first
+      // First try JSON-based job data (modern Greenhouse)
+      let jobCount = 0;
+      
+      // Look for Next.js data script tag
+      const scriptTags = $('script[id="__NEXT_DATA__"]');
+      if (scriptTags.length > 0) {
+        try {
+          const jsonData = JSON.parse(scriptTags.first().html() || '{}');
+          const jobs = jsonData?.props?.pageProps?.serverState?.initialResults?.['www:prod:careers']?.results?.[0]?.hits;
+          if (Array.isArray(jobs)) {
+            jobCount = jobs.length;
+            console.log(`📊 Found ${jobCount} jobs via JSON parsing for ${url}`);
+            return jobCount;
+          }
+        } catch (error) {
+          console.log(`⚠️ JSON parsing failed for ${url}, falling back to HTML selectors`);
+        }
+      }
+      
+      // Fallback to HTML selectors for legacy Greenhouse sites
       let allJobElements = $();
       for (const selector of selectors) {
         const elements = $(selector);
@@ -174,6 +226,8 @@ class DynamicCompanyDiscovery {
       if (allJobElements.length === 0) {
         return 0;
       }
+      
+      jobCount = allJobElements.length;
 
       // Filter for early-career jobs
       const earlyCareerKeywords = [
@@ -256,7 +310,7 @@ export const companyDiscovery = new DynamicCompanyDiscovery();
 // Utility function for easy integration
 export async function getActiveCompaniesForPlatform(
   platform: 'greenhouse' | 'lever', 
-  limit: number = 5
+  limit: number = 15
 ): Promise<Company[]> {
   try {
     return await companyDiscovery.getActiveCompanies(platform, limit);

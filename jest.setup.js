@@ -58,12 +58,22 @@ if (!global.MessageChannel) {
   };
 }
 
+// Polyfill for setImmediate (map to setTimeout)
+if (!global.setImmediate) {
+  global.setImmediate = (callback, ...args) => {
+    return setTimeout(() => callback(...args), 0);
+  };
+}
+
 // Mock environment variables
+process.env.NODE_ENV = 'test';
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
 process.env.OPENAI_API_KEY = 'test-openai-key';
 process.env.RESEND_API_KEY = 'test-resend-key';
 process.env.NEXT_PUBLIC_URL = 'http://localhost:3000';
+process.env.JOBPING_API_KEY = 'test-api-key';
+process.env.SCRAPE_API_KEY = 'test-api-key';
 
 // Mock NextResponse
 jest.mock('next/server', () => ({
@@ -120,33 +130,60 @@ jest.mock('next/navigation', () => ({
   },
 }));
 
-// Mock Supabase
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          single: jest.fn(() => Promise.resolve({ data: null, error: null })),
-        })),
-      })),
-      gte: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          order: jest.fn(() => ({
-            limit: jest.fn(() => Promise.resolve({ data: [], error: null })),
-          })),
-        })),
-      })),
-      upsert: jest.fn(() => Promise.resolve({ error: null })),
-      insert: jest.fn(() => Promise.resolve({ error: null })),
-      update: jest.fn(() => Promise.resolve({ error: null })),
-      delete: jest.fn(() => Promise.resolve({ error: null })),
-    })),
-    auth: {
-      signUp: jest.fn(() => Promise.resolve({ data: null, error: null })),
-      signIn: jest.fn(() => Promise.resolve({ data: null, error: null })),
-    },
-  })),
-}));
+// Mock Supabase with robust chainable methods
+jest.mock('@supabase/supabase-js', () => {
+  console.log('🔧 Supabase mock is being applied');
+  
+  // Create a chainable query builder that properly handles method chaining
+  const createChainableQuery = () => {
+    console.log('🔧 Creating chainable query');
+    const query = {};
+    
+    // Define all chainable methods that return the same object
+    const chainableMethods = [
+      'select', 'eq', 'gte', 'lte', 'gt', 'lt', 'like', 'ilike', 
+      'in', 'contains', 'order', 'limit', 'neq', 'is', 'filter'
+    ];
+    
+    // Add all chainable methods
+    chainableMethods.forEach(method => {
+      query[method] = jest.fn(function(...args) {
+        console.log(`🔧 Called ${method} method`);
+        return this; // Return 'this' for proper chaining
+      });
+    });
+    
+    // Add terminal methods that return promises
+    query.single = jest.fn(() => Promise.resolve({ data: null, error: null }));
+    query.upsert = jest.fn(() => Promise.resolve({ error: null }));
+    query.insert = jest.fn(() => Promise.resolve({ error: null }));
+    query.update = jest.fn(() => Promise.resolve({ error: null }));
+    query.delete = jest.fn(() => Promise.resolve({ error: null }));
+    
+    // Make it awaitable
+    query.then = function(resolve) {
+      return Promise.resolve({ data: [], error: null }).then(resolve);
+    };
+    
+    return query;
+  };
+
+  return {
+    createClient: jest.fn(() => {
+      console.log('🔧 Creating Supabase client');
+      return {
+        from: jest.fn(() => createChainableQuery()),
+        auth: {
+          signUp: jest.fn(() => Promise.resolve({ data: null, error: null })),
+          signIn: jest.fn(() => Promise.resolve({ data: null, error: null })),
+          signOut: jest.fn(() => Promise.resolve({ error: null })),
+          getUser: jest.fn(() => Promise.resolve({ data: null, error: null })),
+          getSession: jest.fn(() => Promise.resolve({ data: null, error: null }))
+        }
+      };
+    })
+  };
+});
 
 // Mock OpenAI
 jest.mock('openai', () => ({
@@ -235,5 +272,5 @@ global.console = {
   ...console,
   log: jest.fn(),
   warn: jest.fn(),
-  error: jest.fn(),
+  error: console.error, // Keep error for debugging
 };

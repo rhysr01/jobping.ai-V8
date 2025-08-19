@@ -82,8 +82,11 @@ export class EnhancedCache<T> {
     this.currentTTL = defaultTTL;
     // Note: AdvancedMonitoringOracle uses static methods only
     this.stats = this.initializeStats();
-    // Lazy initialize Redis to avoid build-time issues
-    this.initializeRedis().catch(console.error);
+    // Skip Redis initialization in test mode
+    if (process.env.NODE_ENV !== 'test') {
+      // Lazy initialize Redis to avoid build-time issues
+      this.initializeRedis().catch(console.error);
+    }
   }
 
   private initializeStats(): CacheStats {
@@ -100,6 +103,13 @@ export class EnhancedCache<T> {
   }
 
   private async initializeRedis() {
+    // Skip Redis connection in test environment
+    if (process.env.NODE_ENV === 'test') {
+      console.log(`⚠️ ${this.name} cache: Running in test mode, skipping Redis connection`);
+      this.isInitialized = false;
+      return;
+    }
+
     try {
       this.redis = createClient({
         url: process.env.REDIS_URL || 'redis://localhost:6379'

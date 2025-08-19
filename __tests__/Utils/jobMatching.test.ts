@@ -58,7 +58,7 @@ jest.mock('@/Utils/jobMatching', () => {
       companyTypes: Array.isArray(userPrefs.company_types) ? userPrefs.company_types : [],
       availability: userPrefs.start_date || 'flexible',
       experienceLevel: userPrefs.entry_level_preference || 'graduate',
-      careerFocus: userPrefs.career_path || 'exploring'
+      careerFocus: userPrefs.career_path || 'unsure'
     })),
     enrichJobData: jest.fn((job: Job) => ({
       ...job,
@@ -103,7 +103,7 @@ describe('Job Matching Utils', () => {
     languages_spoken: ['English'],
     company_types: ['Startups'],
     roles_selected: ['Software Engineer'],
-    career_path: 'Technology',
+    career_path: 'tech',
     entry_level_preference: 'Graduate',
     target_cities: ['San Francisco'],
   };
@@ -218,7 +218,7 @@ describe('Job Matching Utils', () => {
         languages_spoken: [],
         company_types: [],
         roles_selected: [],
-        career_path: 'Technology',
+        career_path: 'tech',
         entry_level_preference: 'Graduate',
         target_cities: [],
       };

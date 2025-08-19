@@ -4,15 +4,29 @@ import { productionRateLimiter } from '@/Utils/productionRateLimiter';
 import { sendMatchedJobsEmail } from '@/Utils/emailUtils';
 import { 
   performEnhancedAIMatching, 
-  generateFallbackMatches,
+  generateRobustFallbackMatches,
   logMatchSession,
   type UserPreferences 
 } from '@/Utils/jobMatching';
 import OpenAI from 'openai';
 
+// Helper function to safely normalize string/array fields
+function normalizeStringToArray(value: any): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    // Handle both comma-separated and pipe-separated strings
+    if (value.includes('|')) {
+      return value.split('|').map(s => s.trim()).filter(Boolean);
+    }
+    return value.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 function getSupabaseClient() {
-  // Only initialize during runtime, not build time
-  if (typeof window !== 'undefined') {
+  // Only initialize during runtime, not build time (but allow in test environment)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
     throw new Error('Supabase client should only be used server-side');
   }
   
@@ -57,13 +71,20 @@ export async function POST(req: NextRequest) {
     // Get all active users who signed up more than 48 hours ago
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
     
+    console.log('🔍 Querying users with conditions:', {
+      email_verified: true,
+      subscription_active: true,
+      created_at_lt: fortyEightHoursAgo.toISOString()
+    });
+    
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select('*')
       .eq('email_verified', true)
       .eq('subscription_active', true)
       .lt('created_at', fortyEightHoursAgo.toISOString())
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(1000);
 
     if (usersError) {
       console.error('❌ Failed to fetch users:', usersError);
@@ -121,15 +142,17 @@ export async function POST(req: NextRequest) {
         const userPreferences: UserPreferences = {
           email: user.email,
           full_name: user.full_name || '',
-          target_cities: user.target_cities ? user.target_cities.split(',').map((s: string) => s.trim()) : [],
-          languages_spoken: user.languages_spoken ? user.languages_spoken.split(',').map((s: string) => s.trim()) : [],
-          company_types: user.company_types ? user.company_types.split(',').map((s: string) => s.trim()) : [],
-          roles_selected: user.roles_selected ? user.roles_selected.split(',').map((s: string) => s.trim()) : [],
+          target_cities: normalizeStringToArray(user.target_cities),
+          languages_spoken: normalizeStringToArray(user.languages_spoken),
+          company_types: normalizeStringToArray(user.company_types),
+          roles_selected: normalizeStringToArray(user.roles_selected),
           professional_expertise: user.professional_expertise || 'entry',
-          visa_status: user.visa_status || 'unknown',
+          professional_experience: user.professional_expertise || 'entry', // Map to same field
+          work_authorization: user.visa_status || 'unknown',
           start_date: user.start_date ? new Date(user.start_date).toISOString() : new Date().toISOString(),
+          target_employment_start_date: user.start_date ? new Date(user.start_date).toISOString() : new Date().toISOString(),
           work_environment: user.work_environment || 'any',
-          career_path: user.career_path || '',
+          career_path: user.career_path ? [user.career_path] : [], // Convert to array
           entry_level_preference: user.entry_level_preference || 'entry'
         };
 
@@ -142,12 +165,12 @@ export async function POST(req: NextRequest) {
           
           if (!matches || matches.length === 0) {
             matchType = 'fallback';
-            matches = generateFallbackMatches(jobs, userPreferences);
+            matches = generateRobustFallbackMatches(jobs, userPreferences);
           }
         } catch (aiError) {
           console.error(`❌ AI matching failed for ${user.email}:`, aiError);
           matchType = 'ai_failed';
-          matches = generateFallbackMatches(jobs, userPreferences);
+          matches = generateRobustFallbackMatches(jobs, userPreferences);
         }
 
         // Limit matches based on subscription tier

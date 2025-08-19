@@ -2,12 +2,12 @@
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
-import { FreshnessTier, JobUpsertResult, DateExtractionResult, Job } from '../scrapers/types';
+import { FreshnessTier, JobUpsertResult, DateExtractionResult, Job, createJobCategories, extractCareerPathFromCategories, calculateCareerPathTelemetry, CANONICAL_CAREER_PATHS } from '../scrapers/types';
 
 // Initialize Supabase client
 function getSupabaseClient() {
-  // Only initialize during runtime, not build time
-  if (typeof window !== 'undefined') {
+  // Only initialize during runtime, not build time (but allow in test environment)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
     throw new Error('Supabase client should only be used server-side');
   }
   
@@ -24,6 +24,43 @@ function getSupabaseClient() {
       persistSession: false
     }
   });
+}
+
+// ================================
+// ROBUST MATCHING & RANKING SYSTEM
+// ================================
+
+export interface MatchScore {
+  overall: number;
+  eligibility: number;
+  careerPath: number;
+  location: number;
+  freshness: number;
+  confidence: number;
+}
+
+export interface MatchResult {
+  job: Job;
+  match_score: number;
+  match_reason: string;
+  match_quality: string;
+  match_tags: string;
+  confidence_score: number;
+  scoreBreakdown: MatchScore;
+}
+
+export interface UserPreferences {
+  email: string;
+  professional_expertise?: string;
+  start_date?: string;
+  work_environment?: string;
+  visa_status?: string;
+  entry_level_preference?: string;
+  career_path?: string[];
+  target_cities?: string[];
+  languages_spoken?: string[];
+  company_types?: string[];
+  roles_selected?: string[];
 }
 
 // ================================
@@ -85,7 +122,12 @@ export class AIMatchingCache {
   static generateUserClusterKey(users: any[]): string {
     // Create key from similar user characteristics
     const signature = users
-      .map(u => `${u.professional_expertise}-${u.entry_level_preference}-${u.target_cities?.split(',')[0] || 'unknown'}`)
+      .map(u => {
+        const targetCitiesRaw = u.target_cities;
+        const firstCity = Array.isArray(targetCitiesRaw) ? targetCitiesRaw[0] : 
+                         typeof targetCitiesRaw === 'string' ? targetCitiesRaw.split('|')[0] : 'unknown';
+        return `${u.professional_expertise}-${u.entry_level_preference}-${firstCity || 'unknown'}`;
+      })
       .sort()
       .join('|');
     
@@ -98,7 +140,7 @@ export class AIMatchingCache {
     if (cached) {
       console.log(`🎯 Cache hit for cluster of ${userCluster.length} users`);
     }
-    return cached || null;
+    return cached;
   }
 
   static setCachedMatches(userCluster: any[], matches: any[]): void {
@@ -113,6 +155,331 @@ export class AIMatchingCache {
   }
 }
 
+// ================================
+// ROBUST MATCHING FUNCTIONS
+// ================================
+
+// C1: Input normalization
+export function normalizeJobForMatching(job: Job): Job {
+  // Normalize categories to string then split and rejoin
+  const categories = normalizeToString(job.categories);
+  if (categories) {
+    const tags = categories.split('|')
+      .map(tag => tag.toLowerCase().trim())
+      .filter(tag => tag.length > 0);
+    
+    // Deduplicate and sort
+    const uniqueTags = [...new Set(tags)].sort();
+    job.categories = uniqueTags.join('|');
+  }
+  
+  return job;
+}
+
+// Defensive string normalization helper
+function normalizeToString(value: any): string {
+  if (Array.isArray(value)) {
+    return value.join('|');
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  return '';
+}
+
+// C2: Hard gates
+export function applyHardGates(job: Job, userPrefs: UserPreferences): { passed: boolean; reason: string } {
+  const categories = normalizeToString(job.categories);
+  const tags = categories.split('|');
+  
+  // Early-career gate
+  const hasEarlyCareer = tags.includes('early-career') || tags.includes('eligibility:uncertain');
+  if (!hasEarlyCareer) {
+    return { passed: false, reason: 'Not early-career eligible' };
+  }
+  
+  // Geo gate (permissive - allow loc:unknown with penalty)
+  const hasLocation = tags.some(tag => tag.startsWith('loc:'));
+  if (!hasLocation) {
+    // Allow with penalty, don't block
+    console.warn(`⚠️ Job ${job.title} has no location tag, allowing with penalty`);
+  }
+  
+  // Visa gate (if user needs sponsorship)
+  if (userPrefs.visa_status === 'non-eu-visa-required') {
+    const jobText = `${job.title} ${job.description}`.toLowerCase();
+    const noSponsorship = /\b(no sponsorship|no visa|eu only|eu citizens only|no work permit)\b/.test(jobText);
+    if (noSponsorship) {
+      return { passed: false, reason: 'No visa sponsorship available' };
+    }
+  }
+  
+  return { passed: true, reason: 'Passed all gates' };
+}
+
+// C3: Scoring model
+export function calculateMatchScore(job: Job, userPrefs: UserPreferences): MatchScore {
+  const categories = normalizeToString(job.categories);
+  const tags = categories.split('|');
+  
+  // Eligibility score (35% weight)
+  let eligibilityScore = 0;
+  if (tags.includes('early-career')) {
+    eligibilityScore = 100;
+  } else if (tags.includes('eligibility:uncertain')) {
+    eligibilityScore = 70;
+  }
+  
+  // Career path match (30% weight)
+  let careerPathScore = 0;
+  const jobCareerPath = tags.find(tag => tag.startsWith('career:'))?.replace('career:', '');
+  const userCareerPath = userPrefs.career_path?.[0];
+  
+  if (jobCareerPath && userCareerPath) {
+    if (jobCareerPath === userCareerPath) {
+      careerPathScore = 100;
+    } else if (jobCareerPath !== 'unknown') {
+      careerPathScore = 70; // Related career path
+    } else {
+      careerPathScore = 40; // Unknown career path
+    }
+  } else if (jobCareerPath === 'unknown') {
+    careerPathScore = 40;
+  }
+  
+  // Location fit (20% weight)
+  let locationScore = 0;
+  const jobLocation = tags.find(tag => tag.startsWith('loc:'))?.replace('loc:', '');
+  // Normalize target_cities to array
+  const userCitiesRaw = userPrefs.target_cities;
+  const userCities = Array.isArray(userCitiesRaw) ? userCitiesRaw : 
+                     typeof userCitiesRaw === 'string' ? userCitiesRaw.split('|').map(c => c.trim()) : [];
+  
+  if (jobLocation && userCities.length > 0) {
+    if (userCities.some(city => jobLocation.includes(city.toLowerCase().replace(/\s+/g, '-')))) {
+      locationScore = 100; // Exact city match
+    } else if (jobLocation.startsWith('eu-')) {
+      locationScore = 75; // EU remote
+    } else if (jobLocation === 'unknown') {
+      locationScore = 50; // Unknown location
+    } else {
+      locationScore = 0; // Non-EU location
+    }
+  } else if (jobLocation === 'unknown') {
+    locationScore = 50;
+  }
+  
+  // Freshness (15% weight)
+  let freshnessScore = 0;
+  const postedAt = new Date(job.posted_at);
+  const now = new Date();
+  const daysDiff = (now.getTime() - postedAt.getTime()) / (1000 * 60 * 60 * 24);
+  
+  if (daysDiff < 1) {
+    freshnessScore = 100; // <24h
+  } else if (daysDiff < 3) {
+    freshnessScore = 90; // 1-3d
+  } else if (daysDiff < 7) {
+    freshnessScore = 70; // 3-7d
+  } else {
+    freshnessScore = 40; // >7d
+  }
+  
+  // Calculate weighted overall score
+  const overallScore = Math.round(
+    (eligibilityScore * 0.35) +
+    (careerPathScore * 0.30) +
+    (locationScore * 0.20) +
+    (freshnessScore * 0.15)
+  );
+  
+  return {
+    overall: overallScore,
+    eligibility: eligibilityScore,
+    careerPath: careerPathScore,
+    location: locationScore,
+    freshness: freshnessScore,
+    confidence: 1.0 // Will be adjusted by confidence handling
+  };
+}
+
+// C4: Confidence handling
+export function calculateConfidenceScore(job: Job, userPrefs: UserPreferences): number {
+  const categories = normalizeToString(job.categories);
+  const tags = categories.split('|');
+  
+  let confidence = 1.0;
+  
+  // Subtract 0.1 per missing key signal
+  if (tags.includes('eligibility:uncertain')) {
+    confidence -= 0.1;
+  }
+  
+  const jobCareerPath = tags.find(tag => tag.startsWith('career:'))?.replace('career:', '');
+  if (jobCareerPath === 'unknown') {
+    confidence -= 0.1;
+  }
+  
+  const jobLocation = tags.find(tag => tag.startsWith('loc:'))?.replace('loc:', '');
+  if (jobLocation === 'unknown') {
+    confidence -= 0.1;
+  }
+  
+  // Floor at 0.5
+  return Math.max(0.5, confidence);
+}
+
+// C5: Generate explanations and tags
+export function generateMatchExplanation(job: Job, scoreBreakdown: MatchScore, userPrefs: UserPreferences): { reason: string; tags: string } {
+  const categories = normalizeToString(job.categories);
+  const tags = categories.split('|');
+  
+  // Find top 2 signals
+  const signals = [];
+  
+  if (scoreBreakdown.eligibility >= 70) {
+    signals.push('Early-career');
+  }
+  
+  const jobCareerPath = tags.find(tag => tag.startsWith('career:'))?.replace('career:', '');
+  if (scoreBreakdown.careerPath >= 70 && jobCareerPath && jobCareerPath !== 'unknown') {
+    signals.push(jobCareerPath.charAt(0).toUpperCase() + jobCareerPath.slice(1));
+  }
+  
+  const jobLocation = tags.find(tag => tag.startsWith('loc:'))?.replace('loc:', '');
+  if (scoreBreakdown.location >= 70 && jobLocation && jobLocation !== 'unknown') {
+    signals.push(jobLocation.replace('-', ' '));
+  }
+  
+  // Generate reason
+  let reason = '';
+  if (signals.length >= 2) {
+    reason = `${signals[0]} + ${signals[1]} match`;
+  } else if (signals.length === 1) {
+    reason = `${signals[0]} match`;
+  } else {
+    reason = 'Potential match';
+  }
+  
+  // Add location if available
+  if (jobLocation && jobLocation !== 'unknown') {
+    reason += ` in ${jobLocation.replace('-', ' ')}`;
+  }
+  
+  // Add explanation for unknowns
+  const unknowns = [];
+  if (tags.includes('eligibility:uncertain')) {
+    unknowns.push('eligibility unclear');
+  }
+  if (jobLocation === 'unknown') {
+    unknowns.push('location unclear');
+  }
+  if (jobCareerPath === 'unknown') {
+    unknowns.push('career path unclear');
+  }
+  
+  if (unknowns.length > 0) {
+    reason += `; kept due to strong early-career signal`;
+  }
+  
+  // Generate match tags
+  const matchTags = {
+    eligibility: tags.includes('early-career') ? 'early-career' : 'uncertain',
+    career_path: jobCareerPath || 'unknown',
+    loc: jobLocation || 'unknown',
+    freshness: scoreBreakdown.freshness >= 90 ? 'fresh' : scoreBreakdown.freshness >= 70 ? 'recent' : 'older',
+    confidence: scoreBreakdown.confidence
+  };
+  
+  return {
+    reason,
+    tags: JSON.stringify(matchTags)
+  };
+}
+
+// C6: Ordering and thresholds
+export function categorizeMatches(matches: MatchResult[]): { confident: MatchResult[]; promising: MatchResult[] } {
+  const confident: MatchResult[] = [];
+  const promising: MatchResult[] = [];
+  
+  for (const match of matches) {
+    if (match.match_score >= 70 && match.confidence_score >= 0.7) {
+      confident.push(match);
+    } else if (match.match_score >= 50 || match.confidence_score < 0.7) {
+      promising.push(match);
+    }
+  }
+  
+  return { confident, promising };
+}
+
+// Main robust matching function
+export function performRobustMatching(jobs: Job[], userPrefs: UserPreferences): MatchResult[] {
+  const matches: MatchResult[] = [];
+  
+  for (const job of jobs) {
+    // Normalize job
+    const normalizedJob = normalizeJobForMatching(job);
+    
+    // Apply hard gates
+    const gateResult = applyHardGates(normalizedJob, userPrefs);
+    if (!gateResult.passed) {
+      continue;
+    }
+    
+    // Calculate scores
+    const scoreBreakdown = calculateMatchScore(normalizedJob, userPrefs);
+    const confidenceScore = calculateConfidenceScore(normalizedJob, userPrefs);
+    
+    // Apply confidence to location and career subscores
+    scoreBreakdown.location = Math.round(scoreBreakdown.location * confidenceScore);
+    scoreBreakdown.careerPath = Math.round(scoreBreakdown.careerPath * confidenceScore);
+    scoreBreakdown.confidence = confidenceScore;
+    
+    // Recalculate overall score
+    scoreBreakdown.overall = Math.round(
+      (scoreBreakdown.eligibility * 0.35) +
+      (scoreBreakdown.careerPath * 0.30) +
+      (scoreBreakdown.location * 0.20) +
+      (scoreBreakdown.freshness * 0.15)
+    );
+    
+    // Generate explanation
+    const explanation = generateMatchExplanation(normalizedJob, scoreBreakdown, userPrefs);
+    
+    // Determine match quality
+    let matchQuality = 'poor';
+    if (scoreBreakdown.overall >= 80) matchQuality = 'excellent';
+    else if (scoreBreakdown.overall >= 70) matchQuality = 'good';
+    else if (scoreBreakdown.overall >= 50) matchQuality = 'fair';
+    
+    const matchResult: MatchResult = {
+      job: normalizedJob,
+      match_score: scoreBreakdown.overall,
+      match_reason: explanation.reason,
+      match_quality: matchQuality,
+      match_tags: explanation.tags,
+      confidence_score: confidenceScore,
+      scoreBreakdown
+    };
+    
+    matches.push(matchResult);
+  }
+  
+  // Sort by match score, then confidence, then posted date
+  matches.sort((a, b) => {
+    if (b.match_score !== a.match_score) {
+      return b.match_score - a.match_score;
+    }
+    if (b.confidence_score !== a.confidence_score) {
+      return b.confidence_score - a.confidence_score;
+    }
+    return new Date(b.job.posted_at).getTime() - new Date(a.job.posted_at).getTime();
+  });
+  
+  return matches;
+}
+
 // Enhanced AI Matching Cache with Redis persistence (new implementation)
 export { EnhancedAIMatchingCache, enhancedAIMatchingCache } from './enhancedCache';
 
@@ -122,17 +489,33 @@ export { EnhancedAIMatchingCache, enhancedAIMatchingCache } from './enhancedCach
 
 // Use the Job interface from scrapers/types.ts instead of local definition
 
+// Helper function to safely normalize string/array fields
+function normalizeStringToArray(value: any): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    // Handle both comma-separated and pipe-separated strings
+    if (value.includes('|')) {
+      return value.split('|').map(s => s.trim()).filter(Boolean);
+    }
+    return value.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 export interface UserPreferences {
   email: string;
   full_name: string;
   professional_expertise: string;
-  visa_status: string;
-  start_date: string;
+  professional_experience: string;      // From your database schema
+  work_authorization: string;           // From your database schema (not visa_status)
   work_environment: string;
+  start_date: string;
+  target_employment_start_date: string; // New field for Tally form
   languages_spoken: string[];           // Updated to array
   company_types: string[];              // Updated to array
-  roles_selected: string[];             // Updated to array
-  career_path: string;
+  roles_selected: any;                  // JSONB in your database schema
+  career_path: string[];                // TEXT[] in your database schema
   entry_level_preference: string;
   target_cities: string[];              // Updated to array
 }
@@ -436,12 +819,12 @@ class DataDrivenJobMatcher {
   }
 
   private static parseStudentContext(userPrefs: UserPreferences): StudentContext {
-    const preferredCities = Array.isArray(userPrefs.target_cities) ? userPrefs.target_cities : [];
-    const languages = Array.isArray(userPrefs.languages_spoken) ? userPrefs.languages_spoken : [];
+    const preferredCities = normalizeStringToArray(userPrefs.target_cities);
+    const languages = normalizeStringToArray(userPrefs.languages_spoken);
     const experienceMonths = this.parseExperienceToMonths(userPrefs.professional_expertise || '0');
     const workPreference = this.parseWorkPreference(userPrefs.work_environment || 'office');
     const visaCategory = this.simplifyVisaStatus(userPrefs.visa_status || 'eu-citizen');
-    const careerPaths = Array.isArray(userPrefs.roles_selected) ? userPrefs.roles_selected : [];
+    const careerPaths = normalizeStringToArray(userPrefs.roles_selected);
 
     return {
       preferredCities,
@@ -677,6 +1060,9 @@ class DataDrivenJobMatcher {
     
     // Extract career path from job using the extraction function
     const jobCareerPath = extractCareerPath(job.title || '', job.description || '');
+    
+    // Handle categories field safely
+    const jobCategories = normalizeStringToArray(job.categories);
     
     for (const careerPath of studentContext.careerPaths) {
       let pathScore = 0;
@@ -1041,14 +1427,16 @@ export async function performEnhancedAIMatching(
   jobs: Job[],
   userPrefs: UserPreferences,
   openai: OpenAI
-): Promise<JobMatch[]> {
+): Promise<MatchResult[]> {
   try {
-    // Normalize and enrich data
-    const normalizedProfile = normalizeUserPreferences(userPrefs);
-    const enrichedJobs = jobs.map(enrichJobData);
+    // C7: AI + Fallback orchestration
+    // Include user single career path, top 3 cities, and eligibility notes
+    const userCareerPath = userPrefs.career_path?.[0] || 'unknown';
+    const topCities = (userPrefs.target_cities || []).slice(0, 3);
+    const eligibilityNotes = userPrefs.entry_level_preference || 'entry-level';
     
-    // Build prompt and call OpenAI
-    const prompt = buildMatchingPrompt(enrichedJobs, normalizedProfile);
+    // Build enhanced prompt with robust matching instructions
+    const prompt = buildRobustMatchingPrompt(jobs, userPrefs, userCareerPath, topCities, eligibilityNotes);
     
     const response = await openai.chat.completions.create({
       model: 'gpt-4',
@@ -1062,21 +1450,22 @@ export async function performEnhancedAIMatching(
       throw new Error('No content in OpenAI response');
     }
     
-    // Parse and validate response
-    const matches = parseAndValidateMatches(content, jobs);
+    // Parse AI response and convert to robust match format
+    const aiMatches = parseAndValidateMatches(content, jobs);
+    const robustMatches = convertToRobustMatches(aiMatches, userPrefs, jobs);
     
     // Log successful matching
-    await logMatchSession(userPrefs.email, 'ai_success', jobs.length, matches.length);
+    await logMatchSession(userPrefs.email, 'ai_success', jobs.length, robustMatches.length);
     
-    return matches;
+    return robustMatches;
     
   } catch (error) {
     console.error('AI matching failed:', error);
     
-    // Log failure and use sophisticated fallback
+    // Log failure and use robust fallback
     await logMatchSession(userPrefs.email, 'ai_failed', jobs.length, 0, error instanceof Error ? error.message : 'Unknown error');
     
-    return generateFallbackMatches(jobs, userPrefs);
+    return generateRobustFallbackMatches(jobs, userPrefs);
   }
 }
 
@@ -1111,26 +1500,116 @@ export function parseAndValidateMatches(response: string, jobs: Job[]): JobMatch
   }
 }
 
-// 4. SOPHISTICATED FALLBACK - Replaces the old "score = 5" system
-export function generateFallbackMatches(jobs: Job[], userPrefs: UserPreferences): JobMatch[] {
-  console.log(`🧠 Using sophisticated fallback for ${userPrefs.email}`);
+// C7: Robust fallback matching
+export function generateRobustFallbackMatches(jobs: Job[], userPrefs: UserPreferences): MatchResult[] {
+  console.log(`🧠 Using robust fallback for ${userPrefs.email}`);
   
-  // Use the sophisticated matching engine instead of the old simple scoring
-  const opportunities = DataDrivenJobMatcher.generateSophisticatedMatches(jobs, userPrefs);
+  // Use the robust matching system
+  const matches = performRobustMatching(jobs, userPrefs);
   
-  // Convert to standard JobMatch format
-  const jobMatches: JobMatch[] = opportunities.map((opp, index) => ({
-    job_index: index + 1,
-    job_hash: opp.job.job_hash,
-    match_score: Math.round(opp.overallScore / 10), // Convert 0-100 to 0-10 scale
-    match_reason: opp.explanation,
-    match_quality: opp.overallScore >= 80 ? 'excellent' : 
-                  opp.overallScore >= 65 ? 'good' : 'fair',
-    match_tags: [...opp.advantages, ...opp.challenges].join(',')
-  }));
+  // Categorize matches
+  const { confident, promising } = categorizeMatches(matches);
   
-  console.log(`✅ Generated ${jobMatches.length} sophisticated fallback matches`);
-  return jobMatches;
+  // C8: Acceptance checks - ensure minimum matches per user
+  const tierQuota = 6; // Free tier quota
+  let finalMatches = confident;
+  
+  // Backfill with promising matches if needed
+  if (finalMatches.length < tierQuota && promising.length > 0) {
+    const needed = tierQuota - finalMatches.length;
+    const backfill = promising.slice(0, needed);
+    finalMatches = [...finalMatches, ...backfill];
+    
+    console.log(`📊 Backfilled ${backfill.length} promising matches to meet quota`);
+  }
+  
+  // Log confidence distribution
+  const lowConfidenceCount = finalMatches.filter(m => m.confidence_score < 0.7).length;
+  const lowConfidencePercentage = (lowConfidenceCount / finalMatches.length) * 100;
+  
+  if (lowConfidencePercentage > 40) {
+    console.warn(`⚠️ High percentage of low confidence matches: ${lowConfidencePercentage.toFixed(1)}%`);
+  }
+  
+  console.log(`✅ Generated ${finalMatches.length} robust fallback matches (${confident.length} confident, ${promising.length} promising)`);
+  
+  return finalMatches;
+}
+
+// Helper function to build robust matching prompt
+function buildRobustMatchingPrompt(jobs: Job[], userPrefs: UserPreferences, careerPath: string, cities: string[], eligibility: string): string {
+  const jobSummaries = jobs.slice(0, 20).map((job, index) => {
+    const categories = normalizeToString(job.categories);
+    const tags = categories.split('|');
+    const careerTag = tags.find(tag => tag.startsWith('career:'))?.replace('career:', '') || 'unknown';
+    const locationTag = tags.find(tag => tag.startsWith('loc:'))?.replace('loc:', '') || 'unknown';
+    const eligibilityTag = tags.includes('early-career') ? 'early-career' : tags.includes('eligibility:uncertain') ? 'uncertain' : 'other';
+    
+    return `${index + 1}. ${job.title} at ${job.company} (${careerTag}, ${locationTag}, ${eligibilityTag})`;
+  }).join('\n');
+  
+  return `You are a job matching expert. Match jobs to user preferences with strict criteria.
+
+USER PROFILE:
+- Career Path: ${careerPath}
+- Target Cities: ${cities.join(', ')}
+- Eligibility: ${eligibility}
+- Work Environment: ${userPrefs.work_environment || 'any'}
+
+MATCHING CRITERIA (in order of importance):
+1. ELIGIBILITY: Prefer early-career > uncertain > other
+2. CAREER PATH: Exact match > related > unknown
+3. LOCATION: Exact city > same country > EU-remote > unknown > non-EU
+
+JOBS TO MATCH:
+${jobSummaries}
+
+INSTRUCTIONS:
+- Return ONLY valid JSON array of matches
+- Each match: { "job_index": number, "match_score": 0-100, "match_reason": "explanation", "match_quality": "excellent|good|fair|poor" }
+- Prioritize eligibility > career > location
+- Surface "promising (incomplete)" matches with clear notes
+- Maximum 6 matches
+- No additional text`;
+}
+
+// Helper function to convert AI matches to robust format
+function convertToRobustMatches(aiMatches: JobMatch[], userPrefs: UserPreferences, originalJobs: Job[]): MatchResult[] {
+  return aiMatches.map(aiMatch => {
+    // Find the original job
+    const job = originalJobs.find(j => j.job_hash === aiMatch.job_hash);
+    if (!job) return null;
+    
+    // Calculate robust scores
+    const scoreBreakdown = calculateMatchScore(job, userPrefs);
+    const confidenceScore = calculateConfidenceScore(job, userPrefs);
+    
+    // Apply confidence adjustments
+    scoreBreakdown.location = Math.round(scoreBreakdown.location * confidenceScore);
+    scoreBreakdown.careerPath = Math.round(scoreBreakdown.careerPath * confidenceScore);
+    scoreBreakdown.confidence = confidenceScore;
+    
+    // Recalculate overall score
+    scoreBreakdown.overall = Math.round(
+      (scoreBreakdown.eligibility * 0.35) +
+      (scoreBreakdown.careerPath * 0.30) +
+      (scoreBreakdown.location * 0.20) +
+      (scoreBreakdown.freshness * 0.15)
+    );
+    
+    // Generate explanation
+    const explanation = generateMatchExplanation(job, scoreBreakdown, userPrefs);
+    
+    return {
+      job,
+      match_score: scoreBreakdown.overall,
+      match_reason: explanation.reason,
+      match_quality: aiMatch.match_quality,
+      match_tags: explanation.tags,
+      confidence_score: confidenceScore,
+      scoreBreakdown
+    };
+  }).filter(Boolean) as MatchResult[];
 }
 
 // 5. Get Match Quality Label
@@ -1388,9 +1867,7 @@ export function calculateFreshnessTier(postedAt: string): FreshnessTier {
   
   if (hoursDiff < 24) return FreshnessTier.ULTRA_FRESH;
   if (hoursDiff < 72) return FreshnessTier.FRESH; // 3 days
-  if (hoursDiff < 168) return FreshnessTier.RECENT; // 7 days
-  if (hoursDiff < 720) return FreshnessTier.STALE; // 30 days
-  return FreshnessTier.OLD;
+  return FreshnessTier.COMPREHENSIVE;
 }
 
 /**
@@ -1670,12 +2147,22 @@ export async function atomicUpsertJobs(jobs: Job[]): Promise<JobUpsertResult> {
         job_hash: job.job_hash || crypto.createHash('md5').update(`${job.title}-${job.company}-${job.job_url}`).digest('hex')
       };
 
-      // Remove undefined fields that might cause issues
+      // Remove undefined fields and fields that don't exist in DB schema
       Object.keys(preparedJob).forEach(key => {
-        if (preparedJob[key as keyof typeof preparedJob] === undefined) {
+        if (preparedJob[key as keyof typeof preparedJob] === undefined || key === 'updated_at') {
           delete preparedJob[key as keyof typeof preparedJob];
         }
       });
+
+      // Ensure categories is properly formatted for database
+      if (preparedJob.categories) {
+        if (Array.isArray(preparedJob.categories)) {
+          preparedJob.categories = preparedJob.categories.join('|');
+        } else if (typeof preparedJob.categories === 'string') {
+          // Keep as string - this should work with TEXT column
+          preparedJob.categories = preparedJob.categories;
+        }
+      }
 
       return preparedJob;
     });
@@ -1905,32 +2392,38 @@ export function extractProfessionalExpertise(jobTitle: string, description: stri
  * @returns Career path category
  */
 export function extractCareerPath(jobTitle: string, description: string): string {
+  // Import the normalization function to ensure we return canonical slugs
+  const { normalizeCareerPath } = require('../scrapers/types');
   const combinedText = `${jobTitle} ${description}`.toLowerCase();
   
-  // Career path categories with comprehensive keyword arrays
+  // Canonical career path categories with comprehensive keyword arrays
   const careerPaths = {
-    'consulting': {
+    'strategy': {
       keywords: [
-        'consultant', 'consulting', 'strategy', 'business development', 'management consulting',
-        'advisory', 'client services', 'business analyst', 'strategy analyst', 'consulting analyst',
-        'business consultant', 'strategy consultant', 'management consultant', 'advisory services',
-        'business transformation', 'change management', 'process improvement', 'operational excellence'
+        'strategy', 'strategic', 'business strategy', 'strategy analyst', 'strategy consultant',
+        'business development', 'management consulting', 'advisory', 'business transformation',
+        'change management', 'process improvement', 'operational excellence', 'business design'
       ]
     },
-    'finance': {
+    'data-analytics': {
       keywords: [
-        'finance', 'financial', 'investment', 'banking', 'accounting', 'audit', 'treasury',
-        'financial analyst', 'investment analyst', 'credit analyst', 'risk analyst', 'financial planning',
-        'corporate finance', 'investment banking', 'private equity', 'venture capital', 'asset management',
-        'financial modeling', 'budgeting', 'financial reporting', 'compliance', 'regulatory'
+        'data analyst', 'data analytics', 'analytics', 'business intelligence', 'bi analyst',
+        'data science', 'machine learning', 'ml', 'artificial intelligence', 'ai', 'statistics',
+        'data visualization', 'reporting', 'kpi', 'metrics', 'data mining', 'predictive analytics'
       ]
     },
-    'tech': {
+    'retail-luxury': {
       keywords: [
-        'software', 'developer', 'engineer', 'programming', 'coding', 'technology', 'tech',
-        'frontend', 'backend', 'full stack', 'data science', 'machine learning', 'ai', 'artificial intelligence',
-        'devops', 'cloud', 'cybersecurity', 'product', 'product manager', 'technical', 'engineering',
-        'software engineer', 'data engineer', 'ml engineer', 'ai engineer', 'systems engineer'
+        'retail', 'luxury', 'fashion', 'retail analyst', 'luxury brand', 'fashion retail',
+        'merchandising', 'buying', 'visual merchandising', 'store operations', 'retail operations',
+        'customer experience', 'brand management', 'retail marketing', 'e-commerce'
+      ]
+    },
+    'sales': {
+      keywords: [
+        'sales', 'sales representative', 'account executive', 'business development',
+        'client success', 'customer success', 'account manager', 'sales development',
+        'inside sales', 'outside sales', 'sales analyst', 'revenue', 'business development representative'
       ]
     },
     'marketing': {
@@ -1941,6 +2434,14 @@ export function extractCareerPath(jobTitle: string, description: string): string
         'campaign', 'seo', 'sem', 'ppc', 'email marketing', 'growth marketing', 'product marketing'
       ]
     },
+    'finance': {
+      keywords: [
+        'finance', 'financial', 'investment', 'banking', 'accounting', 'audit', 'treasury',
+        'financial analyst', 'investment analyst', 'credit analyst', 'risk analyst', 'financial planning',
+        'corporate finance', 'investment banking', 'private equity', 'venture capital', 'asset management',
+        'financial modeling', 'budgeting', 'financial reporting', 'compliance', 'regulatory'
+      ]
+    },
     'operations': {
       keywords: [
         'operations', 'supply chain', 'logistics', 'procurement', 'manufacturing', 'production',
@@ -1949,19 +2450,38 @@ export function extractCareerPath(jobTitle: string, description: string): string
         'warehouse', 'distribution', 'sourcing', 'vendor management', 'operational excellence'
       ]
     },
+    'product': {
+      keywords: [
+        'product', 'product manager', 'product analyst', 'product owner', 'product development',
+        'product strategy', 'product marketing', 'product design', 'user experience', 'ux',
+        'user interface', 'ui', 'product innovation', 'feature development', 'product roadmap'
+      ]
+    },
+    'tech': {
+      keywords: [
+        'software', 'developer', 'engineer', 'programming', 'coding', 'technology', 'tech',
+        'frontend', 'backend', 'full stack', 'devops', 'cloud', 'cybersecurity', 'technical',
+        'engineering', 'software engineer', 'data engineer', 'systems engineer', 'infrastructure'
+      ]
+    },
+    'sustainability': {
+      keywords: [
+        'sustainability', 'esg', 'environmental', 'social responsibility', 'corporate responsibility',
+        'green', 'climate', 'renewable energy', 'carbon', 'environmental analyst', 'sustainability analyst',
+        'esg analyst', 'environmental social governance', 'sustainable development'
+      ]
+    },
     'entrepreneurship': {
       keywords: [
-        'startup', 'entrepreneur', 'founder', 'co-founder', 'business development', 'growth',
-        'startup analyst', 'business development representative', 'sales development', 'growth hacker',
-        'entrepreneurial', 'innovation', 'product management', 'business strategy', 'market research',
-        'customer success', 'sales', 'business analyst', 'strategy analyst'
+        'startup', 'entrepreneur', 'founder', 'co-founder', 'entrepreneurial', 'innovation',
+        'business strategy', 'market research', 'venture', 'startup analyst', 'innovation analyst'
       ]
     }
   };
 
   // Scoring algorithm
   let maxScore = 0;
-  let bestCareerPath = 'General Business';
+  let bestCareerPath = 'unknown';
 
   for (const [careerPath, config] of Object.entries(careerPaths)) {
     let score = 0;
@@ -1982,7 +2502,9 @@ export function extractCareerPath(jobTitle: string, description: string): string
     }
   }
 
-  return bestCareerPath;
+  // Normalize the result to ensure it's a canonical slug
+  const normalizedResult = normalizeCareerPath(bestCareerPath);
+  return normalizedResult[0]; // Return the single career path
 }
 
 /**

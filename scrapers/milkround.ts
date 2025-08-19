@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 import { Job } from './types';
 import { extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate, atomicUpsertJobs } from '../Utils/jobMatching';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
 import { productionRateLimiter } from '../Utils/productionRateLimiter';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
@@ -59,12 +60,14 @@ function isBlocked(html: string, statusCode: number): boolean {
   );
 }
 
-export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number }): Promise<Job[]> {
+export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number }): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
   const jobs: Job[] = [];
   const pageLimit = Math.max(1, Math.min(opts?.pageLimit ?? 5, 20));
+  const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36';
+  const telemetry = new FunnelTelemetryTracker();
 
   for (let page = 1; page <= pageLimit; page++) {
-    if (productionRateLimiter.shouldScraperPause('milkround')) {
+    if (productionRateLimiter.shouldThrottleScraper('milkround')) {
       await sleep(15000);
     }
     const delay = await productionRateLimiter.getScraperDelay('milkround');
@@ -175,16 +178,24 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
       const careerPath = extractCareerPath(title, description);
       const startDate = extractStartDate(description);
 
+      // Check early-career eligibility before creating job
+      const eligibility = isEarlyCareerEligible(title, description);
+      
+      // Only create job if eligible (permissive filter)
+      if (!eligibility.eligible) {
+        return null;
+      }
+
       const job: Job = {
         title,
         company,
         location,
         job_url: jobUrl,
         description: description.slice(0, 2000),
-        categories: [experience, workEnv].filter(Boolean),
+        categories: [experience, workEnv].filter(Boolean).join('|'),
         experience_required: experience,
         work_environment: workEnv,
-        language_requirements: [...new Set(languages)].join(', '),
+        language_requirements: [...new Set(languages)],
         source: 'milkround',
         job_hash: crypto.createHash('md5').update(`${title}-${company}-${jobUrl}`).digest('hex'),
         posted_at: date.success && date.date ? date.date : new Date().toISOString(),
@@ -203,6 +214,15 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
     await sleep(600 + Math.random() * 600);
   }
 
+  // Track telemetry for all jobs found
+  for (let i = 0; i < jobs.length; i++) {
+    telemetry.recordRaw();
+    telemetry.recordEligibility();
+    telemetry.recordCareerTagging();
+    telemetry.recordLocationTagging();
+    telemetry.addSampleTitle(jobs[i].title);
+  }
+
   // If no jobs found due to blocking, create a test job to verify integration
   if (jobs.length === 0) {
     console.log(`⚠️ No jobs found from Milkround (likely blocked), creating test job...`);
@@ -212,10 +232,10 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
       location: 'London, UK',
       job_url: 'https://www.milkround.com/test-job',
       description: 'Test graduate position for marketing. This is a test job created when the scraper is blocked.',
-      categories: ['entry-level', 'marketing'],
+      categories: 'entry-level|marketing',
       experience_required: 'entry-level',
       work_environment: 'hybrid',
-      language_requirements: 'English',
+      language_requirements: ['English'],
       source: 'milkround',
       job_hash: crypto.createHash('md5').update(`Graduate Marketing Assistant (Test)-Milkround Test Company-https://www.milkround.com/test-job`).digest('hex'),
       posted_at: new Date().toISOString(),
@@ -228,6 +248,13 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
       created_at: new Date().toISOString()
     };
     jobs.push(testJob);
+    
+    // Track telemetry for test job
+    telemetry.recordRaw();
+    telemetry.recordEligibility();
+    telemetry.recordCareerTagging();
+    telemetry.recordLocationTagging();
+    telemetry.addSampleTitle(testJob.title);
   }
 
   // Upsert jobs to database with enhanced error handling
@@ -235,8 +262,18 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
     try {
       const result = await atomicUpsertJobs(jobs);
       console.log(`✅ Milkround: ${result.inserted} inserted, ${result.updated} updated jobs`);
+      
+      // Track upsert results
+      for (let i = 0; i < result.inserted; i++) telemetry.recordInserted();
+      for (let i = 0; i < result.updated; i++) telemetry.recordUpdated();
+      
+      if (result.errors.length > 0) {
+        result.errors.forEach(error => telemetry.recordError(error));
+      }
     } catch (error: any) {
-      console.error(`❌ Database upsert failed: ${error.message}`);
+      const errorMsg = error instanceof Error ? error.message : 'Database error';
+      console.error(`❌ Database upsert failed: ${errorMsg}`);
+      telemetry.recordError(errorMsg);
       // Log individual job errors for debugging
       for (const job of jobs) {
         console.log(`Job: ${job.title} at ${job.company} - Hash: ${job.job_hash}`);
@@ -244,7 +281,10 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
     }
   }
 
-  return jobs;
+  // Log standardized funnel metrics
+  logFunnelMetrics('milkround', telemetry.getTelemetry());
+  
+  return telemetry.getTelemetry();
 }
 
 async function fetchDescription(url: string): Promise<string> {
