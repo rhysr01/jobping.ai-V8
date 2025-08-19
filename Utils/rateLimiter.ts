@@ -55,8 +55,8 @@ export class RateLimiter {
     windowMs: number
   ): Promise<{ allowed: boolean; remaining: number; resetTime: number }> {
     if (!this.isConnected) {
-      console.warn('Redis not connected for rate limiter, allowing request');
-      return { allowed: true, remaining: limit - 1, resetTime: Date.now() + windowMs };
+      console.error('Rate limiter Redis not connected - failing closed for safety');
+      return { allowed: false, remaining: 0, resetTime: Date.now() + windowMs };
     }
 
     const key = `rate_limit:${identifier}`;

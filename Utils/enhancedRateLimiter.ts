@@ -199,10 +199,10 @@ export class EnhancedRateLimiter {
     } catch (error) {
       console.error('❌ Enhanced rate limit check failed:', error);
       return { 
-        allowed: true, 
-        remaining: limit, 
+        allowed: false, 
+        remaining: 0, 
         resetTime: Date.now() + windowMs 
-      }; // Fail open for resilience
+      }; // Fail closed for safety
     }
   }
 
@@ -220,11 +220,11 @@ export class EnhancedRateLimiter {
     // Ensure connection before proceeding
     const connected = await this.ensureConnection();
     if (!connected) {
-      console.warn('⚠️ Redis not connected for enhanced rate limiter, allowing request');
+      console.error('❌ Redis not connected for enhanced rate limiter - failing closed for safety');
       this.metrics.errors++;
       return { 
-        allowed: true, 
-        remaining: limit - 1, 
+        allowed: false, 
+        remaining: 0, 
         resetTime: Date.now() + windowMs 
       };
     }
@@ -250,8 +250,8 @@ export class EnhancedRateLimiter {
       console.error('❌ Instance rate limit check failed:', error);
       this.metrics.errors++;
       return { 
-        allowed: true, 
-        remaining: limit, 
+        allowed: false, 
+        remaining: 0, 
         resetTime: Date.now() + windowMs 
       };
     }
