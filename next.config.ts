@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/webp', 'image/avif'],
   },
+  // Add Vercel-specific optimizations
+  swcMinify: true,
+  compress: true,
+  poweredByHeader: false,
   webpack: (config, { isServer, webpack }) => {
     // Always exclude problematic modules
     config.externals = config.externals || [];
