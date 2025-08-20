@@ -63,7 +63,7 @@ export default function PricingSelector({ onSelect }: PricingSelectorProps = {})
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-[#9CA3AF] text-xl max-w-2xl mx-auto leading-relaxed"
           >
-            Start free and upgrade when you're ready. No contracts, cancel anytime.
+            Start free and upgrade when you&apos;re ready. No contracts, cancel anytime.
           </motion.p>
         </div>
 
