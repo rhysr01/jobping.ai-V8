@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
 import { PerformanceMonitor } from '../Utils/performanceMonitor';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -269,29 +270,29 @@ function processJobElementCheerio($: cheerio.CheerioAPI, $el: cheerio.Cheerio<an
     // Extract posting date
     const dateResult = extractPostingDate(description, 'graduateland', jobUrl);
     
-    const job: Job = {
-      title: title,
-      company: company,
-      location: location,
-      job_url: jobUrl.startsWith('http') ? jobUrl : `https://graduateland.com${jobUrl}`,
-      description: description,
-      experience_required: analysis.experienceLevel,
-      work_environment: analysis.workEnv,
-      language_requirements: analysis.languages,
+    // Use enhanced robust job creation with Job Ingestion Contract
+    const jobResult = createRobustJob({
+      title,
+      company,
+      location,
+      jobUrl: jobUrl.startsWith('http') ? jobUrl : `https://graduateland.com${jobUrl}`,
+      companyUrl: '',
+      description,
+      department: 'General',
+      postedAt: dateResult.success ? dateResult.date! : new Date().toISOString(),
+      runId,
       source: 'graduateland',
-      categories: ['Graduate Jobs'],
-      company_profile_url: '',
-      scrape_timestamp: new Date().toISOString(),
-      original_posted_date: dateResult.success ? dateResult.date! : new Date().toISOString(),
-      posted_at: dateResult.success ? dateResult.date! : new Date().toISOString(),
-      last_seen_at: new Date().toISOString(),
-      is_active: true,
-      job_hash: jobHash,
-      scraper_run_id: runId,
-      created_at: new Date().toISOString()
-    };
-    
-    return job;
+      isRemote: analysis.workEnv === 'remote'
+    });
+
+    // Record telemetry and debug filtering
+    if (jobResult.job) {
+      console.log(`✅ Job accepted: "${title}"`);
+    } else {
+      console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
+    }
+
+    return jobResult.job;
     
   } catch (error) {
     console.error('Error processing job element with cheerio:', error);

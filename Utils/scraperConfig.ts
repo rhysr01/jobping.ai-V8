@@ -15,6 +15,7 @@ export interface ScraperConfig {
   enableTelemetry: boolean;
   enableRateLimiting: boolean;
   enableBrowserPool: boolean;
+  enableEmails: boolean;
   
   // Batch processing
   batchSize: number;
@@ -46,6 +47,7 @@ export function getScraperConfig(): ScraperConfig {
     enableTelemetry: process.env.ENABLE_SCRAPER_TELEMETRY !== 'false',
     enableRateLimiting: process.env.ENABLE_RATE_LIMITING !== 'false',
     enableBrowserPool: process.env.ENABLE_BROWSER_POOL !== 'false',
+    enableEmails: process.env.ENABLE_EMAILS !== 'false',
     
     // Batch processing
     batchSize: parseInt(process.env.SCRAPER_BATCH_SIZE || '100'),

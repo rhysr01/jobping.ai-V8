@@ -156,21 +156,30 @@ export async function POST(req: NextRequest) {
           entry_level_preference: user.entry_level_preference || 'entry'
         };
 
-        // Perform AI matching
+        // Perform matching (bypass AI in tests)
         let matches;
         let matchType: 'ai_success' | 'ai_failed' | 'fallback' = 'ai_success';
         
-        try {
-          matches = await performEnhancedAIMatching(jobs, userPreferences, openai);
-          
-          if (!matches || matches.length === 0) {
-            matchType = 'fallback';
+        // Check if AI is disabled (e.g., in tests)
+        const aiDisabled = process.env.MATCH_USERS_DISABLE_AI === 'true';
+        
+        if (aiDisabled) {
+          console.log(`🧠 AI disabled, using rule-based fallback for ${user.email}`);
+          matchType = 'fallback';
+          matches = generateRobustFallbackMatches(jobs, userPreferences);
+        } else {
+          try {
+            matches = await performEnhancedAIMatching(jobs, userPreferences, openai);
+            
+            if (!matches || matches.length === 0) {
+              matchType = 'fallback';
+              matches = generateRobustFallbackMatches(jobs, userPreferences);
+            }
+          } catch (aiError) {
+            console.error(`❌ AI matching failed for ${user.email}:`, aiError);
+            matchType = 'ai_failed';
             matches = generateRobustFallbackMatches(jobs, userPreferences);
           }
-        } catch (aiError) {
-          console.error(`❌ AI matching failed for ${user.email}:`, aiError);
-          matchType = 'ai_failed';
-          matches = generateRobustFallbackMatches(jobs, userPreferences);
         }
 
         // Limit matches based on subscription tier

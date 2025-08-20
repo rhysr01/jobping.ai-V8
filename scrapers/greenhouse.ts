@@ -476,7 +476,7 @@ async function processJobElement(
     ? dateExtraction.date 
     : new Date().toISOString();
   
-  // Use robust job creation
+  // Use enhanced robust job creation with Job Ingestion Contract
   const jobResult = createRobustJob({
     title,
     company: company.name,
@@ -488,7 +488,8 @@ async function processJobElement(
     postedAt,
     runId,
     source: 'greenhouse',
-    isRemote: /\b(remote|100%\s*remote|fully\s*remote|remote\s*only)\b/i.test(`${title} ${description}`)
+    isRemote: /\b(remote|100%\s*remote|fully\s*remote|remote\s*only)\b/i.test(`${title} ${description}`),
+    platformId: jobUrl.match(/greenhouse\.io\/[^\/]+\/jobs\/(\d+)/)?.[1] // Extract Greenhouse job ID
   });
 
   // Record telemetry and debug filtering

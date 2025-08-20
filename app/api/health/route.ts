@@ -90,6 +90,32 @@ async function checkOpenAIHealth(): Promise<'healthy' | 'degraded' | 'critical'>
   }
 }
 
+// Helper function to check Resend health
+async function checkResendHealth(): Promise<'healthy' | 'degraded' | 'critical'> {
+  try {
+    const resendKey = process.env.RESEND_API_KEY;
+    
+    if (!resendKey) {
+      return 'critical';
+    }
+    
+    const { Resend } = require('resend');
+    const resend = new Resend(resendKey);
+    
+    // Simple API call to test connection (list domains)
+    const response = await resend.domains.list();
+    
+    if (response && response.data) {
+      return 'healthy';
+    } else {
+      return 'degraded';
+    }
+  } catch (error) {
+    console.error('Resend health check failed:', error);
+    return 'degraded';
+  }
+}
+
 // Helper function to get scraper status
 function getScraperStatus() {
   const config = getScraperConfig();
@@ -153,10 +179,11 @@ export async function GET(req: NextRequest) {
     const startTime = Date.now();
     
     // Check all dependencies in parallel
-    const [supabaseHealth, redisHealth, openaiHealth] = await Promise.allSettled([
+    const [supabaseHealth, redisHealth, openaiHealth, resendHealth] = await Promise.allSettled([
       checkSupabaseHealth(),
       checkRedisHealth(),
-      checkOpenAIHealth()
+      checkOpenAIHealth(),
+      checkResendHealth()
     ]);
     
     const healthCheckTime = Date.now() - startTime;
@@ -166,19 +193,30 @@ export async function GET(req: NextRequest) {
       api: 'operational',
       database: supabaseHealth.status === 'fulfilled' ? supabaseHealth.value : 'critical',
       redis: redisHealth.status === 'fulfilled' ? redisHealth.value : 'critical',
-      openai: openaiHealth.status === 'fulfilled' ? openaiHealth.value : 'critical'
+      openai: openaiHealth.status === 'fulfilled' ? openaiHealth.value : 'critical',
+      resend: resendHealth.status === 'fulfilled' ? resendHealth.value : 'critical'
     };
     
     const criticalServices = Object.values(services).filter(s => s === 'critical').length;
     const overallStatus = criticalServices === 0 ? 'healthy' : 
                          criticalServices <= 1 ? 'degraded' : 'critical';
     
+    // Get git SHA for version tracking
+    const getGitSHA = () => {
+      try {
+        const { execSync } = require('child_process');
+        return execSync('git rev-parse --short HEAD').toString().trim();
+      } catch {
+        return 'unknown';
+      }
+    };
+
     // Build comprehensive health response
     const health = {
       status: overallStatus,
       timestamp: new Date().toISOString(),
       version: '1.0.0',
-      environment: process.env.NODE_ENV || 'development',
+      gitSHA: getGitSHA(),
       responseTime: healthCheckTime,
       services,
       scraper: getScraperStatus(),
@@ -189,7 +227,8 @@ export async function GET(req: NextRequest) {
         hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
         hasRedisUrl: !!process.env.REDIS_URL,
         hasOpenAIKey: !!process.env.OPENAI_API_KEY,
-        hasScrapeApiKey: !!process.env.SCRAPE_API_KEY
+        hasScrapeApiKey: !!process.env.SCRAPE_API_KEY,
+        hasResendKey: !!process.env.RESEND_API_KEY
       }
     };
 

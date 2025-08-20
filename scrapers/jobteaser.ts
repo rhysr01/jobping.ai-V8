@@ -3,7 +3,7 @@ import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 import { Job } from './types';
 import { extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate, atomicUpsertJobs } from '../Utils/jobMatching';
-import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
 import { productionRateLimiter } from '../Utils/productionRateLimiter';
 
 // Enhanced Puppeteer scraper ready for future use (currently disabled due to Next.js compilation issues)
@@ -442,37 +442,29 @@ async function processJobWithRetry(title: string, company: string, location: str
       const careerPath = extractCareerPath(title, description);
       const startDate = extractStartDate(description);
 
-      // Check early-career eligibility before creating job
-      const eligibility = isEarlyCareerEligible(title, description);
-      
-      // Only create job if eligible (permissive filter)
-      if (!eligibility.eligible) {
-        return null;
-      }
-
-      const job: Job = {
+      // Use enhanced robust job creation with Job Ingestion Contract
+      const jobResult = createRobustJob({
         title,
         company,
         location,
-        job_url: jobUrl,
+        jobUrl,
+        companyUrl: '',
         description: description.slice(0, 2000),
-        categories: [experience, workEnv].filter(Boolean).join('|'),
-        experience_required: experience,
-        work_environment: workEnv,
-        language_requirements: [...new Set(languages)],
+        department: 'General',
+        postedAt: date.success && date.date ? date.date : new Date().toISOString(),
+        runId,
         source: 'jobteaser',
-        job_hash: crypto.createHash('md5').update(`${title}-${company}-${jobUrl}`).digest('hex'),
-        posted_at: date.success && date.date ? date.date : new Date().toISOString(),
-        original_posted_date: date.success && date.date ? date.date : new Date().toISOString(),
-        scraper_run_id: runId,
-        company_profile_url: '',
-        scrape_timestamp: new Date().toISOString(),
-        last_seen_at: new Date().toISOString(),
-        is_active: true,
-        created_at: new Date().toISOString()
-      };
-      
-      return job;
+        isRemote: workEnv === 'remote'
+      });
+
+      // Record telemetry and debug filtering
+      if (jobResult.job) {
+        console.log(`✅ Job accepted: "${title}"`);
+      } else {
+        console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
+      }
+
+      return jobResult.job;
     } catch (error: any) {
       console.log(`⚠️ Job processing attempt ${attempt} failed: ${error.message}`);
       if (attempt === 3) return null;

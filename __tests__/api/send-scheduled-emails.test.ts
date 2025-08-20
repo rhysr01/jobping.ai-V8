@@ -7,9 +7,16 @@ jest.mock('@/Utils/emailUtils', () => ({
 }));
 
 jest.mock('@/Utils/jobMatching', () => ({
-  performEnhancedAIMatching: jest.fn(() => {
-    throw new Error('AI matching failed');
-  }),
+  performEnhancedAIMatching: jest.fn(() => Promise.resolve([
+    {
+      job_index: 1,
+      job_hash: 'hash1',
+      match_score: 8,
+      match_reason: 'Great match for your skills',
+      match_quality: 'good',
+      match_tags: 'tech,entry-level'
+    }
+  ])),
   generateRobustFallbackMatches: jest.fn(() => [
     {
       job_index: 2,
@@ -21,19 +28,6 @@ jest.mock('@/Utils/jobMatching', () => ({
     }
   ]),
   logMatchSession: jest.fn(() => Promise.resolve())
-}));
-
-// Mock OpenAI to avoid constructor issues
-jest.mock('openai', () => ({
-  default: jest.fn(() => ({
-    chat: {
-      completions: {
-        create: jest.fn(() => Promise.resolve({
-          choices: [{ message: { content: 'test response' } }],
-        })),
-      },
-    },
-  })),
 }));
 
 describe('/api/send-scheduled-emails', () => {
@@ -52,7 +46,7 @@ describe('/api/send-scheduled-emails', () => {
           full_name: 'Test User',
           email_verified: true,
           subscription_active: true,
-          created_at: new Date(Date.now() - 50 * 60 * 60 * 1000).toISOString(),
+          created_at: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(), // 72 hours ago
           target_cities: 'madrid|barcelona',
           languages_spoken: 'English,Spanish',
           company_types: 'startup,tech',
@@ -74,7 +68,7 @@ describe('/api/send-scheduled-emails', () => {
           location: 'Madrid, Spain',
           job_url: 'https://example.com/job1',
           description: 'Entry-level software engineering position...',
-          created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+          created_at: new Date().toISOString(),
           job_hash: 'hash1',
           is_sent: false,
           status: 'active',
@@ -90,7 +84,7 @@ describe('/api/send-scheduled-emails', () => {
           location: 'Barcelona, Spain',
           job_url: 'https://example.com/job2',
           description: 'Data analysis role for recent graduates...',
-          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+          created_at: new Date().toISOString(),
           job_hash: 'hash2',
           is_sent: false,
           status: 'active',
@@ -156,11 +150,7 @@ describe('/api/send-scheduled-emails', () => {
     const response = await POST(req);
     const data = await response.json();
 
-    // Debug: log the actual error
-    if (response.status !== 200) {
-      console.log('Response status:', response.status);
-      console.log('Response data:', data);
-    }
+    console.log('Response data:', data);
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);

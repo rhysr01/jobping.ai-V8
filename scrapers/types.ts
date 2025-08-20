@@ -19,7 +19,7 @@ export interface Job {
   experience_required: string;          // text Non-nullable
   work_environment: string;             // text Non-nullable
   source: string;                       // text Non-nullable
-  categories: string;                   // text Nullable (pipe-delimited string)
+  categories: string[];                 // text[] Nullable (PostgreSQL array)
   company_profile_url: string;          // text Nullable (matches DB schema)
   language_requirements: string[];       // text[] Nullable (matches DB schema)
   scrape_timestamp: string;             // timestamptz Non-nullable (renamed from scraped_at)
@@ -556,11 +556,15 @@ export function createJobCategories(careerPath: string, additionalTags: string[]
   return result.length > 512 ? result.substring(0, 512) : result;
 }
 
-export function extractCareerPathFromCategories(categories: string): string {
+export function extractCareerPathFromCategories(categories: any): string {
   if (!categories) return 'unknown';
   
-  const tags = categories.split('|');
-  const careerTag = tags.find(tag => tag.startsWith('career:'));
+  // Normalize categories to string before parsing
+  const normalizedCategories = typeof categories === 'string' ? categories : 
+    Array.isArray(categories) ? categories.filter(Boolean).join('|') : 'career:unknown|loc:unknown';
+  
+  const tags = normalizedCategories.split('|');
+  const careerTag = tags.find((tag: string) => tag.startsWith('career:'));
   
   if (careerTag) {
     const careerPath = careerTag.replace('career:', '');

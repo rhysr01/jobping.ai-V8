@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
 import { PerformanceMonitor } from '../Utils/performanceMonitor';
-import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -397,34 +397,27 @@ async function scrapeCityJobs(city: string, runId: string, userAgent: string): P
 
   // Convert sample jobs to proper Job format
   for (const sampleJob of sampleJobs) {
-    // Check early-career eligibility before creating job
-    const eligibility = isEarlyCareerEligible(sampleJob.title, sampleJob.description);
-    
-    // Only add job if eligible (permissive filter)
-    if (eligibility.eligible) {
-      const job: Job = {
-        job_hash: crypto.createHash('md5').update(`${sampleJob.title}-${sampleJob.company}-${city}-${runId}`).digest('hex'),
-        title: sampleJob.title,
-        company: sampleJob.company,
-        location: sampleJob.location,
-        job_url: `https://graduatejobs.com/jobs/${sampleJob.title.toLowerCase().replace(/\s+/g, '-')}`,
-        description: sampleJob.description,
-        experience_required: sampleJob.experience_required,
-        work_environment: sampleJob.work_environment,
-        source: 'graduatejobs',
-        categories: sampleJob.categories,
-        company_profile_url: `https://graduatejobs.com/companies/${sampleJob.company.toLowerCase().replace(/\s+/g, '-')}`,
-        language_requirements: sampleJob.language_requirements,
-        scrape_timestamp: new Date().toISOString(),
-        original_posted_date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-        posted_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-        last_seen_at: new Date().toISOString(),
-        is_active: true,
-        freshness_tier: 'fresh',
-        scraper_run_id: runId,
-        created_at: new Date().toISOString()
-      };
-      jobs.push(job);
+    // Use enhanced robust job creation with Job Ingestion Contract
+    const jobResult = createRobustJob({
+      title: sampleJob.title,
+      company: sampleJob.company,
+      location: sampleJob.location,
+      jobUrl: `https://graduatejobs.com/jobs/${sampleJob.title.toLowerCase().replace(/\s+/g, '-')}`,
+      companyUrl: `https://graduatejobs.com/companies/${sampleJob.company.toLowerCase().replace(/\s+/g, '-')}`,
+      description: sampleJob.description,
+      department: 'General',
+      postedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+      runId,
+      source: 'graduatejobs',
+      isRemote: sampleJob.work_environment === 'remote'
+    });
+
+    // Record telemetry and debug filtering
+    if (jobResult.job) {
+      console.log(`✅ Job accepted: "${sampleJob.title}"`);
+      jobs.push(jobResult.job);
+    } else {
+      console.log(`❌ Job filtered out: "${sampleJob.title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
     }
   }
 

@@ -178,14 +178,19 @@ class ProductionRateLimiter {
   private scraperRequestTimes: Map<string, number[]> = new Map();
   private scraperThrottleLevel: Map<string, number> = new Map();
 
+  private initialized = false;
+
   constructor() {
-    this.initializeRedis();
+    // No initialization in constructor - lazy init only
   }
 
   private async initializeRedis() {
+    if (this.initialized) return;
+    
     // Skip Redis initialization in test mode
-    if (process.env.NODE_ENV === 'test') {
+    if (process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1') {
       console.log('🧪 Test mode: Skipping Redis initialization for rate limiter');
+      this.initialized = true;
       return;
     }
 
@@ -214,10 +219,29 @@ class ProductionRateLimiter {
         console.warn('⚠️ No REDIS_URL found, using in-memory fallback');
         this.isRedisConnected = false;
       }
+      this.initialized = true;
     } catch (error) {
       console.error('❌ Failed to initialize Redis:', error);
       this.isRedisConnected = false;
+      this.initialized = true;
     }
+  }
+
+  async initialize() {
+    await this.initializeRedis();
+  }
+
+  async teardown() {
+    if (this.redis && this.isRedisConnected) {
+      try {
+        await this.redis.quit();
+        console.log('🔌 Redis disconnected for rate limiter');
+      } catch (error) {
+        console.error('❌ Error disconnecting Redis:', error);
+      }
+    }
+    this.initialized = false;
+    this.isRedisConnected = false;
   }
 
   /**
@@ -361,8 +385,13 @@ class ProductionRateLimiter {
     customConfig?: { windowMs: number; maxRequests: number }
   ): Promise<NextResponse | null> {
     // Skip rate limiting in test mode
-    if (process.env.NODE_ENV === 'test') {
+    if (process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1') {
       return null;
+    }
+
+    // Lazy initialize Redis if needed
+    if (!this.initialized) {
+      await this.initialize();
     }
 
     const identifier = this.getClientIdentifier(req);
@@ -590,20 +619,42 @@ export function shouldThrottleScraper(platform: string): boolean {
   return productionRateLimiter.shouldThrottleScraper(platform);
 }
 
-// Cleanup every 5 minutes
-setInterval(() => {
-  productionRateLimiter.cleanup();
-}, 5 * 60 * 1000);
+// Lazy cleanup timer (only start in production)
+let cleanupTimer: NodeJS.Timeout | null = null;
+
+function startCleanupTimer() {
+  if (process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1') {
+    console.log('🧪 Test mode: Skipping cleanup timer for rate limiter');
+    return;
+  }
+  
+  if (!cleanupTimer) {
+    cleanupTimer = setInterval(() => {
+      productionRateLimiter.cleanup();
+    }, 5 * 60 * 1000);
+  }
+}
+
+// Start cleanup timer on first use
+productionRateLimiter.initialize().then(() => {
+  startCleanupTimer();
+});
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('🔄 Shutting down Production Rate Limiter...');
+  if (cleanupTimer) {
+    clearInterval(cleanupTimer);
+  }
   await productionRateLimiter.close();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('🔄 Shutting down Production Rate Limiter...');
+  if (cleanupTimer) {
+    clearInterval(cleanupTimer);
+  }
   await productionRateLimiter.close();
   process.exit(0);
 });

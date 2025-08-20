@@ -3,7 +3,7 @@ import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 import { Job } from './types';
 import { extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate, atomicUpsertJobs } from '../Utils/jobMatching';
-import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
 import { productionRateLimiter } from '../Utils/productionRateLimiter';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
@@ -178,36 +178,29 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
       const careerPath = extractCareerPath(title, description);
       const startDate = extractStartDate(description);
 
-      // Check early-career eligibility before creating job
-      const eligibility = isEarlyCareerEligible(title, description);
-      
-      // Only create job if eligible (permissive filter)
-      if (!eligibility.eligible) {
-        return null;
-      }
-
-      const job: Job = {
+      // Use enhanced robust job creation with Job Ingestion Contract
+      const jobResult = createRobustJob({
         title,
         company,
         location,
-        job_url: jobUrl,
+        jobUrl,
+        companyUrl: '',
         description: description.slice(0, 2000),
-        categories: [experience, workEnv].filter(Boolean).join('|'),
-        experience_required: experience,
-        work_environment: workEnv,
-        language_requirements: [...new Set(languages)],
+        department: 'General',
+        postedAt: date.success && date.date ? date.date : new Date().toISOString(),
+        runId,
         source: 'milkround',
-        job_hash: crypto.createHash('md5').update(`${title}-${company}-${jobUrl}`).digest('hex'),
-        posted_at: date.success && date.date ? date.date : new Date().toISOString(),
-        original_posted_date: date.success && date.date ? date.date : new Date().toISOString(),
-        scraper_run_id: runId,
-        company_profile_url: '',
-        scrape_timestamp: new Date().toISOString(),
-        last_seen_at: new Date().toISOString(),
-        is_active: true,
-        created_at: new Date().toISOString()
-      };
-      return job;
+        isRemote: workEnv === 'remote'
+      });
+
+      // Record telemetry and debug filtering
+      if (jobResult.job) {
+        console.log(`✅ Job accepted: "${title}"`);
+      } else {
+        console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
+      }
+
+      return jobResult.job;
     }).get());
 
     jobs.push(...(pageJobs.filter(Boolean) as Job[]));
@@ -226,35 +219,31 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
   // If no jobs found due to blocking, create a test job to verify integration
   if (jobs.length === 0) {
     console.log(`⚠️ No jobs found from Milkround (likely blocked), creating test job...`);
-    const testJob: Job = {
+    const testJobResult = createRobustJob({
       title: 'Graduate Marketing Assistant (Test)',
       company: 'Milkround Test Company',
       location: 'London, UK',
-      job_url: 'https://www.milkround.com/test-job',
+      jobUrl: 'https://www.milkround.com/test-job',
+      companyUrl: '',
       description: 'Test graduate position for marketing. This is a test job created when the scraper is blocked.',
-      categories: 'entry-level|marketing',
-      experience_required: 'entry-level',
-      work_environment: 'hybrid',
-      language_requirements: ['English'],
+      department: 'General',
+      postedAt: new Date().toISOString(),
+      runId,
       source: 'milkround',
-      job_hash: crypto.createHash('md5').update(`Graduate Marketing Assistant (Test)-Milkround Test Company-https://www.milkround.com/test-job`).digest('hex'),
-      posted_at: new Date().toISOString(),
-      original_posted_date: new Date().toISOString(),
-      scraper_run_id: runId,
-      company_profile_url: '',
-      scrape_timestamp: new Date().toISOString(),
-      last_seen_at: new Date().toISOString(),
-      is_active: true,
-      created_at: new Date().toISOString()
-    };
-    jobs.push(testJob);
+      isRemote: false
+    });
     
-    // Track telemetry for test job
-    telemetry.recordRaw();
-    telemetry.recordEligibility();
-    telemetry.recordCareerTagging();
-    telemetry.recordLocationTagging();
-    telemetry.addSampleTitle(testJob.title);
+    const testJob = testJobResult.job;
+    if (testJob) {
+      jobs.push(testJob);
+      
+      // Track telemetry for test job
+      telemetry.recordRaw();
+      telemetry.recordEligibility();
+      telemetry.recordCareerTagging();
+      telemetry.recordLocationTagging();
+      telemetry.addSampleTitle(testJob.title);
+    }
   }
 
   // Upsert jobs to database with enhanced error handling

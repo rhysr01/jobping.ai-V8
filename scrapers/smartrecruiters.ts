@@ -1,9 +1,9 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
-import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -113,12 +113,12 @@ export async function scrapeSmartRecruiters(runId: string): Promise<{ raw: numbe
       }
     }
     
-    // Track telemetry for all jobs found
+    // Track telemetry for all jobs found (createRobustJob handles filtering)
     for (let i = 0; i < allJobs.length; i++) {
       telemetry.recordRaw();
-      telemetry.recordEligibility();
-      telemetry.recordCareerTagging();
-      telemetry.recordLocationTagging();
+      telemetry.recordEligibility(); // createRobustJob filters eligible jobs
+      telemetry.recordCareerTagging(); // createRobustJob adds career tags
+      telemetry.recordLocationTagging(); // createRobustJob adds location tags
       telemetry.addSampleTitle(allJobs[i].title);
     }
     
@@ -244,37 +244,30 @@ function processJobElement($: cheerio.CheerioAPI, $el: cheerio.Cheerio<any>, com
     // Extract posting date
     const dateResult = extractPostingDate(description, 'smartrecruiters', jobUrl);
     
-    // Check early-career eligibility before creating job
-    const eligibility = isEarlyCareerEligible(title, description);
-    
-    // Only create job if eligible (permissive filter)
-    if (!eligibility.eligible) {
-      return null;
-    }
-    
-    const job: Job = {
-      title: title,
+    // Use enhanced robust job creation with Job Ingestion Contract
+    const jobResult = createRobustJob({
+      title,
       company: company.name,
       location: location || 'Various Locations',
-      job_url: jobUrl.startsWith('http') ? jobUrl : `${company.url}${jobUrl}`,
-      description: description,
-      experience_required: analysis.experienceLevel,
-      work_environment: analysis.workEnv,
-      language_requirements: analysis.languages.join(', '),
+      jobUrl: jobUrl.startsWith('http') ? jobUrl : `${company.url}${jobUrl}`,
+      companyUrl: company.url,
+      description,
+      department: 'General',
+      postedAt: dateResult.success ? dateResult.date! : new Date().toISOString(),
+      runId,
       source: 'smartrecruiters',
-      categories: ['Corporate Jobs'],
-      company_profile_url: company.url,
-      scrape_timestamp: new Date().toISOString(),
-      original_posted_date: dateResult.success ? dateResult.date! : new Date().toISOString(),
-      posted_at: dateResult.success ? dateResult.date! : new Date().toISOString(),
-      last_seen_at: new Date().toISOString(),
-      is_active: true,
-      job_hash: jobHash,
-      scraper_run_id: runId,
-      created_at: new Date().toISOString()
-    };
-    
-    return job;
+      isRemote: analysis.workEnv === 'remote',
+      platformId: jobUrl.match(/smartrecruiters\.com\/[^\/]+\/([^\/\?]+)/)?.[1] // Extract SmartRecruiters job ID
+    });
+
+    // Record telemetry and debug filtering
+    if (jobResult.job) {
+      console.log(`✅ Job accepted: "${title}"`);
+    } else {
+      console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
+    }
+
+    return jobResult.job;
     
   } catch (error) {
     console.error('Error processing job element:', error);
@@ -302,37 +295,30 @@ function processJobElementAlt($: cheerio.CheerioAPI, $el: cheerio.Cheerio<any>, 
     // Create job hash
     const jobHash = crypto.createHash('md5').update(`${title}-${company.name}-${jobUrl}`).digest('hex');
     
-    // Check early-career eligibility before creating job
-    const eligibility = isEarlyCareerEligible(title, description);
-    
-    // Only create job if eligible (permissive filter)
-    if (!eligibility.eligible) {
-      return null;
-    }
-    
-    const job: Job = {
-      title: title,
+    // Use enhanced robust job creation with Job Ingestion Contract
+    const jobResult = createRobustJob({
+      title,
       company: company.name,
       location: location || 'Various Locations',
-      job_url: jobUrl.startsWith('http') ? jobUrl : `${company.url}${jobUrl}`,
-      description: description,
-      experience_required: analysis.experienceLevel,
-      work_environment: analysis.workEnv,
-      language_requirements: analysis.languages.join(', '),
+      jobUrl: jobUrl.startsWith('http') ? jobUrl : `${company.url}${jobUrl}`,
+      companyUrl: company.url,
+      description,
+      department: 'General',
+      postedAt: new Date().toISOString(),
+      runId,
       source: 'smartrecruiters',
-      categories: ['Corporate Jobs'],
-      company_profile_url: company.url,
-      scrape_timestamp: new Date().toISOString(),
-      original_posted_date: new Date().toISOString(),
-      posted_at: new Date().toISOString(),
-      last_seen_at: new Date().toISOString(),
-      is_active: true,
-      job_hash: jobHash,
-      scraper_run_id: runId,
-      created_at: new Date().toISOString()
-    };
-    
-    return job;
+      isRemote: analysis.workEnv === 'remote',
+      platformId: jobUrl.match(/smartrecruiters\.com\/[^\/]+\/([^\/\?]+)/)?.[1] // Extract SmartRecruiters job ID
+    });
+
+    // Record telemetry and debug filtering
+    if (jobResult.job) {
+      console.log(`✅ Job accepted: "${title}"`);
+    } else {
+      console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
+    }
+
+    return jobResult.job;
     
   } catch (error) {
     console.error('Error processing alternative job element:', error);

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // JobPing-specific user agent for ethical scraping
-export const JOBPING_USER_AGENT = 'JobPing/1.0 (+https://jobping.com/bot) - Early-career job aggregator for EU students';
+export const JOBPING_USER_AGENT = 'JobPingBot/1.0 (+https://getjobping.com/contact)';
 
 // Robots.txt compliance checker
 export class RobotsCompliance {
@@ -18,7 +18,7 @@ export class RobotsCompliance {
       
       if (!robotsRules) {
         // If no robots.txt found, assume allowed (but log for monitoring)
-        console.log(`⚠️ No robots.txt found for ${baseUrl} - proceeding with caution`);
+        console.log(`🤖 Robots decision for ${baseUrl}: allowed (no_robots_txt)`);
         return { allowed: true, reason: 'no_robots_txt' };
       }
 
@@ -29,6 +29,7 @@ export class RobotsCompliance {
       });
 
       if (isDisallowed) {
+        console.log(`🤖 Robots decision for ${baseUrl}: denied_by_robots (path: ${path})`);
         return { 
           allowed: false, 
           reason: `robots.txt disallows path: ${path}` 
@@ -43,11 +44,13 @@ export class RobotsCompliance {
         await new Promise(resolve => setTimeout(resolve, crawlDelay * 1000));
       }
 
+      console.log(`🤖 Robots decision for ${baseUrl}: allowed (robots_txt_allows)`);
       return { allowed: true, reason: 'robots_txt_allows' };
 
     } catch (error) {
       console.error(`❌ Robots.txt check failed for ${baseUrl}:`, error);
       // On error, be conservative and don't scrape
+      console.log(`🤖 Robots decision for ${baseUrl}: denied_by_robots (robots_txt_error)`);
       return { allowed: false, reason: 'robots_txt_error' };
     }
   }

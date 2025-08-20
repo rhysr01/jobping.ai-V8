@@ -82,11 +82,7 @@ export class EnhancedCache<T> {
     this.currentTTL = defaultTTL;
     // Note: AdvancedMonitoringOracle uses static methods only
     this.stats = this.initializeStats();
-    // Skip Redis initialization in test mode
-    if (process.env.NODE_ENV !== 'test') {
-      // Lazy initialize Redis to avoid build-time issues
-      this.initializeRedis().catch(console.error);
-    }
+    // No initialization in constructor - lazy init only
   }
 
   private initializeStats(): CacheStats {
@@ -103,10 +99,12 @@ export class EnhancedCache<T> {
   }
 
   private async initializeRedis() {
+    if (this.isInitialized) return;
+    
     // Skip Redis connection in test environment
-    if (process.env.NODE_ENV === 'test') {
-      console.log(`⚠️ ${this.name} cache: Running in test mode, skipping Redis connection`);
-      this.isInitialized = false;
+    if (process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1') {
+      console.log(`🧪 Test mode: Skipping Redis initialization for ${this.name} cache`);
+      this.isInitialized = true;
       return;
     }
 
@@ -125,12 +123,39 @@ export class EnhancedCache<T> {
     } catch (error) {
       console.error(`❌ Redis connection failed for ${this.name} cache:`, error);
       // Continue with in-memory only
+      this.isInitialized = true;
     }
+  }
+
+  async initialize() {
+    await this.initializeRedis();
+  }
+
+  async teardown() {
+    if (this.maintenanceTimer) {
+      clearInterval(this.maintenanceTimer);
+      this.maintenanceTimer = null;
+    }
+    
+    if (this.redis && this.isInitialized) {
+      try {
+        await this.redis.quit();
+        console.log(`🔌 Redis disconnected for ${this.name} cache`);
+      } catch (error) {
+        console.error(`❌ Error disconnecting Redis for ${this.name} cache:`, error);
+      }
+    }
+    this.isInitialized = false;
   }
 
   // Get value from cache
   async get(key: string): Promise<T | null> {
     const startTime = Date.now();
+    
+    // Lazy initialize Redis if needed
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
     
     try {
       // Check in-memory cache first
@@ -144,7 +169,7 @@ export class EnhancedCache<T> {
           PerformanceMonitor.trackDuration(`cache_${this.name}_miss`, startTime);
           
           // Track cache miss for Datadog monitoring
-          dogstatsd.increment('jobping.cache.misses', 1, [`cache:${this.name}`]);
+          dogstatsd().increment('jobping.cache.misses', 1, [`cache:${this.name}`]);
           
           return null;
         }
@@ -158,7 +183,7 @@ export class EnhancedCache<T> {
         PerformanceMonitor.trackDuration(`cache_${this.name}_hit`, startTime);
         
         // Track cache hit for Datadog monitoring
-        dogstatsd.increment('jobping.cache.hits', 1, [`cache:${this.name}`]);
+        dogstatsd().increment('jobping.cache.hits', 1, [`cache:${this.name}`]);
         
         return entry.value;
       }
@@ -213,6 +238,11 @@ export class EnhancedCache<T> {
   // Set value in cache
   async set(key: string, value: T, ttl?: number): Promise<void> {
     const startTime = Date.now();
+    
+    // Lazy initialize Redis if needed
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
     
     try {
       const entryTTL = ttl || this.currentTTL;
@@ -437,24 +467,33 @@ export class EnhancedCache<T> {
     return Array.from(this.cache.entries()).map(([key, entry]) => [key, entry.value]);
   }
 
+  private maintenanceTimer: NodeJS.Timeout | null = null;
+
   // Periodic cleanup and persistence
   async startMaintenance(): Promise<void> {
-    setInterval(async () => {
-      // Clean up expired entries
-      const now = Date.now();
-      for (const [key, entry] of this.cache) {
-        if (now - entry.timestamp > entry.ttl) {
-          this.cache.delete(key);
+    if (process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1') {
+      console.log(`🧪 Test mode: Skipping maintenance timer for ${this.name} cache`);
+      return;
+    }
+    
+    if (!this.maintenanceTimer) {
+      this.maintenanceTimer = setInterval(async () => {
+        // Clean up expired entries
+        const now = Date.now();
+        for (const [key, entry] of this.cache) {
+          if (now - entry.timestamp > entry.ttl) {
+            this.cache.delete(key);
+          }
         }
-      }
-      
-      // Persist cache metadata
-      await this.persistCacheMeta();
-      
-      // Update monitoring (commented out - method not available)
-      // this.monitoringOracle.updateCacheMetrics(this.name, this.stats);
-      
-    }, 5 * 60 * 1000); // Every 5 minutes
+        
+        // Persist cache metadata
+        await this.persistCacheMeta();
+        
+        // Update monitoring (commented out - method not available)
+        // this.monitoringOracle.updateCacheMetrics(this.name, this.stats);
+        
+      }, 5 * 60 * 1000); // Every 5 minutes
+    }
   }
 
   // Close cache and cleanup

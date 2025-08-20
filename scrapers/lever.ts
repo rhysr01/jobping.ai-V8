@@ -4,7 +4,7 @@ import * as crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
 import { createJobCategories } from './types';
-import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
 import { RobotsCompliance, RespectfulRateLimiter, JOBPING_USER_AGENT } from '../Utils/robotsCompliance';
 
 // Use JobPing-specific user agent for ethical scraping
@@ -329,38 +329,30 @@ async function processLeverJobElement(
   // Analyze job content
   const analysis = analyzeLeverJobContent(title, description);
   
-  // Check early-career eligibility before creating job
-  const eligibility = isEarlyCareerEligible(title, description);
-  
-  // Only create job if eligible (permissive filter)
-  if (!eligibility.eligible) {
-    return null;
-  }
-  
-  const job: Job = {
+  // Use enhanced robust job creation with Job Ingestion Contract
+  const jobResult = createRobustJob({
     title,
     company: company.name,
     location,
-    job_url: jobUrl,
-    description: description.slice(0, 2000),
-    categories: createJobCategories(analysis.careerPath, [department, analysis.level, analysis.workEnv].filter(Boolean)),
-    experience_required: analysis.experienceLevel,
-    work_environment: analysis.workEnv,
-    language_requirements: analysis.languages,
+    jobUrl,
+    companyUrl: company.url,
+    description,
+    department,
+    postedAt,
+    runId,
     source: 'lever',
-    job_hash: crypto.createHash('md5').update(`${title}-${company.name}-${jobUrl}`).digest('hex'),
-    posted_at: postedAt,
-    scraper_run_id: runId,
-    company_profile_url: company.url,
-    scrape_timestamp: new Date().toISOString(),
-    original_posted_date: postedAt,
-    last_seen_at: new Date().toISOString(),
-    is_active: true,
-    freshness_tier: undefined,
-    created_at: new Date().toISOString(),
-  };
+    isRemote: analysis.workEnv === 'remote',
+    platformId: jobUrl.match(/lever\.co\/[^\/]+\/([^\/\?]+)/)?.[1] // Extract Lever job ID
+  });
 
-  return job;
+  // Record telemetry and debug filtering
+  if (jobResult.job) {
+    console.log(`✅ Job accepted: "${title}"`);
+  } else {
+    console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
+  }
+
+  return jobResult.job;
 }
 
 function extractLeverLocation($: cheerio.CheerioAPI, $el: cheerio.Cheerio<any>): string {

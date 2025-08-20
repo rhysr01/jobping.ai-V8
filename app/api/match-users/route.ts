@@ -820,25 +820,102 @@ export async function POST(req: NextRequest) {
         totalTierDistributionTime += tierDistributionTime;
         PerformanceMonitor.trackDuration('tier_distribution', tierDistributionStart);
 
-        // AI matching with performance tracking
+        // AI matching with performance tracking (bypass AI in tests)
         let matches: JobMatch[] = [];
         let matchType: 'ai_success' | 'fallback' | 'ai_failed' = 'ai_success';
         const aiMatchingStart = Date.now();
 
-        try {
-          const openai = getOpenAIClient();
-          const matchesMap = await performEnhancedAIMatchingWithCaching(
-            [user], // Pass a single user for now, will be clustered later
-            distributedJobs,
-            openai,
-            true // Indicate this is a new user for caching
-          );
+        // Check if AI is disabled (e.g., in tests)
+        const aiDisabled = process.env.MATCH_USERS_DISABLE_AI === 'true';
+
+        if (aiDisabled) {
+          console.log(`🧠 AI disabled, using rule-based fallback for ${user.email}`);
+          matchType = 'fallback';
+          // Convert JobWithFreshness to Job for compatibility
+          const jobCompatible = distributedJobs.map(job => ({
+            id: parseInt(job.id) || undefined,
+            job_hash: job.job_hash,
+            title: job.title,
+            company: job.company,
+            location: job.location,
+            job_url: job.job_url,
+            description: job.description,
+            experience_required: '',
+            work_environment: '',
+            source: '',
+            categories: [],
+            company_profile_url: '',
+            language_requirements: [],
+            scrape_timestamp: new Date().toISOString(),
+            original_posted_date: job.original_posted_date || new Date().toISOString(),
+            posted_at: job.original_posted_date || new Date().toISOString(),
+            last_seen_at: job.last_seen_at || new Date().toISOString(),
+            is_active: true,
+            freshness_tier: job.freshness_tier || '',
+            scraper_run_id: '',
+            created_at: job.created_at
+          }));
+          const fallbackResults = generateRobustFallbackMatches(jobCompatible, user);
+          matches = fallbackResults.map((match, index) => ({
+            job_index: index,
+            job_hash: match.job.job_hash,
+            match_score: match.match_score,
+            match_reason: match.match_reason,
+            match_quality: match.match_quality,
+            match_tags: match.match_tags
+          }));
+        } else {
+          try {
+            const openai = getOpenAIClient();
+            const matchesMap = await performEnhancedAIMatchingWithCaching(
+              [user], // Pass a single user for now, will be clustered later
+              distributedJobs,
+              openai,
+              true // Indicate this is a new user for caching
+            );
           
-          // Extract matches for this user from the Map
-          matches = matchesMap.get(user.email) || [];
-          
-          if (!matches || matches.length === 0) {
-            matchType = 'fallback';
+            // Extract matches for this user from the Map
+            matches = matchesMap.get(user.email) || [];
+            
+            if (!matches || matches.length === 0) {
+              matchType = 'fallback';
+              // Convert JobWithFreshness to Job for compatibility
+              const jobCompatible = distributedJobs.map(job => ({
+                id: parseInt(job.id) || undefined,
+                job_hash: job.job_hash,
+                title: job.title,
+                company: job.company,
+                location: job.location,
+                job_url: job.job_url,
+                description: job.description,
+                experience_required: '',
+                work_environment: '',
+                source: '',
+                categories: [],
+                company_profile_url: '',
+                language_requirements: [],
+                scrape_timestamp: new Date().toISOString(),
+                original_posted_date: job.original_posted_date || new Date().toISOString(),
+                posted_at: job.original_posted_date || new Date().toISOString(),
+                last_seen_at: job.last_seen_at || new Date().toISOString(),
+                is_active: true,
+                freshness_tier: job.freshness_tier || '',
+                scraper_run_id: '',
+                created_at: job.created_at
+              }));
+              const fallbackResults = generateRobustFallbackMatches(jobCompatible, user);
+              matches = fallbackResults.map((match, index) => ({
+                job_index: index,
+                job_hash: match.job.job_hash,
+                match_score: match.match_score,
+                match_reason: match.match_reason,
+                match_quality: match.match_quality,
+                match_tags: match.match_tags
+              }));
+            }
+            } catch (err) {
+            console.error(`AI matching failed for ${user.email}:`, err);
+            matchType = 'ai_failed';
             // Convert JobWithFreshness to Job for compatibility
             const jobCompatible = distributedJobs.map(job => ({
               id: parseInt(job.id) || undefined,
@@ -873,42 +950,6 @@ export async function POST(req: NextRequest) {
               match_tags: match.match_tags
             }));
           }
-        } catch (err) {
-          console.error(`AI matching failed for ${user.email}:`, err);
-          matchType = 'ai_failed';
-          // Convert JobWithFreshness to Job for compatibility
-          const jobCompatible = distributedJobs.map(job => ({
-            id: parseInt(job.id) || undefined,
-            job_hash: job.job_hash,
-            title: job.title,
-            company: job.company,
-            location: job.location,
-            job_url: job.job_url,
-            description: job.description,
-            experience_required: '',
-            work_environment: '',
-            source: '',
-            categories: [],
-            company_profile_url: '',
-            language_requirements: [],
-            scrape_timestamp: new Date().toISOString(),
-            original_posted_date: job.original_posted_date || new Date().toISOString(),
-            posted_at: job.original_posted_date || new Date().toISOString(),
-            last_seen_at: job.last_seen_at || new Date().toISOString(),
-            is_active: true,
-            freshness_tier: job.freshness_tier || '',
-            scraper_run_id: '',
-            created_at: job.created_at
-          }));
-          const fallbackResults = generateRobustFallbackMatches(jobCompatible, user);
-          matches = fallbackResults.map((match, index) => ({
-            job_index: index,
-            job_hash: match.job.job_hash,
-            match_score: match.match_score,
-            match_reason: match.match_reason,
-            match_quality: match.match_quality,
-            match_tags: match.match_tags
-          }));
         }
         
         const aiMatchingTime = Date.now() - aiMatchingStart;
@@ -1013,9 +1054,10 @@ export async function POST(req: NextRequest) {
     // Track production metrics for Datadog monitoring
     const requestDuration = Date.now() - requestStartTime;
     
-    dogstatsd.histogram('jobping.match.latency_ms', requestDuration);
-    dogstatsd.histogram('jobping.match.ai_processing_ms', totalAIProcessingTime);
-    dogstatsd.increment('jobping.match.requests', 1, [`status:success`, `users:${users.length}`]);
+    const statsd = dogstatsd();
+    statsd.histogram('jobping.match.latency_ms', requestDuration);
+    statsd.histogram('jobping.match.ai_processing_ms', totalAIProcessingTime);
+    statsd.increment('jobping.match.requests', 1, [`status:success`, `users:${users.length}`]);
     
     return NextResponse.json({
       success: true,

@@ -71,45 +71,41 @@ export async function runReliableScrapers(runId: string): Promise<ScraperResult>
       // Extract career path using the standardized function
       const careerPath = extractCareerPath(job.position, job.description || '');
       
-      // Create job with proper categories
-      const jobObj = {
-        job_hash: crypto.createHash('md5').update(`${job.position}-${job.company}-remote-${runId}`).digest('hex'),
+      // Use the standardized robust job creation with Job Ingestion Contract
+      const { createRobustJob } = require('./robustJobCreation');
+      const jobResult = createRobustJob({
         title: job.position,
         company: job.company,
         location: 'Remote',
-        job_url: `https://remoteok.io/remote-jobs/${job.id}`,
+        jobUrl: `https://remoteok.io/remote-jobs/${job.id}`,
+        companyUrl: `https://${job.company.toLowerCase().replace(/\s+/g, '')}.com`,
         description: job.description || job.position || '',
-        experience_required: 'early-career',
-        work_environment: 'remote',
+        department: 'General',
+        postedAt: job.date && !isNaN(job.date) ? new Date(job.date * 1000).toISOString() : new Date().toISOString(),
+        runId,
         source: 'remoteok',
-        categories: createJobCategories(careerPath, ['early-career', 'loc:eu-remote']),
-        company_profile_url: `https://${job.company.toLowerCase().replace(/\s+/g, '')}.com`,
-        language_requirements: ['English'],
-        scrape_timestamp: new Date().toISOString(),
-        original_posted_date: job.date && !isNaN(job.date) ? new Date(job.date * 1000).toISOString() : new Date().toISOString(),
-        posted_at: job.date && !isNaN(job.date) ? new Date(job.date * 1000).toISOString() : new Date().toISOString(),
-        last_seen_at: new Date().toISOString(),
-        is_active: true,
-        freshness_tier: 'fresh',
-        scraper_run_id: runId,
-        created_at: new Date().toISOString()
-      };
+        isRemote: true,
+        platformId: job.id.toString() // Include native platform ID
+      });
       
-      // Add sample titles (up to 5)
-      if (funnel.samples.length < 5) {
-        funnel.samples.push(job.position);
+      if (jobResult.job) {
+        // Update funnel tracking
+        funnel.careerTagged++;
+        funnel.locationTagged++;
+        
+        // Add sample titles (up to 5)
+        if (funnel.samples.length < 5) {
+          funnel.samples.push(job.position);
+        }
+        
+        return jobResult.job;
+      } else {
+        console.log(`❌ Job filtered out: "${job.position}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
+        return null;
       }
-      
-      return jobObj;
-    });
+    }).filter(Boolean); // Remove null jobs
 
-    // Count jobs with proper career and location tagging
-    funnel.careerTagged = formattedJobs.filter(job => 
-      job.categories && job.categories.includes('career:') && !job.categories.includes('career:unknown')
-    ).length;
-    funnel.locationTagged = formattedJobs.filter(job => 
-      job.categories && job.categories.includes('loc:') && !job.categories.includes('loc:unknown')
-    ).length;
+    console.log(`✅ Reliable scrapers completed: ${formattedJobs.length} jobs formatted`);
     
     console.log(`✅ Reliable scrapers completed: ${formattedJobs.length} jobs formatted`);
     

@@ -16,18 +16,6 @@ jest.mock('@supabase/supabase-js', () => ({
   })),
 }));
 
-jest.mock('openai', () => ({
-  OpenAI: jest.fn(() => ({
-    chat: {
-      completions: {
-        create: jest.fn(() => Promise.resolve({
-          choices: [{ message: { content: 'test response' } }],
-        })),
-      },
-    },
-  })),
-}));
-
 jest.mock('@/Utils/jobMatching', () => ({
   performEnhancedAIMatching: jest.fn(() => Promise.resolve([])),
   generateFallbackMatches: jest.fn(() => []),

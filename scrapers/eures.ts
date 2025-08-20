@@ -3,7 +3,7 @@ import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 import { Job } from './types';
 import { extractPostingDate, atomicUpsertJobs } from '../Utils/jobMatching';
-import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
 import { productionRateLimiter } from '../Utils/productionRateLimiter';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
@@ -231,36 +231,29 @@ async function scrapeEuresHTML(runId: string, pageLimit: number): Promise<Job[]>
       const workEnv = /\bremote\b/.test(content) ? 'remote' : /\b(on.?site|office|in.person|onsite)\b/.test(content) ? 'on-site' : 'hybrid';
       const experience = /\b(intern|internship)\b/.test(content) ? 'internship' : /\b(graduate|junior|entry|trainee)\b/.test(content) ? 'entry-level' : 'entry-level';
 
-      // Check early-career eligibility before creating job
-      const eligibility = isEarlyCareerEligible(title, description);
-      
-      // Only create job if eligible (permissive filter)
-      if (!eligibility.eligible) {
-        return null;
-      }
-
-      const job: Job = {
+      // Use enhanced robust job creation with Job Ingestion Contract
+      const jobResult = createRobustJob({
         title,
         company,
         location,
-        job_url: jobUrl,
+        jobUrl,
+        companyUrl: '',
         description: description.slice(0, 2000),
-        categories: [experience, workEnv].filter(Boolean),
-        experience_required: experience,
-        work_environment: workEnv,
-        language_requirements: [],
+        department: 'General',
+        postedAt: date.success && date.date ? date.date : new Date().toISOString(),
+        runId,
         source: 'eures',
-        job_hash: crypto.createHash('md5').update(`${title}-${company}-${jobUrl}`).digest('hex'),
-        posted_at: date.success && date.date ? date.date : new Date().toISOString(),
-        original_posted_date: date.success && date.date ? date.date : new Date().toISOString(),
-        scraper_run_id: runId,
-        company_profile_url: '',
-        scrape_timestamp: new Date().toISOString(),
-        last_seen_at: new Date().toISOString(),
-        is_active: true,
-        created_at: new Date().toISOString()
-      };
-      return job;
+        isRemote: workEnv === 'remote'
+      });
+
+      // Record telemetry and debug filtering
+      if (jobResult.job) {
+        console.log(`✅ Job accepted: "${title}"`);
+      } else {
+        console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
+      }
+
+      return jobResult.job;
     }).get());
 
     jobs.push(...(pageJobs.filter(Boolean) as Job[]));
@@ -270,27 +263,21 @@ async function scrapeEuresHTML(runId: string, pageLimit: number): Promise<Job[]>
   // If no jobs found due to blocking, create a test job to verify integration
   if (jobs.length === 0) {
     console.log(`⚠️ No jobs found from EURES (likely blocked), creating test job...`);
-    const testJob: Job = {
+    const testJobResult = createRobustJob({
       title: 'EU Graduate Program (Test)',
       company: 'EURES Test Company',
       location: 'Brussels, Belgium',
-      job_url: 'https://ec.europa.eu/eures/public/test-job',
+      jobUrl: 'https://ec.europa.eu/eures/public/test-job',
+      companyUrl: '',
       description: 'Test EU graduate position. This is a test job created when the scraper is blocked.',
-      categories: ['entry-level', 'eu-program'],
-      experience_required: 'entry-level',
-      work_environment: 'hybrid',
-      language_requirements: ['English', 'French', 'German'],
+      department: 'General',
+      postedAt: new Date().toISOString(),
+      runId,
       source: 'eures',
-      job_hash: crypto.createHash('md5').update(`EU Graduate Program (Test)-EURES Test Company-https://ec.europa.eu/eures/public/test-job`).digest('hex'),
-      posted_at: new Date().toISOString(),
-      original_posted_date: new Date().toISOString(),
-      scraper_run_id: runId,
-      company_profile_url: '',
-      scrape_timestamp: new Date().toISOString(),
-      last_seen_at: new Date().toISOString(),
-      is_active: true,
-      created_at: new Date().toISOString()
-    };
+      isRemote: false
+    });
+    
+    const testJob = testJobResult.job;
     jobs.push(testJob);
   }
 

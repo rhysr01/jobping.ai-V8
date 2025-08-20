@@ -34,10 +34,10 @@ interface MockSupabaseClient {
 // Global mock data store
 declare global {
   var __SB_MOCK__: {
-    users: any[];
-    jobs: any[];
-    matches: any[];
-    match_logs: any[];
+    users?: any[];
+    jobs?: any[];
+    matches?: any[];
+    match_logs?: any[];
     [key: string]: any[];
   };
 }
@@ -187,15 +187,14 @@ class MockFilterBuilder implements FilterBuilder {
     const tableData = global.__SB_MOCK__[this.table] || [];
     let filteredData = [...tableData];
 
-    // Debug logging for all queries in test mode
+    // Debug logging in test mode
     if (process.env.NODE_ENV === 'test') {
       console.log(`Mock query for table ${this.table}:`, {
         filters: this.filters,
         tableData: tableData.length,
         orderBy: this.orderBy,
         limitCount: this.limitCount,
-        isSingle: this.isSingle,
-        sampleData: tableData.slice(0, 2) // Show first 2 items for debugging
+        isSingle: this.isSingle
       });
     }
 

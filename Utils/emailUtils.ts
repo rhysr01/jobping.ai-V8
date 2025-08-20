@@ -81,6 +81,11 @@ export function composeRobustEmailContent(
   subscriptionTier: 'free' | 'premium' = 'free',
   isSignupEmail: boolean = false
 ): string {
+  // Check email kill switch
+  if (process.env.ENABLE_EMAILS === 'false') {
+    console.log('🚫 Email sending disabled by ENABLE_EMAILS=false');
+    return '';
+  }
   const isPremium = subscriptionTier === 'premium';
   const emailTypeText = isSignupEmail ? 'Welcome! Here are your first' : 'Your fresh';
   

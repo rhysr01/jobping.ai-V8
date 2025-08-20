@@ -1,7 +1,44 @@
 import { StatsD } from 'hot-shots';
 
-// Simplified Datadog StatsD client for immediate production monitoring
-export const dogstatsd = new StatsD();
+// Lazy Datadog StatsD client to avoid test mode connections
+let dogstatsd: StatsD | null = null;
+let isInitialized = false;
+
+function getDogstatsd(): StatsD {
+  if (!dogstatsd) {
+    // Skip Datadog initialization in test mode
+    if (process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1') {
+      console.log('🧪 Test mode: Skipping Datadog initialization');
+      // Return a mock StatsD client for tests
+      dogstatsd = {
+        increment: () => {},
+        histogram: () => {},
+        timing: () => {},
+        gauge: () => {},
+        close: () => {}
+      } as any;
+    } else {
+      dogstatsd = new StatsD();
+    }
+    isInitialized = true;
+  }
+  return dogstatsd;
+}
+
+export { getDogstatsd as dogstatsd };
+
+export async function teardownDatadog() {
+  if (dogstatsd && isInitialized) {
+    try {
+      dogstatsd.close();
+      console.log('🔌 Datadog client closed');
+    } catch (error) {
+      console.error('❌ Error closing Datadog client:', error);
+    }
+  }
+  dogstatsd = null;
+  isInitialized = false;
+}
 
 /**
  * Production-ready metrics collector for Datadog monitoring

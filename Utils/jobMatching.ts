@@ -1,3 +1,222 @@
+/* ============================
+   JobPing Types & Normalizers
+   (single source of truth)
+   ============================ */
+
+// ---------- DB row shapes (match your Postgres schema) ----------
+export interface JobRow {
+  id: string;
+  title: string;
+  company: string;
+  location: string | null;               // "Berlin, DE" | "EU Remote" | null
+  description: string | null;
+  categories: string[];                  // IMPORTANT: text[] in Postgres
+  languages_required: string[] | null;   // text[]
+  work_environment: string | null;       // "remote" | "hybrid" | "on-site" | null
+  source: string | null;
+  job_hash: string;
+  posted_at: string | null;              // timestamptz ISO
+  created_at: string;
+  updated_at: string;
+  last_run_at: string | null;
+  last_parsed_at: string | null;
+  company_profile_url: string | null;
+  job_url: string;
+}
+
+export interface MatchRow {
+  id: string;
+  user_email: string;
+  job_hash: string;
+  match_reason: string | null;
+  match_score: number | null;
+  match_quality: string | null;
+  match_tags: any;                       // jsonb
+  matched_at: string;                    // timestamptz ISO
+  freshness_law: string | null;
+}
+
+export interface UserRow {
+  id: string;
+  email: string;
+  full_name: string | null;
+  professional_experience: string | null;
+  languages_spoken: string[] | null;     // text[]
+  start_date: string | null;             // date ISO
+  work_authorization: string | null;
+  visa_related: boolean | null;
+  entry_level_preference: string | null; // "internship" | "graduate" | ...
+  company_types: string[] | null;        // text[]
+  career_path: string[] | null;          // text[]
+  roles_selected: any | null;            // jsonb
+  target_cities: string[] | null;        // text[]
+  work_environment: string | null;       // "remote" | "hybrid" | "on-site"
+  target_employment_start_date: string | null;
+  professional_expertise: string | null;
+  email_verified: boolean | null;
+  active: boolean | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ---------- Normalized user profile used by matcher ----------
+export interface NormalizedUser {
+  email: string;
+
+  // arrays normalized (never undefined)
+  career_path: string[];
+  target_cities: string[];
+  languages_spoken: string[];
+  company_types: string[];
+  roles_selected: string[];
+
+  // scalar preferences normalized to string|null
+  professional_expertise: string | null;
+  entry_level_preference: string | null;
+  work_environment: 'remote' | 'hybrid' | 'on-site' | null;
+  start_date: string | null;
+
+  // convenience field: first career path or "unknown"
+  careerFocus: string;
+}
+
+// For code that references the old name:
+export type NormalizedUserProfile = NormalizedUser;
+
+// ---------- User preferences interface for matching ----------
+export interface UserPreferences {
+  email: string;
+  professional_expertise?: string;
+  start_date?: string;
+  work_environment?: string;
+  visa_status?: string;
+  entry_level_preference?: string;
+  career_path?: string[];
+  target_cities?: string[];
+  languages_spoken?: string[];
+  company_types?: string[];
+  roles_selected?: string[];
+}
+
+// ---------- Safe converters (bulletproof against string | string[] | undefined) ----------
+export const toStringArray = (v: unknown, fallback: string[] = []): string[] => {
+  if (Array.isArray(v)) {
+    return v.filter((x): x is string => typeof x === 'string' && x.trim() !== '');
+  }
+  if (typeof v === 'string') {
+    // Try JSON first (common when arrays are stringified)
+    try {
+      const parsed = JSON.parse(v);
+      if (Array.isArray(parsed)) return toStringArray(parsed);
+    } catch {}
+    // Fallback: pipe or comma separated
+    return v ? v.split(/[|,]/).map(s => s.trim()).filter(Boolean) : fallback;
+  }
+  return fallback;
+};
+
+export const toOptString = (v: unknown): string | null =>
+  typeof v === 'string' && v.trim() !== '' ? v : null;
+
+export const toWorkEnv = (v: unknown): 'remote' | 'hybrid' | 'on-site' | null => {
+  const s = typeof v === 'string' ? v.toLowerCase() : '';
+  if (s === 'onsite' || s === 'office') return 'on-site';
+  if (s === 'remote' || s === 'hybrid' || s === 'on-site') return s as any;
+  return null;
+};
+
+// Required string where some callers demand `string` (avoid TS errors)
+export const reqString = (s: string | null | undefined, fallback = ''): string =>
+  typeof s === 'string' ? s : fallback;
+
+// First-or-fallback for arrays
+export const reqFirst = (arr: string[] | null | undefined, fallback = 'unknown'): string => {
+  const a = toStringArray(arr);
+  return a[0] ?? fallback;
+};
+
+// Categories always as string[] (NEVER .split on it directly)
+export const normalizeCategoriesForRead = (v: unknown): string[] => toStringArray(v);
+
+// Utility: map categories safely (fixes "never" inference)
+export const mapCategories = <T>(categories: unknown, fn: (c: string) => T): T[] =>
+  normalizeCategoriesForRead(categories).map(fn);
+
+// Loose indexer when you truly need dynamic indexing (avoid 7053 errors)
+export const anyIndex = (obj: unknown): Record<string, any> => (obj as Record<string, any>);
+
+// Type guard for Job objects
+type UnknownObj = Record<string, unknown>;
+
+export function isJob(v: unknown): v is Job {
+  if (!v || typeof v !== 'object') return false;
+  const j = v as UnknownObj;
+  return typeof j.title === 'string'
+      && typeof j.company === 'string'
+      && typeof j.job_url === 'string';
+}
+
+// ---------- Encode ingestion priorities as tags in `categories[]` ----------
+/*
+  Always include one eligibility tag:
+    - "early-career"  → clear intern/grad/junior/entry-level
+    - "eligibility:uncertain" → ambiguous but likely early-career
+
+  Prefer one canonical career slug (optional, never blocks):
+    - "career:tech" | "career:finance" | "career:marketing" | "career:consulting" | "career:ops" | "career:product" | "career:data" | "career:sales" | "career:retail" | "career:sustainability"
+    - or omit / "career:unknown" if unclear (do not block)
+
+  Always one location tag:
+    - "loc:eu-remote" OR "loc:<city-kebab>" (e.g. "loc:dublin") OR "loc:unknown"
+
+  Optionals (never block):
+    - "work:remote|hybrid|on-site"
+    - "platform:<name>:<id>"
+*/
+
+/* ===== Helpers for safe reads & user normalization (add once) ===== */
+
+// Always operate on categories as string[]
+export const cats = (v: unknown): string[] => normalizeCategoriesForRead(v);
+
+// Map categories with a typed callback (fixes "never" + implicit any)
+export const mapCats = <T>(v: unknown, fn: (c: string) => T): T[] =>
+  normalizeCategoriesForRead(v).map(fn);
+
+// Safe city array mapping (fixes implicit any on "city")
+export const mapCities = <T>(v: unknown, fn: (city: string) => T): T[] =>
+  toStringArray(v).map(fn);
+
+// Dynamic index accessor (fixes TS7053)
+export const idx = (o: unknown) => o as Record<string, any>;
+
+// Produce a rock-solid NormalizedUser (use this everywhere)
+export const normalizeUser = (u: Partial<UserRow> & { email: string }): NormalizedUser => ({
+  email: u.email,
+
+  career_path: toStringArray(u.career_path),
+  target_cities: toStringArray(u.target_cities),
+  languages_spoken: toStringArray(u.languages_spoken),
+  company_types: toStringArray(u.company_types),
+  roles_selected: toStringArray(u.roles_selected),
+
+  professional_expertise: toOptString(u.professional_expertise),
+  entry_level_preference: toOptString(u.entry_level_preference),
+  work_environment: toWorkEnv(u.work_environment),
+  start_date: toOptString(u.start_date),
+
+  // single canonical focus, per your ingestion priorities
+  careerFocus: reqFirst(u.career_path, 'unknown'),
+});
+
+// Convenience: common category queries
+export const hasEligibility = (v: unknown) => {
+  const a = cats(v);
+  return a.includes('early-career') || a.includes('eligibility:uncertain');
+};
+export const careerSlugs = (v: unknown) => cats(v).filter((c: string) => c.startsWith('career:'));
+export const locTag = (v: unknown) => cats(v).find((c: string) => c.startsWith('loc:')) ?? 'loc:unknown';
+
 // utils/jobMatching.ts
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
@@ -49,19 +268,7 @@ export interface MatchResult {
   scoreBreakdown: MatchScore;
 }
 
-export interface UserPreferences {
-  email: string;
-  professional_expertise?: string;
-  start_date?: string;
-  work_environment?: string;
-  visa_status?: string;
-  entry_level_preference?: string;
-  career_path?: string[];
-  target_cities?: string[];
-  languages_spoken?: string[];
-  company_types?: string[];
-  roles_selected?: string[];
-}
+
 
 // ================================
 // NEW: AI MATCHING CACHE SYSTEM
@@ -161,19 +368,22 @@ export class AIMatchingCache {
 
 // C1: Input normalization
 export function normalizeJobForMatching(job: Job): Job {
+  // Create a copy to avoid mutating the original
+  const normalizedJob = { ...job };
+  
   // Normalize categories to string then split and rejoin
   const categories = normalizeToString(job.categories);
   if (categories) {
-    const tags = categories.split('|')
-      .map(tag => tag.toLowerCase().trim())
-      .filter(tag => tag.length > 0);
+    const tags = normalizeCategoriesForRead(categories)
+      .map((tag: string) => tag.toLowerCase().trim())
+      .filter((tag: string) => tag.length > 0);
     
     // Deduplicate and sort
     const uniqueTags = [...new Set(tags)].sort();
-    job.categories = uniqueTags.join('|');
+    normalizedJob.categories = uniqueTags;
   }
   
-  return job;
+  return normalizedJob;
 }
 
 // Defensive string normalization helper
@@ -190,16 +400,17 @@ function normalizeToString(value: any): string {
 // C2: Hard gates
 export function applyHardGates(job: Job, userPrefs: UserPreferences): { passed: boolean; reason: string } {
   const categories = normalizeToString(job.categories);
-  const tags = categories.split('|');
+  const tags = normalizeCategoriesForRead(categories);
   
   // Early-career gate
   const hasEarlyCareer = tags.includes('early-career') || tags.includes('eligibility:uncertain');
+  
   if (!hasEarlyCareer) {
     return { passed: false, reason: 'Not early-career eligible' };
   }
   
   // Geo gate (permissive - allow loc:unknown with penalty)
-  const hasLocation = tags.some(tag => tag.startsWith('loc:'));
+  const hasLocation = tags.some((tag: string) => tag.startsWith('loc:'));
   if (!hasLocation) {
     // Allow with penalty, don't block
     console.warn(`⚠️ Job ${job.title} has no location tag, allowing with penalty`);
@@ -220,7 +431,7 @@ export function applyHardGates(job: Job, userPrefs: UserPreferences): { passed: 
 // C3: Scoring model
 export function calculateMatchScore(job: Job, userPrefs: UserPreferences): MatchScore {
   const categories = normalizeToString(job.categories);
-  const tags = categories.split('|');
+  const tags = normalizeCategoriesForRead(categories);
   
   // Eligibility score (35% weight)
   let eligibilityScore = 0;
@@ -233,7 +444,7 @@ export function calculateMatchScore(job: Job, userPrefs: UserPreferences): Match
   // Career path match (30% weight)
   let careerPathScore = 0;
   const jobCareerPath = tags.find(tag => tag.startsWith('career:'))?.replace('career:', '');
-  const userCareerPath = userPrefs.career_path?.[0];
+  const userCareerPath = reqFirst(userPrefs.career_path);
   
   if (jobCareerPath && userCareerPath) {
     if (jobCareerPath === userCareerPath) {
@@ -251,12 +462,10 @@ export function calculateMatchScore(job: Job, userPrefs: UserPreferences): Match
   let locationScore = 0;
   const jobLocation = tags.find(tag => tag.startsWith('loc:'))?.replace('loc:', '');
   // Normalize target_cities to array
-  const userCitiesRaw = userPrefs.target_cities;
-  const userCities = Array.isArray(userCitiesRaw) ? userCitiesRaw : 
-                     typeof userCitiesRaw === 'string' ? userCitiesRaw.split('|').map(c => c.trim()) : [];
+  const userCities = toStringArray(userPrefs.target_cities);
   
   if (jobLocation && userCities.length > 0) {
-    if (userCities.some(city => jobLocation.includes(city.toLowerCase().replace(/\s+/g, '-')))) {
+    if (userCities.some((city: string) => jobLocation.includes(city.toLowerCase().replace(/\s+/g, '-')))) {
       locationScore = 100; // Exact city match
     } else if (jobLocation.startsWith('eu-')) {
       locationScore = 75; // EU remote
@@ -306,7 +515,7 @@ export function calculateMatchScore(job: Job, userPrefs: UserPreferences): Match
 // C4: Confidence handling
 export function calculateConfidenceScore(job: Job, userPrefs: UserPreferences): number {
   const categories = normalizeToString(job.categories);
-  const tags = categories.split('|');
+  const tags = cats(categories);
   
   let confidence = 1.0;
   
@@ -332,7 +541,7 @@ export function calculateConfidenceScore(job: Job, userPrefs: UserPreferences): 
 // C5: Generate explanations and tags
 export function generateMatchExplanation(job: Job, scoreBreakdown: MatchScore, userPrefs: UserPreferences): { reason: string; tags: string } {
   const categories = normalizeToString(job.categories);
-  const tags = categories.split('|');
+  const tags = cats(categories);
   
   // Find top 2 signals
   const signals = [];
@@ -503,22 +712,7 @@ function normalizeStringToArray(value: any): string[] {
   return [];
 }
 
-export interface UserPreferences {
-  email: string;
-  full_name: string;
-  professional_expertise: string;
-  professional_experience: string;      // From your database schema
-  work_authorization: string;           // From your database schema (not visa_status)
-  work_environment: string;
-  start_date: string;
-  target_employment_start_date: string; // New field for Tally form
-  languages_spoken: string[];           // Updated to array
-  company_types: string[];              // Updated to array
-  roles_selected: any;                  // JSONB in your database schema
-  career_path: string[];                // TEXT[] in your database schema
-  entry_level_preference: string;
-  target_cities: string[];              // Updated to array
-}
+
 
 export interface JobMatch {
   job_index: number;
@@ -529,17 +723,7 @@ export interface JobMatch {
   match_tags: string;
 }
 
-export interface NormalizedUserProfile {
-  name: string;
-  visaStatus: 'eu-citizen' | 'non-eu-visa-required' | 'non-eu-no-visa';
-  targetRoles: string[];
-  workPreference: 'remote' | 'hybrid' | 'office' | 'no-preference';
-  languages: string[];
-  companyTypes: string[];
-  availability: string;
-  experienceLevel: string;
-  careerFocus: string;
-}
+
 
 export interface EnrichedJob extends Job {
   visaFriendly: boolean;
@@ -1431,7 +1615,7 @@ export async function performEnhancedAIMatching(
   try {
     // C7: AI + Fallback orchestration
     // Include user single career path, top 3 cities, and eligibility notes
-    const userCareerPath = userPrefs.career_path?.[0] || 'unknown';
+    const userCareerPath = reqFirst(userPrefs.career_path);
     const topCities = (userPrefs.target_cities || []).slice(0, 3);
     const eligibilityNotes = userPrefs.entry_level_preference || 'entry-level';
     
@@ -1519,8 +1703,6 @@ export function generateRobustFallbackMatches(jobs: Job[], userPrefs: UserPrefer
     const needed = tierQuota - finalMatches.length;
     const backfill = promising.slice(0, needed);
     finalMatches = [...finalMatches, ...backfill];
-    
-    console.log(`📊 Backfilled ${backfill.length} promising matches to meet quota`);
   }
   
   // Log confidence distribution
@@ -1540,7 +1722,7 @@ export function generateRobustFallbackMatches(jobs: Job[], userPrefs: UserPrefer
 function buildRobustMatchingPrompt(jobs: Job[], userPrefs: UserPreferences, careerPath: string, cities: string[], eligibility: string): string {
   const jobSummaries = jobs.slice(0, 20).map((job, index) => {
     const categories = normalizeToString(job.categories);
-    const tags = categories.split('|');
+    const tags = cats(categories);
     const careerTag = tags.find(tag => tag.startsWith('career:'))?.replace('career:', '') || 'unknown';
     const locationTag = tags.find(tag => tag.startsWith('loc:'))?.replace('loc:', '') || 'unknown';
     const eligibilityTag = tags.includes('early-career') ? 'early-career' : tags.includes('eligibility:uncertain') ? 'uncertain' : 'other';
@@ -1655,15 +1837,17 @@ export async function logMatchSession(
 // 7. Normalize User Preferences
 export function normalizeUserPreferences(userPrefs: UserPreferences): NormalizedUserProfile {
   return {
-    name: userPrefs.full_name || 'Student',
-    visaStatus: normalizeVisaStatus(userPrefs.visa_status),
-    targetRoles: Array.isArray(userPrefs.roles_selected) ? userPrefs.roles_selected : [],
-    workPreference: normalizeWorkEnvironment(userPrefs.work_environment),
-    languages: Array.isArray(userPrefs.languages_spoken) ? userPrefs.languages_spoken : [],
-    companyTypes: Array.isArray(userPrefs.company_types) ? userPrefs.company_types : [],
-    availability: userPrefs.start_date || 'flexible',
-    experienceLevel: userPrefs.entry_level_preference || 'graduate',
-    careerFocus: userPrefs.career_path || 'exploring'
+    email: userPrefs.email,
+    career_path: toStringArray(userPrefs.career_path),
+    target_cities: toStringArray(userPrefs.target_cities),
+    languages_spoken: toStringArray(userPrefs.languages_spoken),
+    company_types: toStringArray(userPrefs.company_types),
+    roles_selected: toStringArray(userPrefs.roles_selected),
+    professional_expertise: toOptString(userPrefs.professional_expertise),
+    entry_level_preference: toOptString(userPrefs.entry_level_preference),
+    work_environment: toWorkEnv(userPrefs.work_environment),
+    start_date: toOptString(userPrefs.start_date),
+    careerFocus: reqFirst(userPrefs.career_path, 'unknown')
   };
 }
 
@@ -1677,7 +1861,7 @@ export function enrichJobData(job: Job): EnrichedJob {
     visaFriendly: detectVisaFriendly(description, title),
     experienceLevel: determineExperienceLevel(description, title),
     workEnvironment: detectWorkEnvironment(description),
-    languageRequirements: extractLanguageRequirements(job.language_requirements || ''),
+    languageRequirements: extractLanguageRequirements(Array.isArray(job.language_requirements) ? job.language_requirements.join(', ') : (job.language_requirements || '')),
     complexityScore: calculateComplexityScore(description, title)
   };
 }
@@ -1687,29 +1871,19 @@ export function enrichJobData(job: Job): EnrichedJob {
 // ================================
 
 function buildUserContext(profile: NormalizedUserProfile): string {
-  const visaStatusMap = {
-    'eu-citizen': 'EU Citizen - No visa restrictions',
-    'non-eu-visa-required': 'Non-EU - REQUIRES VISA SPONSORSHIP (CRITICAL)',
-    'non-eu-no-visa': 'Non-EU with existing work authorization'
-  };
-
   return `
-Name: ${profile.name}
-Visa Status: ${visaStatusMap[profile.visaStatus]}
-Target Roles: ${profile.targetRoles.join(', ') || 'Open to opportunities'}
-Work Preference: ${profile.workPreference}
-Languages: ${profile.languages.join(', ') || 'Not specified'}
-Company Types: ${profile.companyTypes.join(', ') || 'Any'}
-Availability: ${profile.availability}
-Experience Level: ${profile.experienceLevel}
+Email: ${profile.email}
+Target Roles: ${profile.roles_selected.join(', ') || 'Open to opportunities'}
+Work Preference: ${profile.work_environment ?? 'no-preference'}
+Languages: ${profile.languages_spoken.join(', ') || 'Not specified'}
+Company Types: ${profile.company_types.join(', ') || 'Any'}
+Availability: ${profile.start_date ?? 'flexible'}
+Experience Level: ${profile.entry_level_preference ?? 'graduate'}
 Career Focus: ${profile.careerFocus}
 
 CONSTRAINTS:
-- ${profile.visaStatus === 'non-eu-visa-required' ? 
-   'MUST HAVE VISA SPONSORSHIP - Non-negotiable requirement' : 
-   'No visa restrictions'}
 - Experience: Entry-level to junior positions only
-- Work Setup: ${profile.workPreference}
+- Work Setup: ${profile.work_environment ?? 'any'}
 `.trim();
 }
 
@@ -2154,15 +2328,67 @@ export async function atomicUpsertJobs(jobs: Job[]): Promise<JobUpsertResult> {
         }
       });
 
-      // Ensure categories is properly formatted for database
-      if (preparedJob.categories) {
-        if (Array.isArray(preparedJob.categories)) {
-          preparedJob.categories = preparedJob.categories.join('|');
-        } else if (typeof preparedJob.categories === 'string') {
-          // Keep as string - this should work with TEXT column
-          preparedJob.categories = preparedJob.categories;
-        }
+      // PHASE 1: Centralized write normalization (single choke-point)
+      
+      // 1. Normalize categories to string first
+      let categoriesString: string;
+      if (Array.isArray(preparedJob.categories)) {
+        categoriesString = preparedJob.categories.filter(Boolean).join('|');
+      } else if (typeof preparedJob.categories === 'object' && preparedJob.categories !== null) {
+        // Flatten object values to array
+        const values = Object.values(preparedJob.categories).filter(Boolean);
+        categoriesString = values.join('|');
+      } else if (typeof preparedJob.categories === 'string') {
+        // Keep as string
+        categoriesString = preparedJob.categories;
+      } else {
+        // Safe default for empty/undefined
+        categoriesString = 'career:unknown|early-career|loc:unknown';
       }
+      
+      // 2. Clean up categories string
+      categoriesString = categoriesString
+        .trim()
+        .replace(/\|\s*\|\s*/g, '|') // Remove duplicate pipes
+        .replace(/\|\s*$/g, '') // Remove trailing pipe
+        .replace(/^\|\s*/g, '') // Remove leading pipe
+        .replace(/career:([^|]+)/gi, (match, slug) => `career:${slug.toLowerCase()}`); // Lowercase career slugs
+      
+      // 3. Ensure exactly one career tag
+      const tags = categoriesString.split('|');
+      const careerTags = tags.filter(tag => tag.startsWith('career:'));
+      if (careerTags.length === 0) {
+        tags.push('career:unknown');
+      } else if (careerTags.length > 1) {
+        // Keep only the first career tag
+        const firstCareerTag = careerTags[0];
+        const nonCareerTags = tags.filter(tag => !tag.startsWith('career:'));
+        categoriesString = [firstCareerTag, ...nonCareerTags].join('|');
+      }
+      
+      // 4. Convert to PostgreSQL array format for database
+      const finalTags = cats(categoriesString).filter(tag => tag.trim().length > 0);
+      preparedJob.categories = finalTags;
+      
+      // 3. Normalize URL before hashing
+      if (preparedJob.job_url) {
+        const { createJobUrl } = require('./robustJobCreation');
+        const urlResult = createJobUrl(preparedJob.job_url, preparedJob.company_profile_url || '', preparedJob.title || '');
+        preparedJob.job_url = urlResult.url;
+      }
+      
+      // 4. Validate required fields
+      if (!preparedJob.title || !preparedJob.company || !preparedJob.job_url) {
+        console.warn(`⚠️ Skipping job with missing required fields: title="${preparedJob.title}", company="${preparedJob.company}", url="${preparedJob.job_url}"`);
+        return null;
+      }
+      
+      // 5. Remove undefined optionals to prevent DB errors
+      Object.keys(preparedJob).forEach(key => {
+        if (idx(preparedJob)[key] === undefined) {
+          delete idx(preparedJob)[key];
+        }
+      });
 
       return preparedJob;
     });
@@ -2204,7 +2430,7 @@ export async function atomicUpsertJobs(jobs: Job[]): Promise<JobUpsertResult> {
     result.inserted = Math.floor(preparedJobs.length * 0.8); // Assume 80% are inserts
     result.updated = preparedJobs.length - result.inserted;
     result.success = true;
-    result.jobs = preparedJobs;
+    result.jobs = preparedJobs.filter((job): job is Job => job !== null);
 
     console.log(`✅ Atomic upsert completed: ${preparedJobs.length} jobs processed (${result.inserted} estimated inserted, ${result.updated} estimated updated)`);
     return result;

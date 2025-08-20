@@ -3,11 +3,11 @@ import { TextEncoder, TextDecoder } from 'util';
 
 // Polyfill for TextEncoder/TextDecoder (required for cheerio and other web APIs)
 global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
+global.TextDecoder = TextDecoder as any;
 
 // Polyfill for crypto.randomUUID (required for Node.js < 19)
 if (!global.crypto) {
-  global.crypto = {
+  (global as any).crypto = {
     randomUUID: () => require('crypto').randomUUID(),
   };
 }
@@ -18,12 +18,13 @@ if (typeof setImmediate === 'undefined') {
 }
 
 // Set test environment
-process.env.NODE_ENV = 'test';
+(process.env as any).NODE_ENV = 'test';
 
 // Test-specific environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
 process.env.OPENAI_API_KEY = 'test-openai-key';
+process.env.MATCH_USERS_DISABLE_AI = 'true';
 process.env.RESEND_API_KEY = 'test-resend-key';
 process.env.NEXT_PUBLIC_URL = 'http://localhost:3000';
 process.env.SCRAPE_API_KEY = 'test-api-key';
@@ -89,18 +90,7 @@ jest.mock('next/navigation', () => ({
   },
 }));
 
-// Mock OpenAI
-jest.mock('openai', () => ({
-  default: jest.fn(() => ({
-    chat: {
-      completions: {
-        create: jest.fn(() => Promise.resolve({
-          choices: [{ message: { content: 'test response' } }],
-        })),
-      },
-    },
-  })),
-}));
+// OpenAI bypassed in tests via MATCH_USERS_DISABLE_AI=true
 
 // Mock Redis (no-op in test mode)
 jest.mock('redis', () => ({
@@ -195,3 +185,29 @@ global.console = {
 (global as any).__restoreConsole = () => {
   global.console = originalConsole;
 };
+
+// Import teardown functions
+import { productionRateLimiter } from './Utils/productionRateLimiter';
+import { teardownDatadog } from './Utils/datadogMetrics';
+import { EnhancedAIMatchingCache } from './Utils/enhancedCache';
+
+// Global teardown to close all connections
+afterAll(async () => {
+  console.log('🧹 Cleaning up test resources...');
+  
+  try {
+    // Teardown rate limiter
+    await productionRateLimiter.teardown();
+    
+    // Teardown Datadog
+    await teardownDatadog();
+    
+    // Teardown cache
+    const cache = EnhancedAIMatchingCache.getInstance();
+    await cache.close();
+    
+    console.log('✅ Test cleanup completed');
+  } catch (error) {
+    console.error('❌ Error during test cleanup:', error);
+  }
+});

@@ -5,6 +5,7 @@ import { scrapeWorkday } from '../../../scrapers/workday';
 import { scrapeRemoteOK } from '../../../scrapers/remoteok';
 import { atomicUpsertJobs } from '../../../Utils/jobMatching';
 import { runReliableScrapers } from '../../../Utils/reliableScrapers';
+import { coerceScraperResult } from '../../../Utils/robustJobCreation';
 import { calculateCareerPathTelemetry, CAREER_TAXONOMY_VERSION, type Job } from '../../../scrapers/types';
 import { SecurityMiddleware, addSecurityHeaders, extractUserData, extractRateLimit } from '../../../Utils/securityMiddleware';
 import { getActiveCompaniesForPlatform } from '../../../Utils/dynamicCompanyDiscovery';
@@ -84,7 +85,8 @@ export async function POST(req: NextRequest) {
     if ((platforms.includes('all') || platforms.includes('reliable')) && isPlatformEnabled('reliable')) {
       console.log('🎯 Running reliable scraper system...');
       try {
-        const reliableResult = await runReliableScrapers(runId);
+        const rawReliableResult = await runReliableScrapers(runId);
+        const reliableResult = coerceScraperResult('reliable', rawReliableResult);
         const reliableJobs = reliableResult.jobs;
         const funnel = reliableResult.funnel;
         
@@ -384,15 +386,16 @@ export async function POST(req: NextRequest) {
       try {
         console.log('🌍 Scraping iAgora...');
         const { scrapeIAgora } = await import('../../../scrapers/iagora');
-        const iagoraJobs = await scrapeIAgora(runId);
+        const rawIAgoraResult = await scrapeIAgora(runId);
+        const iagoraResult = coerceScraperResult('iagora', rawIAgoraResult);
         results.iagora = {
           success: true,
-          jobs: iagoraJobs.length,
-          inserted: iagoraJobs.length,
-          updated: 0,
-          errors: []
+          jobs: iagoraResult.funnel.inserted,
+          inserted: iagoraResult.funnel.inserted,
+          updated: iagoraResult.funnel.updated,
+          errors: iagoraResult.errors
         };
-        console.log(`✅ iAgora: ${iagoraJobs.length} jobs processed`);
+        console.log(`✅ iAgora: ${iagoraResult.funnel.inserted} jobs processed`);
       } catch (error: any) {
         results.iagora = { success: false, error: error.message };
         console.error('❌ iAgora scrape failed:', error.message);
@@ -404,15 +407,16 @@ export async function POST(req: NextRequest) {
       try {
         console.log('🏢 Scraping SmartRecruiters...');
         const { scrapeSmartRecruiters } = await import('../../../scrapers/smartrecruiters');
-        const smartRecruitersJobs = await scrapeSmartRecruiters(runId);
+        const rawSmartRecruitersResult = await scrapeSmartRecruiters(runId);
+        const smartRecruitersResult = coerceScraperResult('smartrecruiters', rawSmartRecruitersResult);
         results.smartrecruiters = {
           success: true,
-          jobs: smartRecruitersJobs.length,
-          inserted: smartRecruitersJobs.length,
-          updated: 0,
-          errors: []
+          jobs: smartRecruitersResult.funnel.inserted,
+          inserted: smartRecruitersResult.funnel.inserted,
+          updated: smartRecruitersResult.funnel.updated,
+          errors: smartRecruitersResult.errors
         };
-        console.log(`✅ SmartRecruiters: ${smartRecruitersJobs.length} jobs processed`);
+        console.log(`✅ SmartRecruiters: ${smartRecruitersResult.funnel.inserted} jobs processed`);
       } catch (error: any) {
         results.smartrecruiters = { success: false, error: error.message };
         console.error('❌ SmartRecruiters scrape failed:', error.message);
@@ -424,15 +428,16 @@ export async function POST(req: NextRequest) {
       try {
         console.log('🚀 Scraping Wellfound...');
         const { scrapeWellfound } = await import('../../../scrapers/wellfound');
-        const wellfoundJobs = await scrapeWellfound(runId);
+        const rawWellfoundResult = await scrapeWellfound(runId);
+        const wellfoundResult = coerceScraperResult('wellfound', rawWellfoundResult);
         results.wellfound = {
           success: true,
-          jobs: wellfoundJobs.length,
-          inserted: wellfoundJobs.length,
-          updated: 0,
-          errors: []
+          jobs: wellfoundResult.funnel.inserted,
+          inserted: wellfoundResult.funnel.inserted,
+          updated: wellfoundResult.funnel.updated,
+          errors: wellfoundResult.errors
         };
-        console.log(`✅ Wellfound: ${wellfoundJobs.length} jobs processed`);
+        console.log(`✅ Wellfound: ${wellfoundResult.funnel.inserted} jobs processed`);
       } catch (error: any) {
         results.wellfound = { success: false, error: error.message };
         console.error('❌ Wellfound scrape failed:', error.message);
@@ -444,15 +449,16 @@ export async function POST(req: NextRequest) {
       try {
         console.log('🥛 Scraping Milkround...');
         const { scrapeMilkround } = await import('../../../scrapers/milkround');
-        const milkroundJobs = await scrapeMilkround(runId);
+        const rawMilkroundResult = await scrapeMilkround(runId);
+        const milkroundResult = coerceScraperResult('milkround', rawMilkroundResult);
         results.milkround = {
           success: true,
-          jobs: milkroundJobs.length,
-          inserted: milkroundJobs.length,
-          updated: 0,
-          errors: []
+          jobs: milkroundResult.funnel.inserted,
+          inserted: milkroundResult.funnel.inserted,
+          updated: milkroundResult.funnel.updated,
+          errors: milkroundResult.errors
         };
-        console.log(`✅ Milkround: ${milkroundJobs.length} jobs processed`);
+        console.log(`✅ Milkround: ${milkroundResult.funnel.inserted} jobs processed`);
       } catch (error: any) {
         results.milkround = { success: false, error: error.message };
         console.error('❌ Milkround scrape failed:', error.message);
@@ -481,48 +487,12 @@ export async function POST(req: NextRequest) {
 
 
 
-    // Scrape TU Delft - UNIVERSITY CAREER PORTAL (may require login)
-    if ((platforms.includes('tu-delft') || platforms.includes('all')) && process.env.ENABLE_UNI_SCRAPERS === 'true') {
-      try {
-        console.log('🇳🇱 Scraping TU Delft...');
-        const { scrapeTUDelft } = await import('../../../scrapers/tu-delft');
-        const tuDelftJobs = await scrapeTUDelft(runId);
-        results['tu-delft'] = {
-          success: true,
-          jobs: tuDelftJobs.length,
-          inserted: tuDelftJobs.length,
-          updated: 0,
-          errors: []
-        };
-        console.log(`✅ TU Delft: ${tuDelftJobs.length} jobs processed`);
-      } catch (error: any) {
-        results['tu-delft'] = { success: false, error: error.message };
-        console.error('❌ TU Delft scrape failed:', error.message);
-      }
-    } else if (platforms.includes('tu-delft')) {
-      results['tu-delft'] = { success: false, error: 'Disabled: requires login. Set ENABLE_UNI_SCRAPERS=true to enable if you have access.' };
+    // University scrapers disabled - modules not present
+    if (platforms.includes('tu-delft')) {
+      results['tu-delft'] = { success: false, error: 'Disabled: TU Delft scraper not available' };
     }
-
-    // Scrape ETH Zurich - UNIVERSITY CAREER PORTAL (may require login)
-    if ((platforms.includes('eth-zurich') || platforms.includes('all')) && process.env.ENABLE_UNI_SCRAPERS === 'true') {
-      try {
-        console.log('🇨🇭 Scraping ETH Zurich...');
-        const { scrapeETHZurich } = await import('../../../scrapers/eth-zurich');
-        const ethJobs = await scrapeETHZurich(runId);
-        results['eth-zurich'] = {
-          success: true,
-          jobs: ethJobs.length,
-          inserted: ethJobs.length,
-          updated: 0,
-          errors: []
-        };
-        console.log(`✅ ETH Zurich: ${ethJobs.length} jobs processed`);
-      } catch (error: any) {
-        results['eth-zurich'] = { success: false, error: error.message };
-        console.error('❌ ETH Zurich scrape failed:', error.message);
-      }
-    } else if (platforms.includes('eth-zurich')) {
-      results['eth-zurich'] = { success: false, error: 'Disabled: requires login. Set ENABLE_UNI_SCRAPERS=true to enable if you have access.' };
+    if (platforms.includes('eth-zurich')) {
+      results['eth-zurich'] = { success: false, error: 'Disabled: ETH Zurich scraper not available' };
     }
 
     console.log(`✅ Scrape run ${runId} completed`);

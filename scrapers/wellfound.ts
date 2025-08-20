@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
 import { PerformanceMonitor } from '../Utils/performanceMonitor';
-import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
+import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -452,37 +452,29 @@ async function processJobElement(page: any, element: any, city: string, runId: s
     // Extract posting date
     const dateResult = extractPostingDate(description, 'wellfound', jobUrl);
     
-    // Check early-career eligibility before creating job
-    const eligibility = isEarlyCareerEligible(title, description);
-    
-    // Only create job if eligible (permissive filter)
-    if (!eligibility.eligible) {
-      return null;
-    }
-    
-    const job: Job = {
-      title: title,
-      company: company,
-      location: location,
-      job_url: jobUrl,
-      description: description,
-      experience_required: analysis.experienceLevel,
-      work_environment: analysis.workEnv,
-      language_requirements: analysis.languages.join(', '),
+    // Use enhanced robust job creation with Job Ingestion Contract
+    const jobResult = createRobustJob({
+      title,
+      company,
+      location,
+      jobUrl,
+      companyUrl: '',
+      description,
+      department: 'General',
+      postedAt: dateResult.success ? dateResult.date! : new Date().toISOString(),
+      runId,
       source: 'wellfound',
-      categories: ['Startup Jobs'],
-      company_profile_url: '',
-      scrape_timestamp: new Date().toISOString(),
-      original_posted_date: dateResult.success ? dateResult.date! : new Date().toISOString(),
-      posted_at: dateResult.success ? dateResult.date! : new Date().toISOString(),
-      last_seen_at: new Date().toISOString(),
-      is_active: true,
-      job_hash: jobHash,
-      scraper_run_id: runId,
-      created_at: new Date().toISOString()
-    };
-    
-    return job;
+      isRemote: analysis.workEnv === 'remote'
+    });
+
+    // Record telemetry and debug filtering
+    if (jobResult.job) {
+      console.log(`✅ Job accepted: "${title}"`);
+    } else {
+      console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
+    }
+
+    return jobResult.job;
     
   } catch (error) {
     console.error('Error processing job element:', error);
@@ -510,37 +502,29 @@ function processJobElementCheerio($: cheerio.CheerioAPI, $el: cheerio.Cheerio<an
     // Create job hash
     const jobHash = crypto.createHash('md5').update(`${title}-${company}-${jobUrl}`).digest('hex');
     
-    // Check early-career eligibility before creating job
-    const eligibility = isEarlyCareerEligible(title, description);
-    
-    // Only create job if eligible (permissive filter)
-    if (!eligibility.eligible) {
-      return null;
-    }
-    
-    const job: Job = {
-      title: title,
-      company: company,
-      location: location,
-      job_url: jobUrl.startsWith('http') ? jobUrl : `https://wellfound.com${jobUrl}`,
-      description: description,
-      experience_required: analysis.experienceLevel,
-      work_environment: analysis.workEnv,
-      language_requirements: analysis.languages.join(', '),
+    // Use enhanced robust job creation with Job Ingestion Contract
+    const jobResult = createRobustJob({
+      title,
+      company,
+      location,
+      jobUrl: jobUrl.startsWith('http') ? jobUrl : `https://wellfound.com${jobUrl}`,
+      companyUrl: '',
+      description,
+      department: 'General',
+      postedAt: new Date().toISOString(),
+      runId,
       source: 'wellfound',
-      categories: ['Startup Jobs'],
-      company_profile_url: '',
-      scrape_timestamp: new Date().toISOString(),
-      original_posted_date: new Date().toISOString(),
-      posted_at: new Date().toISOString(),
-      last_seen_at: new Date().toISOString(),
-      is_active: true,
-      job_hash: jobHash,
-      scraper_run_id: runId,
-      created_at: new Date().toISOString()
-    };
-    
-    return job;
+      isRemote: analysis.workEnv === 'remote'
+    });
+
+    // Record telemetry and debug filtering
+    if (jobResult.job) {
+      console.log(`✅ Job accepted: "${title}"`);
+    } else {
+      console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
+    }
+
+    return jobResult.job;
     
   } catch (error) {
     console.error('Error processing job element with cheerio:', error);
