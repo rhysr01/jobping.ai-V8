@@ -81,7 +81,7 @@ export async function backfillCareerPaths(batchSize: number = 100): Promise<Back
         
         // Create new categories with career path
         const newCategories = createJobCategories(careerPath, 
-          job.categories ? job.categories.split('|').filter(tag => !tag.startsWith('career:')) : []
+          job.categories ? job.categories.split('|').filter((tag: string) => !tag.startsWith('career:')) : []
         );
 
         // Update the job
