@@ -101,7 +101,13 @@ export async function POST(req: NextRequest) {
         let totalErrors: string[] = [];
         
         for (const chunk of chunks) {
-          const result = await atomicUpsertJobs(chunk);
+          // Filter out non-Job objects and cast properly
+          const validJobs = chunk.filter((job): job is Job => 
+            job && typeof job === 'object' && 
+            'job_hash' in job && 'title' in job && 'company' in job && 'location' in job
+          );
+          
+          const result = await atomicUpsertJobs(validJobs);
           totalInserted += result.inserted;
           totalUpdated += result.updated;
           totalErrors.push(...result.errors);
@@ -150,7 +156,13 @@ export async function POST(req: NextRequest) {
         let totalErrors: string[] = [];
         
         for (const chunk of chunks) {
-          const result = await atomicUpsertJobs(chunk);
+          // Filter out non-Job objects and cast properly
+          const validJobs = chunk.filter((job): job is Job => 
+            job && typeof job === 'object' && 
+            'job_hash' in job && 'title' in job && 'company' in job && 'location' in job
+          );
+          
+          const result = await atomicUpsertJobs(validJobs);
           totalInserted += result.inserted;
           totalUpdated += result.updated;
           totalErrors.push(...result.errors);

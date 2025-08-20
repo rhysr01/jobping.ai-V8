@@ -2,7 +2,8 @@
 // For existing jobs lacking career: tags, run a background pass using mapping rules
 
 import { createClient } from '@supabase/supabase-js';
-import { extractCareerPath, createJobCategories, extractCareerPathFromCategories } from '../scrapers/types';
+import { createJobCategories, extractCareerPathFromCategories } from '../scrapers/types';
+import { extractCareerPath } from './jobMatching';
 
 // Initialize Supabase client
 function getSupabaseClient() {

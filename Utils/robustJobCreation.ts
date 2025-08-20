@@ -27,7 +27,7 @@ export interface FunnelTelemetry {
 }
 
 // Scraper result normalization types
-export type ScrapeJob = Job | Record<string, any>;
+export type ScrapeJob = Job;
 
 export interface ScrapeFunnel {
   platform: string;
