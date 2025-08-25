@@ -14,6 +14,10 @@
 const axios = require('axios');
 const crypto = require('crypto');
 
+// Set test environment variables
+process.env.NODE_ENV = 'test';
+process.env.JOBPING_TEST_MODE = '1';
+
 // Configuration
 const CONFIG = {
   BASE_URL: process.env.NEXT_PUBLIC_URL || 'http://localhost:3000',
@@ -117,14 +121,45 @@ class PilotTester {
     console.log('🏥 Testing System Health...');
     
     const healthChecks = [
-      { name: 'API Endpoint', url: `${CONFIG.BASE_URL}/api/match-users?email=test@example.com` },
-      { name: 'Webhook Endpoint', url: `${CONFIG.BASE_URL}/api/webhook-tally` },
-      { name: 'Verification Endpoint', url: `${CONFIG.BASE_URL}/api/verify-email` }
+      { 
+        name: 'API Endpoint', 
+        url: `${CONFIG.BASE_URL}/api/match-users`,
+        method: 'POST',
+        data: { limit: 5 }
+      },
+      { 
+        name: 'Webhook Endpoint', 
+        url: `${CONFIG.BASE_URL}/api/webhook-tally`,
+        method: 'POST',
+        data: {
+          eventId: 'health-check',
+          eventType: 'FORM_RESPONSE',
+          createdAt: new Date().toISOString(),
+          formId: 'health-check',
+          responseId: 'health-check',
+          data: {
+            fields: [
+              { key: 'email', label: 'Email', type: 'email', value: 'health@test.com' }
+            ]
+          }
+        }
+      },
+      { 
+        name: 'Verification Endpoint', 
+        url: `${CONFIG.BASE_URL}/api/verify-email`,
+        method: 'GET'
+      }
     ];
 
     for (const check of healthChecks) {
       try {
-        const response = await axios.get(check.url, { timeout: 5000 });
+        let response;
+        if (check.method === 'POST') {
+          response = await axios.post(check.url, check.data, { timeout: 5000 });
+        } else {
+          response = await axios.get(check.url, { timeout: 5000 });
+        }
+        
         this.results.push({
           test: 'System Health',
           component: check.name,
@@ -246,23 +281,24 @@ class PilotTester {
     
     for (const user of TEST_USERS) {
       try {
-        // Use GET method with email parameter (as per the API design)
-        const response = await axios.get(
-          `${CONFIG.BASE_URL}/api/match-users?email=${encodeURIComponent(user.email)}`,
+        // Use POST method with limit parameter (as per the API design)
+        const response = await axios.post(
+          `${CONFIG.BASE_URL}/api/match-users`,
+          { limit: 5 },
           {
             headers: { 'Content-Type': 'application/json' },
             timeout: 30000
           }
         );
 
-        if (response.data.matches && Array.isArray(response.data.matches)) {
+        if (response.data.success && response.data.results) {
           this.results.push({
             test: 'AI Matching',
             component: user.email,
             status: 'PASS',
-            details: `Found ${response.data.matches.length} matches`
+            details: `Processed ${response.data.results.length} users`
           });
-          console.log(`  ✅ ${user.email}: Found ${response.data.matches.length} matches`);
+          console.log(`  ✅ ${user.email}: Processed ${response.data.results.length} users`);
         } else if (response.data.message && response.data.message.includes('No users found')) {
           this.results.push({
             test: 'AI Matching',
@@ -272,7 +308,7 @@ class PilotTester {
           });
           console.log(`  ✅ ${user.email}: No users in database (expected)`);
         } else {
-          throw new Error('No matches returned');
+          throw new Error('Unexpected response format');
         }
         
         // Add delay to avoid rate limiting

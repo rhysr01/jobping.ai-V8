@@ -267,17 +267,17 @@ export class EnhancedRateLimiter {
   ): Promise<{ allowed: boolean; remaining: number; resetTime: number; tier: string }> {
     const limits = {
       free: {
-        matching: { limit: 5, window: 15 * 60 * 1000 }, // 5 per 15 min
+        matching: { limit: 5, window: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000') }, // 5 per 15 min
         scraping: { limit: 10, window: 60 * 60 * 1000 }, // 10 per hour
         general: { limit: 50, window: 60 * 60 * 1000 }   // 50 per hour
       },
       premium: {
-        matching: { limit: 25, window: 15 * 60 * 1000 }, // 25 per 15 min
+        matching: { limit: 25, window: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000') }, // 25 per 15 min
         scraping: { limit: 50, window: 60 * 60 * 1000 }, // 50 per hour
         general: { limit: 200, window: 60 * 60 * 1000 }  // 200 per hour
       },
       enterprise: {
-        matching: { limit: 100, window: 15 * 60 * 1000 }, // 100 per 15 min
+        matching: { limit: 100, window: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000') }, // 100 per 15 min
         scraping: { limit: 200, window: 60 * 60 * 1000 }, // 200 per hour
         general: { limit: 1000, window: 60 * 60 * 1000 }  // 1000 per hour
       }

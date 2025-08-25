@@ -3,6 +3,10 @@ import { AdvancedMonitoringOracle } from './advancedMonitoring';
 import { PerformanceMonitor } from './performanceMonitor';
 import { dogstatsd } from './datadogMetrics';
 
+// Test mode detection
+const isTestMode = () =>
+  process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1';
+
 // Enhanced cache configuration
 const CACHE_CONFIG = {
   // TTL configuration
@@ -11,7 +15,7 @@ const CACHE_CONFIG = {
     MIN: 30 * 60 * 1000,     // 30 minutes
     MAX: 60 * 60 * 1000,     // 60 minutes
     TARGET: 45 * 60 * 1000,  // 45 minutes target
-    ADJUSTMENT_STEP: 15 * 60 * 1000, // 15 minutes
+    ADJUSTMENT_STEP: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes default
   },
   
   // Cache size configuration
@@ -539,6 +543,7 @@ export class EnhancedAIMatchingCache {
 
   // Get cached matches
   async getCachedMatches(userCluster: any[]): Promise<any[] | null> {
+    if (isTestMode()) return null; // force miss in tests
     const key = EnhancedAIMatchingCache.generateUserClusterKey(userCluster);
     const cached = await this.cache.get(key);
     
@@ -551,6 +556,7 @@ export class EnhancedAIMatchingCache {
 
   // Set cached matches
   async setCachedMatches(userCluster: any[], matches: any[]): Promise<void> {
+    if (isTestMode()) return; // skip cache in tests
     const key = EnhancedAIMatchingCache.generateUserClusterKey(userCluster);
     await this.cache.set(key, matches);
     

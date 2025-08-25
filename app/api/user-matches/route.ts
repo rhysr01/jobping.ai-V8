@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { productionRateLimiter } from '@/Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 
 function getSupabaseClient() {
   // Only initialize during runtime, not build time
@@ -25,7 +25,7 @@ function getSupabaseClient() {
 
 export async function GET(req: NextRequest) {
   // PRODUCTION: Rate limiting for user matches endpoint
-  const rateLimitResult = await productionRateLimiter.middleware(req, 'default', {
+  const rateLimitResult = await getProductionRateLimiter().middleware(req, 'default', {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 30 // 30 requests per minute for user queries
   });

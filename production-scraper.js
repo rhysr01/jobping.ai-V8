@@ -12,12 +12,15 @@ const path = require('path');
 const CONFIG = {
   SCRAPING_INTERVAL_MINUTES: process.env.SCRAPING_INTERVAL_MINUTES || 60,
   MAX_CONCURRENT_SCRAPERS: process.env.MAX_CONCURRENT_SCRAPERS || 3,
-  REQUEST_TIMEOUT_MS: process.env.REQUEST_TIMEOUT_MS || 20000,
+  REQUEST_TIMEOUT_MS: process.env.REQUEST_TIMEOUT_MS || 30000, // Increased timeout
   ENABLE_PROXY: process.env.ENABLE_PROXY === 'true',
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   ENABLE_MONITORING: process.env.ENABLE_MONITORING === 'true',
-  API_BASE_URL: process.env.NEXT_PUBLIC_URL || 'http://localhost:3002',
-  API_KEY: process.env.JOBPING_API_KEY || 'test-api-key'
+  API_BASE_URL: process.env.RAILWAY_STATIC_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3002',
+  API_KEY: process.env.JOBPING_API_KEY || 'test-api-key',
+  // Railway-specific settings
+  IS_RAILWAY: process.env.RAILWAY_ENVIRONMENT === 'production',
+  DISABLE_PUPPETEER: process.env.DISABLE_PUPPETEER === 'true' || process.env.RAILWAY_ENVIRONMENT === 'production'
 };
 
 // Logging system
@@ -149,7 +152,8 @@ class ProductionScraperOrchestrator {
     
     try {
       const response = await axios.post(`${CONFIG.API_BASE_URL}/api/scrape`, {
-        platforms: ['reliable']
+        platforms: ['all'],
+        companies: []
       }, {
         headers: {
           'Content-Type': 'application/json',

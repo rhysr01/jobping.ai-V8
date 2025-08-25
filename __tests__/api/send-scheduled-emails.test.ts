@@ -19,8 +19,21 @@ jest.mock('@/Utils/jobMatching', () => ({
   ])),
   generateRobustFallbackMatches: jest.fn(() => [
     {
-      job_index: 2,
-      job_hash: 'hash2',
+      job: {
+        id: 2,
+        job_hash: 'hash2',
+        title: 'Data Analyst',
+        company: 'Tech Corp',
+        location: 'Barcelona, Spain',
+        job_url: 'https://example.com/job2',
+        description: 'Data analysis role for recent graduates...',
+        created_at: new Date().toISOString(),
+        is_sent: false,
+        status: 'active',
+        freshness_tier: 'ultra_fresh',
+        original_posted_date: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+        last_seen_at: new Date().toISOString()
+      },
       match_score: 6,
       match_reason: 'Fallback match',
       match_quality: 'fair',
@@ -47,6 +60,10 @@ describe('/api/send-scheduled-emails', () => {
           email_verified: true,
           subscription_active: true,
           created_at: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(), // 72 hours ago
+          last_email_sent: new Date(Date.now() - 168 * 60 * 60 * 1000).toISOString(), // 7 days ago (eligible for free tier)
+          email_count: 2,
+          onboarding_complete: true,
+          email_phase: 'regular',
           target_cities: 'madrid|barcelona',
           languages_spoken: 'English,Spanish',
           company_types: 'startup,tech',

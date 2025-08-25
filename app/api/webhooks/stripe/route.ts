@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { constructWebhookEvent } from '@/Utils/stripe';
-import { productionRateLimiter } from '@/Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
@@ -27,7 +27,7 @@ function getSupabaseClient() {
 
 export async function POST(req: NextRequest) {
   // PRODUCTION: Rate limiting for Stripe webhooks (high limit, but still protected)
-  const rateLimitResult = await productionRateLimiter.middleware(req, 'webhooks-stripe');
+  const rateLimitResult = await getProductionRateLimiter().middleware(req, 'webhooks-stripe');
   if (rateLimitResult) {
     return rateLimitResult;
   }

@@ -47,16 +47,16 @@ export default function Features() {
   ];
 
   return (
-    <section id="features" className="py-20 px-6 bg-[#0B0B0F]">
+    <section id="features" className="py-24 md:py-32 px-6 bg-[#0B0B0F]">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-20">
           <motion.h2
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-[#F8F9FA] font-bold text-4xl lg:text-5xl mb-6 tracking-tight"
+            className="text-[#F8F9FA] font-bold text-4xl lg:text-5xl mb-8 tracking-tight"
           >
             Why JobPing Works
           </motion.h2>
@@ -72,7 +72,7 @@ export default function Features() {
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {features.map((feature, index) => (
             <motion.div
               key={index}
@@ -80,20 +80,20 @@ export default function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="card group cursor-pointer"
+              className="text-center"
             >
-              <div className="mb-6">
-                <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-[#374151] to-[#4B5563] rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-200">
-                  <feature.icon className="w-7 h-7 text-white" />
+              <div className="mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/5 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 border border-white/10">
+                  <feature.icon className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-[#F8F9FA] font-semibold text-xl mb-3 leading-tight">
+                <h3 className="text-[#F8F9FA] font-semibold text-2xl mb-4 leading-tight">
                   {feature.title}
                 </h3>
-                <p className="text-[#9CA3AF] leading-relaxed mb-4">
+                <p className="text-[#9CA3AF] leading-relaxed mb-6 text-lg">
                   {feature.description}
                 </p>
-                <div className="bg-[#0B0B0F]/50 rounded-lg px-3 py-2 inline-block">
-                  <span className="text-[#10B981] text-sm font-medium">
+                <div className="bg-white/5 rounded-xl px-4 py-3 inline-block border border-white/10">
+                  <span className="text-[#10B981] text-base font-medium">
                     ✓ {feature.highlight}
                   </span>
                 </div>

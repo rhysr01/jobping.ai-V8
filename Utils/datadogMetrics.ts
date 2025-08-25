@@ -22,7 +22,7 @@ function getDogstatsd(): StatsD {
     }
     isInitialized = true;
   }
-  return dogstatsd;
+  return dogstatsd!;
 }
 
 export { getDogstatsd as dogstatsd };

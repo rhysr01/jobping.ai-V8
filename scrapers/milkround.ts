@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { Job } from './types';
 import { extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate, atomicUpsertJobs } from '../Utils/jobMatching';
 import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
-import { productionRateLimiter } from '../Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '../Utils/productionRateLimiter';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -67,10 +67,10 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
   const telemetry = new FunnelTelemetryTracker();
 
   for (let page = 1; page <= pageLimit; page++) {
-    if (productionRateLimiter.shouldThrottleScraper('milkround')) {
+    if (getProductionRateLimiter().shouldThrottleScraper('milkround')) {
       await sleep(15000);
     }
-    const delay = await productionRateLimiter.getScraperDelay('milkround');
+    const delay = await getProductionRateLimiter().getScraperDelay('milkround');
     await sleep(delay);
     // Enterprise-level URL strategies with circuit breaker
     const urlStrategies = [

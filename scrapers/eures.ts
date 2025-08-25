@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { Job } from './types';
 import { extractPostingDate, atomicUpsertJobs } from '../Utils/jobMatching';
 import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
-import { productionRateLimiter } from '../Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '../Utils/productionRateLimiter';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -115,10 +115,10 @@ export async function scrapeEures(runId: string, opts?: { pageLimit?: number }):
 async function scrapeEuresHTML(runId: string, pageLimit: number): Promise<Job[]> {
   const jobs: Job[] = [];
   for (let page = 1; page <= pageLimit; page++) {
-    if (productionRateLimiter.shouldThrottleScraper('eures')) {
+    if (getProductionRateLimiter().shouldThrottleScraper('eures')) {
       await sleep(15000);
     }
-    const delay = await productionRateLimiter.getScraperDelay('eures');
+    const delay = await getProductionRateLimiter().getScraperDelay('eures');
     await sleep(delay);
     // Enterprise-level URL strategies with EU-specific targeting
     const urlStrategies = [
@@ -278,7 +278,9 @@ async function scrapeEuresHTML(runId: string, pageLimit: number): Promise<Job[]>
     });
     
     const testJob = testJobResult.job;
-    jobs.push(testJob);
+    if (testJob) {
+      jobs.push(testJob);
+    }
   }
 
   // Upsert jobs to database with enhanced error handling

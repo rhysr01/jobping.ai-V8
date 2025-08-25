@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createCheckoutSession, STRIPE_CONFIG } from '@/Utils/stripe';
-import { productionRateLimiter } from '@/Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import { createClient } from '@supabase/supabase-js';
 
 let _supabaseClient: any = null;
@@ -33,7 +33,7 @@ function getSupabaseClient() {
 
 export async function POST(req: NextRequest) {
   // PRODUCTION: Rate limiting for payment checkout (prevent abuse)
-  const rateLimitResult = await productionRateLimiter.middleware(req, 'create-checkout-session');
+  const rateLimitResult = await getProductionRateLimiter().middleware(req, 'create-checkout-session');
   if (rateLimitResult) {
     return rateLimitResult;
   }

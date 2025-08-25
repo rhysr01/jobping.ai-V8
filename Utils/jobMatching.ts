@@ -274,15 +274,21 @@ export interface MatchResult {
 // NEW: AI MATCHING CACHE SYSTEM
 // ================================
 
-// Simple LRU cache implementation (no external dependencies)
+// Fixed LRU cache implementation with proper cleanup
 class LRUCache<K, V> {
   private cache = new Map<K, { value: V; timestamp: number }>();
   private maxSize: number;
   private ttl: number;
+  private sweepInterval: NodeJS.Timeout;
 
   constructor(maxSize: number = 5000, ttl: number = 1000 * 60 * 30) { // 30 minutes default
     this.maxSize = maxSize;
     this.ttl = ttl;
+    
+    // Periodic cleanup every 5 minutes
+    this.sweepInterval = setInterval(() => {
+      this.sweep();
+    }, 5 * 60 * 1000);
   }
 
   get(key: K): V | null {
@@ -313,12 +319,28 @@ class LRUCache<K, V> {
     this.cache.set(key, { value, timestamp: Date.now() });
   }
 
+  sweep(): void {
+    const now = Date.now();
+    for (const [key, item] of this.cache) {
+      if (now - item.timestamp > this.ttl) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
   clear(): void {
     this.cache.clear();
   }
 
   size(): number {
     return this.cache.size;
+  }
+
+  destroy(): void {
+    if (this.sweepInterval) {
+      clearInterval(this.sweepInterval);
+    }
+    this.cache.clear();
   }
 }
 
@@ -342,6 +364,9 @@ export class AIMatchingCache {
   }
 
   static async getCachedMatches(userCluster: any[]): Promise<any[] | null> {
+    // Skip Redis wait in tests
+    if (isTestOrPerfMode()) return null;
+    
     const key = this.generateUserClusterKey(userCluster);
     const cached = this.cache.get(key);
     if (cached) {
@@ -357,8 +382,8 @@ export class AIMatchingCache {
   }
 
   static clearCache(): void {
-    this.cache.clear();
-    console.log('🧹 AI matching cache cleared');
+    this.cache.destroy();
+    console.log('🧹 AI matching cache cleared and destroyed');
   }
 }
 
@@ -2308,7 +2333,7 @@ export async function atomicUpsertJobs(jobs: Job[]): Promise<JobUpsertResult> {
   }
 
   try {
-    // Prepare jobs with calculated fields
+    // Prepare jobs with calculated fields  
     const preparedJobs = jobs.map(job => {
       // Ensure all required fields are present
       const preparedJob = {
@@ -2391,7 +2416,7 @@ export async function atomicUpsertJobs(jobs: Job[]): Promise<JobUpsertResult> {
       });
 
       return preparedJob;
-    });
+    }).filter(job => job !== null);
 
     // Perform atomic upsert with proper conflict resolution
     const { data, error } = await supabase
@@ -2430,7 +2455,7 @@ export async function atomicUpsertJobs(jobs: Job[]): Promise<JobUpsertResult> {
     result.inserted = Math.floor(preparedJobs.length * 0.8); // Assume 80% are inserts
     result.updated = preparedJobs.length - result.inserted;
     result.success = true;
-    result.jobs = preparedJobs.filter((job): job is Job => job !== null);
+    result.jobs = preparedJobs;
 
     console.log(`✅ Atomic upsert completed: ${preparedJobs.length} jobs processed (${result.inserted} estimated inserted, ${result.updated} estimated updated)`);
     return result;
@@ -2870,4 +2895,13 @@ export function extractStartDate(description: string): string {
   }
   
   return 'TBD';
+}
+
+// Test/Performance mode detection
+export const isTestOrPerfMode = () =>
+  process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1';
+
+// Timeout utility for AI calls
+export function timeout<T>(ms: number, label='timeout'): Promise<T> {
+  return new Promise((_r, rej) => setTimeout(() => rej(new Error(label)), ms));
 }

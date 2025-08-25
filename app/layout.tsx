@@ -12,28 +12,31 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://jobping.ai'),
-  title: 'JobPingAI - AI-powered job matching for students',
+  alternates: {
+    canonical: '/',
+  },
+  title: 'JobPing - AI-powered job matching for students',
         description: 'AI-curated job opportunities delivered every 48 hours to ambitious students and graduates. Stop scrolling job boards, start landing interviews.',
   keywords: ['jobs', 'students', 'graduates', 'AI', 'career', 'recruitment', 'internships', 'job matching'],
-  authors: [{ name: 'JobPingAI Team' }],
-  creator: 'JobPingAI',
-  publisher: 'JobPingAI',
+  authors: [{ name: 'JobPing Team' }],
+  creator: 'JobPing',
+  publisher: 'JobPing',
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
   openGraph: {
-    title: 'JobPingAI - AI-powered job matching for students',
+    title: 'JobPing - AI-powered job matching for students',
     description: 'AI-curated job opportunities delivered every 48 hours to ambitious students and graduates. Stop scrolling job boards, start landing interviews.',
     url: 'https://www.jobping.ai',
-    siteName: 'JobPingAI',
+    siteName: 'JobPing',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'JobPingAI - Smart Job Discovery Platform',
+        alt: 'JobPing - Smart Job Discovery Platform',
       },
     ],
     locale: 'en_US',
@@ -41,7 +44,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'JobPingAI - AI-powered job matching for students',
+    title: 'JobPing - AI-powered job matching for students',
     description: 'AI-curated job opportunities delivered every 48 hours to ambitious students and graduates.',
     images: ['/og-image.png'],
   },
@@ -77,6 +80,25 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="theme-color" content="#0B0B0F" />
         <meta name="color-scheme" content="dark" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "JobPing",
+              "description": "AI-powered job matching for students and graduates",
+              "url": "https://jobping.ai",
+              "applicationCategory": "BusinessApplication",
+              "operatingSystem": "Web",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "EUR"
+              }
+            })
+          }}
+        />
       </head>
       <body className="bg-[#0B0B0F] text-white overflow-x-hidden font-inter selection:bg-white selection:text-black">
         {children}

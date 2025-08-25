@@ -224,11 +224,11 @@ export class EnhancedRateLimiter {
   private getLimitsForTier(tier: string, endpoint: string) {
     const tierLimits = {
       free: {
-        matching: { maxRequests: 3, windowMs: 15 * 60 * 1000 }, // 3 requests per 15 minutes
+        matching: { maxRequests: 3, windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000') }, // 3 requests per 15 minutes
         default: { maxRequests: 10, windowMs: 60 * 1000 } // 10 requests per minute
       },
       premium: {
-        matching: { maxRequests: 10, windowMs: 15 * 60 * 1000 }, // 10 requests per 15 minutes
+        matching: { maxRequests: 10, windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000') }, // 10 requests per 15 minutes
         default: { maxRequests: 50, windowMs: 60 * 1000 } // 50 requests per minute
       }
     };

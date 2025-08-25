@@ -101,6 +101,9 @@ export function JobCard({ index }: JobCardProps) {
             <div className="w-8 h-8 bg-[#8AB4F8] rounded-full flex items-center justify-center ml-2">
               <span className="text-[#1F1F1F] font-medium text-sm">U</span>
             </div>
+            <span className="ml-2 rounded-full border border-[#2D2D30] px-2 py-0.5 text-[11px] text-[#9AA0A6]">
+              Sample preview
+            </span>
           </div>
         </div>
 

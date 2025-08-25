@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { Job } from './types';
 import { extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate, atomicUpsertJobs } from '../Utils/jobMatching';
 import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
-import { productionRateLimiter } from '../Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '../Utils/productionRateLimiter';
 
 // Enhanced Puppeteer scraper ready for future use (currently disabled due to Next.js compilation issues)
 // const JobTeaserScraperEnhanced = require('./jobteaser-puppeteer');
@@ -93,10 +93,10 @@ export async function scrapeJobTeaser(runId: string, opts?: { pageLimit?: number
   const telemetry = new FunnelTelemetryTracker();
   
   // Platform-specific throttling
-  if (productionRateLimiter.shouldThrottleScraper('jobteaser')) {
+  if (getProductionRateLimiter().shouldThrottleScraper('jobteaser')) {
     await sleep(15000);
   }
-  const delay = await productionRateLimiter.getScraperDelay('jobteaser');
+  const delay = await getProductionRateLimiter().getScraperDelay('jobteaser');
   await sleep(delay);
 
   // Use fallback method for now (enhanced Puppeteer scraper ready for future use)
@@ -120,7 +120,7 @@ export async function scrapeJobTeaser(runId: string, opts?: { pageLimit?: number
       location: 'Paris, France',
       job_url: 'https://www.jobteaser.com/test-job',
       description: 'Test graduate position for software engineering. This is a test job created when the scraper is blocked.',
-      categories: 'entry-level|technology',
+      categories: ['entry-level', 'technology'],
       experience_required: 'entry-level',
       work_environment: 'hybrid',
       language_requirements: ['English', 'French'],

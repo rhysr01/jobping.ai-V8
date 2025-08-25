@@ -8,7 +8,7 @@ interface MockResponse<T = any> {
 
 interface FilterBuilder {
   select(columns?: string): FilterBuilder;
-  eq(column: string, value: any): FilterBuilder;
+  eq(column: string, value: any): FilterBuilder | Promise<MockResponse>;
   gte(column: string, value: any): FilterBuilder;
   lte(column: string, value: any): FilterBuilder;
   lt(column: string, value: any): FilterBuilder;
@@ -19,7 +19,7 @@ interface FilterBuilder {
   single(): Promise<MockResponse>;
   upsert(data: any): Promise<MockResponse>;
   insert(data: any): Promise<MockResponse>;
-  update(data: any): Promise<MockResponse>;
+  update(data: any): FilterBuilder;
   delete(): Promise<MockResponse>;
 }
 
@@ -53,6 +53,10 @@ if (!global.__SB_MOCK__) {
         email_verified: true,
         subscription_active: true,
         created_at: new Date(Date.now() - 49 * 60 * 60 * 1000).toISOString(),
+        last_email_sent: new Date(Date.now() - 168 * 60 * 60 * 1000).toISOString(), // 7 days ago
+        email_count: 2,
+        onboarding_complete: true,
+        email_phase: 'regular',
         target_cities: 'madrid|barcelona',
         languages_spoken: 'English,Spanish',
         company_types: 'startup,tech',
@@ -122,8 +126,14 @@ class MockFilterBuilder implements FilterBuilder {
     return this;
   }
 
-  eq(column: string, value: any): FilterBuilder {
+  eq(column: string, value: any): FilterBuilder | Promise<MockResponse> {
     this.filters.push({ type: 'eq', column, value });
+    
+    // If this is after an update, execute immediately
+    if ((this as any).updateData) {
+      return this.execute() as Promise<MockResponse>;
+    }
+    
     return this;
   }
 
@@ -175,8 +185,10 @@ class MockFilterBuilder implements FilterBuilder {
     return this.executeInsert(data);
   }
 
-  update(data: any): Promise<MockResponse> {
-    return this.executeUpdate(data);
+  update(data: any): FilterBuilder {
+    // Store update data for when the query is actually executed
+    (this as any).updateData = data;
+    return this;
   }
 
   delete(): Promise<MockResponse> {
@@ -186,6 +198,11 @@ class MockFilterBuilder implements FilterBuilder {
   private async execute(): Promise<MockResponse> {
     const tableData = global.__SB_MOCK__[this.table] || [];
     let filteredData = [...tableData];
+
+    // Check if this is an update operation
+    if ((this as any).updateData) {
+      return this.executeUpdate((this as any).updateData);
+    }
 
     // Debug logging in test mode
     if (process.env.NODE_ENV === 'test') {

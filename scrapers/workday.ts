@@ -4,7 +4,7 @@ import * as crypto from 'crypto';
 import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
 import { createJobCategories } from './types';
-import { productionRateLimiter } from '../Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '../Utils/productionRateLimiter';
 import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
 import { RobotsCompliance, RespectfulRateLimiter, JOBPING_USER_AGENT } from '../Utils/robotsCompliance';
 
@@ -107,7 +107,7 @@ export async function scrapeWorkday(company: {
     // Rate limiting is handled by getScraperDelay below
 
     // Intelligent platform-specific rate limiting (Workday is most aggressive)
-    const delay = await productionRateLimiter.getScraperDelay('workday');
+    const delay = await getProductionRateLimiter().getScraperDelay('workday');
     console.log(`⏱️ Workday: Waiting ${delay}ms before scraping ${company.name}`);
     await sleep(delay);
 
@@ -147,7 +147,7 @@ async function scrapeWorkdayJSON(company: any, runId: string, userAgent: string,
     // Check for blocks/rate limits (simplified)
     if (response.status === 429 || response.status === 403) {
       console.warn(`🚨 Block detected for Workday ${company.name}! Status: ${response.status}`);
-      await productionRateLimiter.getScraperDelay('workday', true);
+              await getProductionRateLimiter().getScraperDelay('workday', true);
       throw new Error('Rate limit detected, will retry with throttling');
     }
 

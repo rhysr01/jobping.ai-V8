@@ -1,0 +1,279 @@
+
+> jobping@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.4.3
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.2.29:3000
+   - Environments: .env.local, .env
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+ ✓ Starting...
+ ⚠ Invalid next.config.ts options detected: 
+ ⚠     Unrecognized key(s) in object: 'swcMinify'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ✓ Ready in 2.5s
+ ✓ Compiled /middleware in 179ms (108 modules)
+ ○ Compiling /api/match-users ...
+ ✓ Compiled /api/match-users in 1168ms (1070 modules)
+✅ Atomic rate limit Lua script loaded successfully
+✅ Redis connected for production rate limiter
+Processing match-users request from IP: ::1
+Database schema validation passed
+🔧 Scaling recommendations detected: [
+  {
+    type: 'cache_optimization',
+    priority: 'medium',
+    message: 'Cache hit rate low (0%), consider tuning clustering',
+    action: 'adjust_clustering_algorithm',
+    impact: 'medium',
+    estimatedSavings: '20-40% cost reduction'
+  }
+]
+{"evt":"perf","step":"fetch_users","ms":965}
+🔍 About to query users table...
+🔍 Users query result: { data: 1, error: null }
+Found 1 active users to process
+👥 User Segmentation Analysis:
+        High Engagement: 3
+        Premium Candidates: 5
+        At Risk: 8
+        New Graduates: 12
+        Active Job Seekers: 3
+        Passive Candidates: 0
+        Total Users: 12
+      
+👥 User segmentation completed: {
+  highEngagement: { count: 3, percentage: 10 },
+  premiumCandidates: { count: 5, percentage: 16 },
+  atRisk: { count: 8, percentage: 26 },
+  newGraduates: { count: 12, percentage: 39 },
+  activeJobSeekers: { count: 3, percentage: 10 },
+  passiveCandidates: { count: 0, percentage: 0 }
+}
+{"evt":"perf","step":"fetch_jobs","ms":1325}
+Found 1000 active jobs from past 30 days in 657ms
+Global job freshness distribution: { ultra_fresh: 1000 }
+Processing matches for test-api@jobping.ai (tier: free)
+📊 User analysis for test-api@jobping.ai: {
+  engagementScore: 70,
+  segments: {
+    highEngagement: false,
+    premiumCandidate: true,
+    atRisk: true,
+    newGraduate: true,
+    activeJobSeeker: false,
+    passiveCandidate: false
+  },
+  recommendations: 3
+}
+Pre-filtered from 1000 to 13 jobs for user test-api@jobping.ai
+{"evt":"perf","step":"distribute","ms":2179}
+Distributing jobs for free user test-api@jobping.ai. Total jobs: 13
+Job breakdown for test-api@jobping.ai - Ultra Fresh: 13, Fresh: 0, Comprehensive: 0
+Selected 6 jobs for test-api@jobping.ai (free tier) in 0ms
+{"evt":"perf","step":"ai_or_rules","ms":2179}
+🤖 Starting enhanced AI matching for 1 users with 6 jobs
+👥 Created 1 clusters from 1 users
+(node:25629) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+⚠️ ai_timeout -> falling back to rules
+🧠 Using robust fallback for test-api@jobping.ai
+✅ Generated 0 robust fallback matches (0 confident, 0 promising)
+🧠 Using robust fallback for test-api@jobping.ai
+✅ Generated 0 robust fallback matches (0 confident, 0 promising)
+{"evt":"perf","step":"persist","ms":4183}
+Logged fallback session for test-api@jobping.ai
+✅ Atomic rate limit Lua script loaded successfully
+✅ Enhanced rate limiter Redis connected
+🚀 Enhanced rate limiter Redis ready
+📧 Sending daily report to admin...
+📊 Daily Report Summary: {
+  timestamp: '2025-08-20T15:00:45.219Z',
+  health: 'degraded',
+  aiCalls: 1,
+  estimatedCost: '$0.0040',
+  cacheHitRate: 0,
+  recommendations: 1
+}
+📊 Daily performance report generated
+
+📊 Performance Report:
+==================================================
+  rate_limit_check:
+    Count: 1 samples
+    Average: 0.00ms
+    Min: 0ms, Max: 0ms
+    Median: 0ms, P95: 0ms
+
+  user_fetch:
+    Count: 1 samples
+    Average: 226.00ms
+    Min: 226ms, Max: 226ms
+    Median: 226ms, P95: 226ms
+
+  user_segmentation:
+    Count: 1 samples
+    Average: 135.00ms
+    Min: 135ms, Max: 135ms
+    Median: 135ms, P95: 135ms
+
+  job_fetch:
+    Count: 1 samples
+    Average: 657.00ms
+    Min: 657ms, Max: 657ms
+    Median: 657ms, P95: 657ms
+
+  user_analysis:
+    Count: 1 samples
+    Average: 196.00ms
+    Min: 196ms, Max: 196ms
+    Median: 196ms, P95: 196ms
+
+  job_prefilter:
+    Count: 1 samples
+    Average: 0.00ms
+    Min: 0ms, Max: 0ms
+    Median: 0ms, P95: 0ms
+
+  tier_distribution:
+    Count: 1 samples
+    Average: 0.00ms
+    Min: 0ms, Max: 0ms
+    Median: 0ms, P95: 0ms
+
+  ai_matching:
+    Count: 1 samples
+    Average: 2004.00ms
+    Min: 2004ms, Max: 2004ms
+    Median: 2004ms, P95: 2004ms
+
+  monitoring_report:
+    Count: 1 samples
+    Average: 1673.00ms
+    Min: 1673ms, Max: 1673ms
+    Median: 1673ms, P95: 1673ms
+
+{"evt":"perf","step":"done","ms":6223}
+ POST /api/match-users 200 in 7603ms
+Failed to parse AI response: SyntaxError: Unexpected token 'G', "Given the "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at parseAndValidateMatches (Utils/jobMatching.ts:1668:25)
+    at callOpenAIForCluster (app/api/match-users/route.ts:241:35)
+  1666 |       .trim();
+  1667 |     
+> 1668 |     const matches = JSON.parse(cleanResponse);
+       |                         ^
+  1669 |     
+  1670 |     if (!Array.isArray(matches)) {
+  1671 |       throw new Error('Response is not an array');
+Raw response: Given the user's profile and the job listings provided, here are the personalized job matches:
+
+### 1. Associate Data Engineer at Sayari
+- **Reasoning**: The user is a recent graduate, which aligns with the Associate Data Engineer position at Sayari that requires 0-2+ years of experience. This role is remote, fitting the user's preference, and does not require visa sponsorship, which is compatible with the user being an EU citizen.
+- **Location**: Remote, compatible with the user's flexibility on location.
+- **Experience Level**: Entry-level, suitable for a recent graduate.
+- **Skills and Learning Opportunities**: Offers a chance to work with Python or JVM programming languages, SQL databases, and ETL pipelines in cloud environments, which could be beneficial for a graduate looking to start a career in data engineering.
+
+### 2. Junior Network Engineer at Kyivstar
+- **Reasoning**: This position is tailored for individuals at the beginning of their career path in network engineering, making it a good match for a recent graduate. The job is remote and seems to offer a supportive environment for learning and growth.
+- **Location**: Remote, aligning with the user's location preference.
+- **Experience Level**: Junior level, making it accessible for someone who is just starting out.
+- **Skills and Learning Opportunities**: The role involves working with network protocols and concepts, and troubleshooting network devices, providing a solid foundation for a career in network engineering.
+
+### Additional Considerations:
+- The **Customer Support Engineer I Intern** at CloudWalk could offer a unique entry point into the tech industry, especially if the user is open to customer support roles. However, it requires fluency in Portuguese, which may or may not fit the user's language skills.
+- The **Associate Director Clinical Monitoring** positions at WEP Clinical and WEP Clinical (possibly a duplicate listing with slight variations) demand significant experience in clinical research and leadership, which likely exceeds the user's current qualifications as a recent graduate.
+
+### Recommendation:
+The **Associate Data Engineer** position at Sayari and the **Junior Network Engineer** role at Kyivstar are the most suitable matches based on the user's profile. These positions offer the right level of challenge and learning opportunity for a recent graduate looking to enter the data engineering or network engineering fields, respectively. The user should consider applying to these positions first, while potentially exploring the Customer Support Engineer I Intern at CloudWalk if interested and linguistically qualified.
+OpenAI cluster matching failed: Error: Parse error: Unexpected token 'G', "Given the "... is not valid JSON
+    at parseAndValidateMatches (Utils/jobMatching.ts:1686:10)
+    at callOpenAIForCluster (app/api/match-users/route.ts:241:35)
+  1684 |     console.error('Failed to parse AI response:', error);
+  1685 |     console.error('Raw response:', response);
+> 1686 |     throw new Error(`Parse error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+       |          ^
+  1687 |   }
+  1688 | }
+  1689 |
+Processing match-users request from IP: ::1
+ POST /api/match-users 409 in 6ms
+Database schema validation passed
+🔧 Scaling recommendations detected: [
+  {
+    type: 'cache_optimization',
+    priority: 'medium',
+    message: 'Cache hit rate low (0%), consider tuning clustering',
+    action: 'adjust_clustering_algorithm',
+    impact: 'medium',
+    estimatedSavings: '20-40% cost reduction'
+  }
+]
+{"evt":"perf","step":"fetch_users","ms":1026}
+🔍 About to query users table...
+🔍 Users query result: { data: 1, error: null }
+Found 1 active users to process
+👥 User Segmentation Analysis:
+        High Engagement: 3
+        Premium Candidates: 5
+        At Risk: 8
+        New Graduates: 12
+        Active Job Seekers: 3
+        Passive Candidates: 0
+        Total Users: 12
+      
+👥 User segmentation completed: {
+  highEngagement: { count: 3, percentage: 10 },
+  premiumCandidates: { count: 5, percentage: 16 },
+  atRisk: { count: 8, percentage: 26 },
+  newGraduates: { count: 12, percentage: 39 },
+  activeJobSeekers: { count: 3, percentage: 10 },
+  passiveCandidates: { count: 0, percentage: 0 }
+}
+{"evt":"perf","step":"fetch_jobs","ms":1688}
+Found 1000 active jobs from past 30 days in 461ms
+Job 3442 already reserved
+Jobs already reserved by another process
+ POST /api/match-users 409 in 2154ms
+Processing match-users request from IP: ::1
+ POST /api/match-users 409 in 6ms
+Database schema validation passed
+🔧 Scaling recommendations detected: [
+  {
+    type: 'cache_optimization',
+    priority: 'medium',
+    message: 'Cache hit rate low (0%), consider tuning clustering',
+    action: 'adjust_clustering_algorithm',
+    impact: 'medium',
+    estimatedSavings: '20-40% cost reduction'
+  }
+]
+{"evt":"perf","step":"fetch_users","ms":909}
+🔍 About to query users table...
+🔍 Users query result: { data: 1, error: null }
+Found 1 active users to process
+👥 User Segmentation Analysis:
+        High Engagement: 3
+        Premium Candidates: 5
+        At Risk: 8
+        New Graduates: 12
+        Active Job Seekers: 3
+        Passive Candidates: 0
+        Total Users: 12
+      
+👥 User segmentation completed: {
+  highEngagement: { count: 3, percentage: 10 },
+  premiumCandidates: { count: 5, percentage: 16 },
+  atRisk: { count: 8, percentage: 26 },
+  newGraduates: { count: 12, percentage: 39 },
+  activeJobSeekers: { count: 3, percentage: 10 },
+  passiveCandidates: { count: 0, percentage: 0 }
+}
+{"evt":"perf","step":"fetch_jobs","ms":1427}
+Found 1000 active jobs from past 30 days in 775ms
+Job 3442 already reserved
+Jobs already reserved by another process
+ POST /api/match-users 409 in 2205ms
+ ✓ Compiled in 15ms

@@ -59,7 +59,25 @@ async function initializeOrchestrator() {
     serviceState.status = 'ready';
   } catch (error) {
     log(`❌ Failed to initialize orchestrator: ${error.message}`, 'red');
-    serviceState.status = 'error';
+    log(`🔧 Attempting fallback initialization...`, 'yellow');
+    
+    // Fallback: Try to initialize with basic configuration
+    try {
+      const { ProductionScraperOrchestrator } = require('./production-scraper');
+      orchestrator = new ProductionScraperOrchestrator();
+      
+      // Override configuration for Railway
+      process.env.DISABLE_PUPPETEER = 'true';
+      process.env.ENABLE_BROWSER_POOL = 'false';
+      process.env.SCRAPER_REQUESTS_PER_MINUTE = '15';
+      process.env.SCRAPER_REQUESTS_PER_HOUR = '500';
+      
+      log('✅ Production Scraper Orchestrator initialized with Railway fallback', 'green');
+      serviceState.status = 'ready';
+    } catch (fallbackError) {
+      log(`❌ Fallback initialization also failed: ${fallbackError.message}`, 'red');
+      serviceState.status = 'error';
+    }
   }
 }
 

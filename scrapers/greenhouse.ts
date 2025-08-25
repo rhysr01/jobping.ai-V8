@@ -7,7 +7,7 @@ import { createJobCategories } from './types';
 import { createRobustJob, FunnelTelemetryTracker, isEarlyCareerEligible } from '../Utils/robustJobCreation';
 import { RobotsCompliance, RespectfulRateLimiter, JOBPING_USER_AGENT } from '../Utils/robotsCompliance';
 import { PerformanceMonitor } from '../Utils/performanceMonitor';
-import { productionRateLimiter } from '../Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '../Utils/productionRateLimiter';
 
 // Use JobPing-specific user agent for ethical scraping
 const USER_AGENTS = [JOBPING_USER_AGENT];
@@ -27,6 +27,15 @@ class SimpleBrowserPool {
   private static lastHealthCheck = 0;
 
   static async getBrowser() {
+    // Check if we're in Railway environment
+    const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production';
+    const disablePuppeteer = process.env.DISABLE_PUPPETEER === 'true' || isRailway;
+    
+    if (disablePuppeteer) {
+      console.log('🚂 Railway environment detected - using axios fallback');
+      return null;
+    }
+    
     // Health check all browsers periodically
     await this.performHealthCheck();
     
@@ -260,7 +269,7 @@ export async function scrapeGreenhouse(company: {
     await RespectfulRateLimiter.waitForDomain(new URL(company.url).hostname);
 
     // Intelligent platform-specific rate limiting
-    const delay = await productionRateLimiter.getScraperDelay('greenhouse');
+    const delay = await getProductionRateLimiter().getScraperDelay('greenhouse');
     console.log(`⏱️ Greenhouse: Waiting ${delay}ms before scraping ${company.name}`);
     await sleep(delay);
 
@@ -288,7 +297,7 @@ export async function scrapeGreenhouse(company: {
       // Check for blocks/rate limits (simplified)
       if (response.status === 429 || response.status === 403) {
         console.warn(`🚨 Block detected for ${company.name}! Status: ${response.status}`);
-        await productionRateLimiter.getScraperDelay('greenhouse', true);
+        await getProductionRateLimiter().getScraperDelay('greenhouse', true);
       }
     }
 

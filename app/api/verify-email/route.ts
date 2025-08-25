@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { EmailVerificationOracle } from '@/Utils/emailVerification';
-import { productionRateLimiter } from '@/Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
+
+// Test mode helper
+const isTestMode = () => process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1';
 
 function getSupabaseClient() {
   // Only initialize during runtime, not build time
@@ -26,12 +29,15 @@ function getSupabaseClient() {
 
 export async function POST(request: NextRequest) {
   // PRODUCTION: Rate limiting for email verification (prevent abuse)
-  const rateLimitResult = await productionRateLimiter.middleware(request, 'default', {
-    windowMs: 5 * 60 * 1000, // 5 minutes
-    maxRequests: 10 // 10 verification attempts per 5 minutes
-  });
-  if (rateLimitResult) {
-    return rateLimitResult;
+  // Skip rate limiting in test mode
+  if (!isTestMode()) {
+    const rateLimitResult = await getProductionRateLimiter().middleware(request, 'default', {
+      windowMs: 5 * 60 * 1000, // 5 minutes
+      maxRequests: 10 // 10 verification attempts per 5 minutes
+    });
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
   }
 
   try {
@@ -64,6 +70,7 @@ export async function GET() {
   return NextResponse.json({ 
     message: 'Email verification endpoint active',
     method: 'POST',
-    required: { token: 'string' }
+    required: { token: 'string' },
+    testMode: isTestMode()
   });
 }

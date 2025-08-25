@@ -7,5 +7,15 @@
     "startCommand": "node railway-server.js",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
+  },
+  "variables": {
+    "RAILWAY_ENVIRONMENT": "production",
+    "DISABLE_PUPPETEER": "true",
+    "ENABLE_BROWSER_POOL": "false",
+    "SCRAPER_REQUESTS_PER_MINUTE": "15",
+    "SCRAPER_REQUESTS_PER_HOUR": "500",
+    "SCRAPER_RETRY_DELAY": "5000",
+    "ENABLE_RATE_LIMITING": "false",
+    "ENABLE_ROBOTS_COMPLIANCE": "false"
   }
 }

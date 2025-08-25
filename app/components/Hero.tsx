@@ -5,17 +5,17 @@ import { ArrowRight, Play, Shield, Clock, Mail } from 'lucide-react';
 
 export default function Hero() {
   return (
-    <section className="relative bg-[#0B0B0F] pt-20 pb-16 px-6 overflow-hidden">
+    <section className="relative bg-[#0B0B0F] pt-32 pb-24 px-6 overflow-hidden">
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-radial from-[#1F1F23]/20 via-transparent to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-radial from-[#1F1F23]/10 via-transparent to-transparent"></div>
       
-      <div className="max-w-4xl mx-auto text-center relative z-10">
+      <div className="max-w-5xl mx-auto text-center relative z-10">
         {/* Main Headline */}
         <motion.h1
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-[#F8F9FA] font-extrabold text-5xl sm:text-6xl lg:text-7xl leading-tight tracking-tight mb-6"
+          transition={{ duration: 1 }}
+          className="text-[#F8F9FA] font-extrabold text-6xl sm:text-7xl lg:text-8xl leading-tight tracking-tight mb-8"
         >
           Stop Job Hunting.
           <br />
@@ -24,10 +24,10 @@ export default function Hero() {
 
         {/* Subheadline */}
         <motion.p
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-[#9CA3AF] text-lg sm:text-xl leading-relaxed mb-10 max-w-3xl mx-auto"
+          transition={{ duration: 1, delay: 0.2 }}
+          className="text-[#9CA3AF] text-xl sm:text-2xl leading-relaxed mb-16 max-w-4xl mx-auto"
         >
           AI-powered job matching for students & graduates. 2,800+ sources scraped daily. 
           Visa-friendly roles delivered to your inbox every 48 hours.
@@ -35,27 +35,27 @@ export default function Hero() {
 
         {/* CTA Buttons */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
+          transition={{ duration: 1, delay: 0.4 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16"
         >
-          <button className="bg-white text-[#0B0B0F] px-8 py-4 rounded-xl font-semibold text-lg hover:bg-[#F8F9FA] transition-all duration-200 flex items-center gap-3 shadow-xl">
+          <button className="bg-white text-[#0B0B0F] px-10 py-5 rounded-2xl font-bold text-xl hover:bg-[#F8F9FA] transition-all duration-300 flex items-center gap-3 shadow-2xl">
             Start Getting Jobs
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="w-6 h-6" />
           </button>
-          <button className="text-[#D1D5DB] hover:text-white font-medium text-lg flex items-center gap-2 transition-colors">
-            <Play className="w-5 h-5" />
+          <a href="#how" className="text-[#D1D5DB] hover:text-white font-medium text-xl flex items-center gap-3 transition-colors">
+            <Play className="w-6 h-6" />
             See How It Works
-          </button>
+          </a>
         </motion.div>
 
         {/* Trust Indicators */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="flex flex-wrap items-center justify-center gap-6 text-[#6B7280] text-sm"
+          transition={{ duration: 1, delay: 0.6 }}
+          className="flex flex-wrap items-center justify-center gap-8 text-[#6B7280] text-base"
         >
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4" />

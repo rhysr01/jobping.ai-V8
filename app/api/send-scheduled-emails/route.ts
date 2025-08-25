@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { productionRateLimiter } from '@/Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import { sendMatchedJobsEmail } from '@/Utils/emailUtils';
 import { 
   performEnhancedAIMatching, 
@@ -53,7 +53,7 @@ function getOpenAIClient() {
 
 export async function POST(req: NextRequest) {
   // PRODUCTION: Rate limiting for scheduled emails (should only be called by automation)
-  const rateLimitResult = await productionRateLimiter.middleware(req, 'send-scheduled-emails');
+  const rateLimitResult = await getProductionRateLimiter().middleware(req, 'send-scheduled-emails');
   if (rateLimitResult) {
     return rateLimitResult;
   }
@@ -68,21 +68,17 @@ export async function POST(req: NextRequest) {
     console.log('🚀 Starting scheduled email delivery...');
     const supabase = getSupabaseClient();
 
-    // Get all active users who signed up more than 48 hours ago
-    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    // Get all active users who are eligible for scheduled emails based on tier-based timing
+    const testingMode = process.env.NODE_ENV === 'production' && process.env.JOBPING_PILOT_TESTING === '1';
+    const now = new Date();
     
-    console.log('🔍 Querying users with conditions:', {
-      email_verified: true,
-      subscription_active: true,
-      created_at_lt: fortyEightHoursAgo.toISOString()
-    });
+    console.log('🔍 Querying users for scheduled emails with tier-based timing...');
     
-    const { data: users, error: usersError } = await supabase
+    // Get all verified users with their email history and tracking fields
+    const { data: allUsers, error: usersError } = await supabase
       .from('users')
-      .select('*')
+      .select('email, email_verified, subscription_active, subscription_tier, created_at, last_email_sent, email_count, onboarding_complete, email_phase, target_cities, languages_spoken, professional_expertise, entry_level_preference')
       .eq('email_verified', true)
-      .eq('subscription_active', true)
-      .lt('created_at', fortyEightHoursAgo.toISOString())
       .order('created_at', { ascending: false })
       .limit(1000);
 
@@ -91,16 +87,74 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
     }
 
-    if (!users || users.length === 0) {
+    if (!allUsers || allUsers.length === 0) {
+      console.log('ℹ️ No users found');
+      return NextResponse.json({ 
+        success: true, 
+        message: 'No users found',
+        usersProcessed: 0 
+      }, { status: 200 });
+    }
+
+    // Filter users based on tier-based timing rules using tracking fields
+    const eligibleUsers = allUsers.filter(user => {
+      const userTier = user.subscription_tier || 'free';
+      const signupTime = new Date(user.created_at);
+      const lastEmailTime = user.last_email_sent ? new Date(user.last_email_sent) : null;
+      const timeSinceSignup = now.getTime() - signupTime.getTime();
+      const timeSinceLastEmail = lastEmailTime ? now.getTime() - lastEmailTime.getTime() : Infinity;
+      const emailPhase = user.email_phase || 'welcome';
+      const onboardingComplete = user.onboarding_complete || false;
+
+      // Testing mode: 5 minutes instead of normal intervals
+      if (testingMode) {
+        const testThreshold = 5 * 60 * 1000; // 5 minutes
+        return timeSinceLastEmail >= testThreshold;
+      }
+
+      // Phase 1: Welcome email (immediate) - handled by webhook-tally
+      // Skip if user hasn't received their welcome email yet
+      if (emailPhase === 'welcome' && !lastEmailTime) {
+        return false;
+      }
+
+      // Phase 2: 48-hour follow-up (exactly 48 hours after signup)
+      if (emailPhase === 'welcome' && timeSinceSignup >= 48 * 60 * 60 * 1000 && timeSinceSignup < 72 * 60 * 60 * 1000) {
+        // User is in the 48-72 hour window and hasn't received the follow-up email
+        return timeSinceLastEmail >= 48 * 60 * 60 * 1000;
+      }
+
+      // Phase 3: Regular distribution (tier-based) - only after onboarding is complete
+      if (onboardingComplete && emailPhase === 'regular') {
+        if (userTier === 'premium') {
+          // Premium: every 48 hours
+          return timeSinceLastEmail >= 48 * 60 * 60 * 1000;
+        } else {
+          // Free: every 7 days (168 hours)
+          return timeSinceLastEmail >= 168 * 60 * 60 * 1000;
+        }
+      }
+
+      return false;
+    });
+
+    console.log(`📧 Found ${eligibleUsers.length} eligible users out of ${allUsers.length} total users`);
+    console.log('🔍 Eligibility breakdown:', {
+      total: allUsers.length,
+      eligible: eligibleUsers.length,
+      testingMode: testingMode ? 'ENABLED' : 'DISABLED'
+    });
+
+    if (!eligibleUsers || eligibleUsers.length === 0) {
       console.log('ℹ️ No users eligible for scheduled emails');
       return NextResponse.json({ 
         success: true, 
         message: 'No users eligible for scheduled emails',
         usersProcessed: 0 
-      });
+      }, { status: 200 });
     }
 
-    console.log(`📧 Processing ${users.length} users for scheduled emails`);
+    console.log(`📧 Processing ${eligibleUsers.length} users for scheduled emails`);
 
     // Get fresh jobs from the last 7 days
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -133,7 +187,7 @@ export async function POST(req: NextRequest) {
     let errorCount = 0;
 
     // Process each user
-    for (const user of users) {
+    for (const user of eligibleUsers) {
       try {
         console.log(`🎯 Processing user: ${user.email}`);
 
@@ -141,18 +195,13 @@ export async function POST(req: NextRequest) {
         // Parse comma-separated text fields into arrays per database schema
         const userPreferences: UserPreferences = {
           email: user.email,
-          full_name: user.full_name || '',
           target_cities: normalizeStringToArray(user.target_cities),
           languages_spoken: normalizeStringToArray(user.languages_spoken),
-          company_types: normalizeStringToArray(user.company_types),
-          roles_selected: normalizeStringToArray(user.roles_selected),
+          company_types: [], // Default empty array since field not available
+          roles_selected: [], // Default empty array since field not available
           professional_expertise: user.professional_expertise || 'entry',
-          professional_experience: user.professional_expertise || 'entry', // Map to same field
-          work_authorization: user.visa_status || 'unknown',
-          start_date: user.start_date ? new Date(user.start_date).toISOString() : new Date().toISOString(),
-          target_employment_start_date: user.start_date ? new Date(user.start_date).toISOString() : new Date().toISOString(),
-          work_environment: user.work_environment || 'any',
-          career_path: user.career_path ? [user.career_path] : [], // Convert to array
+          work_environment: 'any', // Default since field not available
+          career_path: [], // Default empty array since field not available
           entry_level_preference: user.entry_level_preference || 'entry'
         };
 
@@ -166,24 +215,70 @@ export async function POST(req: NextRequest) {
         if (aiDisabled) {
           console.log(`🧠 AI disabled, using rule-based fallback for ${user.email}`);
           matchType = 'fallback';
-          matches = generateRobustFallbackMatches(jobs, userPreferences);
+          const fallbackResults = generateRobustFallbackMatches(jobs, userPreferences);
+          // Convert MatchResult[] to the format expected by sendMatchedJobsEmail
+          matches = fallbackResults.map((result, index) => ({
+            ...result.job,
+            match_score: result.match_score,
+            match_reason: result.match_reason,
+            match_quality: result.match_quality,
+            match_tags: result.match_tags
+          }));
         } else {
           try {
             matches = await performEnhancedAIMatching(jobs, userPreferences, openai);
             
             if (!matches || matches.length === 0) {
               matchType = 'fallback';
-              matches = generateRobustFallbackMatches(jobs, userPreferences);
+              const fallbackResults = generateRobustFallbackMatches(jobs, userPreferences);
+              matches = fallbackResults.map((result, index) => ({
+                ...result.job,
+                match_score: result.match_score,
+                match_reason: result.match_reason,
+                match_quality: result.match_quality,
+                match_tags: result.match_tags
+              }));
             }
           } catch (aiError) {
             console.error(`❌ AI matching failed for ${user.email}:`, aiError);
             matchType = 'ai_failed';
-            matches = generateRobustFallbackMatches(jobs, userPreferences);
+            const fallbackResults = generateRobustFallbackMatches(jobs, userPreferences);
+            matches = fallbackResults.map((result, index) => ({
+              ...result.job,
+              match_score: result.match_score,
+              match_reason: result.match_reason,
+              match_quality: result.match_quality,
+              match_tags: result.match_tags
+            }));
           }
         }
 
-        // Limit matches based on subscription tier
-        const maxMatches = (user.subscription_tier === 'premium') ? 15 : 5;
+        // Determine match limits based on user's phase and tier
+        const userTier = user.subscription_tier || 'free';
+        const signupTime = new Date(user.created_at);
+        const timeSinceSignup = now.getTime() - signupTime.getTime();
+        
+        let maxMatches: number;
+        let isOnboardingPhase = false;
+        
+        // Phase 2: 48-hour follow-up (all users get 5 matches)
+        if (timeSinceSignup >= 48 * 60 * 60 * 1000 && timeSinceSignup < 72 * 60 * 60 * 1000) {
+          maxMatches = 5;
+          isOnboardingPhase = true;
+        }
+        // Phase 3: Regular distribution (tier-based)
+        else if (timeSinceSignup >= 72 * 60 * 60 * 1000) {
+          if (userTier === 'premium') {
+            maxMatches = 15; // Premium: 15 jobs every 48 hours
+          } else {
+            maxMatches = 6; // Free: 6 jobs per week
+          }
+        }
+        // Fallback for edge cases
+        else {
+          maxMatches = 5;
+        }
+        
         matches = matches.slice(0, maxMatches);
 
         // Log match session
@@ -199,12 +294,34 @@ export async function POST(req: NextRequest) {
           await sendMatchedJobsEmail({
             to: user.email,
             jobs: matches,
-            userName: user.full_name,
-            subscriptionTier: (user.subscription_tier as 'free' | 'premium') || 'free',
+            userName: user.email.split('@')[0], // Use email prefix as name
+            subscriptionTier: userTier,
             isSignupEmail: false
           });
           
-          console.log(`✅ Email sent to ${user.email} with ${matches.length} matches`);
+          // Update tracking fields
+          const updateData: any = {
+            last_email_sent: new Date().toISOString(),
+            email_count: (user.email_count || 0) + 1
+          };
+
+          // Update email phase based on current state
+          if (isOnboardingPhase) {
+            // This is the 48-hour follow-up email
+            updateData.email_phase = 'regular';
+            updateData.onboarding_complete = true;
+          }
+          
+          const { error: updateError } = await supabase
+            .from('users')
+            .update(updateData)
+            .eq('email', user.email);
+          
+          if (updateError) {
+            console.error(`❌ Failed to update tracking fields for ${user.email}:`, updateError);
+          }
+          
+          console.log(`✅ Email sent to ${user.email} with ${matches.length} matches (${userTier} tier, ${isOnboardingPhase ? 'onboarding' : 'regular'} phase)`);
           successCount++;
         } else {
           console.log(`⚠️ No matches found for ${user.email}`);
@@ -222,12 +339,12 @@ export async function POST(req: NextRequest) {
     console.log(`📊 Scheduled email delivery completed:`);
     console.log(`   ✅ Success: ${successCount}`);
     console.log(`   ❌ Errors: ${errorCount}`);
-    console.log(`   📧 Total processed: ${users.length}`);
+    console.log(`   📧 Total processed: ${eligibleUsers.length}`);
 
     return NextResponse.json({
       success: true,
       message: 'Scheduled email delivery completed',
-      usersProcessed: users.length,
+      usersProcessed: eligibleUsers.length,
       emailsSent: successCount,
       errors: errorCount
     });

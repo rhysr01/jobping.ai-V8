@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { productionRateLimiter } from '@/Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import { createClient } from '@supabase/supabase-js';
 import { PerformanceMonitor } from '@/Utils/performanceMonitor';
 import { getScraperConfig } from '@/Utils/scraperConfig';
@@ -137,7 +137,7 @@ function getEnvironmentStatus() {
 
 export async function GET(req: NextRequest) {
   // PRODUCTION: Rate limiting for dashboard endpoint
-  const rateLimitResult = await productionRateLimiter.middleware(req, 'dashboard', {
+  const rateLimitResult = await getProductionRateLimiter().middleware(req, 'dashboard', {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 30 // 30 requests per minute for dashboard
   });

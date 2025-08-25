@@ -187,7 +187,7 @@ global.console = {
 };
 
 // Import teardown functions
-import { productionRateLimiter } from './Utils/productionRateLimiter';
+import { getProductionRateLimiter } from './Utils/productionRateLimiter';
 import { teardownDatadog } from './Utils/datadogMetrics';
 import { EnhancedAIMatchingCache } from './Utils/enhancedCache';
 
@@ -197,7 +197,7 @@ afterAll(async () => {
   
   try {
     // Teardown rate limiter
-    await productionRateLimiter.teardown();
+    await getProductionRateLimiter().teardown();
     
     // Teardown Datadog
     await teardownDatadog();

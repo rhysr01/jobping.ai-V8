@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
         // Update funnel with actual database results
         funnel.inserted = totalInserted;
         funnel.updated = totalUpdated;
-        funnel.errors.push(...totalErrors);
+        funnel.errors = totalErrors.length;
         
         results.reliable = {
           success: true,
@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
         // Update funnel with database results
         funnel.inserted = totalInserted;
         funnel.updated = totalUpdated;
-        funnel.errors.push(...totalErrors);
+        funnel.errors = totalErrors.length;
         
         results.remoteok = {
           success: true,
@@ -483,14 +483,15 @@ export async function POST(req: NextRequest) {
         console.log('🇪🇺 Scraping EURES...');
         const { scrapeEures } = await import('../../../scrapers/eures');
         const euresJobs = await scrapeEures(runId);
+        const jobCount = Array.isArray(euresJobs) ? euresJobs.length : 0;
         results.eures = {
           success: true,
-          jobs: euresJobs.length,
-          inserted: euresJobs.length,
+          jobs: jobCount,
+          inserted: jobCount,
           updated: 0,
           errors: []
         };
-        console.log(`✅ EURES: ${euresJobs.length} jobs processed`);
+        console.log(`✅ EURES: ${jobCount} jobs processed`);
       } catch (error: any) {
         results.eures = { success: false, error: error.message };
         console.error('❌ EURES scrape failed:', error.message);

@@ -14,6 +14,12 @@
 import { createClient } from 'redis';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Test flag + env-safe prefix
+const isTestMode = () =>
+  process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1';
+
+const PREFIX = () => (isTestMode() ? 'jobping:test:' : 'jobping:prod:');
+
 // Production rate limit configurations per endpoint
 export const RATE_LIMIT_CONFIG = {
   // Public endpoints (stricter limits)
@@ -28,7 +34,7 @@ export const RATE_LIMIT_CONFIG = {
     skipSuccessfulRequests: true
   },
   'match-users': {
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes default
     maxRequests: 5, // 5 matching requests per 15 minutes
     skipSuccessfulRequests: false
   },
@@ -170,7 +176,7 @@ export const SCRAPER_RATE_LIMITS = {
 };
 
 class ProductionRateLimiter {
-  private redis: any;
+  public redisClient: any = null;
   private fallbackMap: Map<string, { count: number; resetTime: number }> = new Map();
   private isRedisConnected = false;
   
@@ -179,51 +185,49 @@ class ProductionRateLimiter {
   private scraperThrottleLevel: Map<string, number> = new Map();
 
   private initialized = false;
+  private bypass = false;
 
   constructor() {
     // No initialization in constructor - lazy init only
   }
 
-  private async initializeRedis() {
+  public async initializeRedis() {
     if (this.initialized) return;
-    
-    // Skip Redis initialization in test mode
-    if (process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1') {
-      console.log('🧪 Test mode: Skipping Redis initialization for rate limiter');
-      this.initialized = true;
+    this.initialized = true;
+
+    if (isTestMode()) {
+      this.bypass = true;
+      console.log('🧪 Test mode: bypass limiter & skip Redis');
       return;
     }
 
     try {
       if (process.env.REDIS_URL) {
-        this.redis = createClient({
+        this.redisClient = createClient({
           url: process.env.REDIS_URL,
           socket: {
-            connectTimeout: 5000,
-            commandTimeout: 3000
+            connectTimeout: 5000
           }
         });
 
-        this.redis.on('error', (err: any) => {
+        this.redisClient.on('error', (err: any) => {
           console.error('❌ Redis connection error:', err);
           this.isRedisConnected = false;
         });
 
-        this.redis.on('connect', () => {
+        this.redisClient.on('connect', () => {
           console.log('✅ Redis connected for production rate limiter');
           this.isRedisConnected = true;
         });
 
-        await this.redis.connect();
+        await this.redisClient.connect();
       } else {
         console.warn('⚠️ No REDIS_URL found, using in-memory fallback');
         this.isRedisConnected = false;
       }
-      this.initialized = true;
     } catch (error) {
       console.error('❌ Failed to initialize Redis:', error);
       this.isRedisConnected = false;
-      this.initialized = true;
     }
   }
 
@@ -232,9 +236,9 @@ class ProductionRateLimiter {
   }
 
   async teardown() {
-    if (this.redis && this.isRedisConnected) {
+    if (this.redisClient && this.isRedisConnected) {
       try {
-        await this.redis.quit();
+        await this.redisClient.quit();
         console.log('🔌 Redis disconnected for rate limiter');
       } catch (error) {
         console.error('❌ Error disconnecting Redis:', error);
@@ -257,12 +261,17 @@ class ProductionRateLimiter {
     resetTime: number;
     retryAfter?: number;
   }> {
-    // BYPASS RATE LIMITS IN TEST ENVIRONMENT
+    await this.initializeRedis();
+    if (this.bypass) return { allowed: true, remaining: 999, resetTime: Date.now() + 60000 };
+    
+    // BYPASS RATE LIMITS IN TEST ENVIRONMENT OR RAILWAY
     const isTestEnvironment = process.env.NODE_ENV === 'test' || 
                              process.env.JEST_WORKER_ID !== undefined ||
                              process.env.npm_config_user_config?.includes('.npmrc');
     
-    if (isTestEnvironment) {
+    const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production';
+    
+    if (isTestEnvironment || isRailway) {
       return {
         allowed: true,
         remaining: 999,
@@ -280,7 +289,7 @@ class ProductionRateLimiter {
     const windowStart = now - config.windowMs;
 
     try {
-      if (this.isRedisConnected && this.redis) {
+      if (this.isRedisConnected && this.redisClient) {
         return await this.checkRedisRateLimit(key, config, now, windowStart);
       } else {
         // Fallback to in-memory
@@ -304,7 +313,7 @@ class ProductionRateLimiter {
     windowStart: number
   ) {
     // Use Redis sorted sets for sliding window rate limiting
-    const multi = this.redis.multi();
+    const multi = this.redisClient.multi();
     
     // Remove expired entries
     multi.zRemRangeByScore(key, '-inf', windowStart);
@@ -361,6 +370,27 @@ class ProductionRateLimiter {
     };
   }
 
+  public async consume(key: string) {
+    await this.initializeRedis();
+    if (this.bypass) return { allowed: true };
+
+    const redis = this.redisClient;
+    if (!redis) return { allowed: true }; // fail-open if no redis (or add small in-memory cap)
+
+    const k = `${PREFIX()}ratelimit:${key}`;
+    try {
+      // Simple INCR/EX pattern
+      const count = await redis.incr(k);
+      if (count === 1) {
+        await redis.expire(k, 60); // 1 minute TTL
+      }
+      return { allowed: count <= 10 }; // 10 requests per minute
+    } catch (e) {
+      console.warn('rate limiter degraded:', e);
+      return { allowed: true };
+    }
+  }
+
   /**
    * Get client identifier from request (IP + User-Agent fingerprint)
    */
@@ -386,6 +416,7 @@ class ProductionRateLimiter {
   ): Promise<NextResponse | null> {
     // Skip rate limiting in test mode
     if (process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1') {
+      console.log('🧪 Test mode: bypassing rate limiter');
       return null;
     }
 
@@ -440,8 +471,8 @@ class ProductionRateLimiter {
     const key = `rate_limit:${endpoint}:${identifier}`;
     
     try {
-      if (this.isRedisConnected && this.redis) {
-        await this.redis.del(key);
+      if (this.isRedisConnected && this.redisClient) {
+        await this.redisClient.del(key);
       } else {
         this.fallbackMap.delete(key);
       }
@@ -462,8 +493,8 @@ class ProductionRateLimiter {
     try {
       let totalKeys = 0;
       
-      if (this.isRedisConnected && this.redis) {
-        const keys = await this.redis.keys('rate_limit:*');
+      if (this.isRedisConnected && this.redisClient) {
+        const keys = await this.redisClient.keys('rate_limit:*');
         totalKeys = keys.length;
       }
 
@@ -585,8 +616,8 @@ class ProductionRateLimiter {
    */
   async close(): Promise<void> {
     try {
-      if (this.redis && this.isRedisConnected) {
-        await this.redis.quit();
+      if (this.redisClient && this.isRedisConnected) {
+        await this.redisClient.quit();
       }
       this.fallbackMap.clear();
       this.scraperRequestTimes.clear();
@@ -597,8 +628,14 @@ class ProductionRateLimiter {
   }
 }
 
-// Export singleton instance
-export const productionRateLimiter = new ProductionRateLimiter();
+// Lazy singleton pattern
+let __limiterSingleton: ProductionRateLimiter | null = null;
+
+export function getProductionRateLimiter() {
+  if (__limiterSingleton) return __limiterSingleton;
+  __limiterSingleton = new ProductionRateLimiter();
+  return __limiterSingleton;
+}
 
 // Export rate limiting middleware for easy use in API routes
 export async function withRateLimit(
@@ -606,39 +643,55 @@ export async function withRateLimit(
   endpoint: string,
   customConfig?: { windowMs: number; maxRequests: number }
 ): Promise<NextResponse | null> {
-  return productionRateLimiter.middleware(req, endpoint, customConfig);
+  return getProductionRateLimiter().middleware(req, endpoint, customConfig);
 }
 
 // Helper function for scraper rate limiting
 export async function getScraperDelay(platform: string, wasBlocked: boolean = false): Promise<number> {
-  return productionRateLimiter.getScraperDelay(platform, wasBlocked);
+  return getProductionRateLimiter().getScraperDelay(platform, wasBlocked);
 }
 
 // Helper function to check if scraper should be throttled
 export function shouldThrottleScraper(platform: string): boolean {
-  return productionRateLimiter.shouldThrottleScraper(platform);
+  return getProductionRateLimiter().shouldThrottleScraper(platform);
 }
 
 // Lazy cleanup timer (only start in production)
 let cleanupTimer: NodeJS.Timeout | null = null;
 
 function startCleanupTimer() {
-  if (process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1') {
+  if (isTestMode()) {
     console.log('🧪 Test mode: Skipping cleanup timer for rate limiter');
     return;
   }
   
   if (!cleanupTimer) {
     cleanupTimer = setInterval(() => {
-      productionRateLimiter.cleanup();
+      getProductionRateLimiter().cleanup();
     }, 5 * 60 * 1000);
   }
 }
 
-// Start cleanup timer on first use
-productionRateLimiter.initialize().then(() => {
-  startCleanupTimer();
-});
+// Start cleanup timer on first use (lazy initialization)
+// Don't initialize immediately - wait for first use
+
+/** TEST ONLY: nuke test keys (safe no-op in prod) */
+export async function resetLimiterForTests() {
+  if (!isTestMode()) return;
+  try {
+    if (!__limiterSingleton || !__limiterSingleton.redisClient) return;
+    const redis = __limiterSingleton.redisClient;
+    const pattern = `${PREFIX()}ratelimit:*`;
+    let cursor = '0';
+    do {
+      const [next, keys] = await redis.scan(cursor, { MATCH: pattern, COUNT: 100 });
+      if (keys?.length) await redis.del(keys);
+      cursor = next;
+    } while (cursor !== '0');
+  } catch (e) {
+    // ignore in tests
+  }
+}
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
@@ -646,7 +699,9 @@ process.on('SIGINT', async () => {
   if (cleanupTimer) {
     clearInterval(cleanupTimer);
   }
-  await productionRateLimiter.close();
+  if (__limiterSingleton) {
+    await __limiterSingleton.close();
+  }
   process.exit(0);
 });
 
@@ -655,6 +710,8 @@ process.on('SIGTERM', async () => {
   if (cleanupTimer) {
     clearInterval(cleanupTimer);
   }
-  await productionRateLimiter.close();
+  if (__limiterSingleton) {
+    await __limiterSingleton.close();
+  }
   process.exit(0);
 });

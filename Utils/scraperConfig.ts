@@ -33,6 +33,8 @@ export interface ScraperConfig {
 }
 
 export function getScraperConfig(): ScraperConfig {
+  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production';
+  
   return {
     // Platform toggles (env-based)
     enableGreenhouse: process.env.ENABLE_GREENHOUSE_SCRAPER !== 'false',
@@ -46,17 +48,17 @@ export function getScraperConfig(): ScraperConfig {
     debugMode: process.env.SCRAPER_DEBUG_MODE === 'true',
     enableTelemetry: process.env.ENABLE_SCRAPER_TELEMETRY !== 'false',
     enableRateLimiting: process.env.ENABLE_RATE_LIMITING !== 'false',
-    enableBrowserPool: process.env.ENABLE_BROWSER_POOL !== 'false',
+    enableBrowserPool: process.env.ENABLE_BROWSER_POOL !== 'false' && !isRailway,
     enableEmails: process.env.ENABLE_EMAILS !== 'false',
     
     // Batch processing
     batchSize: parseInt(process.env.SCRAPER_BATCH_SIZE || '100'),
     maxRetries: parseInt(process.env.SCRAPER_MAX_RETRIES || '3'),
-    retryDelay: parseInt(process.env.SCRAPER_RETRY_DELAY || '2000'),
+    retryDelay: parseInt(process.env.SCRAPER_RETRY_DELAY || (isRailway ? '5000' : '2000')),
     
     // Rate limiting
-    requestsPerMinute: parseInt(process.env.SCRAPER_REQUESTS_PER_MINUTE || '30'),
-    requestsPerHour: parseInt(process.env.SCRAPER_REQUESTS_PER_HOUR || '1000'),
+    requestsPerMinute: parseInt(process.env.SCRAPER_REQUESTS_PER_MINUTE || (isRailway ? '15' : '30')),
+    requestsPerHour: parseInt(process.env.SCRAPER_REQUESTS_PER_HOUR || (isRailway ? '500' : '1000')),
     
     // Debug settings
     logSampleTitles: process.env.SCRAPER_DEBUG_MODE === 'true',

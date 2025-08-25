@@ -537,7 +537,7 @@ async function tryLeverAPI(company: any, runId: string, userAgent: string): Prom
         location: job.categories?.location || 'Location not specified',
         job_url: job.hostedUrl || job.applyUrl,
         description: job.description || 'Description not available',
-        categories: createJobCategories('unknown', [job.categories?.team || 'General']),
+        categories: [createJobCategories('unknown', [job.categories?.team || 'General'])],
         experience_required: 'entry-level',
         work_environment: 'hybrid',
         language_requirements: [],

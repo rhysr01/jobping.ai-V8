@@ -342,7 +342,7 @@ export function createRobustJob(params: {
   ];
   
   // 7. Create categories with career path
-  const categories = createJobCategories(careerPath, tags);
+  const categories = [createJobCategories(careerPath, tags)];
   
   // 8. Create job hash
   const jobHash = createJobHash(title, company, urlResult.url);

@@ -32,6 +32,9 @@ export class SecurityMiddleware {
     status?: number;
   }> {
     try {
+      // Check for test mode
+      const isTestMode = process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1';
+      
       // Extract API key
       const apiKey = this.extractAPIKey(req);
       

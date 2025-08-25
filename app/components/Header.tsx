@@ -13,16 +13,16 @@ export default function Header() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo Section */}
+          {/* Logo Section - Typography-First Design */}
           <motion.div
-            className="flex items-center gap-3"
+            className="flex items-center"
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-[#0B0B0F] font-black text-sm">J</span>
-            </div>
-            <h1 className="text-white font-bold text-xl tracking-tight">JobPing</h1>
+            <h1 className="jobping-logo">
+              <span className="job">Job</span>
+              <span className="ping">Ping</span>
+            </h1>
           </motion.div>
 
           {/* Desktop Navigation */}

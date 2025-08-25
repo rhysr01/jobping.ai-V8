@@ -8,7 +8,7 @@ import { Job } from './types';
 import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
 import { createJobCategories } from './types';
 import { PerformanceMonitor } from '../Utils/performanceMonitor';
-import { createRobustJob, FunnelTelemetryTracker, logFunnelMetrics } from '../Utils/robustJobCreation';
+import { createRobustJob, FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible } from '../Utils/robustJobCreation';
 
 const USER_AGENTS = [
   'JobPingBot/1.0 (+https://getjobping.com/contact)',
@@ -484,7 +484,7 @@ if (require.main === module) {
     const runId = crypto.randomUUID();
     console.log(`🚀 Starting RemoteOK scrape with run ID: ${runId}`);
     
-    const jobs = await scrapeRemoteOK(runId);
+    const { jobs, funnel } = await scrapeRemoteOK(runId);
     if (jobs.length === 0) {
       console.log('ℹ️ No early-career jobs found.');
       return;

@@ -79,7 +79,8 @@ export function composeRobustEmailContent(
   jobCards: EmailJobCard[],
   userName?: string,
   subscriptionTier: 'free' | 'premium' = 'free',
-  isSignupEmail: boolean = false
+  isSignupEmail: boolean = false,
+  userEmail?: string
 ): string {
   // Check email kill switch
   if (process.env.ENABLE_EMAILS === 'false') {
@@ -232,7 +233,7 @@ export function composeRobustEmailContent(
             ">
               Top Matches
             </h2>
-            ${confidentMatches.map((card, index) => generateJobCard(card, index, isPremium)).join('')}
+            ${confidentMatches.map((card, index) => generateJobCard(card, index, isPremium, false, userEmail)).join('')}
           </div>
           ` : ''}
           
@@ -247,7 +248,7 @@ export function composeRobustEmailContent(
             ">
               Promising Opportunities
             </h2>
-            ${finalPromisingMatches.map((card, index) => generateJobCard(card, index + confidentMatches.length, isPremium, true)).join('')}
+            ${finalPromisingMatches.map((card, index) => generateJobCard(card, index + confidentMatches.length, isPremium, true, userEmail)).join('')}
           </div>
           ` : ''}
           
@@ -305,7 +306,7 @@ export function composeRobustEmailContent(
               Questions? Reply to this email or visit <a href="https://jobping.ai" target="_blank" style="color: #000000;">jobping.ai</a>
             </p>
             <p style="margin: 0; font-size: 12px;">
-              <a href="https://jobping.ai/unsubscribe?email=${encodeURIComponent(to)}" target="_blank" style="color: #999999;">Unsubscribe</a>
+              <a href="https://jobping.ai/unsubscribe?email=${encodeURIComponent(userEmail || '')}" target="_blank" style="color: #999999;">Unsubscribe</a>
             </p>
           </div>
         </div>
@@ -316,7 +317,7 @@ export function composeRobustEmailContent(
 }
 
 // Helper function to generate individual job cards
-function generateJobCard(card: EmailJobCard, index: number, isPremium: boolean, isPromising: boolean = false): string {
+function generateJobCard(card: EmailJobCard, index: number, isPremium: boolean, isPromising: boolean = false, userEmail?: string): string {
   const { job, matchResult, hasManualLocator, searchHint } = card;
   
   // Extract tags for display
@@ -512,7 +513,7 @@ function generateJobCard(card: EmailJobCard, index: number, isPremium: boolean, 
             gap: 8px;
             margin-bottom: 16px;
           ">
-            <a href="https://jobping.ai/feedback?email=${encodeURIComponent(to)}&job=${job.job_hash}&verdict=relevant" target="_blank" style="
+            <a href="https://jobping.ai/feedback?email=${encodeURIComponent(userEmail || '')}&job=${job.job_hash}&verdict=relevant" target="_blank" style="
               display: inline-block;
               background: #4CAF50;
               color: #FFFFFF;
@@ -524,7 +525,7 @@ function generateJobCard(card: EmailJobCard, index: number, isPremium: boolean, 
             ">
               👍 Relevant
             </a>
-            <a href="https://jobping.ai/feedback?email=${encodeURIComponent(to)}&job=${job.job_hash}&verdict=not_relevant" target="_blank" style="
+            <a href="https://jobping.ai/feedback?email=${encodeURIComponent(userEmail || '')}&job=${job.job_hash}&verdict=not_relevant" target="_blank" style="
               display: inline-block;
               background: #F44336;
               color: #FFFFFF;
@@ -781,11 +782,16 @@ export async function recordEmailFeedback(feedback: EmailFeedback): Promise<void
 // D5) Link hygiene without blocking
 export async function checkLinkHealth(jobUrl: string): Promise<'ok' | 'redirect' | 'dead'> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
     const response = await fetch(jobUrl, { 
       method: 'HEAD',
       redirect: 'follow',
-      timeout: 5000
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     if (response.ok) {
       return 'ok';
@@ -892,6 +898,23 @@ export async function sendMatchedJobsEmail({
     subscriptionTier?: 'free' | 'premium',
     isSignupEmail?: boolean,
   }) {
+    // Generate idempotency token
+    const sendDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const jobsHash = require('crypto').createHash('md5').update(JSON.stringify(jobs.map(j => j.job_hash))).digest('hex').slice(0, 8);
+    const sendToken = `${to}_${sendDate}_${jobsHash}`;
+    
+    // Check if email already sent (idempotency)
+    const supabase = getSupabaseClient();
+    const { data: existingSend } = await supabase
+      .from('email_sends')
+      .select('id')
+      .eq('send_token', sendToken)
+      .single();
+    
+    if (existingSend) {
+      console.log(`📧 Email already sent for token: ${sendToken}`);
+      return { id: existingSend.id, alreadySent: true };
+    }
     const isPremium = subscriptionTier === 'premium';
     const jobLimit = isPremium ? 15 : 6; // Updated: Free tier now gets 6 matches per week instead of 5 every 48h
     const emailTypeText = isSignupEmail ? 'Welcome! Here are your first' : 'Your fresh';
@@ -908,60 +931,62 @@ export async function sendMatchedJobsEmail({
       <body style="
         margin: 0;
         padding: 0;
-        background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+        background: #FFFFFF;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
         font-feature-settings: 'tnum' on, 'lnum' on, 'kern' on;
         line-height: 1.6;
+        color: #000000;
       ">
         <div style="
           max-width: 600px;
           margin: 0 auto;
           background: #FFFFFF;
-          border-radius: 16px;
+          border-radius: 20px;
           overflow: hidden;
-          box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06), 0 8px 16px rgba(0, 0, 0, 0.04);
           margin-top: 40px;
           margin-bottom: 40px;
+          border: 1px solid #F0F0F0;
         ">
-          <!-- Header with Subtle Gradient -->
+          <!-- Header -->
           <div style="
-            background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%);
-            padding: 32px 40px 24px 40px;
-            border-bottom: 1px solid #EEEEEE;
+            background: #000000;
+            padding: 40px 40px 32px 40px;
+            text-align: center;
           ">
             <!-- JobPingAI Logo -->
             <div style="
-              text-align: center;
-              margin-bottom: 16px;
+              font-size: 28px;
+              font-weight: 900;
+              letter-spacing: -0.02em;
+              color: #FFFFFF;
+              margin-bottom: 8px;
             ">
-              <div style="
-                display: inline-block;
-                font-size: 24px;
-                font-weight: 900;
-                letter-spacing: -0.02em;
-                color: #000000;
-                background: linear-gradient(135deg, #000000 0%, #333333 100%);
-                -webkit-background-clip: text;
-                background-clip: text;
-                -webkit-text-fill-color: transparent;
-              ">
-                JOBPINGAI
-              </div>
+              JOBPINGAI
+            </div>
+            <div style="
+              font-size: 14px;
+              color: #CCCCCC;
+              font-weight: 500;
+              letter-spacing: 0.5px;
+              text-transform: uppercase;
+            ">
+              AI-Powered Job Matching
             </div>
           </div>
           
           <!-- Main Content -->
           <div style="
-            padding: 40px;
+            padding: 48px 40px;
             color: #000000;
           ">
             ${isPremium ? `
             <!-- Premium Badge -->
             <div style="
-              background: linear-gradient(135deg, #000000 0%, #1A1A1A 100%);
+              background: #000000;
               color: #FFFFFF;
               padding: 12px 20px;
               border-radius: 12px;
@@ -971,7 +996,7 @@ export async function sendMatchedJobsEmail({
               font-weight: 700;
               letter-spacing: 1px;
               text-transform: uppercase;
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             ">
               ⭐ Premium Member
             </div>
@@ -979,9 +1004,9 @@ export async function sendMatchedJobsEmail({
             
             <!-- Greeting -->
             <h1 style="
-              font-size: 36px;
+              font-size: 32px;
               font-weight: 800;
-              margin: 0 0 16px 0;
+              margin: 0 0 12px 0;
               letter-spacing: -0.02em;
               color: #000000;
               line-height: 1.1;
@@ -993,7 +1018,7 @@ export async function sendMatchedJobsEmail({
             <p style="
               font-size: 18px;
               line-height: 1.6;
-              margin: 0 0 32px 0;
+              margin: 0 0 40px 0;
               color: #333333;
               font-weight: 400;
             ">
@@ -1007,38 +1032,39 @@ export async function sendMatchedJobsEmail({
                 <!-- Job Card ${index + 1} -->
                 <div style="
                   background: #FFFFFF;
-                  border: 1px solid #EEEEEE;
-                  border-radius: 12px;
-                  margin-bottom: 16px;
-                  padding: 24px;
-                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+                  border: 1px solid #F0F0F0;
+                  border-radius: 16px;
+                  margin-bottom: 20px;
+                  padding: 28px;
+                  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
                   transition: all 0.2s ease;
-                  ${index === 0 ? 'border: 2px solid #000000; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);' : ''}
+                  ${index === 0 ? 'border: 2px solid #000000; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);' : ''}
                 ">
-                  <div style="display: flex; align-items: flex-start; gap: 16px;">
+                  <div style="display: flex; align-items: flex-start; gap: 20px;">
                     <!-- Job Icon -->
                     <div style="
-                      width: 40px;
-                      height: 40px;
-                      background: linear-gradient(135deg, #000000 0%, #1A1A1A 100%);
-                      border-radius: 8px;
+                      width: 48px;
+                      height: 48px;
+                      background: #000000;
+                      border-radius: 12px;
                       display: flex;
                       align-items: center;
                       justify-content: center;
                       flex-shrink: 0;
+                      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
                     ">
                       <div style="
-                        width: 20px;
-                        height: 20px;
+                        width: 24px;
+                        height: 24px;
                         background: #FFFFFF;
-                        border-radius: 2px;
+                        border-radius: 3px;
                         position: relative;
                       ">
                         <div style="
                           position: absolute;
-                          top: 6px;
-                          left: 4px;
-                          width: 12px;
+                          top: 8px;
+                          left: 5px;
+                          width: 14px;
                           height: 8px;
                           border: 2px solid #000000;
                           border-top: none;
@@ -1049,10 +1075,10 @@ export async function sendMatchedJobsEmail({
                     <!-- Job Content -->
                     <div style="flex: 1; min-width: 0;">
                       <!-- Job Title & Company -->
-                      <div style="margin-bottom: 12px;">
+                      <div style="margin-bottom: 16px;">
                         <h3 style="
-                          margin: 0 0 4px 0;
-                          font-size: 18px;
+                          margin: 0 0 6px 0;
+                          font-size: 20px;
                           font-weight: 700;
                           color: #000000;
                           line-height: 1.3;
@@ -1064,7 +1090,7 @@ export async function sendMatchedJobsEmail({
                         </h3>
                         <p style="
                           margin: 0;
-                          font-size: 14px;
+                          font-size: 16px;
                           font-weight: 500;
                           color: #666666;
                         ">${job.company}</p>
@@ -1074,28 +1100,29 @@ export async function sendMatchedJobsEmail({
                       <div style="
                         display: flex;
                         align-items: center;
-                        gap: 12px;
-                        margin-bottom: 12px;
+                        gap: 16px;
+                        margin-bottom: 16px;
                         flex-wrap: wrap;
                       ">
                         ${job.location ? `
                         <span style="
-                          font-size: 13px;
+                          font-size: 14px;
                           color: #666666;
                           display: flex;
                           align-items: center;
-                          gap: 4px;
+                          gap: 6px;
+                          font-weight: 500;
                         ">
                           📍 ${job.location}
                         </span>
                         ` : ''}
                         ${isPremium && (job.match_score || index === 0) ? `
                         <span style="
-                          background: linear-gradient(135deg, #000000 0%, #333333 100%);
+                          background: #000000;
                           color: #FFFFFF;
-                          padding: 2px 8px;
-                          border-radius: 6px;
-                          font-size: 11px;
+                          padding: 4px 10px;
+                          border-radius: 8px;
+                          font-size: 12px;
                           font-weight: 600;
                           letter-spacing: 0.5px;
                           text-transform: uppercase;
@@ -1108,24 +1135,27 @@ export async function sendMatchedJobsEmail({
                       ${isPremium ? `
                       <!-- Premium Match Insights -->
                       <div style="
-                        background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%);
-                        border-left: 3px solid #000000;
-                        padding: 12px 16px;
-                        border-radius: 8px;
-                        margin-top: 12px;
+                        background: #F8F8F8;
+                        border-left: 4px solid #000000;
+                        padding: 16px 20px;
+                        border-radius: 12px;
+                        margin-top: 16px;
+                        margin-bottom: 20px;
                       ">
                         <div style="
-                          font-size: 13px;
-                          font-weight: 600;
+                          font-size: 14px;
+                          font-weight: 700;
                           color: #000000;
-                          margin-bottom: 4px;
+                          margin-bottom: 6px;
+                          text-transform: uppercase;
+                          letter-spacing: 0.5px;
                         ">
                           Why it's perfect for you:
                         </div>
                         <div style="
-                          font-size: 13px;
+                          font-size: 14px;
                           color: #333333;
-                          line-height: 1.4;
+                          line-height: 1.5;
                         ">
                           ${job.match_reason || 'Strong alignment with your skills, experience level, and career goals.'}
                         </div>
@@ -1133,28 +1163,36 @@ export async function sendMatchedJobsEmail({
                       ` : job.match_reason ? `
                       <!-- Basic Match Reason -->
                       <div style="
-                        font-size: 13px;
-                        color: #666666;
-                        font-style: italic;
-                        margin-top: 8px;
-                        line-height: 1.4;
+                        background: #F8F8F8;
+                        padding: 12px 16px;
+                        border-radius: 8px;
+                        margin-top: 12px;
+                        margin-bottom: 16px;
                       ">
-                        ${job.match_reason}
+                        <div style="
+                          font-size: 13px;
+                          color: #333333;
+                          line-height: 1.4;
+                          font-style: italic;
+                        ">
+                          ${job.match_reason}
+                        </div>
                       </div>
                       ` : ''}
                       
                       <!-- Apply Button -->
-                      <div style="margin-top: 16px;">
+                      <div style="margin-top: 20px;">
                         <a href="${job.job_url}" target="_blank" style="
                           display: inline-block;
-                          background: linear-gradient(135deg, #000000 0%, #1A1A1A 100%);
+                          background: #000000;
                           color: #FFFFFF;
-                          padding: 10px 20px;
-                          border-radius: 8px;
+                          padding: 12px 24px;
+                          border-radius: 10px;
                           text-decoration: none;
                           font-size: 14px;
                           font-weight: 600;
                           transition: all 0.2s ease;
+                          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
                         ">
                           View Job →
                         </a>
@@ -1168,43 +1206,43 @@ export async function sendMatchedJobsEmail({
             ${!isPremium ? `
             <!-- Upgrade Prompt -->
             <div style="
-              background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%);
-              border: 2px solid #EEEEEE;
-              border-radius: 16px;
-              padding: 32px;
-              margin-bottom: 32px;
+              background: #F8F8F8;
+              border: 2px solid #E0E0E0;
+              border-radius: 20px;
+              padding: 40px;
+              margin-bottom: 40px;
               text-align: center;
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
+              box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
             ">
               <h3 style="
                 margin: 0 0 16px 0;
                 color: #000000;
-                font-size: 20px;
-                font-weight: 700;
-                letter-spacing: -0.01em;
+                font-size: 24px;
+                font-weight: 800;
+                letter-spacing: -0.02em;
               ">
                 Want more opportunities? 🚀
               </h3>
               <p style="
-                margin: 0 0 24px 0;
+                margin: 0 0 32px 0;
                 color: #666666;
-                font-size: 16px;
-                line-height: 1.5;
+                font-size: 18px;
+                line-height: 1.6;
               ">
                 Premium members get <strong style="color: #000000;">~45 jobs per week</strong><br>
                 + detailed match insights + priority support
               </p>
               <a href="${process.env.NEXT_PUBLIC_BASE_URL}/pricing" style="
                 display: inline-block;
-                background: linear-gradient(135deg, #000000 0%, #1A1A1A 100%);
+                background: #000000;
                 color: #FFFFFF;
-                padding: 14px 32px;
+                padding: 16px 36px;
                 border-radius: 12px;
                 text-decoration: none;
                 font-weight: 700;
                 font-size: 16px;
                 letter-spacing: -0.01em;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
                 transition: all 0.2s ease;
               ">
                 Upgrade to Premium
@@ -1215,16 +1253,17 @@ export async function sendMatchedJobsEmail({
             <!-- Schedule Info -->
             <div style="
               text-align: center;
-              margin-bottom: 32px;
-              padding: 20px;
-              background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%);
-              border-radius: 12px;
+              margin-bottom: 40px;
+              padding: 24px;
+              background: #F8F8F8;
+              border-radius: 16px;
+              border: 1px solid #E0E0E0;
             ">
               <p style="
                 margin: 0 0 8px 0;
-                font-size: 16px;
+                font-size: 18px;
                 color: #000000;
-                font-weight: 600;
+                font-weight: 700;
               ">
                 You'll get <strong>${isPremium ? jobLimit + ' premium jobs every 48 hours' : jobLimit + ' jobs per week'}</strong>
               </p>
@@ -1240,18 +1279,18 @@ export async function sendMatchedJobsEmail({
             ${isSignupEmail ? `
             <!-- Welcome Next Steps -->
             <div style="
-              background: linear-gradient(135deg, #E8F5E8 0%, #F0F8F0 100%);
-              border-radius: 12px;
-              padding: 24px;
-              margin-bottom: 32px;
+              background: #F0F8F0;
+              border-radius: 16px;
+              padding: 28px;
+              margin-bottom: 40px;
               text-align: center;
               border: 1px solid #D4F4D4;
             ">
               <p style="
                 margin: 0;
                 color: #2D5A2D;
-                font-size: 16px;
-                font-weight: 600;
+                font-size: 18px;
+                font-weight: 700;
               ">
                 <strong>Next steps:</strong> Check your email every 48 hours for fresh opportunities!
               </p>
@@ -1262,24 +1301,23 @@ export async function sendMatchedJobsEmail({
           
           <!-- Footer -->
           <div style="
-            background: linear-gradient(135deg, #F5F5F5 0%, #EEEEEE 100%);
-            padding: 24px 40px;
+            background: #000000;
+            padding: 32px 40px;
             text-align: center;
-            border-top: 1px solid #EEEEEE;
           ">
             <div style="
-              font-size: 20px;
+              font-size: 24px;
               font-weight: 900;
               letter-spacing: 2px;
-              color: #000000;
+              color: #FFFFFF;
               margin-bottom: 8px;
             ">
               JOBPINGAI
             </div>
             <p style="
               margin: 0;
-              font-size: 12px;
-              color: #666666;
+              font-size: 14px;
+              color: #CCCCCC;
               letter-spacing: 0.5px;
             ">
               AI-powered job matching for ambitious professionals
@@ -1304,26 +1342,67 @@ export async function sendMatchedJobsEmail({
         }
       };
 
-      const resend = getResendClient();
-      const { data, error } = await resend.emails.send({
-        from: 'JobPing <noreply@jobping.ai>',
-        to: [to],
-        subject: getSubjectLine(),
-        html: html,
-      });
+      // Retry logic with exponential backoff
+      const maxRetries = 3;
+      let lastError: any;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const resend = getResendClient();
+          const { data, error } = await resend.emails.send({
+            from: 'JobPing <noreply@jobping.ai>',
+            to: [to],
+            subject: getSubjectLine(),
+            html: html,
+          });
 
-      if (error) {
-        console.error('Failed to send email:', error);
-        throw error;
+          if (error) {
+            throw error;
+          }
+
+          // Record successful send in database
+          await supabase.from('email_sends').insert({
+            send_token: sendToken,
+            user_email: to,
+            email_type: isSignupEmail ? 'welcome' : 'job_matches',
+            jobs_count: jobs.length,
+            sent_at: new Date().toISOString(),
+            status: 'sent'
+          });
+
+          console.log(`📧 Email sent successfully (attempt ${attempt}):`, data);
+          return { ...data, sendToken };
+          
+        } catch (error) {
+          lastError = error;
+          console.error(`📧 Email send attempt ${attempt} failed:`, error);
+          
+          if (attempt < maxRetries) {
+            const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 2s, 4s, 8s
+            console.log(`📧 Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
       }
-
-      console.log('Email sent successfully:', data);
-      return data;
-    } catch (error) {
-      console.error('Email sending failed:', error);
-      throw error;
+      
+      // All retries failed - record failure
+      await supabase.from('email_sends').insert({
+        send_token: sendToken,
+        user_email: to,
+        email_type: isSignupEmail ? 'welcome' : 'job_matches',
+        jobs_count: jobs.length,
+        sent_at: new Date().toISOString(),
+        status: 'failed',
+        error_message: lastError?.message || 'Unknown error'
+      });
+      
+      throw lastError;
     }
+  } catch (error) {
+    console.error('Email sending failed:', error);
+    throw error;
   }
+}
 
 // Helper function to send welcome email for new users
 export async function sendWelcomeEmail({
@@ -1336,45 +1415,147 @@ export async function sendWelcomeEmail({
   matchCount: number;
 }) {
   const html = `
-    <div style="
-      font-family: Helvetica, Arial, sans-serif;
-      background: #fff;
-      color: #181818;
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 36px 32px 28px 32px;
-      border-radius: 18px;
-      border: 1px solid #eee;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+      <title>Welcome to JobPingAI</title>
+    </head>
+    <body style="
+      margin: 0;
+      padding: 0;
+      background: #FFFFFF;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      font-feature-settings: 'tnum' on, 'lnum' on, 'kern' on;
+      line-height: 1.6;
+      color: #000000;
     ">
-      <h2 style="
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 0.6em;
-        letter-spacing: -0.5px;
-        color: #000;
-      ">
-        Welcome to JobPingAI${userName ? ', ' + userName : ''}! 🎉
-      </h2>
-      <p style="font-size: 1.07rem; margin-bottom: 1.7em;">
-        Your AI career assistant is now active and has found <b>${matchCount} perfect job matches</b> for you.
-      </p>
-      <p style="font-size: 1rem; margin-bottom: 2.2em; color:#191919;">
-        Check your inbox for your first batch of AI-matched opportunities. You'll receive new matches every 48 hours.
-      </p>
       <div style="
-        border-top:1px solid #eee;
-        margin-top:20px;
-        padding-top:16px;
-        text-align:center;
-        font-size:13px;
-        color:#111;
-        font-weight: bold;
-        letter-spacing: 1.7px;
+        max-width: 600px;
+        margin: 0 auto;
+        background: #FFFFFF;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06), 0 8px 16px rgba(0, 0, 0, 0.04);
+        margin-top: 40px;
+        margin-bottom: 40px;
+        border: 1px solid #F0F0F0;
       ">
-        JOBPINGAI
+        <!-- Header -->
+        <div style="
+          background: #000000;
+          padding: 40px 40px 32px 40px;
+          text-align: center;
+        ">
+          <div style="
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            color: #FFFFFF;
+            margin-bottom: 8px;
+          ">
+            JOBPINGAI
+          </div>
+          <div style="
+            font-size: 14px;
+            color: #CCCCCC;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+          ">
+            AI-Powered Job Matching
+          </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div style="
+          padding: 48px 40px;
+          color: #000000;
+          text-align: center;
+        ">
+          <h1 style="
+            font-size: 32px;
+            font-weight: 800;
+            margin: 0 0 16px 0;
+            letter-spacing: -0.02em;
+            color: #000000;
+            line-height: 1.1;
+          ">
+            Welcome${userName ? ', ' + userName : ''}! 🎉
+          </h1>
+          
+          <p style="
+            font-size: 18px;
+            line-height: 1.6;
+            margin: 0 0 24px 0;
+            color: #333333;
+            font-weight: 400;
+          ">
+            Your AI career assistant is now active and has found <strong style="color: #000000;">${matchCount} perfect job matches</strong> for you.
+          </p>
+          
+          <p style="
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0 0 40px 0;
+            color: #666666;
+            font-weight: 400;
+          ">
+            Check your inbox for your first batch of AI-matched opportunities. You'll receive new matches every 48 hours.
+          </p>
+          
+          <!-- Next Steps -->
+          <div style="
+            background: #F0F8F0;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 40px;
+            text-align: center;
+            border: 1px solid #D4F4D4;
+          ">
+            <p style="
+              margin: 0;
+              color: #2D5A2D;
+              font-size: 18px;
+              font-weight: 700;
+            ">
+              <strong>Next steps:</strong> Check your email every 48 hours for fresh opportunities!
+            </p>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="
+          background: #000000;
+          padding: 32px 40px;
+          text-align: center;
+        ">
+          <div style="
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: #FFFFFF;
+            margin-bottom: 8px;
+          ">
+            JOBPINGAI
+          </div>
+          <p style="
+            margin: 0;
+            font-size: 14px;
+            color: #CCCCCC;
+            letter-spacing: 0.5px;
+          ">
+            AI-powered job matching for ambitious professionals
+          </p>
+        </div>
       </div>
-    </div>
+    </body>
+    </html>
   `;
 
   try {

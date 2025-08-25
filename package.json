@@ -22,7 +22,12 @@
     "scrape:test": "node test-reliable-scrapers.js",
     "railway:start": "node railway-server.js",
     "railway:dev": "nodemon railway-server.js",
-    "scrape:smoke": "tsx scripts/smoke-scrape.ts"
+    "scrape:smoke": "tsx scripts/smoke-scrape.ts",
+    "build:prod": "next build && next start -p 4173",
+    "test:e2e": "playwright test -c ./",
+    "test:a11y": "playwright test a11y.spec.ts",
+    "perf": "lhci autorun",
+    "fe:check": "next build && playwright test && lhci autorun"
   },
   "dependencies": {
     "@stripe/stripe-js": "^7.8.0",
@@ -51,7 +56,10 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.8.4",
     "@eslint/eslintrc": "^3.0.0",
+    "@lhci/cli": "^0.12.0",
+    "@playwright/test": "^1.40.1",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^15.0.0",
     "@types/jest": "^29.5.8",
@@ -63,6 +71,7 @@
     "eslint-config-next": "15.4.3",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
+    "playwright": "^1.40.1",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",
     "tsx": "^4.7.0",

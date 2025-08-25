@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { productionRateLimiter } from '@/Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createRedisClient } from 'redis';
 import OpenAI from 'openai';

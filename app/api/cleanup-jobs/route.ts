@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { productionRateLimiter } from '@/Utils/productionRateLimiter';
+import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 
 // Initialize Supabase client
 function getSupabaseClient() {
@@ -26,7 +26,7 @@ function getSupabaseClient() {
 
 export async function POST(req: NextRequest) {
   // PRODUCTION: Rate limiting for cleanup endpoint (automation use)
-  const rateLimitResult = await productionRateLimiter.middleware(req, 'default', {
+  const rateLimitResult = await getProductionRateLimiter().middleware(req, 'default', {
     windowMs: 5 * 60 * 1000, // 5 minutes
     maxRequests: 2 // Max 2 cleanup requests per 5 minutes
   });

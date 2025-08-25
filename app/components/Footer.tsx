@@ -11,11 +11,11 @@ export default function Footer() {
           
           {/* Company Info */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-[#0B0B0F] font-black text-sm">J</span>
-              </div>
-              <h3 className="text-white font-bold text-xl">JobPing</h3>
+            <div className="mb-4">
+              <h3 className="jobping-logo text-xl">
+                <span className="job">Job</span>
+                <span className="ping">Ping</span>
+              </h3>
             </div>
             <p className="text-[#9CA3AF] leading-relaxed mb-6 max-w-md">
               AI-powered job matching for students and graduates. Stop scrolling job boards, 
@@ -48,10 +48,10 @@ export default function Footer() {
           <div>
             <h4 className="text-[#F8F9FA] font-semibold mb-4">Support</h4>
             <ul className="space-y-3 text-[#9CA3AF]">
-              <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
+              <li><a href="https://jobping.ai/privacy" className="hover:text-white transition-colors" rel="noopener noreferrer">Privacy Policy</a></li>
+              <li><a href="https://jobping.ai/terms" className="hover:text-white transition-colors" rel="noopener noreferrer">Terms of Service</a></li>
+              <li><a href="mailto:support@jobping.ai" className="hover:text-white transition-colors">Contact Us</a></li>
+              <li><a href="https://help.jobping.ai" className="hover:text-white transition-colors" rel="noopener noreferrer">Help Center</a></li>
             </ul>
           </div>
         </div>
@@ -60,7 +60,7 @@ export default function Footer() {
         <div className="border-t border-[#374151] pt-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-[#6B7280] text-sm">
-              © 2024 JobPing AI. All rights reserved.
+              © 2024 JobPing. All rights reserved.
             </div>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2 text-[#6B7280] text-sm">
