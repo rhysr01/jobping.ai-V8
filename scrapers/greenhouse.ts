@@ -335,8 +335,8 @@ export async function scrapeGreenhouse(runId: string, opts?: { pageLimit?: numbe
     }
 
     if (jobElements.length === 0) {
-      console.warn(`⚠️ No jobs found at ${company.name} - trying JSON endpoint`);
-      const apiJobs = await tryGreenhouseAPI(company, runId, userAgent);
+      console.warn(`⚠️ No jobs found at ${employer.name} - trying JSON endpoint`);
+      const apiJobs = await tryGreenhouseAPI(employer, runId, userAgent);
       
       // For API fallback, create basic telemetry
       if (apiJobs.length > 0) {
@@ -354,18 +354,18 @@ export async function scrapeGreenhouse(runId: string, opts?: { pageLimit?: numbe
         }
       }
       
-      telemetry.logTelemetry(`Greenhouse-${company.name}`);
+      telemetry.logTelemetry(`Greenhouse-${employer.name}`);
       return telemetry.getTelemetry();
     }
     
-    console.log(`🔍 Found ${jobElements.length} job elements at ${company.name}`);
+    console.log(`🔍 Found ${jobElements.length} job elements at ${employer.name}`);
 
     const processedJobs = await Promise.all(
       jobElements.map(async (_, el) => {
         try {
-          return await processJobElement($, $(el), company, runId, userAgent, telemetry);
+          return await processJobElement($, $(el), employer, runId, userAgent, telemetry);
         } catch (err) {
-          console.warn(`⚠️ Error processing job at ${company.name}:`, err);
+          console.warn(`⚠️ Error processing job at ${employer.name}:`, err);
           return null;
         }
       }).get()
@@ -382,39 +382,39 @@ export async function scrapeGreenhouse(runId: string, opts?: { pageLimit?: numbe
         for (let i = 0; i < result.inserted; i++) telemetry.recordInserted();
         for (let i = 0; i < result.updated; i++) telemetry.recordUpdated();
         
-        console.log(`✅ Greenhouse DATABASE (${company.name}): ${result.inserted} inserted, ${result.updated} updated, ${result.errors.length} errors`);
+        console.log(`✅ Greenhouse DATABASE (${employer.name}): ${result.inserted} inserted, ${result.updated} updated, ${result.errors.length} errors`);
         if (result.errors.length > 0) {
           console.error('❌ Greenhouse upsert errors:', result.errors.slice(0, 3));
           result.errors.forEach(error => telemetry.recordError(error));
         }
       } catch (error: any) {
         const errorMsg = error instanceof Error ? error.message : 'Database error';
-        console.error(`❌ Greenhouse database upsert failed for ${company.name}:`, errorMsg);
+        console.error(`❌ Greenhouse database upsert failed for ${employer.name}:`, errorMsg);
         telemetry.recordError(errorMsg);
       }
     }
     
     // Log telemetry for this company
-    telemetry.logTelemetry(`Greenhouse-${company.name}`);
+    telemetry.logTelemetry(`Greenhouse-${employer.name}`);
     
-    console.log(`✅ Scraped ${validJobs.length} graduate jobs from ${company.name}`);
+    console.log(`✅ Scraped ${validJobs.length} graduate jobs from ${employer.name}`);
     
     // Log scraping activity for compliance monitoring
-    RobotsCompliance.logScrapingActivity('greenhouse', company.url, true);
+    RobotsCompliance.logScrapingActivity('greenhouse', employer.url, true);
     
     // Track performance
-    PerformanceMonitor.trackDuration(`greenhouse_scraping_${company.name}`, scrapeStart);
+    PerformanceMonitor.trackDuration(`greenhouse_scraping_${employer.name}`, scrapeStart);
     
     return telemetry.getTelemetry();
     
   } catch (error: any) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`❌ Greenhouse scrape failed for ${company.name}:`, errorMsg);
+    console.error(`❌ Greenhouse scrape failed for ${employer.name}:`, errorMsg);
     
     // Log failed scraping activity for compliance monitoring
-    RobotsCompliance.logScrapingActivity('greenhouse', company.url, false);
+    RobotsCompliance.logScrapingActivity('greenhouse', employer.url, false);
     
-    PerformanceMonitor.trackDuration(`greenhouse_scraping_${company.name}`, scrapeStart);
+    PerformanceMonitor.trackDuration(`greenhouse_scraping_${employer.name}`, scrapeStart);
     telemetry.recordError(errorMsg);
     return telemetry.getTelemetry();
   } finally {
@@ -426,7 +426,7 @@ export async function scrapeGreenhouse(runId: string, opts?: { pageLimit?: numbe
 async function processJobElement(
   $: cheerio.CheerioAPI, 
   $el: cheerio.Cheerio<any>, 
-  company: any, 
+  employer: GraduateEmployer, 
   runId: string,
   userAgent: string,
   telemetry?: FunnelTelemetryTracker
@@ -461,11 +461,11 @@ async function processJobElement(
   );
   
   if (jobUrl.startsWith('/')) {
-    const baseUrl = new URL(company.url).origin;
+    const baseUrl = new URL(employer.url).origin;
     jobUrl = baseUrl + jobUrl;
-  } else if (!jobUrl.startsWith('http')) {
-    jobUrl = company.url.replace(/\/$/, '') + '/' + jobUrl;
-  }
+      } else if (!jobUrl.startsWith('http')) {
+      jobUrl = employer.url.replace(/\/$/, '') + '/' + jobUrl;
+    }
 
   // Extract location with multiple strategies
   const location = extractLocation($, $el);
@@ -494,10 +494,10 @@ async function processJobElement(
   // Use enhanced robust job creation with Job Ingestion Contract
   const jobResult = createRobustJob({
     title,
-    company: company.name,
+    company: employer.name,
     location,
     jobUrl,
-    companyUrl: company.url,
+    companyUrl: employer.url,
     description,
     department,
     postedAt,
@@ -629,9 +629,9 @@ function analyzeJobContent(title: string, description: string) {
 }
 
 // Fallback: Try Greenhouse API endpoint
-async function tryGreenhouseAPI(company: any, runId: string, userAgent: string): Promise<Job[]> {
+async function tryGreenhouseAPI(employer: GraduateEmployer, runId: string, userAgent: string): Promise<Job[]> {
   try {
-    const apiUrl = company.url.replace(/\/$/, '') + '/jobs.json';
+    const apiUrl = employer.url.replace(/\/$/, '') + '/jobs.json';
     
     const { data } = await axios.get(apiUrl, {
       headers: { 'User-Agent': userAgent },
@@ -651,7 +651,7 @@ async function tryGreenhouseAPI(company: any, runId: string, userAgent: string):
         
         return {
           title: job.title,
-          company: company.name,
+          company: employer.name,
           location: job.location?.name || 'Location not specified',
           job_url: job.absolute_url,
           description: job.content || 'Description not available',
@@ -660,10 +660,10 @@ async function tryGreenhouseAPI(company: any, runId: string, userAgent: string):
           work_environment: 'hybrid',
           language_requirements: [],
           source: 'greenhouse',
-          job_hash: crypto.createHash('md5').update(`${job.title}-${company.name}-${job.absolute_url}`).digest('hex'),
+          job_hash: crypto.createHash('md5').update(`${job.title}-${employer.name}-${job.absolute_url}`).digest('hex'),
           posted_at: postedAt,
           scraper_run_id: runId,
-          company_profile_url: company.url,
+          company_profile_url: employer.url,
           created_at: new Date().toISOString(),
           extracted_posted_date: job.updated_at || job.created_at,
           // Add missing required fields
@@ -676,7 +676,13 @@ async function tryGreenhouseAPI(company: any, runId: string, userAgent: string):
       });
       
   } catch (err) {
-    console.warn(`API fallback failed for ${company.name}:`, err);
+    console.warn(`API fallback failed for ${employer.name}:`, err);
     return [];
   }
+}
+
+  // Return final telemetry for all employers
+  console.log(`🎯 Greenhouse scraper completed for ${graduateEmployers.length} employers`);
+  telemetry.logTelemetry('Greenhouse-All');
+  return telemetry.getTelemetry();
 }
