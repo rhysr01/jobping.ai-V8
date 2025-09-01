@@ -20,7 +20,7 @@ class JobScrapingOrchestrator {
     }
     
     try {
-      const { scrapeJobTeaser } = require('./jobteaser');
+      // const { scrapeJobTeaser } = require('./jobteaser'); // TEMPORARILY DISABLED due to syntax errors
       this.scrapers.push({
         name: 'JobTeaser',
         scrapeWithRetry: () => scrapeJobTeaser('orchestrator-run-' + Date.now())

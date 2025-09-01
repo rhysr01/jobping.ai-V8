@@ -417,7 +417,7 @@ export async function scrapeJobTeaser(runId: string, opts?: { pageLimit?: number
       telemetry.recordError(errorMsg);
       // Log individual job errors for debugging
       for (const job of jobs) {
-        console.log(`Job: ${job.title} at ${job.company} - Hash: ${job.job_hash}`);
+        console.error(`❌ Job upsert failed: ${job.title} at ${job.company}`);
       }
     }
   }
@@ -527,6 +527,55 @@ async function scrapeJobTeaserFallback(runId: string, opts?: { pageLimit?: numbe
               console.log(`⚠️ [${strategy.name}] Blocked (status: ${res.status}), trying next...`);
               continue;
             }
+            
+            success = true;
+            break;
+            
+          } catch (error: any) {
+            console.log(`❌ [${strategy.name}] Attempt ${attempt} failed: ${error.message}`);
+            circuitBreakerState.consecutiveFailures++;
+            
+            if (circuitBreakerState.consecutiveFailures >= circuitBreakerState.maxFailures) {
+              circuitBreakerState.isOpen = true;
+              circuitBreakerState.lastFailureTime = Date.now();
+              console.log(`🔌 Circuit breaker opened after ${circuitBreakerState.consecutiveFailures} failures`);
+              break;
+            }
+          }
+        }
+        
+        if (success) break;
+      }
+      
+      if (success) break;
+    }
+    
+    if (!success) {
+      console.log(`❌ All strategies failed for page ${page}`);
+      continue;
+    }
+    
+    // Process the HTML to extract jobs
+    const $ = cheerio.load(html);
+    const jobElements = $('.job-listing, .job-card, .position-listing, [data-job-id]');
+    
+    console.log(`📄 Page ${page}: Found ${jobElements.length} job elements`);
+    
+    for (let i = 0; i < jobElements.length; i++) {
+      try {
+        const element = jobElements.eq(i);
+        const job = await processJobElement($, element, ua);
+        if (job) {
+          jobs.push(job);
+        }
+      } catch (error: any) {
+        console.log(`⚠️ Error processing job element: ${error.message}`);
+      }
+    }
+    
+    // Respectful delay between pages
+    await sleep(2000 + Math.random() * 3000);
+  }
             
             success = true;
             circuitBreakerState.consecutiveFailures = 0;
@@ -817,4 +866,9 @@ async function fetchDescription(jobUrl: string, ua: string): Promise<string> {
   } catch {
     return 'Description not available';
   }
+}
+
+  // Return jobs from fallback function
+  console.log(`🔌 JobTeaser fallback completed: ${jobs.length} jobs found`);
+  return jobs;
 }

@@ -321,28 +321,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Scrape JobTeaser - replaces Graduateland
+    // Scrape JobTeaser - TEMPORARILY DISABLED due to syntax errors
     if (platforms.includes('jobteaser') || platforms.includes('all')) {
-      try {
-        console.log('🎓 Scraping JobTeaser...');
-        const { scrapeJobTeaser } = await import('../../../scrapers/jobteaser');
-        const jobteaserJobs = await scrapeJobTeaser(runId);
-        results.jobteaser = {
-          success: true,
-          raw: jobteaserJobs.raw,
-          eligible: jobteaserJobs.eligible,
-          careerTagged: jobteaserJobs.careerTagged,
-          locationTagged: jobteaserJobs.locationTagged,
-          inserted: jobteaserJobs.inserted,
-          updated: jobteaserJobs.updated,
-          errors: jobteaserJobs.errors,
-          samples: jobteaserJobs.samples
-        };
-        console.log(`✅ JobTeaser: Raw=${jobteaserJobs.raw}, Eligible=${jobteaserJobs.eligible}, Inserted=${jobteaserJobs.inserted}, Updated=${jobteaserJobs.updated}`);
-      } catch (error: any) {
-        results.jobteaser = { success: false, error: error.message };
-        console.error('❌ JobTeaser scrape failed:', error.message);
-      }
+      console.log('🎓 JobTeaser temporarily disabled due to syntax errors...');
+      results.jobteaser = { success: false, error: 'Temporarily disabled due to syntax errors' };
     }
 
     // Scrape iAgora - NEW EU SCRAPER

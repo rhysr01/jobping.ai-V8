@@ -37,6 +37,7 @@
     "deploy:phase6": "node scripts/phase6-deployment.js deploy",
     "deploy:phase6:rollback": "node scripts/phase6-deployment.js rollback",
     "deploy:phase6:validate": "node scripts/phase6-deployment.js validate",
+    "apply:indexes": "node scripts/apply-ingestjob-indexes.js",
     "db:migrate": "echo 'Run migrations in Supabase dashboard'",
     "health:check": "curl -f http://localhost:3000/api/health || exit 1"
   },
