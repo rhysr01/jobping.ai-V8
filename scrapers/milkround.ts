@@ -1,195 +1,69 @@
+/**
+ * Simplified Milkround Scraper using IngestJob format
+ * Phase 4 of IngestJob implementation
+ */
+
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import crypto from 'crypto';
-import { Job } from './types';
-import { extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate, atomicUpsertJobs } from '../Utils/jobMatching';
-import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
-import { getProductionRateLimiter } from '../Utils/productionRateLimiter';
-import { CFG, throttle, fetchHtml } from '../Utils/railwayConfig';
+import { atomicUpsertJobs } from '../Utils/jobMatching.js';
+import { 
+  IngestJob, 
+  classifyEarlyCareer, 
+  inferRole, 
+  parseLocation, 
+  makeJobHash, 
+  validateJob, 
+  convertToDatabaseFormat, 
+  shouldSaveJob, 
+  logJobProcessing 
+} from './utils.js';
+import { RobotsCompliance, RespectfulRateLimiter, JOBPING_USER_AGENT } from '../Utils/robotsCompliance.js';
 
-// Milkround.com UK Graduate-Specific Configuration
-const MILKROUND_CONFIG = {
-  baseUrl: 'https://www.milkround.com',
-  graduateSections: [
-    '/jobs/graduate',
-    '/graduate-jobs',
-    '/graduate-schemes',
-    '/graduate-programmes',
-    '/entry-level-jobs',
-    '/student-jobs',
-    '/internships'
-  ],
-  ukGraduateKeywords: [
-    'graduate scheme',
-    'graduate programme',
-    'graduate training',
-    'graduate development',
-    'graduate academy',
-    'graduate intake',
-    'graduate year',
-    'graduate cohort',
-    'graduate stream',
-    'graduate pathway',
-    'graduate rotation',
-    'graduate trainee',
-    'graduate associate',
-    'graduate analyst',
-    'graduate engineer',
-    'graduate consultant',
-    'graduate accountant',
-    'graduate lawyer',
-    'graduate solicitor',
-    'graduate barrister'
-  ],
-  ukCompanies: [
-    'PwC', 'Deloitte', 'EY', 'KPMG', 'McKinsey', 'BCG', 'Bain',
-    'Goldman Sachs', 'JP Morgan', 'Morgan Stanley', 'Barclays',
-    'HSBC', 'Lloyds', 'RBS', 'NatWest', 'Santander',
-    'Google', 'Microsoft', 'Amazon', 'Apple', 'Meta',
-    'Unilever', 'P&G', 'Nestle', 'Diageo', 'Tesco',
-    'Sainsbury', 'Asda', 'Morrisons', 'Waitrose', 'M&S'
-  ]
-};
-
-const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Enterprise-level header generation
-function getEnterpriseHeaders(attempt: number = 1) {
-  const acceptLanguages = [
-    'en-GB,en;q=0.9,fr;q=0.8',
-    'en-US,en;q=0.9,fr;q=0.8',
-    'fr-FR,fr;q=0.9,en;q=0.8'
-  ];
+// Enhanced retry with jitter
+async function backoffRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
+  let attempt = 0;
   
-  return {
-    'User-Agent': UA,
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-    'Accept-Language': acceptLanguages[attempt % acceptLanguages.length],
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Connection': 'keep-alive',
-    'Upgrade-Insecure-Requests': '1',
-    'Sec-Fetch-Dest': 'document',
-    'Sec-Fetch-Mode': 'navigate',
-    'Sec-Fetch-Site': 'none',
-    'Cache-Control': 'no-cache',
-    'Pragma': 'no-cache',
-    'DNT': '1'
-  };
-}
-
-// Legacy headers for fallback
-function headers() {
-  return getEnterpriseHeaders(1);
-}
-
-// Advanced blocking detection
-function isBlocked(html: string, statusCode: number): boolean {
-  if (statusCode === 403 || statusCode === 429 || statusCode === 503) {
-    return true;
+  while (attempt <= maxRetries) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      attempt++;
+      
+      // Don't retry on certain errors
+      if (err?.response?.status === 404 || err?.response?.status === 401) {
+        throw err;
+      }
+      
+      if (attempt > maxRetries) {
+        throw err;
+      }
+      
+      // Exponential backoff with jitter
+      const baseDelay = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
+      const jitter = Math.random() * 1000;
+      const delay = baseDelay + jitter;
+      
+      console.warn(`🔁 Milkround retrying ${err?.response?.status || 'unknown error'} in ${Math.round(delay)}ms (attempt ${attempt}/${maxRetries})`);
+      await sleep(delay);
+    }
   }
-  
-  const blockingIndicators = [
-    'Just a moment',
-    'Cloudflare',
-    'Access denied',
-    'Blocked',
-    'Rate limited',
-    'Too many requests',
-    'Security check'
-  ];
-  
-  const lowerHtml = html.toLowerCase();
-  return blockingIndicators.some(indicator => 
-    lowerHtml.includes(indicator.toLowerCase())
-  );
-}
-
-// UK Graduate-specific job filter
-function isUKGraduateJob(title: string, description: string, company: string): boolean {
-  const content = `${title} ${description} ${company}`.toLowerCase();
-  
-  // Must contain UK graduate-specific keywords
-  const hasGraduateKeyword = MILKROUND_CONFIG.ukGraduateKeywords.some(keyword => 
-    content.includes(keyword.toLowerCase())
-  );
-  
-  // Prefer UK companies (but don't exclude others)
-  const isUKCompany = MILKROUND_CONFIG.ukCompanies.some(ukCompany => 
-    company.toLowerCase().includes(ukCompany.toLowerCase())
-  );
-  
-  // Exclude senior positions
-  const seniorKeywords = [
-    'senior', 'lead', 'principal', 'director', 'head of', 'manager',
-    '5+ years', '7+ years', 'experienced', 'expert', 'senior level'
-  ];
-  
-  const hasSeniorKeyword = seniorKeywords.some(keyword => 
-    content.includes(keyword.toLowerCase())
-  );
-  
-  return hasGraduateKeyword && !hasSeniorKeyword;
-}
-
-// Extract UK graduate-specific details
-function extractUKGraduateDetails(description: string): {
-  applicationDeadline?: string;
-  startDate?: string;
-  programDuration?: string;
-  salary?: string;
-  location?: string;
-  conversionToFullTime?: boolean;
-} {
-  const details = {
-    applicationDeadline: undefined as string | undefined,
-    startDate: undefined as string | undefined,
-    programDuration: undefined as string | undefined,
-    salary: undefined as string | undefined,
-    location: undefined as string | undefined,
-    conversionToFullTime: false
-  };
-  
-  const desc = description.toLowerCase();
-  
-  // Extract UK-specific patterns
-  const deadlineMatch = desc.match(/(?:application deadline|closing date|apply by|deadline)[:\s]+([^.\n]+)/i);
-  if (deadlineMatch) {
-    details.applicationDeadline = deadlineMatch[1].trim();
-  }
-  
-  // Extract salary (UK format)
-  const salaryMatch = desc.match(/(?:salary|starting salary|package)[:\s]*£?([0-9,]+(?:k|000)?)/i);
-  if (salaryMatch) {
-    details.salary = `£${salaryMatch[1]}`;
-  }
-  
-  // Extract start date
-  const startMatch = desc.match(/(?:start date|commence|begin|starting)[:\s]+([^.\n]+)/i);
-  if (startMatch) {
-    details.startDate = startMatch[1].trim();
-  }
-  
-  // Extract program duration
-  const durationMatch = desc.match(/(\d+)[\s-]*(?:month|year|week)s?/i);
-  if (durationMatch) {
-    details.programDuration = durationMatch[0];
-  }
-  
-  // Check for conversion to full-time
-  details.conversionToFullTime = /convert|conversion|permanent|full.?time|ftc|permanent role/.test(desc);
-  
-  return details;
+  throw new Error('Max retries exceeded');
 }
 
 export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number }): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
-  const jobs: Job[] = [];
-  const telemetry = new FunnelTelemetryTracker();
-  
-  console.log('🇬🇧 Starting Milkround.com UK graduate scraping...');
+  // Simplified metrics tracking
+  let rawCount = 0;
+  let eligibleCount = 0;
+  let savedCount = 0;
+  const errors: string[] = [];
+  const samples: string[] = [];
+
+  console.log('🇬🇧 Starting Milkround.com UK graduate scraping with IngestJob format...');
   
   try {
-    // REAL SCRAPING: Target actual UK graduate job URLs
+    // Target UK graduate job URLs
     const ukGraduateJobUrls = [
       'https://www.milkround.com/graduate-jobs',
       'https://www.milkround.com/graduate-schemes',
@@ -199,16 +73,39 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
     ];
     
     for (const url of ukGraduateJobUrls) {
-      console.log(`🇬🇧 Scraping REAL UK graduate jobs from: ${url}`);
+      console.log(`🇬🇧 Scraping UK graduate jobs from: ${url}`);
       
       try {
-        // Use Railway-compatible HTTP fetching
-        const html = await fetchHtml(url);
+        // Check robots.txt compliance
+        const robotsCheck = await RobotsCompliance.isScrapingAllowed(url);
+        if (!robotsCheck.allowed) {
+          console.log(`🚫 Robots.txt disallows scraping for ${url}: ${robotsCheck.reason}`);
+          errors.push(`Robots.txt disallows: ${robotsCheck.reason}`);
+          continue;
+        }
+
+        // Wait for respectful rate limiting
+        await RespectfulRateLimiter.waitForDomain(new URL(url).hostname);
+
+        // Fetch HTML using axios with retry
+        const { data: html } = await backoffRetry(() =>
+          axios.get(url, {
+            headers: {
+              'User-Agent': JOBPING_USER_AGENT,
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'en-GB,en;q=0.9',
+              'Accept-Encoding': 'gzip, deflate',
+              'Connection': 'keep-alive',
+              'Upgrade-Insecure-Requests': '1'
+            },
+            timeout: 15000,
+          })
+        );
+        
         const $ = cheerio.load(html);
+        console.log(`📄 HTML size: ${html.length} chars, Title: ${$('title').text()}`);
         
-        console.log(`📄 HTML size: ${html.length} chars`);
-        
-        // REAL selectors for Milkround.com
+        // Selectors for Milkround.com
         const jobSelectors = [
           '.job-listing',
           '.graduate-job',
@@ -228,7 +125,7 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
           console.log(`🔍 Selector "${selector}": ${elements.length} elements`);
           if (elements.length > 0) {
             jobElements = elements;
-            console.log(`✅ Using selector: ${selector} (found ${elements.length} REAL UK jobs)`);
+            console.log(`✅ Using selector: ${selector} (found ${elements.length} UK jobs)`);
             break;
           }
         }
@@ -238,12 +135,16 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
           continue;
         }
         
-        // Process REAL UK graduate jobs
+        // Process jobs using IngestJob format
+        const ingestJobs: IngestJob[] = [];
+        
         for (let i = 0; i < jobElements.length; i++) {
+          rawCount++;
+          
           try {
             const element = jobElements.eq(i);
             
-            // Extract REAL UK job data
+            // Extract job data
             const title = element.find('.job-title, .title, h3, .position-title').text().trim();
             const company = element.find('.company-name, .employer, .company').text().trim();
             const location = element.find('.location, .job-location, .job-location').text().trim();
@@ -251,257 +152,130 @@ export async function scrapeMilkround(runId: string, opts?: { pageLimit?: number
             const jobUrl = element.find('a').attr('href');
             const postedDate = element.find('.posted-date, .date, .job-date').text().trim();
             
-            // Skip if no real data
+            // Skip if no essential data
             if (!title || !company) {
               console.log(`⏭️ Skipping job with missing data: ${title || 'No title'}`);
               continue;
             }
             
-            // Skip if not UK graduate-specific
-            if (!isUKGraduateJob(title, description, company)) {
-              console.log(`⏭️ Skipping non-UK graduate job: ${title}`);
+            // Create IngestJob
+            const ingestJob: IngestJob = {
+              title: title.trim(),
+              company: company.trim(),
+              location: location.trim() || 'UK',
+              description: description.trim(),
+              url: jobUrl ? (jobUrl.startsWith('http') ? jobUrl : `https://www.milkround.com${jobUrl}`) : '',
+              posted_at: new Date().toISOString(), // Simplified date handling
+              source: 'milkround'
+            };
+
+            // Validate the job
+            const validation = validateJob(ingestJob);
+            if (!validation.valid) {
+              console.log(`❌ Invalid job: "${title}" - ${validation.errors.join(', ')}`);
               continue;
             }
+
+            eligibleCount++;
             
-            telemetry.recordRaw();
-            
-            // Extract UK graduate-specific details from REAL description
-            const ukGraduateDetails = extractUKGraduateDetails(description);
-            
-            // Create robust job with REAL UK data
-            const jobResult = createRobustJob({
-              title,
-              company,
-              location,
-              jobUrl: jobUrl ? (jobUrl.startsWith('http') ? jobUrl : `${MILKROUND_CONFIG.baseUrl}${jobUrl}`) : '',
-              companyUrl: MILKROUND_CONFIG.baseUrl,
-              description: `${description}\n\nUK Graduate Details:\n- Application Deadline: ${ukGraduateDetails.applicationDeadline || 'Not specified'}\n- Start Date: ${ukGraduateDetails.startDate || 'Not specified'}\n- Program Duration: ${ukGraduateDetails.programDuration || 'Not specified'}\n- Salary: ${ukGraduateDetails.salary || 'Not specified'}\n- Conversion to Full-time: ${ukGraduateDetails.conversionToFullTime ? 'Yes' : 'No'}`,
-              postedAt: postedDate,
-              runId,
-              source: 'milkround',
-              isRemote: location.toLowerCase().includes('remote') || location.toLowerCase().includes('work from home')
-            });
-            
-            if (jobResult.job) {
-              jobs.push(jobResult.job);
-              telemetry.recordEligibility();
-              telemetry.addSampleTitle(title);
-              console.log(`✅ Added REAL UK graduate job: ${title} at ${company}`);
+            // Check if job should be saved based on north-star rule
+            if (shouldSaveJob(ingestJob)) {
+              savedCount++;
+              ingestJobs.push(ingestJob);
+              samples.push(ingestJob.title);
+              
+              logJobProcessing(ingestJob, 'SAVED', { source: 'milkround' });
+            } else {
+              logJobProcessing(ingestJob, 'FILTERED', { source: 'milkround' });
             }
             
-          } catch (error) {
-            console.error(`❌ Error processing job ${i}:`, error);
-            telemetry.recordError(`Job processing error: ${error}`);
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+            console.warn(`⚠️ Error processing job:`, errorMsg);
+            errors.push(errorMsg);
           }
         }
-        
-        // Respect rate limiting
-        await sleep(3000);
-        
-      } catch (error) {
-        console.error(`❌ Error scraping ${url}:`, error);
-        telemetry.recordError(`URL scraping error: ${error}`);
-      }
-    }
-    
-    let html: string = '';
-    let success = false;
-    let consecutiveFailures = 0;
-    
-    for (const strategy of urlStrategies) {
-      if (success) break;
-      
-      for (const searchUrl of strategy.urls) {
-        if (success) break;
-        
-        // Exponential backoff retry
-        for (let attempt = 1; attempt <= 3; attempt++) {
+
+        // Convert IngestJobs to database format and insert
+        if (ingestJobs.length > 0) {
           try {
-            console.log(`🔍 [${strategy.name}] Attempt ${attempt}/3: ${searchUrl}`);
+            const databaseJobs = ingestJobs.map(convertToDatabaseFormat);
+            const result = await atomicUpsertJobs(databaseJobs);
             
-            const delay = Math.min(1000 * Math.pow(2, attempt - 1) + Math.random() * 1000, 8000);
-            await sleep(delay);
+            console.log(`✅ Milkround DATABASE: ${result.inserted} inserted, ${result.updated} updated, ${result.errors.length} errors`);
             
-            const res = await axios.get(searchUrl, { 
-              headers: getEnterpriseHeaders(attempt),
-              timeout: 15000 + (attempt * 3000),
-              maxRedirects: 3,
-              validateStatus: (status) => status < 500
-            });
-            
-            html = res.data;
-            
-            // Advanced blocking detection with content analysis
-            if (isBlocked(html, res.status)) {
-              console.log(`⚠️ [${strategy.name}] Blocked (status: ${res.status}), trying next...`);
-              consecutiveFailures++;
-              continue;
+            if (result.errors.length > 0) {
+              console.error('❌ Milkround upsert errors:', result.errors.slice(0, 3));
+              errors.push(...result.errors);
             }
-            
-            // Additional content validation
-            if (html.length < 1000 || html.includes('No results found') || html.includes('No jobs found')) {
-              console.log(`⚠️ [${strategy.name}] No content found, trying next...`);
-              continue;
-            }
-            
-            success = true;
-            consecutiveFailures = 0;
-            console.log(`✅ [${strategy.name}] Success on attempt ${attempt}`);
-            break;
-            
           } catch (error: any) {
-            console.log(`❌ [${strategy.name}] Attempt ${attempt} failed: ${error.message}`);
-            consecutiveFailures++;
-            if (attempt === 3) break;
+            const errorMsg = error instanceof Error ? error.message : 'Database error';
+            console.error(`❌ Milkround database upsert failed:`, errorMsg);
+            errors.push(errorMsg);
           }
         }
+        
+        console.log(`✅ Scraped ${savedCount} graduate jobs from ${url} (${eligibleCount} eligible, ${rawCount} total)`);
+        
+        // Log scraping activity for compliance monitoring
+        RobotsCompliance.logScrapingActivity('milkround', url, true);
+        
+        // Simple rate limiting between URLs
+        await sleep(1000 + Math.random() * 2000);
+        
+      } catch (error: any) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`❌ Milkround scrape failed for ${url}:`, errorMsg);
+        
+        // Log failed scraping activity for compliance monitoring
+        RobotsCompliance.logScrapingActivity('milkround', url, false);
+        
+        errors.push(errorMsg);
       }
     }
     
-    if (!success) {
-      console.log(`❌ All strategies failed for page ${page}, consecutive failures: ${consecutiveFailures}`);
-      if (consecutiveFailures >= 5) {
-        console.log(`🔌 Too many consecutive failures, stopping...`);
-        break;
-      }
-      break;
-    }
-
-    const $ = cheerio.load(html);
-    const cards = $('.job, .job-card, .lister__item, article, [data-testid="job-card"]');
-    if (cards.length === 0) break;
-
-    const pageJobs = await Promise.all(cards.map(async (_, el) => {
-      const $el = $(el);
-      const title = ($el.find('a, h2, h3').first().text() || '').trim();
-      const company = ($el.find('.lister__meta-item--recruiter, .company, .employer').first().text() || '').trim();
-      const location = ($el.find('.location, .lister__meta-item--location, .job-location').first().text() || 'Location not specified').trim();
-      let jobUrl = $el.find('a').attr('href') || '';
-      if (jobUrl && !jobUrl.startsWith('http')) jobUrl = `https://www.milkround.com${jobUrl}`;
-      if (!title || !company || !jobUrl) return null;
-
-      const description = await fetchDescription(jobUrl);
-      const date = extractPostingDate(description, 'milkround', jobUrl);
-      const content = `${title} ${description}`.toLowerCase();
-      const workEnv = /\bremote\b/.test(content) ? 'remote' : /\b(on.?site|office|in.person|onsite)\b/.test(content) ? 'on-site' : 'hybrid';
-      const experience = /\b(intern|internship)\b/.test(content) ? 'internship' : /\b(graduate|junior|entry|trainee)\b/.test(content) ? 'entry-level' : 'entry-level';
-      const languages = (description.match(/\b(english|spanish|french|german|dutch|portuguese|italian)\b/gi) || []).map(l => l.toLowerCase());
-      const professionalExpertise = extractProfessionalExpertise(title, description);
-      const careerPath = extractCareerPath(title, description);
-      const startDate = extractStartDate(description);
-
-      // Use enhanced robust job creation with Job Ingestion Contract
-      const jobResult = createRobustJob({
-        title,
-        company,
-        location,
-        jobUrl,
-        companyUrl: '',
-        description: description.slice(0, 2000),
-        department: 'General',
-        postedAt: date.success && date.date ? date.date : new Date().toISOString(),
-        runId,
-        source: 'milkround',
-        isRemote: workEnv === 'remote'
-      });
-
-      // Record telemetry and debug filtering
-      if (jobResult.job) {
-        console.log(`✅ Job accepted: "${title}"`);
-      } else {
-        console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
-      }
-
-      return jobResult.job;
-    }).get());
-
-    jobs.push(...(pageJobs.filter(Boolean) as Job[]));
-    await sleep(600 + Math.random() * 600);
-  }
-
-  // Track telemetry for all jobs found
-  for (let i = 0; i < jobs.length; i++) {
-    telemetry.recordRaw();
-    telemetry.recordEligibility();
-    telemetry.recordCareerTagging();
-    telemetry.recordLocationTagging();
-    telemetry.addSampleTitle(jobs[i].title);
-  }
-
-  // If no jobs found due to blocking, create a test job to verify integration
-  if (jobs.length === 0) {
-    console.log(`⚠️ No jobs found from Milkround (likely blocked), creating test job...`);
-    const testJobResult = createRobustJob({
-      title: 'Graduate Marketing Assistant (Test)',
-      company: 'Milkround Test Company',
-      location: 'London, UK',
-      jobUrl: 'https://www.milkround.com/test-job',
-      companyUrl: '',
-      description: 'Test graduate position for marketing. This is a test job created when the scraper is blocked.',
-      department: 'General',
-      postedAt: new Date().toISOString(),
-      runId,
-      source: 'milkround',
-      isRemote: false
-    });
+    return {
+      raw: rawCount,
+      eligible: eligibleCount,
+      careerTagged: savedCount,
+      locationTagged: savedCount,
+      inserted: savedCount,
+      updated: 0,
+      errors,
+      samples
+    };
     
-    const testJob = testJobResult.job;
-    if (testJob) {
-      jobs.push(testJob);
-      
-      // Track telemetry for test job
-      telemetry.recordRaw();
-      telemetry.recordEligibility();
-      telemetry.recordCareerTagging();
-      telemetry.recordLocationTagging();
-      telemetry.addSampleTitle(testJob.title);
-    }
+  } catch (error: any) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Milkround scraper failed:', errorMsg);
+    
+    return {
+      raw: rawCount,
+      eligible: eligibleCount,
+      careerTagged: savedCount,
+      locationTagged: savedCount,
+      inserted: savedCount,
+      updated: 0,
+      errors: [errorMsg],
+      samples
+    };
   }
-
-  // Upsert jobs to database with enhanced error handling
-  if (jobs.length > 0) {
-    try {
-      const result = await atomicUpsertJobs(jobs);
-      console.log(`✅ Milkround: ${result.inserted} inserted, ${result.updated} updated jobs`);
-      
-      // Track upsert results
-      for (let i = 0; i < result.inserted; i++) telemetry.recordInserted();
-      for (let i = 0; i < result.updated; i++) telemetry.recordUpdated();
-      
-      if (result.errors.length > 0) {
-        result.errors.forEach(error => telemetry.recordError(error));
-      }
-    } catch (error: any) {
-      const errorMsg = error instanceof Error ? error.message : 'Database error';
-      console.error(`❌ Database upsert failed: ${errorMsg}`);
-      telemetry.recordError(errorMsg);
-      // Log individual job errors for debugging
-      for (const job of jobs) {
-        console.log(`Job: ${job.title} at ${job.company} - Hash: ${job.job_hash}`);
-      }
-    }
-  }
-
-  // Log standardized funnel metrics
-  logFunnelMetrics('milkround', telemetry.getTelemetry());
-  
-  return telemetry.getTelemetry();
 }
 
-async function fetchDescription(url: string): Promise<string> {
-  try {
-    await sleep(200 + Math.random() * 300);
-    const res = await axios.get(url, { headers: headers(), timeout: 12000 });
-    const $ = cheerio.load(res.data);
-    const selectors = ['.job-description', '.description', '#job-description', '.content', 'article'];
-    for (const sel of selectors) {
-      const text = $(sel).text().trim();
-      if (text && text.length > 100) return text;
-    }
-    return $('body').text().trim().slice(0, 1500);
-  } catch {
-    return 'Description not available';
-  }
+// Test runner
+if (require.main === module) {
+  const testRunId = 'test-run-' + Date.now();
+
+  scrapeMilkround(testRunId)
+    .then((result) => {
+      console.log(`🧪 Test: ${result.inserted + result.updated} jobs processed`);
+      console.log(`📊 MILKROUND TEST FUNNEL: Raw=${result.raw}, Eligible=${result.eligible}, Inserted=${result.inserted}, Updated=${result.updated}`);
+      if (result.samples.length > 0) {
+        console.log(`📝 Sample titles: ${result.samples.join(' | ')}`);
+      }
+      console.log('---');
+    })
+    .catch(err => console.error('🛑 Test failed:', err));
 }
 
 
