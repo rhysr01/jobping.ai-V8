@@ -1,367 +1,283 @@
+/**
+ * Simplified SmartRecruiters Scraper using IngestJob format
+ * Phase 4 of IngestJob implementation
+ */
+
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import * as crypto from 'crypto';
-import { Job } from './types';
-import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
-import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
-
-const USER_AGENTS = [
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0',
-];
-
-// Enhanced anti-detection headers with rotating IP simulation
-const getRandomHeaders = (userAgent: string) => {
-  const referrers = [
-    'https://www.google.com/',
-    'https://www.linkedin.com/jobs/',
-    'https://www.glassdoor.com/',
-    'https://www.indeed.com/',
-    'https://www.ziprecruiter.com/',
-    'https://www.simplyhired.com/',
-    'https://www.dice.com/',
-    'https://www.angel.co/jobs',
-    'https://www.wellfound.com/',
-    'https://www.otta.com/'
-  ];
-
-  const languages = [
-    'en-US,en;q=0.9,es;q=0.8,fr;q=0.7,de;q=0.6',
-    'en-GB,en;q=0.9',
-    'en-CA,en;q=0.9,fr;q=0.8',
-    'en-AU,en;q=0.9',
-    'en-US,en;q=0.9,zh;q=0.8,ja;q=0.7'
-  ];
-
-  return {
-    'User-Agent': userAgent,
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-    'Accept-Language': languages[Math.floor(Math.random() * languages.length)],
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Cache-Control': 'no-cache',
-    'Pragma': 'no-cache',
-    'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-    'Sec-Ch-Ua-Mobile': '?0',
-    'Sec-Ch-Ua-Platform': '"macOS"',
-    'Sec-Fetch-Dest': 'document',
-    'Sec-Fetch-Mode': 'navigate',
-    'Sec-Fetch-Site': 'cross-site',
-    'Sec-Fetch-User': '?1',
-    'Upgrade-Insecure-Requests': '1',
-    'DNT': '1',
-    'Referer': referrers[Math.floor(Math.random() * referrers.length)],
-    'X-Forwarded-For': `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-    'X-Real-IP': `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-  };
-};
+import { atomicUpsertJobs } from '../Utils/jobMatching.js';
+import { 
+  IngestJob, 
+  classifyEarlyCareer, 
+  inferRole, 
+  parseLocation, 
+  makeJobHash, 
+  validateJob, 
+  convertToDatabaseFormat, 
+  shouldSaveJob, 
+  logJobProcessing 
+} from './utils.js';
+import { RobotsCompliance, RespectfulRateLimiter, JOBPING_USER_AGENT } from '../Utils/robotsCompliance.js';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// EU Companies using SmartRecruiters platform
-const EU_COMPANIES = [
-  { name: 'Spotify', url: 'https://jobs.smartrecruiters.com/Spotify' },
-  { name: 'Klarna', url: 'https://jobs.smartrecruiters.com/Klarna' },
-  { name: 'Adidas', url: 'https://jobs.smartrecruiters.com/Adidas' },
-  { name: 'Volkswagen', url: 'https://jobs.smartrecruiters.com/Volkswagen' },
-  { name: 'BMW', url: 'https://jobs.smartrecruiters.com/BMW' },
-  { name: 'Siemens', url: 'https://jobs.smartrecruiters.com/Siemens' },
-  { name: 'Bosch', url: 'https://jobs.smartrecruiters.com/Bosch' },
-  { name: 'Philips', url: 'https://jobs.smartrecruiters.com/Philips' },
-  { name: 'Unilever', url: 'https://jobs.smartrecruiters.com/Unilever' },
-  { name: 'Nestle', url: 'https://jobs.smartrecruiters.com/Nestle' },
-  { name: 'IKEA', url: 'https://jobs.smartrecruiters.com/IKEA' },
-  { name: 'H&M', url: 'https://jobs.smartrecruiters.com/HM' },
-  { name: 'Zalando', url: 'https://jobs.smartrecruiters.com/Zalando' },
-  { name: 'Delivery Hero', url: 'https://jobs.smartrecruiters.com/DeliveryHero' },
-  { name: 'HelloFresh', url: 'https://jobs.smartrecruiters.com/HelloFresh' },
-  { name: 'N26', url: 'https://jobs.smartrecruiters.com/N26' },
-  { name: 'Revolut', url: 'https://jobs.smartrecruiters.com/Revolut' },
-  { name: 'Monzo', url: 'https://jobs.smartrecruiters.com/Monzo' },
-  { name: 'TransferWise', url: 'https://jobs.smartrecruiters.com/TransferWise' },
-  { name: 'Booking.com', url: 'https://jobs.smartrecruiters.com/Bookingcom' }
-];
-
-export async function scrapeSmartRecruiters(runId: string): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
-  const startTime = Date.now();
-  const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-  const telemetry = new FunnelTelemetryTracker();
+// Enhanced retry with jitter
+async function backoffRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
+  let attempt = 0;
   
-  console.log('🏢 Starting SmartRecruiters scraping...');
-  
-  try {
-    const allJobs: Job[] = [];
-    
-    // Scrape jobs for each EU company
-    for (const company of EU_COMPANIES) {
-      console.log(`🏢 Scraping ${company.name}...`);
+  while (attempt <= maxRetries) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      attempt++;
       
-      try {
-        const companyJobs = await scrapeCompanyJobs(company, runId, userAgent);
-        allJobs.push(...companyJobs);
-        console.log(`✅ ${company.name}: ${companyJobs.length} jobs found`);
-        
-        // Rate limiting between companies
-        await sleep(2000 + Math.random() * 3000);
-        
-      } catch (error) {
-        console.error(`❌ Failed to scrape ${company.name}:`, error);
-        continue;
+      // Don't retry on certain errors
+      if (err?.response?.status === 404 || err?.response?.status === 401) {
+        throw err;
       }
-    }
-    
-    // Track telemetry for all jobs found (createRobustJob handles filtering)
-    for (let i = 0; i < allJobs.length; i++) {
-      telemetry.recordRaw();
-      telemetry.recordEligibility(); // createRobustJob filters eligible jobs
-      telemetry.recordCareerTagging(); // createRobustJob adds career tags
-      telemetry.recordLocationTagging(); // createRobustJob adds location tags
-      telemetry.addSampleTitle(allJobs[i].title);
-    }
-    
-    const duration = Date.now() - startTime;
-    console.log(`🏢 SmartRecruiters scraping completed: ${allJobs.length} jobs in ${duration}ms`);
-    
-    // Use atomicUpsertJobs for database insertion
-    if (allJobs.length > 0) {
-      try {
-        const result = await atomicUpsertJobs(allJobs);
-        console.log(`💾 SmartRecruiters database result: ${result.inserted} inserted, ${result.updated} updated`);
-        
-        // Track upsert results
-        for (let i = 0; i < result.inserted; i++) telemetry.recordInserted();
-        for (let i = 0; i < result.updated; i++) telemetry.recordUpdated();
-        
-        if (result.errors.length > 0) {
-          result.errors.forEach(error => telemetry.recordError(error));
-        }
-      } catch (error: any) {
-        const errorMsg = error instanceof Error ? error.message : 'Database error';
-        console.error(`❌ SmartRecruiters database error:`, errorMsg);
-        telemetry.recordError(errorMsg);
+      
+      if (attempt > maxRetries) {
+        throw err;
       }
+      
+      // Exponential backoff with jitter
+      const baseDelay = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
+      const jitter = Math.random() * 1000;
+      const delay = baseDelay + jitter;
+      
+      console.warn(`🔁 SmartRecruiters retrying ${err?.response?.status || 'unknown error'} in ${Math.round(delay)}ms (attempt ${attempt}/${maxRetries})`);
+      await sleep(delay);
     }
-    
-    // Log standardized funnel metrics
-    logFunnelMetrics('smartrecruiters', telemetry.getTelemetry());
-    
-    return telemetry.getTelemetry();
-    
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    console.error('❌ SmartRecruiters scraping failed:', errorMsg);
-    telemetry.recordError(errorMsg);
-    
-    logFunnelMetrics('smartrecruiters', telemetry.getTelemetry());
-    return telemetry.getTelemetry();
   }
+  throw new Error('Max retries exceeded');
 }
 
-async function scrapeCompanyJobs(company: { name: string; url: string }, runId: string, userAgent: string): Promise<Job[]> {
-  const jobs: Job[] = [];
+export async function scrapeSmartRecruiters(runId: string, opts?: { pageLimit?: number }): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
+  // Simplified metrics tracking
+  let rawCount = 0;
+  let eligibleCount = 0;
+  let savedCount = 0;
+  const errors: string[] = [];
+  const samples: string[] = [];
+
+  console.log('🏢 Starting SmartRecruiters.com scraping with IngestJob format...');
   
   try {
-    // Try to get jobs from company's SmartRecruiters page
-    const response = await axios.get(company.url, {
-      headers: getRandomHeaders(userAgent),
-      timeout: 15000
-    });
+    // Target SmartRecruiters URLs
+    const smartRecruitersUrls = [
+      'https://jobs.smartrecruiters.com',
+      'https://jobs.smartrecruiters.com/Spotify',
+      'https://jobs.smartrecruiters.com/Klarna',
+      'https://jobs.smartrecruiters.com/Adidas',
+      'https://jobs.smartrecruiters.com/Volkswagen',
+      'https://jobs.smartrecruiters.com/BMW',
+      'https://jobs.smartrecruiters.com/Siemens',
+      'https://jobs.smartrecruiters.com/Bosch',
+      'https://jobs.smartrecruiters.com/Philips',
+      'https://jobs.smartrecruiters.com/Unilever'
+    ];
     
-    const $ = cheerio.load(response.data);
-    
-    // Look for job listings (SmartRecruiters specific selectors)
-    const jobElements = $('.job-card, .job-listing, .job-item, [data-job-id]');
-    
-    jobElements.each((index, element) => {
-      if (index >= 15) return; // Limit to 15 jobs per company
+    for (const url of smartRecruitersUrls) {
+      console.log(`🏢 Scraping SmartRecruiters jobs from: ${url}`);
       
       try {
-        const job = processJobElement($, $(element), company, runId, userAgent);
-        if (job) {
-          jobs.push(job);
+        // Check robots.txt compliance
+        const robotsCheck = await RobotsCompliance.isScrapingAllowed(url);
+        if (!robotsCheck.allowed) {
+          console.log(`🚫 Robots.txt disallows scraping for ${url}: ${robotsCheck.reason}`);
+          errors.push(`Robots.txt disallows: ${robotsCheck.reason}`);
+          continue;
         }
-      } catch (error) {
-        console.error('Error processing job element:', error);
-      }
-    });
-    
-    // If no jobs found with standard selectors, try alternative approach
-    if (jobs.length === 0) {
-      console.log(`No jobs found for ${company.name}, trying alternative selectors...`);
-      
-      // Try different selectors that might be used by SmartRecruiters
-      const altJobElements = $('.sr-job, .job, .position, [class*="job"]');
-      
-      altJobElements.each((index, element) => {
-        if (index >= 15) return;
+
+        // Wait for respectful rate limiting
+        await RespectfulRateLimiter.waitForDomain(new URL(url).hostname);
+
+        // Fetch HTML using axios with retry
+        const { data: html } = await backoffRetry(() =>
+          axios.get(url, {
+            headers: {
+              'User-Agent': JOBPING_USER_AGENT,
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'en-GB,en;q=0.9',
+              'Accept-Encoding': 'gzip, deflate',
+              'Connection': 'keep-alive',
+              'Upgrade-Insecure-Requests': '1'
+            },
+            timeout: 15000,
+          })
+        );
         
-        try {
-          const job = processJobElementAlt($, $(element), company, runId, userAgent);
-          if (job) {
-            jobs.push(job);
+        const $ = cheerio.load(html);
+        console.log(`📄 HTML size: ${html.length} chars, Title: ${$('title').text()}`);
+        
+        // Selectors for SmartRecruiters
+        const jobSelectors = [
+          '.job-listing',
+          '.job-card',
+          '.job-item',
+          '.position-listing',
+          '.smartrecruiters-job',
+          '.job-result',
+          '.job-offer',
+          '[data-job-id]',
+          '.search-result'
+        ];
+        
+        let jobElements = $();
+        for (const selector of jobSelectors) {
+          const elements = $(selector);
+          console.log(`🔍 Selector "${selector}": ${elements.length} elements`);
+          if (elements.length > 0) {
+            jobElements = elements;
+            console.log(`✅ Using selector: ${selector} (found ${elements.length} SmartRecruiters jobs)`);
+            break;
           }
-        } catch (error) {
-          console.error('Error processing alternative job element:', error);
         }
-      });
+        
+        if (jobElements.length === 0) {
+          console.log(`⚠️ No jobs found with any selector on ${url}`);
+          continue;
+        }
+        
+        // Process jobs using IngestJob format
+        const ingestJobs: IngestJob[] = [];
+        
+        for (let i = 0; i < jobElements.length; i++) {
+          rawCount++;
+          
+          try {
+            const element = jobElements.eq(i);
+            
+            // Extract job data
+            const title = element.find('.job-title, .title, h3, .position-title').text().trim();
+            const company = element.find('.company-name, .employer, .company').text().trim();
+            const location = element.find('.location, .job-location, .job-location').text().trim();
+            const description = element.find('.job-description, .description, .job-summary').text().trim();
+            const jobUrl = element.find('a').attr('href');
+            const postedDate = element.find('.posted-date, .date, .job-date').text().trim();
+            
+            // Skip if no essential data
+            if (!title || !company) {
+              console.log(`⏭️ Skipping job with missing data: ${title || 'No title'}`);
+              continue;
+            }
+            
+            // Create IngestJob
+            const ingestJob: IngestJob = {
+              title: title.trim(),
+              company: company.trim(),
+              location: location.trim() || 'Europe',
+              description: description.trim(),
+              url: jobUrl ? (jobUrl.startsWith('http') ? jobUrl : `https://jobs.smartrecruiters.com${jobUrl}`) : '',
+              posted_at: new Date().toISOString(), // Simplified date handling
+              source: 'smartrecruiters'
+            };
+
+            // Validate the job
+            const validation = validateJob(ingestJob);
+            if (!validation.valid) {
+              console.log(`❌ Invalid job: "${title}" - ${validation.errors.join(', ')}`);
+              continue;
+            }
+
+            eligibleCount++;
+            
+            // Check if job should be saved based on north-star rule
+            if (shouldSaveJob(ingestJob)) {
+              savedCount++;
+              ingestJobs.push(ingestJob);
+              samples.push(ingestJob.title);
+              
+              logJobProcessing(ingestJob, 'SAVED', { source: 'smartrecruiters' });
+            } else {
+              logJobProcessing(ingestJob, 'FILTERED', { source: 'smartrecruiters' });
+            }
+            
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+            console.warn(`⚠️ Error processing job:`, errorMsg);
+            errors.push(errorMsg);
+          }
+        }
+
+        // Convert IngestJobs to database format and insert
+        if (ingestJobs.length > 0) {
+          try {
+            const databaseJobs = ingestJobs.map(convertToDatabaseFormat);
+            const result = await atomicUpsertJobs(databaseJobs);
+            
+            console.log(`✅ SmartRecruiters DATABASE: ${result.inserted} inserted, ${result.updated} updated, ${result.errors.length} errors`);
+            
+            if (result.errors.length > 0) {
+              console.error('❌ SmartRecruiters upsert errors:', result.errors.slice(0, 3));
+              errors.push(...result.errors);
+            }
+          } catch (error: any) {
+            const errorMsg = error instanceof Error ? error.message : 'Database error';
+            console.error(`❌ SmartRecruiters database upsert failed:`, errorMsg);
+            errors.push(errorMsg);
+          }
+        }
+        
+        console.log(`✅ Scraped ${savedCount} SmartRecruiters jobs from ${url} (${eligibleCount} eligible, ${rawCount} total)`);
+        
+        // Log scraping activity for compliance monitoring
+        RobotsCompliance.logScrapingActivity('smartrecruiters', url, true);
+        
+        // Simple rate limiting between URLs
+        await sleep(1000 + Math.random() * 2000);
+        
+      } catch (error: any) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`❌ SmartRecruiters scrape failed for ${url}:`, errorMsg);
+        
+        // Log failed scraping activity for compliance monitoring
+        RobotsCompliance.logScrapingActivity('smartrecruiters', url, false);
+        
+        errors.push(errorMsg);
+      }
     }
     
-    console.log(`Found ${jobs.length} jobs for ${company.name}`);
-    return jobs;
+    return {
+      raw: rawCount,
+      eligible: eligibleCount,
+      careerTagged: savedCount,
+      locationTagged: savedCount,
+      inserted: savedCount,
+      updated: 0,
+      errors,
+      samples
+    };
     
-  } catch (error) {
-    console.error(`Error scraping ${company.name}:`, error);
-    return [];
+  } catch (error: any) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ SmartRecruiters scraper failed:', errorMsg);
+    
+    return {
+      raw: rawCount,
+      eligible: eligibleCount,
+      careerTagged: savedCount,
+      locationTagged: savedCount,
+      inserted: savedCount,
+      updated: 0,
+      errors: [errorMsg],
+      samples
+    };
   }
 }
 
-function processJobElement($: cheerio.CheerioAPI, $el: cheerio.Cheerio<any>, company: { name: string; url: string }, runId: string, userAgent: string): Job | null {
-  try {
-    // Extract job information using SmartRecruiters selectors
-    const title = $el.find('.job-title, .title, h3, h4').first().text().trim();
-    const location = $el.find('.job-location, .location, .city').first().text().trim();
-    const jobUrl = $el.find('a').attr('href') || '';
-    
-    if (!title) {
-      return null;
-    }
-    
-    // Extract job description if available
-    let description = $el.find('.job-description, .description, .summary').text().trim();
-    if (!description) {
-      description = `Position at ${company.name} in ${location || 'various locations'}. ${title}`;
-    }
-    
-    // Analyze job content
-    const analysis = analyzeJobContent(title, description);
-    
-    // Create job hash
-    const jobHash = crypto.createHash('md5').update(`${title}-${company.name}-${jobUrl}`).digest('hex');
-    
-    // Extract posting date
-    const dateResult = extractPostingDate(description, 'smartrecruiters', jobUrl);
-    
-    // Use enhanced robust job creation with Job Ingestion Contract
-    const jobResult = createRobustJob({
-      title,
-      company: company.name,
-      location: location || 'Various Locations',
-      jobUrl: jobUrl.startsWith('http') ? jobUrl : `${company.url}${jobUrl}`,
-      companyUrl: company.url,
-      description,
-      department: 'General',
-      postedAt: dateResult.success ? dateResult.date! : new Date().toISOString(),
-      runId,
-      source: 'smartrecruiters',
-      isRemote: analysis.workEnv === 'remote',
-      platformId: jobUrl.match(/smartrecruiters\.com\/[^\/]+\/([^\/\?]+)/)?.[1] // Extract SmartRecruiters job ID
-    });
+// Test runner
+if (require.main === module) {
+  const testRunId = 'test-run-' + Date.now();
 
-    // Record telemetry and debug filtering
-    if (jobResult.job) {
-      console.log(`✅ Job accepted: "${title}"`);
-    } else {
-      console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
-    }
-
-    return jobResult.job;
-    
-  } catch (error) {
-    console.error('Error processing job element:', error);
-    return null;
-  }
-}
-
-function processJobElementAlt($: cheerio.CheerioAPI, $el: cheerio.Cheerio<any>, company: { name: string; url: string }, runId: string, userAgent: string): Job | null {
-  try {
-    // Alternative processing for different SmartRecruiters layouts
-    const title = $el.find('h1, h2, h3, h4, .title, [class*="title"]').first().text().trim();
-    const location = $el.find('[class*="location"], [class*="city"], .location').first().text().trim();
-    const jobUrl = $el.find('a').attr('href') || '';
-    
-    if (!title) {
-      return null;
-    }
-    
-    // Create basic description
-    const description = `Position at ${company.name} in ${location || 'various locations'}. ${title}`;
-    
-    // Analyze job content
-    const analysis = analyzeJobContent(title, description);
-    
-    // Create job hash
-    const jobHash = crypto.createHash('md5').update(`${title}-${company.name}-${jobUrl}`).digest('hex');
-    
-    // Use enhanced robust job creation with Job Ingestion Contract
-    const jobResult = createRobustJob({
-      title,
-      company: company.name,
-      location: location || 'Various Locations',
-      jobUrl: jobUrl.startsWith('http') ? jobUrl : `${company.url}${jobUrl}`,
-      companyUrl: company.url,
-      description,
-      department: 'General',
-      postedAt: new Date().toISOString(),
-      runId,
-      source: 'smartrecruiters',
-      isRemote: analysis.workEnv === 'remote',
-      platformId: jobUrl.match(/smartrecruiters\.com\/[^\/]+\/([^\/\?]+)/)?.[1] // Extract SmartRecruiters job ID
-    });
-
-    // Record telemetry and debug filtering
-    if (jobResult.job) {
-      console.log(`✅ Job accepted: "${title}"`);
-    } else {
-      console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
-    }
-
-    return jobResult.job;
-    
-  } catch (error) {
-    console.error('Error processing alternative job element:', error);
-    return null;
-  }
-}
-
-function analyzeJobContent(title: string, description: string) {
-  const content = `${title} ${description}`.toLowerCase();
-  
-  // Determine experience level
-  let experienceLevel = 'entry-level';
-  if (/\b(intern|internship)\b/.test(content)) experienceLevel = 'internship';
-  else if (/\b(graduate|grad)\b/.test(content)) experienceLevel = 'graduate';
-  else if (/\b(junior|entry)\b/.test(content)) experienceLevel = 'entry-level';
-  
-  // Determine work environment
-  let workEnv = 'hybrid';
-  if (/\b(remote|work.from.home|distributed)\b/.test(content)) workEnv = 'remote';
-  else if (/\b(on.?site|office|in.person)\b/.test(content)) workEnv = 'office';
-  
-  // Extract language requirements
-  const languages: string[] = [];
-  const langMatches = content.match(/\b(english|spanish|french|german|dutch|portuguese|italian)\b/g);
-  if (langMatches) {
-    languages.push(...[...new Set(langMatches)]);
-  }
-  
-  // Extract professional expertise using the helper function
-  const professionalExpertise = extractProfessionalExpertise(title, description);
-  
-  // Extract career path using the helper function
-  const careerPath = extractCareerPath(title, description);
-  
-  // Extract start date using the helper function
-  const startDate = extractStartDate(description);
-  
-  return {
-    experienceLevel,
-    workEnv,
-    languages,
-    professionalExpertise,
-    careerPath,
-    startDate
-  };
+  scrapeSmartRecruiters(testRunId)
+    .then((result) => {
+      console.log(`🧪 Test: ${result.inserted + result.updated} jobs processed`);
+      console.log(`📊 SMARTRECRUITERS TEST FUNNEL: Raw=${result.raw}, Eligible=${result.eligible}, Inserted=${result.inserted}, Updated=${result.updated}`);
+      if (result.samples.length > 0) {
+        console.log(`📝 Sample titles: ${result.samples.join(' | ')}`);
+      }
+      console.log('---');
+    })
+    .catch(err => console.error('🛑 Test failed:', err));
 }
