@@ -1,341 +1,278 @@
+/**
+ * Simplified Graduateland Scraper using IngestJob format
+ * Phase 4 of IngestJob implementation
+ */
+
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import crypto from 'crypto';
-import { Job } from './types';
-import { atomicUpsertJobs, extractPostingDate, extractProfessionalExpertise, extractCareerPath, extractStartDate } from '../Utils/jobMatching';
-import { PerformanceMonitor } from '../Utils/performanceMonitor';
-import { FunnelTelemetryTracker, logFunnelMetrics, isEarlyCareerEligible, createRobustJob } from '../Utils/robustJobCreation';
-
-const USER_AGENTS = [
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0',
-];
-
-// Enhanced anti-detection headers with rotating IP simulation
-const getRandomHeaders = (userAgent: string) => {
-  const referrers = [
-    'https://www.google.com/',
-    'https://www.linkedin.com/jobs/',
-    'https://www.glassdoor.com/',
-    'https://www.indeed.com/',
-    'https://www.ziprecruiter.com/',
-    'https://www.simplyhired.com/',
-    'https://www.dice.com/',
-    'https://www.angel.co/jobs',
-    'https://www.wellfound.com/',
-    'https://www.otta.com/'
-  ];
-
-  const languages = [
-    'en-US,en;q=0.9,es;q=0.8,fr;q=0.7,de;q=0.6',
-    'en-GB,en;q=0.9',
-    'en-CA,en;q=0.9,fr;q=0.8',
-    'en-AU,en;q=0.9',
-    'en-US,en;q=0.9,zh;q=0.8,ja;q=0.7'
-  ];
-
-  return {
-    'User-Agent': userAgent,
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': languages[Math.floor(Math.random() * languages.length)],
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Cache-Control': 'no-cache',
-    'Pragma': 'no-cache',
-    'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-    'Sec-Ch-Ua-Mobile': '?0',
-    'Sec-Ch-Ua-Platform': '"macOS"',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'cross-site',
-    'DNT': '1',
-    'Referer': referrers[Math.floor(Math.random() * referrers.length)],
-    'X-Forwarded-For': `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-    'X-Real-IP': `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-  };
-};
+import { atomicUpsertJobs } from '../Utils/jobMatching.js';
+import { 
+  IngestJob, 
+  classifyEarlyCareer, 
+  inferRole, 
+  parseLocation, 
+  makeJobHash, 
+  validateJob, 
+  convertToDatabaseFormat, 
+  shouldSaveJob, 
+  logJobProcessing 
+} from './utils.js';
+import { RobotsCompliance, RespectfulRateLimiter, JOBPING_USER_AGENT } from '../Utils/robotsCompliance.js';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// EU Cities for Graduateland
-const EU_CITIES = ['London', 'Madrid', 'Berlin', 'Amsterdam', 'Paris', 'Dublin', 'Stockholm', 'Zurich', 'Barcelona', 'Munich'];
-
-// Graduateland API configuration
-const GRADUATELAND_API_BASE = 'https://graduateland.com/api/v2';
-const API_ENDPOINTS = {
-  jobs: '/jobs',
-  companies: '/companies'
-};
-
-export async function scrapeGraduateland(runId: string): Promise<Job[]> {
-  const startTime = Date.now();
-  const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+// Enhanced retry with jitter
+async function backoffRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
+  let attempt = 0;
   
-  console.log('🎓 Starting Graduateland API scraping...');
+  while (attempt <= maxRetries) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      attempt++;
+      
+      // Don't retry on certain errors
+      if (err?.response?.status === 404 || err?.response?.status === 401) {
+        throw err;
+      }
+      
+      if (attempt > maxRetries) {
+        throw err;
+      }
+      
+      // Exponential backoff with jitter
+      const baseDelay = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
+      const jitter = Math.random() * 1000;
+      const delay = baseDelay + jitter;
+      
+      console.warn(`🔁 Graduateland retrying ${err?.response?.status || 'unknown error'} in ${Math.round(delay)}ms (attempt ${attempt}/${maxRetries})`);
+      await sleep(delay);
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
+export async function scrapeGraduateland(runId: string, opts?: { pageLimit?: number }): Promise<{ raw: number; eligible: number; careerTagged: number; locationTagged: number; inserted: number; updated: number; errors: string[]; samples: string[] }> {
+  // Simplified metrics tracking
+  let rawCount = 0;
+  let eligibleCount = 0;
+  let savedCount = 0;
+  const errors: string[] = [];
+  const samples: string[] = [];
+
+  console.log('🎓 Starting Graduateland.com scraping with IngestJob format...');
   
   try {
-    const allJobs: Job[] = [];
+    // Target Graduateland URLs
+    const graduatelandUrls = [
+      'https://graduateland.com/jobs',
+      'https://graduateland.com/graduate-jobs',
+      'https://graduateland.com/entry-level-jobs',
+      'https://graduateland.com/internships',
+      'https://graduateland.com/student-jobs'
+    ];
     
-    // Scrape jobs for each EU city
-    for (const city of EU_CITIES) {
-      console.log(`📍 Scraping Graduateland for ${city}...`);
+    for (const url of graduatelandUrls) {
+      console.log(`🎓 Scraping Graduateland jobs from: ${url}`);
       
       try {
-        const cityJobs = await scrapeCityJobs(city, runId, userAgent);
-        allJobs.push(...cityJobs);
-        console.log(`✅ ${city}: ${cityJobs.length} jobs found`);
+        // Check robots.txt compliance
+        const robotsCheck = await RobotsCompliance.isScrapingAllowed(url);
+        if (!robotsCheck.allowed) {
+          console.log(`🚫 Robots.txt disallows scraping for ${url}: ${robotsCheck.reason}`);
+          errors.push(`Robots.txt disallows: ${robotsCheck.reason}`);
+          continue;
+        }
+
+        // Wait for respectful rate limiting
+        await RespectfulRateLimiter.waitForDomain(new URL(url).hostname);
+
+        // Fetch HTML using axios with retry
+        const { data: html } = await backoffRetry(() =>
+          axios.get(url, {
+            headers: {
+              'User-Agent': JOBPING_USER_AGENT,
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'en-GB,en;q=0.9,da;q=0.8',
+              'Accept-Encoding': 'gzip, deflate',
+              'Connection': 'keep-alive',
+              'Upgrade-Insecure-Requests': '1'
+            },
+            timeout: 15000,
+          })
+        );
         
-        // Rate limiting between cities
+        const $ = cheerio.load(html);
+        console.log(`📄 HTML size: ${html.length} chars, Title: ${$('title').text()}`);
+        
+        // Selectors for Graduateland
+        const jobSelectors = [
+          '.job-listing',
+          '.job-card',
+          '.job-item',
+          '.position-listing',
+          '.graduateland-job',
+          '.job-result',
+          '.job-offer',
+          '[data-job-id]',
+          '.search-result'
+        ];
+        
+        let jobElements = $();
+        for (const selector of jobSelectors) {
+          const elements = $(selector);
+          console.log(`🔍 Selector "${selector}": ${elements.length} elements`);
+          if (elements.length > 0) {
+            jobElements = elements;
+            console.log(`✅ Using selector: ${selector} (found ${elements.length} Graduateland jobs)`);
+            break;
+          }
+        }
+        
+        if (jobElements.length === 0) {
+          console.log(`⚠️ No jobs found with any selector on ${url}`);
+          continue;
+        }
+        
+        // Process jobs using IngestJob format
+        const ingestJobs: IngestJob[] = [];
+        
+        for (let i = 0; i < jobElements.length; i++) {
+          rawCount++;
+          
+          try {
+            const element = jobElements.eq(i);
+            
+            // Extract job data
+            const title = element.find('.job-title, .title, h3, .position-title').text().trim();
+            const company = element.find('.company-name, .employer, .company').text().trim();
+            const location = element.find('.location, .job-location, .job-location').text().trim();
+            const description = element.find('.job-description, .description, .job-summary').text().trim();
+            const jobUrl = element.find('a').attr('href');
+            const postedDate = element.find('.posted-date, .date, .job-date').text().trim();
+            
+            // Skip if no essential data
+            if (!title || !company) {
+              console.log(`⏭️ Skipping job with missing data: ${title || 'No title'}`);
+              continue;
+            }
+            
+            // Create IngestJob
+            const ingestJob: IngestJob = {
+              title: title.trim(),
+              company: company.trim(),
+              location: location.trim() || 'Europe',
+              description: description.trim(),
+              url: jobUrl ? (jobUrl.startsWith('http') ? jobUrl : `https://graduateland.com${jobUrl}`) : '',
+              posted_at: new Date().toISOString(), // Simplified date handling
+              source: 'graduateland'
+            };
+
+            // Validate the job
+            const validation = validateJob(ingestJob);
+            if (!validation.valid) {
+              console.log(`❌ Invalid job: "${title}" - ${validation.errors.join(', ')}`);
+              continue;
+            }
+
+            eligibleCount++;
+            
+            // Check if job should be saved based on north-star rule
+            if (shouldSaveJob(ingestJob)) {
+              savedCount++;
+              ingestJobs.push(ingestJob);
+              samples.push(ingestJob.title);
+              
+              logJobProcessing(ingestJob, 'SAVED', { source: 'graduateland' });
+            } else {
+              logJobProcessing(ingestJob, 'FILTERED', { source: 'graduateland' });
+            }
+            
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+            console.warn(`⚠️ Error processing job:`, errorMsg);
+            errors.push(errorMsg);
+          }
+        }
+
+        // Convert IngestJobs to database format and insert
+        if (ingestJobs.length > 0) {
+          try {
+            const databaseJobs = ingestJobs.map(convertToDatabaseFormat);
+            const result = await atomicUpsertJobs(databaseJobs);
+            
+            console.log(`✅ Graduateland DATABASE: ${result.inserted} inserted, ${result.updated} updated, ${result.errors.length} errors`);
+            
+            if (result.errors.length > 0) {
+              console.error('❌ Graduateland upsert errors:', result.errors.slice(0, 3));
+              errors.push(...result.errors);
+            }
+          } catch (error: any) {
+            const errorMsg = error instanceof Error ? error.message : 'Database error';
+            console.error(`❌ Graduateland database upsert failed:`, errorMsg);
+            errors.push(errorMsg);
+          }
+        }
+        
+        console.log(`✅ Scraped ${savedCount} Graduateland jobs from ${url} (${eligibleCount} eligible, ${rawCount} total)`);
+        
+        // Log scraping activity for compliance monitoring
+        RobotsCompliance.logScrapingActivity('graduateland', url, true);
+        
+        // Simple rate limiting between URLs
         await sleep(1000 + Math.random() * 2000);
         
-      } catch (error) {
-        console.error(`❌ Failed to scrape ${city}:`, error);
-        continue;
+      } catch (error: any) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`❌ Graduateland scrape failed for ${url}:`, errorMsg);
+        
+        // Log failed scraping activity for compliance monitoring
+        RobotsCompliance.logScrapingActivity('graduateland', url, false);
+        
+        errors.push(errorMsg);
       }
     }
     
-    const duration = Date.now() - startTime;
-    console.log(`🎓 Graduateland scraping completed: ${allJobs.length} jobs in ${duration}ms`);
-    
-    // Use atomicUpsertJobs for database insertion
-    const result = await atomicUpsertJobs(allJobs);
-    console.log(`💾 Graduateland database result: ${result.inserted} inserted, ${result.updated} updated`);
-    
-    return allJobs;
-    
-  } catch (error) {
-    console.error('❌ Graduateland scraping failed:', error);
-    throw error;
-  }
-}
-
-async function scrapeCityJobs(city: string, runId: string, userAgent: string): Promise<Job[]> {
-  const jobs: Job[] = [];
-  
-  try {
-    // Try API first
-    const apiJobs = await tryGraduatelandAPI(city, runId, userAgent);
-    if (apiJobs.length > 0) {
-      return apiJobs;
-    }
-    
-    // Fallback to web scraping if API fails
-    console.log('API failed, falling back to web scraping...');
-    return await scrapeGraduatelandWeb(city, runId, userAgent);
-    
-  } catch (error) {
-    console.error(`Error scraping Graduateland for ${city}:`, error);
-    return [];
-  }
-}
-
-async function tryGraduatelandAPI(city: string, runId: string, userAgent: string): Promise<Job[]> {
-  try {
-    const apiUrl = `${GRADUATELAND_API_BASE}${API_ENDPOINTS.jobs}`;
-    
-    const params = {
-      location: city,
-      type: 'graduate',
-      limit: 50,
-      offset: 0,
-      sort: 'date'
+    return {
+      raw: rawCount,
+      eligible: eligibleCount,
+      careerTagged: savedCount,
+      locationTagged: savedCount,
+      inserted: savedCount,
+      updated: 0,
+      errors,
+      samples
     };
     
-    const response = await axios.get(apiUrl, {
-      params,
-      headers: getRandomHeaders(userAgent),
-      timeout: 15000
-    });
+  } catch (error: any) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Graduateland scraper failed:', errorMsg);
     
-    if (!response.data || !response.data.jobs || !Array.isArray(response.data.jobs)) {
-      console.log('Invalid API response format');
-      return [];
-    }
-    
-    const apiJobs = response.data.jobs
-      .filter((job: any) => {
-        // Filter for graduate/entry-level positions
-        const title = job.title?.toLowerCase() || '';
-        const description = job.description?.toLowerCase() || '';
-        const content = `${title} ${description}`;
-        
-        return /\b(graduate|entry|junior|intern|trainee|new.grad|recent.graduate)\b/.test(content);
-      })
-      .map((job: any) => {
-        // Extract posting date
-        const postedAt = job.created_at || job.updated_at || job.posted_at || new Date().toISOString();
-        
-        // Analyze job content
-        const analysis = analyzeJobContent(job.title || '', job.description || '');
-        
-        // Create job hash
-        const jobHash = crypto.createHash('md5').update(`${job.title}-${job.company}-${job.id}`).digest('hex');
-        
-        return {
-          title: job.title || 'Graduate Position',
-          company: job.company?.name || job.company || 'Company not specified',
-          location: job.location?.city || job.location || city,
-          job_url: job.url || job.apply_url || `https://graduateland.com/jobs/${job.id}`,
-          description: job.description || 'Description not available',
-          experience_required: analysis.experienceLevel,
-          work_environment: analysis.workEnv,
-          language_requirements: analysis.languages,
-          source: 'graduateland',
-          categories: [job.category?.name || 'Graduate Jobs'],
-          company_profile_url: job.company?.url || '',
-          scrape_timestamp: new Date().toISOString(),
-          original_posted_date: postedAt,
-          posted_at: postedAt,
-          last_seen_at: new Date().toISOString(),
-          is_active: true,
-          job_hash: jobHash,
-          scraper_run_id: runId,
-          created_at: new Date().toISOString()
-        };
-      });
-    
-    console.log(`API returned ${apiJobs.length} jobs for ${city}`);
-    return apiJobs;
-    
-  } catch (error) {
-    console.error(`Graduateland API failed for ${city}:`, error);
-    return [];
+    return {
+      raw: rawCount,
+      eligible: eligibleCount,
+      careerTagged: savedCount,
+      locationTagged: savedCount,
+      inserted: savedCount,
+      updated: 0,
+      errors: [errorMsg],
+      samples
+    };
   }
 }
 
-async function scrapeGraduatelandWeb(city: string, runId: string, userAgent: string): Promise<Job[]> {
-  const jobs: Job[] = [];
-  const baseUrl = 'https://graduateland.com/jobs';
-  
-  try {
-    const response = await axios.get(`${baseUrl}?location=${encodeURIComponent(city)}`, {
-      headers: getRandomHeaders(userAgent),
-      timeout: 15000
-    });
-    
-    const $ = cheerio.load(response.data);
-    
-    // Look for job listings (adjust selectors based on actual site structure)
-    const jobElements = $('.job-listing, .job-card, .job-item, [data-job-id]');
-    
-    jobElements.each((index, element) => {
-      if (index >= 30) return; // Limit to 30 jobs per city
-      
-      try {
-        const job = processJobElementCheerio($, $(element), city, runId, userAgent);
-        if (job) {
-          jobs.push(job);
-        }
-      } catch (error) {
-        console.error('Error processing job element:', error);
+// Test runner
+if (require.main === module) {
+  const testRunId = 'test-run-' + Date.now();
+
+  scrapeGraduateland(testRunId)
+    .then((result) => {
+      console.log(`🧪 Test: ${result.inserted + result.updated} jobs processed`);
+      console.log(`📊 GRADUATELAND TEST FUNNEL: Raw=${result.raw}, Eligible=${result.eligible}, Inserted=${result.inserted}, Updated=${result.updated}`);
+      if (result.samples.length > 0) {
+        console.log(`📝 Sample titles: ${result.samples.join(' | ')}`);
       }
-    });
-    
-    console.log(`Web scraping found ${jobs.length} jobs for ${city}`);
-    return jobs;
-    
-  } catch (error) {
-    console.error(`Web scraping failed for ${city}:`, error);
-    return [];
-  }
-}
-
-function processJobElementCheerio($: cheerio.CheerioAPI, $el: cheerio.Cheerio<any>, city: string, runId: string, userAgent: string): Job | null {
-  try {
-    // Try multiple possible selectors for job data
-    const title = $el.find('.job-title, .title, h3, h4').first().text().trim();
-    const company = $el.find('.company-name, .company, .employer').first().text().trim();
-    const location = $el.find('.location, .job-location, .city').first().text().trim() || city;
-    const jobUrl = $el.find('a').attr('href') || '';
-    
-    if (!title || !company) {
-      return null;
-    }
-    
-    // Extract job description if available
-    let description = $el.find('.description, .job-description, .summary').text().trim();
-    if (!description) {
-      description = `Graduate position at ${company} in ${location}. ${title}`;
-    }
-    
-    // Analyze job content
-    const analysis = analyzeJobContent(title, description);
-    
-    // Create job hash
-    const jobHash = crypto.createHash('md5').update(`${title}-${company}-${jobUrl}`).digest('hex');
-    
-    // Extract posting date
-    const dateResult = extractPostingDate(description, 'graduateland', jobUrl);
-    
-    // Use enhanced robust job creation with Job Ingestion Contract
-    const jobResult = createRobustJob({
-      title,
-      company,
-      location,
-      jobUrl: jobUrl.startsWith('http') ? jobUrl : `https://graduateland.com${jobUrl}`,
-      companyUrl: '',
-      description,
-      department: 'General',
-      postedAt: dateResult.success ? dateResult.date! : new Date().toISOString(),
-      runId,
-      source: 'graduateland',
-      isRemote: analysis.workEnv === 'remote'
-    });
-
-    // Record telemetry and debug filtering
-    if (jobResult.job) {
-      console.log(`✅ Job accepted: "${title}"`);
-    } else {
-      console.log(`❌ Job filtered out: "${title}" - Stage: ${jobResult.funnelStage}, Reason: ${jobResult.reason}`);
-    }
-
-    return jobResult.job;
-    
-  } catch (error) {
-    console.error('Error processing job element with cheerio:', error);
-    return null;
-  }
-}
-
-function analyzeJobContent(title: string, description: string) {
-  const content = `${title} ${description}`.toLowerCase();
-  
-  // Determine experience level
-  let experienceLevel = 'entry-level';
-  if (/\b(intern|internship)\b/.test(content)) experienceLevel = 'internship';
-  else if (/\b(graduate|grad)\b/.test(content)) experienceLevel = 'graduate';
-  else if (/\b(junior|entry)\b/.test(content)) experienceLevel = 'entry-level';
-  
-  // Determine work environment
-  let workEnv = 'hybrid';
-  if (/\b(remote|work.from.home|distributed)\b/.test(content)) workEnv = 'remote';
-  else if (/\b(on.?site|office|in.person)\b/.test(content)) workEnv = 'office';
-  
-  // Extract language requirements
-  const languages: string[] = [];
-  const langMatches = content.match(/\b(english|spanish|french|german|dutch|portuguese|italian)\b/g);
-  if (langMatches) {
-    languages.push(...[...new Set(langMatches)]);
-  }
-  
-  // Extract professional expertise using the helper function
-  const professionalExpertise = extractProfessionalExpertise(title, description);
-  
-  // Extract career path using the helper function
-  const careerPath = extractCareerPath(title, description);
-  
-  // Extract start date using the helper function
-  const startDate = extractStartDate(description);
-  
-  return {
-    experienceLevel,
-    workEnv,
-    languages,
-    professionalExpertise,
-    careerPath,
-    startDate
-  };
+      console.log('---');
+    })
+    .catch(err => console.error('🛑 Test failed:', err));
 }
