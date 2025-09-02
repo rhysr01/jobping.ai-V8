@@ -7,7 +7,7 @@
  */
 export class PerformanceMonitor {
   private static metrics = new Map<string, number[]>();
-  private static maxMeasurements = 100;
+  private static maxMeasurements = 500; // Increased for better scaling with 500+ users
 
   /**
    * Track duration of an operation

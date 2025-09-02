@@ -10,6 +10,7 @@
  * - Used with the existing schedule-scraping.js
  */
 
+require('dotenv').config({ path: '.env.local' });
 require('dotenv').config();
 
 const { spawn } = require('child_process');
@@ -196,11 +197,11 @@ async function main() {
     
     if (CONFIG.mode === 'all') {
       result = await runAllScrapers();
-    } else if (['reed', 'adzuna', 'infojobs'].includes(CONFIG.mode)) {
+    } else if (['reed', 'adzuna'].includes(CONFIG.mode)) {
       result = await runScraper(CONFIG.mode);
     } else {
       log(`❌ Unknown mode: ${CONFIG.mode}`, 'red');
-      log('Available modes: all, reed, adzuna, infojobs', 'yellow');
+      log('Available modes: all, reed, adzuna', 'yellow');
       process.exit(1);
     }
     
@@ -232,7 +233,6 @@ Modes:
   all       - Run all scrapers (default)
   reed      - Run Reed scraper only
   adzuna    - Run Adzuna scraper only
-  infojobs  - Run InfoJobs scraper only
 
 Options:
   --verbose, -v    - Show detailed output

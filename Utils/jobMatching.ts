@@ -262,6 +262,14 @@ function getSupabaseClient() {
     auth: {
       autoRefreshToken: false,
       persistSession: false
+    },
+    db: {
+      schema: 'public'
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'jobping-matching-engine'
+      }
     }
   });
 }
@@ -302,7 +310,7 @@ class LRUCache<K, V> {
   private ttl: number;
   private sweepInterval: NodeJS.Timeout;
 
-  constructor(maxSize: number = 5000, ttl: number = 1000 * 60 * 30) { // 30 minutes default
+  constructor(maxSize: number = 10000, ttl: number = 1000 * 60 * 30) { // 10k entries, 30 minutes default
     this.maxSize = maxSize;
     this.ttl = ttl;
     
@@ -365,9 +373,9 @@ class LRUCache<K, V> {
   }
 }
 
-// Enhanced AI Matching Cache with user clustering
+// Enhanced AI Matching Cache with user clustering - SCALED for 500+ users
 export class AIMatchingCache {
-  private static cache = new LRUCache<string, any[]>(5000, 1000 * 60 * 30); // 30 minutes TTL
+  private static cache = new LRUCache<string, any[]>(10000, 1000 * 60 * 30); // 10k entries, 30 minutes TTL
 
   static generateUserClusterKey(users: any[]): string {
     // Create key from similar user characteristics

@@ -9,8 +9,8 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
 // Job queue configuration
 const QUEUE_CONFIG = {
-  // Chunk size for user processing
-  CHUNK_SIZE: 100,
+  // Chunk size for user processing - OPTIMIZED for scale
+  CHUNK_SIZE: 50, // Balanced for memory and throughput with 500+ users
   
   // Backoff configuration
   BACKOFF: {
@@ -21,7 +21,7 @@ const QUEUE_CONFIG = {
   
   // Rate limiting
   RATE_LIMIT: {
-    max: 10, // Max 10 jobs per
+    max: 50, // Max 50 jobs per minute (5x increase for 150 users)
     duration: 60000, // 1 minute
   },
   
@@ -193,27 +193,27 @@ export class JobQueueManager {
   }
 
   private setupJobProcessors() {
-    // Match users processor
+    // Match users processor - CONCURRENT for scale
     const matchUsersQueue = this.queues.get(JobType.MATCH_USERS)!;
-    matchUsersQueue.process(async (job) => {
+    matchUsersQueue.process(5, async (job) => { // Process 5 jobs concurrently
       return await this.processMatchUsersJob(job);
     });
 
-    // Send emails processor
+    // Send emails processor - CONCURRENT for scale
     const sendEmailsQueue = this.queues.get(JobType.SEND_EMAILS)!;
-    sendEmailsQueue.process(async (job) => {
+    sendEmailsQueue.process(10, async (job) => { // Process 10 emails concurrently
       return await this.processSendEmailsJob(job);
     });
 
-    // Scrape jobs processor
+    // Scrape jobs processor - CONCURRENT for scale
     const scrapeJobsQueue = this.queues.get(JobType.SCRAPE_JOBS)!;
-    scrapeJobsQueue.process(async (job) => {
+    scrapeJobsQueue.process(3, async (job) => { // Process 3 scraping jobs concurrently
       return await this.processScrapeJobsJob(job);
     });
 
-    // Cleanup jobs processor
+    // Cleanup jobs processor - CONCURRENT for scale
     const cleanupJobsQueue = this.queues.get(JobType.CLEANUP_JOBS)!;
-    cleanupJobsQueue.process(async (job) => {
+    cleanupJobsQueue.process(2, async (job) => { // Process 2 cleanup jobs concurrently
       return await this.processCleanupJobsJob(job);
     });
   }
@@ -289,8 +289,8 @@ export class JobQueueManager {
   async addSendEmailsJob(emailData: SendEmailsJobData['emailData'], runId: string, priority: 'high' | 'normal' | 'low' = 'normal'): Promise<void> {
     const queue = this.queues.get(JobType.SEND_EMAILS)!;
     
-    // Chunk emails into groups
-    const chunks = this.chunkArray(emailData, 50); // Smaller chunks for emails
+    // Chunk emails into groups - OPTIMIZED for scale
+    const chunks = this.chunkArray(emailData, 100); // Larger chunks for better throughput
     
     console.log(`📧 Adding ${chunks.length} send-emails jobs for ${emailData.length} emails`);
     

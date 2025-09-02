@@ -57,8 +57,8 @@ export function getScraperConfig(): ScraperConfig {
     retryDelay: parseInt(process.env.SCRAPER_RETRY_DELAY || (isRailway ? '5000' : '2000')),
     
     // Rate limiting
-    requestsPerMinute: parseInt(process.env.SCRAPER_REQUESTS_PER_MINUTE || (isRailway ? '15' : '30')),
-    requestsPerHour: parseInt(process.env.SCRAPER_REQUESTS_PER_HOUR || (isRailway ? '500' : '1000')),
+    requestsPerMinute: parseInt(process.env.SCRAPER_REQUESTS_PER_MINUTE || (isRailway ? '50' : '100')),
+    requestsPerHour: parseInt(process.env.SCRAPER_REQUESTS_PER_HOUR || (isRailway ? '2000' : '5000')),
     
     // Debug settings
     logSampleTitles: process.env.SCRAPER_DEBUG_MODE === 'true',

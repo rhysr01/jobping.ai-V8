@@ -9,8 +9,8 @@ export const CFG = {
   useBrowser: !bool('DISABLE_PUPPETEER', false),
   browserPool: bool('ENABLE_BROWSER_POOL', true),
   rateLimitEnabled: bool('ENABLE_RATE_LIMITING', true),
-  rpm: int('SCRAPER_REQUESTS_PER_MINUTE', 10),
-  rph: int('SCRAPER_REQUESTS_PER_HOUR', 300),
+  rpm: int('SCRAPER_REQUESTS_PER_MINUTE', 50),
+  rph: int('SCRAPER_REQUESTS_PER_HOUR', 2000),
 } as const;
 
 // Throttling system

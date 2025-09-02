@@ -181,7 +181,7 @@ async function performEnhancedAIMatchingWithCaching(
 
       // TIME-BOX OpenAI
       const aiCall = callOpenAIForCluster(cluster, jobs, openai);
-      const aiResult = await Promise.race([aiCall, timeout(2000, 'ai_timeout')]).catch(() => null) as JobMatch[] | null;
+      const aiResult = await Promise.race([aiCall, timeout(8000, 'ai_timeout')]).catch(() => null) as JobMatch[] | null;
       
       if (!aiResult) {
         console.warn('⚠️ ai_timeout -> falling back to rules');
@@ -205,42 +205,81 @@ async function performEnhancedAIMatchingWithCaching(
   return results;
 }
 
-// NEW: Helper function to call OpenAI for a cluster
+// FIXED: Helper function to call OpenAI for a cluster with better JSON prompting
 async function callOpenAIForCluster(userCluster: UserPreferences[], jobs: JobWithFreshness[], openai: OpenAI): Promise<JobMatch[]> {
-  // Batch the OpenAI call for the entire cluster
-  const clusterPrompt = `
-    Analyze these ${userCluster.length} similar users and ${jobs.length} jobs.
-    Users: ${JSON.stringify(userCluster.map(u => ({
-      expertise: u.professional_expertise,
-      experience: u.entry_level_preference,
-      location: u.target_cities,
-      visa: u.visa_status,
-      email: u.email
-    })))}
-    Jobs: ${JSON.stringify(jobs.slice(0, 10))} // Limit to first 10 jobs for prompt size
-  `;
+  const user = userCluster[0]; // Take first user for now
+  
+  // FIXED: Much more explicit JSON-only prompt
+  const prompt = `Return ONLY valid JSON array. No explanations, no markdown, no additional text.
+
+User Profile:
+- Career: ${user.professional_expertise || 'Graduate'}
+- Level: ${user.entry_level_preference || 'entry-level'} 
+- Cities: ${(user.target_cities || []).join(', ') || 'Europe'}
+- Work: ${user.work_environment || 'any'}
+
+Available Jobs (select best 3-5):
+${jobs.slice(0, 8).map((job, i) => `${i+1}: ${job.title} at ${job.company} [${job.job_hash}] - ${job.location}`).join('\n')}
+
+Respond with ONLY this JSON format:
+[{"job_index":1,"job_hash":"actual-hash-from-above","match_score":75,"match_reason":"Career match in target city","match_quality":"good","match_tags":"career-match"}]
+
+Requirements:
+- job_index: 1-${jobs.length}
+- match_score: 50-100 (integer)
+- Use actual job_hash from jobs above
+- Max 5 matches
+- VALID JSON ONLY`;
   
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+      model: 'gpt-3.5-turbo', // FIXED: Use faster model
       messages: [
         {
           role: 'system',
-          content: 'You are an AI job matching expert. Analyze users and jobs to provide personalized matches.'
+          content: 'You are a JSON API. Respond ONLY with valid JSON arrays. No explanations, no markdown.'
         },
         {
           role: 'user',
-          content: clusterPrompt
+          content: prompt
         }
       ],
-      temperature: 0.3,
-      max_tokens: 2000
+      temperature: 0.1, // FIXED: Lower temperature for consistency
+      max_tokens: 800    // FIXED: Smaller limit
     });
     
-    const response = completion.choices[0]?.message?.content || '';
-    return parseAndValidateMatches(response, jobs as unknown as Job[]);
+    let response = completion.choices[0]?.message?.content || '';
+    
+    // FIXED: Better response cleaning and parsing
+    response = response.replace(/```json/gi, '').replace(/```/gi, '').trim();
+    
+    // Extract JSON if buried in text
+    const jsonMatch = response.match(/\[[\s\S]*?\]/);
+    if (jsonMatch) {
+      response = jsonMatch[0];
+    }
+    
+    try {
+      const matches = JSON.parse(response);
+      if (Array.isArray(matches) && matches.length > 0) {
+        return matches.slice(0, 5).map(match => ({
+          job_index: match.job_index,
+          job_hash: match.job_hash,
+          match_score: Math.min(100, Math.max(50, match.match_score || 60)),
+          match_reason: match.match_reason || 'AI suggested match',
+          match_quality: match.match_quality || 'fair',
+          match_tags: match.match_tags || 'ai-match'
+        }));
+      }
+    } catch (parseError) {
+      console.error('JSON parse failed, response was:', response.slice(0, 200));
+    }
+    
+    // If all parsing fails, return empty array (will trigger fallback)
+    return [];
+    
   } catch (error) {
-    console.error('OpenAI cluster matching failed:', error);
+    console.error('OpenAI API call failed:', error);
     return [];
   }
 }
@@ -284,50 +323,123 @@ async function processMatchingResults(
   }
 }
 
-// NEW: Rule-based fallback matching
+// IMPROVED: Rule-based fallback matching with better scoring
 async function performRuleBasedMatching(
   userCluster: UserPreferences[], 
   jobs: JobWithFreshness[], 
   results: Map<string, JobMatch[]>
 ): Promise<void> {
   for (const user of userCluster) {
-    // Convert JobWithFreshness to Job for compatibility
-    const jobCompatible = jobs.map(job => ({
-      id: parseInt(job.id) || undefined, // Convert string to number or undefined
-      job_hash: job.job_hash,
-      title: job.title,
-      company: job.company,
-      location: job.location,
-      job_url: job.job_url,
-      description: job.description,
-      experience_required: '', // Default value for compatibility
-      work_environment: '', // Default value for compatibility
-      source: '', // Default value for compatibility
-      categories: [], // Default value for compatibility
-      company_profile_url: '', // Default value for compatibility
-      language_requirements: [], // Default value for compatibility
-      scrape_timestamp: new Date().toISOString(), // Default value for compatibility
-      original_posted_date: job.original_posted_date || new Date().toISOString(),
-      posted_at: job.original_posted_date || new Date().toISOString(),
-      last_seen_at: job.last_seen_at || new Date().toISOString(),
-      is_active: true, // Default value for compatibility
-      freshness_tier: job.freshness_tier || '',
-      scraper_run_id: '', // Default value for compatibility
-      created_at: job.created_at
-    }));
+    console.log(`🔧 Rule-based matching for ${user.email} with ${jobs.length} jobs`);
     
-    const fallbackMatches = generateRobustFallbackMatches(jobCompatible, user);
-    if (fallbackMatches.length > 0) {
-      // Convert MatchResult[] to JobMatch[]
-      const jobMatches = fallbackMatches.map((match, index) => ({
-        job_index: index,
-        job_hash: match.job.job_hash,
-        match_score: match.match_score,
-        match_reason: match.match_reason,
-        match_quality: match.match_quality,
-        match_tags: match.match_tags
+    const matches = [];
+    const userCities = user.target_cities || [];
+    const userCareer = user.professional_expertise || '';
+    
+    // Score each job using simple but effective rules
+    for (let i = 0; i < Math.min(jobs.length, 20); i++) {
+      const job = jobs[i];
+      let score = 50; // Base score
+      let reasons = [];
+      
+      // Title-based scoring (most reliable)
+      const title = job.title?.toLowerCase() || '';
+      if (title.includes('junior') || title.includes('graduate') || title.includes('entry')) {
+        score += 25;
+        reasons.push('entry-level title');
+      }
+      
+      if (title.includes('intern') || title.includes('trainee') || title.includes('associate')) {
+        score += 30;
+        reasons.push('early-career role');
+      }
+      
+      // Career matching (broad)
+      if (userCareer) {
+        const careerLower = userCareer.toLowerCase();
+        if (title.includes(careerLower) || job.description?.toLowerCase().includes(careerLower)) {
+          score += 20;
+          reasons.push('career match');
+        }
+        
+        // Broader career matching
+        const careerMappings: Record<string, string[]> = {
+          'backend': ['developer', 'engineer', 'software'],
+          'frontend': ['developer', 'engineer', 'ui', 'web'],
+          'data': ['analyst', 'science', 'analytics'],
+          'marketing': ['marketing', 'brand', 'digital'],
+          'sales': ['sales', 'business development', 'account'],
+          'consulting': ['consultant', 'advisory', 'strategy']
+        };
+        
+        for (const [career, keywords] of Object.entries(careerMappings)) {
+          if (careerLower.includes(career) && keywords.some(kw => title.includes(kw))) {
+            score += 15;
+            reasons.push('career alignment');
+            break;
+          }
+        }
+      }
+      
+      // Location matching
+      if (userCities.length > 0 && job.location) {
+        const location = job.location.toLowerCase();
+        if (userCities.some(city => location.includes(city.toLowerCase()))) {
+          score += 15;
+          reasons.push('location match');
+        } else if (location.includes('remote') || location.includes('europe')) {
+          score += 10;
+          reasons.push('remote/flexible');
+        }
+      }
+      
+      // Freshness bonus (recent jobs are better)
+      if (job.original_posted_date) {
+        const daysDiff = (Date.now() - new Date(job.original_posted_date).getTime()) / (1000 * 60 * 60 * 24);
+        if (daysDiff < 7) {
+          score += 10;
+          reasons.push('recent posting');
+        }
+      }
+      
+      // Company quality indicators
+      if (job.company && job.company.length > 3) { // Not just initials
+        score += 5;
+      }
+      
+      // Only include jobs that meet minimum threshold
+      if (score >= 65) {
+        matches.push({
+          job_index: i + 1,
+          job_hash: job.job_hash,
+          match_score: score,
+          match_reason: reasons.join(', ') || 'Rule-based match',
+          match_quality: score >= 80 ? 'good' : 'fair',
+          match_tags: 'rule-based'
+        });
+      }
+    }
+    
+    // Sort by score and take top matches
+    matches.sort((a, b) => b.match_score - a.match_score);
+    const topMatches = matches.slice(0, 6);
+    
+    results.set(user.email, topMatches);
+    console.log(`✅ Rule-based matching generated ${topMatches.length} matches for ${user.email}`);
+    
+    // If still no matches, create emergency fallback
+    if (topMatches.length === 0) {
+      console.log(`🚨 Emergency fallback for ${user.email}`);
+      const emergencyMatches = jobs.slice(0, 3).map((job, i) => ({
+        job_index: i + 1,
+        job_hash: job.job_hash,
+        match_score: 55,
+        match_reason: 'Emergency match - recent job posting',
+        match_quality: 'fair',
+        match_tags: 'emergency-fallback'
       }));
-      results.set(user.email, jobMatches);
+      results.set(user.email, emergencyMatches);
+      console.log(`🚨 Emergency fallback generated ${emergencyMatches.length} matches`);
     }
   }
 }

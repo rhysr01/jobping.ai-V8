@@ -1,6 +1,5 @@
 import AdzunaScraper from './adzuna-scraper-standalone';
 import ReedScraper from './reed-scraper-standalone';
-import InfoJobsScraper from './infojobs-scraper-standalone';
 import { IngestJob, Job } from './types';
 import { 
   classifyEarlyCareer, 
@@ -22,17 +21,12 @@ const EARLY_CAREER_PATTERNS = {
   nl: /(stagiair|werkstudent|junior|starter|afgestudeerde|student|eerste.?baan|geen.?ervaring|0-1|0-2|1-2|beginner)/i
 };
 
-// Target cities with language mapping
+// Target cities with language mapping (Adzuna supported + Reed + InfoJobs)
 const TARGET_CITIES = {
-  'Dublin': { country: 'ie', lang: 'en' },
   'London': { country: 'gb', lang: 'en' },
   'Madrid': { country: 'es', lang: 'es' },
   'Berlin': { country: 'de', lang: 'de' },
-  'Paris': { country: 'fr', lang: 'fr' },
   'Barcelona': { country: 'es', lang: 'es' },
-  'Zurich': { country: 'ch', lang: 'de' }, // German-speaking part
-  'Milan': { country: 'it', lang: 'it' },
-  'Rome': { country: 'it', lang: 'it' },
   'Amsterdam': { country: 'nl', lang: 'nl' }
 };
 
@@ -68,7 +62,6 @@ interface JobEnrichment {
 class MultiSourceOrchestrator {
   private adzunaScraper: AdzunaScraper;
   private reedScraper: ReedScraper;
-  private infojobsScraper: InfoJobsScraper;
   private seenJobs: Map<string, number> = new Map(); // jobHash -> timestamp
   private metrics: ScrapingMetrics[] = [];
   private isRunning = false;
@@ -76,7 +69,6 @@ class MultiSourceOrchestrator {
   constructor() {
     this.adzunaScraper = new AdzunaScraper();
     this.reedScraper = new ReedScraper();
-    this.infojobsScraper = new InfoJobsScraper();
     
     // Clean up seen jobs every 24 hours
     setInterval(() => this.cleanupSeenJobs(), 24 * 60 * 60 * 1000);
@@ -401,15 +393,13 @@ class MultiSourceOrchestrator {
     seenJobsCount: number;
     adzunaStatus: any;
     reedStatus: any;
-    infojobsStatus: any;
   } {
     return {
       isRunning: this.isRunning,
       lastRun: this.metrics[this.metrics.length - 1] || null,
       seenJobsCount: this.seenJobs.size,
       adzunaStatus: this.adzunaScraper.getDailyStats(),
-      reedStatus: this.reedScraper.getStatus(),
-      infojobsStatus: this.infojobsScraper.getStatus()
+      reedStatus: this.reedScraper.getStatus()
     };
   }
 

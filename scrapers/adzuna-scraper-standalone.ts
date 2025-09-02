@@ -43,15 +43,10 @@ const ADZUNA_CONFIG = {
   appId: process.env.ADZUNA_APP_ID || '',
   appKey: process.env.ADZUNA_APP_KEY || '',
   countries: {
-    'Dublin': 'ie',
     'London': 'gb',
     'Madrid': 'es', 
     'Berlin': 'de',
-    'Paris': 'fr',
     'Barcelona': 'es',
-    'Zurich': 'ch',
-    'Milan': 'it',
-    'Rome': 'it',
     'Amsterdam': 'nl'
   },
   dailyBudget: 33, // 1,000 calls/month ≈ 33/day
@@ -62,9 +57,9 @@ const ADZUNA_CONFIG = {
 type Track = 'A' | 'B' | 'C';
 
 const TRACK_QUERIES: Record<Track, string> = {
-  A: '(intern OR graduate OR junior)',
-  B: '(student OR trainee OR entry-level)',
-  C: '(praktikum OR becario OR stagiaire OR stagiair)'
+  A: 'graduate',
+  B: 'junior',
+  C: 'intern'
 };
 
 class AdzunaScraper {
@@ -130,7 +125,7 @@ class AdzunaScraper {
     }
   }
 
-  private buildUrl(city: string, track: Track, page: number = 1): string {
+  public buildUrl(city: string, track: Track, page: number = 1): string {
     const country = ADZUNA_CONFIG.countries[city];
     if (!country) {
       throw new Error(`Unsupported city: ${city}`);
@@ -141,14 +136,10 @@ class AdzunaScraper {
       app_key: ADZUNA_CONFIG.appKey,
       what: TRACK_QUERIES[track],
       where: city,
-      distance: '15',
-      'content-type': 'application/json',
-      sort_by: 'date',
-      results_per_page: '50',
-      max_days_old: '2',
-      page: page.toString()
+      results_per_page: '5'
     });
 
+    // Adzuna API format: /jobs/{country}/search/{page}
     return `${ADZUNA_CONFIG.baseUrl}/${country}/search/${page}?${params.toString()}`;
   }
 
