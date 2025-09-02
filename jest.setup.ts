@@ -167,6 +167,17 @@ jest.mock('@/Utils/datadogMetrics', () => ({
   },
 }));
 
+// Mock EnhancedAIMatchingCache to prevent hanging
+jest.mock('@/Utils/enhancedCache', () => ({
+  EnhancedAIMatchingCache: {
+    getInstance: jest.fn(() => ({
+      close: jest.fn(() => Promise.resolve()),
+      log: jest.fn(),
+      startMaintenance: jest.fn(),
+    })),
+  },
+}));
+
 // Global test utilities
 global.fetch = jest.fn();
 
@@ -189,7 +200,6 @@ global.console = {
 // Import teardown functions
 import { getProductionRateLimiter } from './Utils/productionRateLimiter';
 import { teardownDatadog } from './Utils/datadogMetrics';
-import { EnhancedAIMatchingCache } from './Utils/enhancedCache';
 
 // Global teardown to close all connections
 afterAll(async () => {
@@ -202,9 +212,7 @@ afterAll(async () => {
     // Teardown Datadog
     await teardownDatadog();
     
-    // Teardown cache
-    const cache = EnhancedAIMatchingCache.getInstance();
-    await cache.close();
+    // Cache teardown is handled by mocks
     
     console.log('✅ Test cleanup completed');
   } catch (error) {

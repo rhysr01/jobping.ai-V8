@@ -1713,13 +1713,10 @@ export async function performEnhancedAIMatching(
     const robustMatches = convertToRobustMatches(aiMatches, userPrefs, jobs);
     
     // Log successful matching with enhanced details
-    const endTime = Date.now();
-    await logMatchSession(userPrefs.email, 'ai_success', jobs.length, robustMatches.length, undefined, {
-      processingTimeMs: endTime - startTime,
-      aiModelUsed: 'gpt-4',
-      cacheHit: false,
-      userTier: 'free', // Default, should be passed from caller
-      jobFreshnessDistribution: { total: jobs.length }
+    await logMatchSession(userPrefs.email, 'ai_success', robustMatches.length, {
+      userCareerPath: userPrefs.career_path?.[0] || undefined,
+      userProfessionalExpertise: userPrefs.professional_expertise || undefined,
+      userWorkPreference: userPrefs.work_environment || undefined
     });
     
     return robustMatches;
@@ -1728,13 +1725,11 @@ export async function performEnhancedAIMatching(
     console.error('AI matching failed:', error);
     
     // Log failure and use robust fallback
-    const endTime = Date.now();
-    await logMatchSession(userPrefs.email, 'ai_failed', jobs.length, 0, error instanceof Error ? error.message : 'Unknown error', {
-      processingTimeMs: endTime - startTime,
-      aiModelUsed: 'gpt-4',
-      cacheHit: false,
-      userTier: 'free',
-      jobFreshnessDistribution: { total: jobs.length }
+    await logMatchSession(userPrefs.email, 'ai_failed', 0, {
+      userCareerPath: userPrefs.career_path?.[0] || undefined,
+      userProfessionalExpertise: userPrefs.professional_expertise || undefined,
+      userWorkPreference: userPrefs.work_environment || undefined,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error'
     });
     
     return generateRobustFallbackMatches(jobs, userPrefs);
@@ -1904,20 +1899,19 @@ export function getMatchQuality(score: number): string {
   return 'poor';
 }
 
-// 6. Log Match Session with Enhanced Details
+// 6. Log Match Session - Updated for JobPing Schema
 export async function logMatchSession(
   userEmail: string,
-  matchType: 'ai_success' | 'ai_failed' | 'fallback',
-  jobsProcessed: number,
+  matchType: 'ai_success' | 'ai_failed' | 'fallback' | 'manual',
   matchesGenerated: number,
-  errorMessage?: string,
   additionalData?: {
-    processingTimeMs?: number;
-    aiModelUsed?: string;
-    cacheHit?: boolean;
-    userTier?: string;
-    jobFreshnessDistribution?: Record<string, number>;
-    batchId?: string;
+    userCareerPath?: string;
+    userProfessionalExpertise?: string;
+    userWorkPreference?: string;
+    matchJobId?: string;
+    errorMessage?: string;
+    blockSend?: boolean;
+    blockProcessed?: boolean;
   }
 ): Promise<void> {
   try {
@@ -1926,24 +1920,18 @@ export async function logMatchSession(
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     
-    const batchId = additionalData?.batchId || `batch_${Date.now()}`;
-    const startTime = Date.now();
-    
     const logData = {
       user_email: userEmail,
-      job_batch_id: batchId,
-      success: matchType === 'ai_success',
-      fallback_used: matchType === 'fallback' || matchType === 'ai_failed',
-      jobs_processed: jobsProcessed,
-      matches_generated: matchesGenerated,
-      error_message: errorMessage,
       match_type: matchType,
+      matches_generated: matchesGenerated,
       timestamp: new Date().toISOString(),
-      processing_time_ms: additionalData?.processingTimeMs || (Date.now() - startTime),
-      ai_model_used: additionalData?.aiModelUsed || null,
-      cache_hit: additionalData?.cacheHit || false,
-      user_tier: additionalData?.userTier || 'unknown',
-      job_freshness_distribution: additionalData?.jobFreshnessDistribution || null
+      user_career_path: additionalData?.userCareerPath || null,
+      user_professional_expertise: additionalData?.userProfessionalExpertise || null,
+      user_work_preference: additionalData?.userWorkPreference || null,
+      match_job_id: additionalData?.matchJobId || null,
+      error_message: additionalData?.errorMessage || null,
+      block_send: additionalData?.blockSend || false,
+      block_processed: additionalData?.blockProcessed || false
     };
     
     const { error } = await supabase.from('match_logs').insert(logData);
@@ -1954,20 +1942,19 @@ export async function logMatchSession(
     }
     
     // Enhanced console logging
-    const emoji = matchType === 'ai_success' ? '✅' : matchType === 'fallback' ? '🔄' : '❌';
-    const tierInfo = additionalData?.userTier ? ` (${additionalData.userTier})` : '';
-    const timeInfo = additionalData?.processingTimeMs ? ` in ${additionalData.processingTimeMs}ms` : '';
-    const cacheInfo = additionalData?.cacheHit ? ' [CACHE HIT]' : '';
+    const emoji = matchType === 'ai_success' ? '✅' : matchType === 'fallback' ? '🔄' : matchType === 'manual' ? '👤' : '❌';
+    const careerInfo = additionalData?.userCareerPath ? ` [${additionalData.userCareerPath}]` : '';
+    const workInfo = additionalData?.userWorkPreference ? ` (${additionalData.userWorkPreference})` : '';
     
-    console.log(`${emoji} Logged ${matchType} session for ${userEmail}${tierInfo}${timeInfo}${cacheInfo}`);
-    console.log(`   📊 Jobs: ${jobsProcessed} → Matches: ${matchesGenerated}`);
+    console.log(`${emoji} Logged ${matchType} session for ${userEmail}${careerInfo}${workInfo}`);
+    console.log(`   📊 Matches generated: ${matchesGenerated}`);
     
-    if (additionalData?.jobFreshnessDistribution) {
-      console.log(`   🆕 Freshness: ${JSON.stringify(additionalData.jobFreshnessDistribution)}`);
+    if (additionalData?.errorMessage) {
+      console.log(`   ⚠️  Error: ${additionalData.errorMessage}`);
     }
     
-    if (errorMessage) {
-      console.log(`   ⚠️  Error: ${errorMessage}`);
+    if (additionalData?.blockSend) {
+      console.log(`   🚫 Blocked from sending`);
     }
     
   } catch (error) {
