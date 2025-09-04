@@ -1,0 +1,41 @@
+[dotenv@17.2.1] injecting env (34) from .env.local -- tip: 📡 observe env with Radar: https://dotenvx.com/radar
+[dotenv@17.2.1] injecting env (1) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[34m[2025-09-02T17:57:15.760Z] 🚀 Starting adzuna scraper...[0m
+✅ Orchestrator ready
+🔄 Running adzuna scraper...
+🚀 Starting Adzuna scraping...
+🔄 Adzuna scraping with Track A: graduate analyst
+📍 Processing London...
+✅ London: 5 jobs found
+🔄 Low yield for London, fetching extra page...
+📍 Processing Madrid...
+✅ Madrid: 2 jobs found
+🔄 Low yield for Madrid, fetching extra page...
+📍 Processing Berlin...
+✅ Berlin: 2 jobs found
+🔄 Low yield for Berlin, fetching extra page...
+📍 Processing Barcelona...
+✅ Barcelona: 0 jobs found
+📍 Processing Amsterdam...
+✅ Amsterdam: 1 jobs found
+🔄 Low yield for Amsterdam, fetching extra page...
+📊 Adzuna scraping complete: 10 jobs, 9 calls used, 24 remaining
+✅ Adzuna completed in 3582ms
+✅ adzuna scraping completed
+📊 Results: {
+  jobsFound: 9,
+  metrics: {
+    citiesProcessed: 5,
+    totalJobs: 10,
+    newJobs: 10,
+    duplicates: 0,
+    errors: 0,
+    callsUsed: 9,
+    budgetRemaining: 24
+  }
+}
+📋 Sample jobs:
+   1. Graduate Analyst - 6-Month Programme at Woozle Research (London, UK)
+   2. Analyst, Graduate Programme September 2025, Management Consulting at Carnall Farrar (London, UK)
+   3. Campus Recruiter at Jefferies (London, UK)
+✅ adzuna scraping test passed
