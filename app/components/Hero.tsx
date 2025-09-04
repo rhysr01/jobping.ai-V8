@@ -13,49 +13,48 @@ export default function Hero() {
       <div className="absolute bottom-20 right-10 w-40 h-40 bg-gradient-to-tl from-[#3B82F6]/20 to-transparent rounded-full blur-3xl"></div>
       
       <div className="max-w-5xl mx-auto text-center relative z-10">
-        {/* Main Headline */}
+        {/* Main Headline - CLEAR & FUNCTIONAL */}
         <motion.h1
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
-          className="text-[#F8F9FA] font-extrabold text-6xl sm:text-7xl lg:text-8xl leading-tight tracking-tight mb-8"
+          className="text-[#F8F9FA] font-extrabold text-4xl sm:text-6xl lg:text-8xl leading-tight tracking-tight mb-6 sm:mb-8"
         >
-          Database with thousands of EU and UK jobs
+          Get EU Tech Jobs
           <br />
-          <span className="text-[#D1D5DB]">straight to your email</span>
+          <span className="text-[#10B981]">Delivered to Your Inbox</span>
         </motion.h1>
 
-        {/* Subheadline */}
+        {/* Subheadline - WHAT IT DOES */}
         <motion.p
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
-          className="text-[#9CA3AF] text-xl sm:text-2xl leading-relaxed mb-12 max-w-4xl mx-auto"
+          className="text-[#9CA3AF] text-lg sm:text-xl lg:text-2xl leading-relaxed mb-12 max-w-4xl mx-auto"
         >
-          Stop the job search. Focus on the application.
-          <br />2,800+ sources scraped daily.
+          AI-curated job matches from 2,800+ sources.
+          <br />
+          <span className="text-[#D1D5DB] font-semibold">No more job board hunting.</span>
         </motion.p>
 
-
-
-        {/* Value Props */}
+        {/* Value Props - SPECIFIC & REAL */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.4 }}
-          className="flex flex-wrap items-center justify-center gap-8 mb-16 text-[#D1D5DB] text-base font-medium"
+          className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 mb-16 text-[#D1D5DB] text-sm sm:text-base font-medium"
         >
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 bg-[#10B981] rounded-full"></div>
-            <span>No endless scrolling</span>
+            <span>Visa-friendly roles prioritized</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 bg-[#10B981] rounded-full"></div>
-            <span>EU/UK focus</span>
+            <span>Early-career focused</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 bg-[#10B981] rounded-full"></div>
-            <span>Visa-friendly priority</span>
+            <span>EU/UK locations only</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 bg-[#10B981] rounded-full"></div>
@@ -63,30 +62,29 @@ export default function Hero() {
           </div>
         </motion.div>
 
-        {/* CTA Buttons */}
+        {/* CTA Buttons - CLEAR ACTION */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.4 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16"
         >
-          <a href="#signup" className="premium-button bg-white text-[#0B0B0F] px-12 py-6 rounded-2xl font-bold text-xl hover:bg-[#F8F9FA] transition-all duration-300 flex items-center gap-3 shadow-2xl hover:shadow-3xl transform hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-            Get My First 5 Matches Free
-            <ArrowRight className="w-6 h-6" />
+          <a href="#signup" className="premium-button bg-[#10B981] text-white px-8 sm:px-12 py-4 sm:py-6 rounded-2xl font-bold text-lg sm:text-xl hover:bg-[#059669] transition-all duration-300 flex items-center gap-3 shadow-2xl hover:shadow-3xl transform hover:scale-[1.02] active:scale-[0.98] min-h-[56px]">
+            Start Getting Job Matches
+            <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </a>
-          <a href="#preview" className="text-[#D1D5DB] hover:text-white font-medium text-xl flex items-center gap-3 transition-colors">
-            <Play className="w-6 h-6" />
+          <a href="#preview" className="text-[#D1D5DB] hover:text-white font-medium text-lg sm:text-xl flex items-center gap-3 transition-colors">
+            <Play className="w-5 h-5 sm:w-6 sm:h-6" />
             See Email Preview
           </a>
         </motion.div>
 
-        {/* Trust Indicators */}
+        {/* Trust Indicators - REAL FACTS */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.6 }}
-          className="flex flex-wrap items-center justify-center gap-8 text-[#6B7280] text-base"
+          className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 text-[#6B7280] text-sm sm:text-base"
         >
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4" />
@@ -98,7 +96,7 @@ export default function Hero() {
           </div>
           <div className="flex items-center gap-2">
             <Mail className="w-4 h-4" />
-            <span>GDPR compliant</span>
+            <span>Unsubscribe anytime</span>
           </div>
         </motion.div>
       </div>

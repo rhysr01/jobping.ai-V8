@@ -60,7 +60,7 @@ export default function Home() {
         <HowItWorks />
         
         {/* Gmail Job Preview Section */}
-        <section id="preview" className="py-20 bg-[#0B0B0F] relative">
+        <section id="preview" className="section-content bg-[#0B0B0F] relative">
           <Suspense fallback={<JobCardSkeleton />}>
             <JobCard index={0} />
           </Suspense>
@@ -68,7 +68,7 @@ export default function Home() {
 
         {/* Features Section */}
         <Suspense fallback={
-          <div className="py-24 md:py-32 text-center">
+          <div className="section-content text-center">
             <div className="h-8 bg-[#374151] rounded-lg mb-4 animate-pulse max-w-md mx-auto"></div>
             <div className="h-6 bg-[#374151] rounded animate-pulse max-w-2xl mx-auto"></div>
           </div>
@@ -81,7 +81,7 @@ export default function Home() {
 
         {/* Pricing Section */}
         <Suspense fallback={
-          <div className="py-24 md:py-32 text-center">
+          <div className="section-content text-center">
             <div className="h-8 bg-[#374151] rounded-lg mb-4 animate-pulse max-w-md mx-auto"></div>
             <div className="h-6 bg-[#374151] rounded animate-pulse max-w-2xl mx-auto"></div>
           </div>
@@ -93,7 +93,7 @@ export default function Home() {
         <FAQ />
 
         {/* Signup Section */}
-        <section id="signup" className="py-20 bg-[#0B0B0F] relative">
+        <section id="signup" className="section-cta bg-[#0B0B0F] relative">
           <div className="container-frame">
             <Suspense fallback={
               <div className="text-center mb-6">

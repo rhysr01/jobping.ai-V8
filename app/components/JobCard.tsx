@@ -90,11 +90,11 @@ export function JobCard({ index }: JobCardProps) {
       transition={{ duration: 0.6, delay: index * 0.1 }}
       className="max-w-5xl mx-auto"
     >
-      <div className="text-center mb-16">
-        <h2 className="text-[#F8F9FA] font-bold text-4xl lg:text-5xl mb-6 tracking-tight">
+      <div className="text-center mb-12 sm:mb-16">
+        <h2 className="text-[#F8F9FA] font-bold text-3xl sm:text-4xl lg:text-5xl mb-4 sm:mb-6 tracking-tight">
           What Gets Delivered to Your Email
         </h2>
-        <p className="text-[#9CA3AF] text-xl max-w-2xl mx-auto leading-relaxed">
+        <p className="text-[#9CA3AF] text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed px-4 sm:px-0">
           <strong className="text-[#D1D5DB]">6-8 curated opportunities</strong> every 48 hours. No spam, no irrelevant jobs.<br />
           Just quality roles you can actually get.
         </p>
