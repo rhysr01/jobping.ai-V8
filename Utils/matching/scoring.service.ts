@@ -362,6 +362,6 @@ export class ScoringService {
       user: userPrefs,
       weights: this.config.scoring.weights,
       thresholds: this.config.scoring.thresholds
-    };
+    } as ScoringContext;
   }
 }

@@ -38,10 +38,7 @@ class DatabasePool {
             persistSession: false
           },
           db: {
-            schema: 'public',
-            pool_size: 20, // Connection pool size
-            pool_timeout: 5000, // 5 second timeout
-            pool_idle_timeout: 30000 // 30 second idle timeout
+            schema: 'public'
           },
           global: {
             headers: {

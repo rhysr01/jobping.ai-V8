@@ -882,10 +882,36 @@ export async function POST(req: NextRequest) {
       PerformanceMonitor.trackDuration('user_segmentation', userSegmentationStart);
     }
 
-    // 2. Fetch jobs with UTC-safe date calculation
+    // 2. Fetch jobs with UTC-safe date calculation and EU/Early Career filtering
     const jobFetchStart = Date.now();
     lap('fetch_jobs');
     const thirtyDaysAgo = getDateDaysAgo(30);
+
+    // EU location hints for filtering
+    const EU_HINTS = [
+      "UK","United Kingdom","Ireland","Germany","France","Spain","Portugal","Italy",
+      "Netherlands","Belgium","Luxembourg","Denmark","Sweden","Norway","Finland",
+      "Iceland","Poland","Czech","Austria","Switzerland","Hungary","Greece",
+      "Romania","Bulgaria","Croatia","Slovenia","Slovakia","Estonia","Latvia",
+      "Lithuania","Amsterdam","Rotterdam","Eindhoven","London","Dublin","Paris",
+      "Berlin","Munich","Frankfurt","Zurich","Stockholm","Copenhagen","Oslo",
+      "Helsinki","Madrid","Barcelona","Lisbon","Milan","Rome","Athens","Warsaw",
+      "Prague","Vienna","Budapest","Bucharest","Tallinn","Riga","Vilnius",
+      "Brussels","Luxembourg City"
+    ];
+
+    // Early career keywords for filtering
+    const EARLY_CAREER_KEYWORDS = [
+      "graduate","new grad","entry level","intern","internship","apprentice",
+      "early career","junior","campus","working student","associate","assistant"
+    ];
+
+    // Build EU location filter
+    const euLocationFilter = EU_HINTS.map(hint => `location.ilike.%${hint}%`).join(',');
+    
+    // Build early career filter for title and description
+    const earlyCareerTitleFilter = EARLY_CAREER_KEYWORDS.map(keyword => `title.ilike.%${keyword}%`).join(',');
+    const earlyCareerDescFilter = EARLY_CAREER_KEYWORDS.map(keyword => `description.ilike.%${keyword}%`).join(',');
 
     const { data: jobs, error: jobsError } = await supabase
       .from('jobs')
@@ -907,6 +933,8 @@ export async function POST(req: NextRequest) {
       .gte('created_at', thirtyDaysAgo.toISOString())
       .eq('is_sent', false)
       .eq('status', 'active')
+      .or(euLocationFilter)
+      .or(`${earlyCareerTitleFilter},${earlyCareerDescFilter}`)
       .order('original_posted_date', { ascending: false })
       .limit(jobCap);
 
@@ -923,7 +951,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'No active jobs to process' });
     }
 
-    console.log(`Found ${jobs.length} active jobs from past 30 days in ${jobFetchTime}ms`);
+    console.log(`Found ${jobs.length} EU-based early career jobs from past 30 days in ${jobFetchTime}ms`);
+    
+    // Log filtering effectiveness
+    if (jobs.length > 0) {
+      const euJobs = jobs.filter(job => 
+        EU_HINTS.some(hint => job.location.toLowerCase().includes(hint.toLowerCase()))
+      ).length;
+      const earlyCareerJobs = jobs.filter(job => 
+        EARLY_CAREER_KEYWORDS.some(keyword => 
+          job.title.toLowerCase().includes(keyword.toLowerCase()) ||
+          job.description.toLowerCase().includes(keyword.toLowerCase())
+        )
+      ).length;
+      
+      console.log(`📊 Job Filtering Results:`);
+      console.log(`   • EU-based jobs: ${euJobs}/${jobs.length} (${Math.round(euJobs/jobs.length*100)}%)`);
+      console.log(`   • Early career jobs: ${earlyCareerJobs}/${jobs.length} (${Math.round(earlyCareerJobs/jobs.length*100)}%)`);
+    }
 
     // Reserve jobs to prevent race conditions
     const jobIds = jobs.map(job => job.id);

@@ -1,7 +1,7 @@
 // Railway Configuration System
 // Safe, throttled HTTP-only scraping for Railway environment
 
-const bool = (k: string, d = false) => (process.env[k]?.toLowerCase() === 'true') ?? d;
+const bool = (k: string, d = false) => process.env[k]?.toLowerCase() === 'true' || d;
 const int = (k: string, d: number) => Number(process.env[k] ?? d);
 
 export const CFG = {

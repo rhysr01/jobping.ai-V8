@@ -349,7 +349,7 @@ export function batchIngestJobs(jobs: Job[]): {
 
   for (const job of jobs) {
     const result = ingestJob(job);
-    results.set(job.job_hash || job.id, result);
+    results.set(job.job_hash || String(job.id) || `job_${Date.now()}_${Math.random()}`, result);
 
     if (result.shouldSave) {
       saved.push(job);

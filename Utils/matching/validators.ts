@@ -16,7 +16,7 @@ export function applyHardGates(job: Job, userPrefs: UserPreferences): {
   reason: string;
 } {
   // Gate 1: Job must have required fields
-  if (!job.title || !job.company || !job.job_url) {
+  if (!job.title || !job.company || !job.job_hash) {
     return { passed: false, reason: 'Missing required job fields' };
   }
 
@@ -26,7 +26,7 @@ export function applyHardGates(job: Job, userPrefs: UserPreferences): {
   }
 
   // Gate 3: Job must have location
-  if (!job.location || job.location.length === 0) {
+  if (!job.location || job.location.trim() === '') {
     return { passed: false, reason: 'Job has no location' };
   }
 
@@ -54,7 +54,7 @@ export function validateJobData(job: Partial<Job>): job is Job {
   return !!(
     job.title && 
     job.company && 
-    job.job_url &&
+    job.job_hash &&
     job.categories &&
     job.location
   );
@@ -347,7 +347,7 @@ export function validateJobUserCompatibility(
   };
 } {
   const hardGates = applyHardGates(job, user);
-  const jobLocation = Array.isArray(job.location) ? job.location : [job.location];
+  const jobLocation = [job.location]; // Location is now single string, convert to array for compatibility
   const location = validateLocationCompatibility(jobLocation, user.target_cities || []);
   const careerPath = validateCareerPathCompatibility(job.categories, user.career_path || '');
   const workEnvironment = validateWorkEnvironmentCompatibility(

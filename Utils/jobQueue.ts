@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { AIMatchingCache } from './jobMatching';
 import { PerformanceMonitor } from './performanceMonitor';
 import { AdvancedMonitoringOracle } from './advancedMonitoring';
+import { sendMatchedJobsEmail } from './email';
 
 // Initialize Redis connection
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';

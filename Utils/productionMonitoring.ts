@@ -107,11 +107,11 @@ export class ProductionMonitor {
     }
 
     // Check for critical issues
-    if (!health.components.database.ok) {
+    if (health.components.database.status === 'failed') {
       health.criticalIssues.push('Database connection failed - system cannot function');
     }
 
-    if (!health.components.email.ok) {
+    if (health.components.email.status === 'failed') {
       health.criticalIssues.push('Email system failed - users cannot receive matches');
     }
 
@@ -140,8 +140,7 @@ export class ProductionMonitor {
       const { data, error } = await db
         .from('jobs')
         .select('count')
-        .limit(1)
-        .timeout(5000);
+        .limit(1);
 
       const responseTime = Date.now() - startTime;
       

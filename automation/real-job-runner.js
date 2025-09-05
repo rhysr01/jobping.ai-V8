@@ -170,6 +170,72 @@ class RealJobRunner {
     }
   }
 
+  // Run Arbeitnow scraper (NEW - FREE EU)
+  async runArbeitnowScraper() {
+    try {
+      console.log('🔄 Running Arbeitnow scraper...');
+      
+      const { stdout } = await execAsync('npx tsx scrapers/arbeitnow-scraper.ts', {
+        cwd: process.cwd(),
+        timeout: 300000
+      });
+      
+      // Parse output for job count
+      const jobMatch = stdout.match(/early-career jobs found: (\d+)/);
+      const jobsFound = jobMatch ? parseInt(jobMatch[1]) : 0;
+      
+      console.log(`✅ Arbeitnow: ${jobsFound} early-career jobs found`);
+      return jobsFound;
+    } catch (error) {
+      console.error('❌ Arbeitnow scraper failed:', error.message);
+      return 0;
+    }
+  }
+
+  // Run Arbeitsamt scraper (NEW - FREE EU)
+  async runArbeitsamtScraper() {
+    try {
+      console.log('🔄 Running Arbeitsamt scraper...');
+      
+      const { stdout } = await execAsync('npx tsx scrapers/arbeitsamt-scraper.ts', {
+        cwd: process.cwd(),
+        timeout: 300000
+      });
+      
+      // Parse output for job count
+      const jobMatch = stdout.match(/early-career jobs found: (\d+)/);
+      const jobsFound = jobMatch ? parseInt(jobMatch[1]) : 0;
+      
+      console.log(`✅ Arbeitsamt: ${jobsFound} early-career jobs found`);
+      return jobsFound;
+    } catch (error) {
+      console.error('❌ Arbeitsamt scraper failed:', error.message);
+      return 0;
+    }
+  }
+
+  // Run EURES scraper (NEW - FREE EU)
+  async runEUREScraper() {
+    try {
+      console.log('🔄 Running EURES scraper...');
+      
+      const { stdout } = await execAsync('npx tsx scrapers/eures-scraper.ts', {
+        cwd: process.cwd(),
+        timeout: 300000
+      });
+      
+      // Parse output for job count
+      const jobMatch = stdout.match(/early-career jobs found: (\d+)/);
+      const jobsFound = jobMatch ? parseInt(jobMatch[1]) : 0;
+      
+      console.log(`✅ EURES: ${jobsFound} early-career jobs found`);
+      return jobsFound;
+    } catch (error) {
+      console.error('❌ EURES scraper failed:', error.message);
+      return 0;
+    }
+  }
+
   // Monitor database health
   async checkDatabaseHealth() {
     try {
@@ -264,9 +330,19 @@ class RealJobRunner {
       await new Promise(resolve => setTimeout(resolve, 5000)); // Rate limiting
       
       const jsearchJobs = await this.runJSearchScraper();
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Rate limiting
+      
+      // Run NEW FREE EU scrapers
+      const arbeitnowJobs = await this.runArbeitnowScraper();
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Rate limiting
+      
+      const arbeitsamtJobs = await this.runArbeitsamtScraper();
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Rate limiting
+      
+      const euresJobs = await this.runEUREScraper();
       
       // Update stats
-      this.totalJobsSaved += (adzunaJobs + reedJobs + greenhouseJobs + indeedJobs + museJobs + jsearchJobs);
+      this.totalJobsSaved += (adzunaJobs + reedJobs + greenhouseJobs + indeedJobs + museJobs + jsearchJobs + arbeitnowJobs + arbeitsamtJobs + euresJobs);
       this.runCount++;
       this.lastRun = new Date();
       
@@ -280,13 +356,17 @@ class RealJobRunner {
       console.log('\n✅ SCRAPING CYCLE COMPLETE');
       console.log('============================');
       console.log(`⏱️  Duration: ${duration.toFixed(1)} seconds`);
-      console.log(`📊 Jobs processed this cycle: ${adzunaJobs + reedJobs + greenhouseJobs + indeedJobs + museJobs + jsearchJobs}`);
+      console.log(`📊 Jobs processed this cycle: ${adzunaJobs + reedJobs + greenhouseJobs + indeedJobs + museJobs + jsearchJobs + arbeitnowJobs + arbeitsamtJobs + euresJobs}`);
       console.log(`📈 Total jobs processed: ${this.totalJobsSaved}`);
       console.log(`🔄 Total cycles run: ${this.runCount}`);
       console.log(`📅 Last run: ${this.lastRun.toISOString()}`);
       console.log(`💾 Database total: ${dbStats.totalJobs} jobs`);
       console.log(`🆕 Database recent (24h): ${dbStats.recentJobs} jobs`);
       console.log(`🏷️  Sources: ${JSON.stringify(dbStats.sourceBreakdown)}`);
+      console.log(`\n🆕 NEW FREE EU SCRAPERS:`);
+      console.log(`   - Arbeitnow: ${arbeitnowJobs} jobs`);
+      console.log(`   - Arbeitsamt: ${arbeitsamtJobs} jobs`);
+      console.log(`   - EURES: ${euresJobs} jobs`);
       
     } catch (error) {
       console.error('❌ Scraping cycle failed:', error);
@@ -321,7 +401,7 @@ class RealJobRunner {
     console.log('   - Hourly scraping cycles');
     console.log('   - Daily health checks');
     console.log('   - Database monitoring');
-    console.log('   - All 6 scrapers integrated');
+    console.log('   - All 9 scrapers integrated (6 original + 3 new FREE EU)');
   }
 
   // Get status

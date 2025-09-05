@@ -7,7 +7,7 @@
 
 // Re-export shared types from scrapers
 // Re-export types from scrapers
-export {
+export type {
   User,
   Match,
   MatchLog,
@@ -19,15 +19,41 @@ export {
 // Import Job type but extend it for our needs
 import { Job as BaseJob } from '../../scrapers/types';
 
-// Extended Job interface for matching system
-export interface Job extends Omit<BaseJob, 'id' | 'location'> {
-  // Override specific properties for matching system
-  id: number | string;
-  location: string | string[];
-  // Add any additional properties needed for matching
-  description?: string;
-  created_at?: string;
-  updated_at?: string;
+// Extended Job interface for matching system - aligned with database schema
+export interface Job {
+  // Core fields from database
+  id: number;
+  title: string;
+  company: string;
+  location: string;  // Single text field, not array
+  categories: string[];
+  description: string;  // Required text field, not optional
+  experience_required: string;
+  work_environment: string;
+  source: string;
+  job_hash: string;
+  posted_at: string;
+  language_requirements: string[];
+  scrape_timestamp: string;
+  created_at: string;
+  updated_at: string;
+  
+  // Additional fields from database
+  freshness_tier: string;
+  ai_labels: string[];
+  work_location: string;
+  city: string;
+  country: string;
+  company_name: string;
+  
+  // Optional fields
+  company_profile_url?: string;
+  is_active?: boolean;
+  job_hash_score?: number;
+  is_sent?: boolean;
+  status?: string;
+  last_seen_at?: string;
+  original_posted_date?: string;
 }
 
 // Matching-specific types
@@ -59,20 +85,32 @@ export interface EnrichedJob extends Job {
 }
 
 export interface UserPreferences {
+  // Core fields from database
+  id: string;  // UUID from database
   email: string;
-  full_name?: string;
-  professional_expertise?: string;
-  visa_status?: string;
-  start_date?: string;
-  work_environment?: string;
-  languages_spoken?: string[];
-  company_types?: string[];
-  roles_selected?: string[];
-  career_path?: string | string[];
-  entry_level_preference?: string;
-  target_cities?: string[];
-  subscription_tier?: string;
+  full_name: string;
+  professional_expertise: string;
+  visa_status: string;
+  start_date: string;
+  work_environment: string;
+  languages_spoken: string[];
+  company_types: string[];
+  roles_selected: string[];
+  career_path: string;  // Single text field, not array
+  entry_level_preference: string;
+  target_cities: string[];
+  
+  // Additional fields from database
+  verification_token?: string;
   email_verified?: boolean;
+  active?: boolean;
+  subscription_active?: boolean;
+  target_employment_date?: string;
+  last_email_sent?: string;
+  email_count?: number;
+  onboarding_complete?: boolean;
+  email_phase?: string;
+  cv_url?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -109,17 +147,7 @@ export interface MatchingResult {
   errors?: string[];
 }
 
-export interface ScoringContext {
-  job: Job;
-  user: UserPreferences;
-  config: any;
-  weights: {
-    eligibility: number;
-    careerPath: number;
-    location: number;
-    freshness: number;
-  };
-}
+
 
 // Type-safe property accessors (replaces anyIndex function)
 export function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {

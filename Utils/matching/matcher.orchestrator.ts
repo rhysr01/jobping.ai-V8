@@ -249,7 +249,7 @@ export class MatcherOrchestrator {
     try {
       // Test scoring service
       const testJob = {
-        id: 'test',
+        id: 1,
         job_hash: 'test-hash',
         title: 'Test Job',
         company: 'Test Company',
@@ -268,11 +268,28 @@ export class MatcherOrchestrator {
         last_seen_at: new Date().toISOString(),
         is_active: true,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        freshness_tier: 'recent',
+        ai_labels: ['early-career'],
+        work_location: 'remote',
+        city: 'Test City',
+        country: 'Test Country',
+        company_name: 'Test Company',
       };
       
       const testUser = {
+        id: 'test-user-id',
         email: 'test@example.com',
+        full_name: 'Test User',
+        professional_expertise: 'Software Development',
+        visa_status: 'citizen',
+        start_date: new Date().toISOString().split('T')[0],
+        work_environment: 'remote',
+        languages_spoken: ['English'],
+        company_types: ['tech'],
+        roles_selected: ['developer'],
         career_path: 'tech',
+        entry_level_preference: 'entry',
         target_cities: ['Test City']
       };
       

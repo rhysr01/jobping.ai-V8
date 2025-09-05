@@ -157,7 +157,7 @@ export async function sendMatchedJobsEmail({
         
       } catch (error) {
         lastError = error;
-        console.error(`❌ Email attempt ${attempt} failed:`, error.message);
+        console.error(`❌ Email attempt ${attempt} failed:`, error instanceof Error ? error.message : String(error));
         
         if (attempt < EMAIL_CONFIG.maxRetries) {
           const delay = Math.pow(2, attempt) * EMAIL_CONFIG.retryDelay;

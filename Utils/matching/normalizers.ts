@@ -144,13 +144,13 @@ export function normalizeEntryLevel(level: unknown): string {
   return 'entry';
 }
 
-// Batch normalization for user preferences
+// Batch normalization for user preferences - aligned with database schema
 export function normalizeUserPreferences(userData: Record<string, unknown>): {
   email: string;
-  full_name?: string;
-  professional_expertise?: string;
+  full_name: string;
+  professional_expertise: string;
   visa_status: string;
-  start_date?: string;
+  start_date: string;
   work_environment: string;
   languages_spoken: string[];
   company_types: string[];
@@ -161,10 +161,10 @@ export function normalizeUserPreferences(userData: Record<string, unknown>): {
 } {
   return {
     email: normalizeEmail(userData.email),
-    full_name: toOptString(userData.full_name),
-    professional_expertise: toOptString(userData.professional_expertise),
+    full_name: toOptString(userData.full_name) || 'Unknown User',
+    professional_expertise: toOptString(userData.professional_expertise) || 'General',
     visa_status: normalizeVisaStatus(userData.visa_status),
-    start_date: normalizeStartDate(userData.start_date),
+    start_date: normalizeStartDate(userData.start_date) || new Date().toISOString().split('T')[0],
     work_environment: normalizeWorkEnvironment(userData.work_environment),
     languages_spoken: normalizeLanguage(userData.languages_spoken),
     company_types: normalizeCompanyType(userData.company_types),
@@ -175,28 +175,52 @@ export function normalizeUserPreferences(userData: Record<string, unknown>): {
   };
 }
 
-// Job data normalization
+// Job data normalization - aligned with database schema
 export function normalizeJobData(jobData: Record<string, unknown>): {
   title: string;
   company: string;
   job_url: string;
   categories: string[];
-  location: string[];
-  description?: string;
-  salary_min?: number;
-  salary_max?: number;
-  created_at?: string;
+  location: string;  // Single string, not array
+  description: string;  // Required string, not optional
+  experience_required: string;
+  work_environment: string;
+  source: string;
+  job_hash: string;
+  posted_at: string;
+  language_requirements: string[];
+  scrape_timestamp: string;
+  created_at: string;
+  updated_at: string;
+  freshness_tier: string;
+  ai_labels: string[];
+  work_location: string;
+  city: string;
+  country: string;
+  company_name: string;
 } {
   return {
-    title: reqString(jobData.title),
-    company: reqString(jobData.company),
-    job_url: reqString(jobData.job_url),
+    title: reqString(jobData.title as any),
+    company: reqString(jobData.company as any),
+    job_url: reqString(jobData.job_url as any),
     categories: toStringArray(jobData.categories),
-    location: toStringArray(jobData.location),
-    description: toOptString(jobData.description),
-    salary_min: typeof jobData.salary_min === 'number' ? jobData.salary_min : undefined,
-    salary_max: typeof jobData.salary_max === 'number' ? jobData.salary_max : undefined,
-    created_at: toOptString(jobData.created_at),
+    location: reqString(jobData.location as any),  // Single string
+    description: reqString(jobData.description as any),  // Required string
+    experience_required: toOptString(jobData.experience_required) || 'entry',
+    work_environment: toOptString(jobData.work_environment) || 'unclear',
+    source: toOptString(jobData.source) || 'unknown',
+    job_hash: reqString(jobData.job_hash as any),
+    posted_at: toOptString(jobData.posted_at) || new Date().toISOString(),
+    language_requirements: toStringArray(jobData.language_requirements),
+    scrape_timestamp: toOptString(jobData.scrape_timestamp) || new Date().toISOString(),
+    created_at: toOptString(jobData.created_at) || new Date().toISOString(),
+    updated_at: toOptString(jobData.updated_at) || new Date().toISOString(),
+    freshness_tier: toOptString(jobData.freshness_tier) || 'recent',
+    ai_labels: toStringArray(jobData.ai_labels),
+    work_location: toOptString(jobData.work_location) || 'unclear',
+    city: toOptString(jobData.city) || 'unknown',
+    country: toOptString(jobData.country) || 'unknown',
+    company_name: toOptString(jobData.company_name) || 'unknown',
   };
 }
 
