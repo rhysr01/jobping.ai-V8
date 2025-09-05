@@ -41,6 +41,8 @@
     "test:greenhouse-embed": "node scripts/test-greenhouse-embed.js",
     "test:indeed": "npx tsx scrapers/indeed-scraper.ts",
     "test:muse": "npx tsx scrapers/muse-scraper.ts",
+    "test:arbeitnow": "npx tsx scrapers/arbeitnow-scraper.ts",
+    "test:jobs-ac-uk": "npx tsx scrapers/jobs-ac-uk-scraper.ts",
     "test:jsearch": "npx tsx scrapers/jsearch-scraper.ts",
     "test:fixes": "node scripts/test-scraper-fixes.js",
     "test:all-scrapers": "node test-all-scrapers.js",
@@ -73,6 +75,7 @@
     "automation:start": "node automation/real-job-runner.js"
   },
   "dependencies": {
+    "@sentry/nextjs": "10.10.0",
     "@stripe/react-stripe-js": "3.9.2",
     "@stripe/stripe-js": "7.9.0",
     "@supabase/supabase-js": "^2.39.0",

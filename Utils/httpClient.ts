@@ -11,6 +11,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { Agent } from 'http';
 import { Agent as HttpsAgent } from 'https';
+import * as Sentry from '@sentry/nextjs';
 
 // Connection pool configuration
 const HTTP_CONFIG = {
@@ -201,6 +202,20 @@ class ProductionHttpClient {
         return response;
       },
       async (error) => {
+        // Sentry error tracking for HTTP failures
+        Sentry.captureException(error, {
+          tags: {
+            component: 'http-client',
+            status: error.response?.status,
+            url: error.config?.url
+          },
+          extra: {
+            method: error.config?.method,
+            timeout: error.config?.timeout,
+            responseTime: error.response?.headers?.['x-response-time']
+          }
+        });
+
         if (error.response?.status === 429) {
           console.warn('🚫 Rate limited, implementing backoff...');
           await this.handleRateLimit(error.config);

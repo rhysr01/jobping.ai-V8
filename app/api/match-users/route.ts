@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import OpenAI from 'openai';
+import * as Sentry from '@sentry/nextjs';
 import {
   generateRobustFallbackMatches,
   logMatchSession,
@@ -22,6 +23,7 @@ import type { JobMatch } from '@/Utils/jobMatching';
 import { dogstatsd } from '@/Utils/datadogMetrics';
 import { createClient as createRedisClient } from 'redis';
 import crypto from 'crypto';
+import { criticalAlerts } from '@/Utils/criticalAlerts';
 import { resetLimiterForTests } from '@/Utils/productionRateLimiter';
 import { createConsolidatedMatcher } from '@/Utils/consolidatedMatching';
 
@@ -40,6 +42,29 @@ function normalizeStringToArray(value: any): string[] {
     return value.split(',').map(s => s.trim()).filter(Boolean);
   }
   return [];
+}
+
+// OpenAI cost calculation - CRITICAL for budget monitoring
+function calculateOpenAICost(usage: any): number {
+  if (!usage) return 0;
+  
+  // GPT-4 pricing (as of 2024)
+  const PRICING = {
+    'gpt-4': { input: 0.03 / 1000, output: 0.06 / 1000 },
+    'gpt-4-turbo': { input: 0.01 / 1000, output: 0.03 / 1000 },
+    'gpt-3.5-turbo': { input: 0.001 / 1000, output: 0.002 / 1000 }
+  };
+  
+  const model = usage.model || 'gpt-4';
+  const pricing = PRICING[model as keyof typeof PRICING] || PRICING['gpt-4'];
+  
+  const inputTokens = usage.prompt_tokens || 0;
+  const outputTokens = usage.completion_tokens || 0;
+  
+  const inputCost = inputTokens * pricing.input;
+  const outputCost = outputTokens * pricing.output;
+  
+  return inputCost + outputCost;
 }
 
 // Enhanced monitoring and performance tracking
@@ -226,15 +251,25 @@ async function callConsolidatedMatcher(
     const result = await matcher.performMatching(compatibleJobs, user);
     console.log(`🎯 Matching result for ${user.email}: method=${result.method}, matches=${result.matches.length}, confidence=${result.confidence}`);
     
+    // Track OpenAI usage and costs
+    if (result.method === 'ai_success' && result.usage) {
+      const cost = calculateOpenAICost(result.usage);
+      await criticalAlerts.trackOpenAIUsage(
+        result.usage.model || 'gpt-4',
+        result.usage.total_tokens || 0,
+        cost
+      );
+    }
+    
     // Create provenance data for consolidated matcher
     const provenance = {
       match_algorithm: result.method === 'ai_success' ? 'ai' : 
                       result.method === 'rule_based' ? 'rules' : 'hybrid',
-      ai_model: 'gpt-4', // Default model for consolidated matcher
+      ai_model: result.usage?.model || 'gpt-4',
       prompt_version: process.env.PROMPT_VERSION || 'v1',
       cache_hit: false,
       ai_latency_ms: 0, // Will be set by caller
-      ai_cost_usd: 0    // Will be calculated by caller
+      ai_cost_usd: result.usage ? calculateOpenAICost(result.usage) : 0
     };
     
     return { matches: result.matches, provenance };
@@ -682,14 +717,41 @@ function getOpenAIClient() {
 }
 
 export async function POST(req: NextRequest) {
-  // At the very top of handler (first lines), nuke any lingering test keys (safe, fast)
-  if (isTestOrPerfMode()) {
-    try { await resetLimiterForTests?.(); } catch {}
-  }
+  const startTime = Date.now();
+  const requestId = crypto.randomUUID();
+  
+  // Start Sentry transaction for performance monitoring
+  const transaction = Sentry.startTransaction({
+    name: 'match-users-api',
+    op: 'api.request',
+    tags: {
+      endpoint: 'match-users',
+      requestId
+    }
+  });
+  
+  // Sentry context for API monitoring
+  Sentry.setContext('api', {
+    endpoint: '/api/match-users',
+    method: 'POST',
+    startTime: new Date().toISOString(),
+    requestId
+  });
 
-  const performanceTracker = trackPerformance();
+  try {
+    // At the very top of handler (first lines), nuke any lingering test keys (safe, fast)
+    if (isTestOrPerfMode()) {
+      try { await resetLimiterForTests?.(); } catch {}
+    }
+
+      const performanceTracker = trackPerformance();
   const reservationId = `batch_${Date.now()}`;
   const requestStartTime = Date.now();
+  
+  // Declare variables for the function scope
+  let users: any[] = [];
+  let jobs: any[] = [];
+  let results: any = {};
   
   // Stopwatch helper
   const t0 = Date.now(); 
@@ -845,6 +907,10 @@ export async function POST(req: NextRequest) {
 
     if (usersError) {
       console.error('Failed to fetch users:', usersError);
+      
+      // Critical alert for database failure
+      await criticalAlerts.alertDatabaseIssue('fetch_users', usersError.message);
+      
       return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
     }
 
@@ -943,6 +1009,10 @@ export async function POST(req: NextRequest) {
 
     if (jobsError) {
       console.error('Failed to fetch jobs:', jobsError);
+      
+      // Critical alert for database failure
+      await criticalAlerts.alertDatabaseIssue('fetch_jobs', jobsError.message);
+      
       return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
     }
 
@@ -1311,6 +1381,17 @@ export async function POST(req: NextRequest) {
 
     // Track production metrics for Datadog monitoring
     const requestDuration = Date.now() - requestStartTime;
+
+    // Critical performance alerts
+    if (requestDuration > 5000) {
+      await criticalAlerts.alertSlowResponse('/api/match-users', requestDuration);
+    }
+
+    // Calculate error rate and alert if high (simplified for now)
+    const errorRate = 0; // TODO: Track actual error count in performance metrics
+    if (errorRate > 10) {
+      await criticalAlerts.alertHighErrorRate(errorRate);
+    }
     
     try {
       const statsd = dogstatsd();
@@ -1344,12 +1425,38 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
+    const requestDuration = Date.now() - startTime;
     console.error('Match-users processing error:', error);
+    
+    // Critical alert for API failure
+    await criticalAlerts.alertApiFailure(
+      '/api/match-users', 
+      error instanceof Error ? error.message : String(error),
+      500
+    );
+    
+    // Sentry error tracking with context
+    Sentry.captureException(error, {
+      tags: {
+        endpoint: 'match-users',
+        operation: 'batch-processing',
+        requestId
+      },
+      extra: {
+        processingTime: Date.now() - requestStartTime,
+        requestDuration,
+        requestId
+      }
+    });
+    
     return NextResponse.json({ 
       error: 'Internal server error',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   } finally {
+    // Complete Sentry transaction
+    transaction.finish();
+    
     if (haveRedisLock) {
       try {
         const limiter = getProductionRateLimiter();

@@ -352,3 +352,111 @@ class MuseScraper {
     }
 }
 exports.default = MuseScraper;
+
+// Add execution and database saving logic
+const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto');
+
+// Load environment variables
+require('dotenv').config({ path: '.env.local' });
+require('dotenv').config();
+
+// Initialize Supabase
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// Helper function to create job hash
+function makeJobHash(job) {
+  const content = `${job.title}${job.company}${job.location}`;
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
+
+// Helper function to save jobs to database
+async function saveJobsToDatabase(jobs) {
+  if (jobs.length === 0) return 0;
+  
+  console.log(`💾 Saving ${jobs.length} jobs to database...`);
+  
+  const jobData = jobs.map(job => ({
+    job_hash: makeJobHash(job),
+    source: 'muse',
+    title: job.title,
+    company: job.company,
+    location: job.location,
+    job_url: job.url,
+    description: job.description,
+    created_at: new Date().toISOString(),
+    is_sent: false,
+    status: 'active',
+    freshness_tier: 'fresh',
+    original_posted_date: job.posted ? new Date(job.posted).toISOString() : new Date().toISOString(),
+    last_seen_at: new Date().toISOString()
+  }));
+
+  try {
+    const { data, error } = await supabase
+      .from('jobs')
+      .upsert(jobData, {
+        onConflict: 'job_hash',
+        ignoreDuplicates: true
+      })
+      .select();
+
+    if (error) {
+      console.error('❌ Database error:', error);
+      return 0;
+    }
+
+    console.log(`✅ Successfully saved ${data.length} new jobs to database`);
+    return data.length;
+  } catch (error) {
+    console.error('❌ Error saving jobs:', error);
+    return 0;
+  }
+}
+
+// Main execution function
+async function runMuseScraper() {
+  console.log('🚀 Starting Muse Job Scraper...\n');
+  
+  const scraper = new MuseScraper();
+  const allJobs = [];
+  
+  try {
+    // Scrape jobs from all locations
+    for (const location of MUSE_CONFIG.locations.slice(0, 5)) { // Limit to 5 locations for testing
+      console.log(`🌍 Scraping ${location}...`);
+      
+      const jobs = await scraper.scrapeSingleLocation(location);
+      if (jobs && jobs.length > 0) {
+        console.log(`   ✅ Found ${jobs.length} jobs`);
+        allJobs.push(...jobs);
+      } else {
+        console.log(`   ⚠️  No jobs found`);
+      }
+      
+      // Rate limiting
+      await new Promise(resolve => setTimeout(resolve, MUSE_CONFIG.requestInterval));
+    }
+    
+    console.log(`\n📊 Total jobs collected: ${allJobs.length}`);
+    
+    // Save to database
+    if (allJobs.length > 0) {
+      const savedCount = await saveJobsToDatabase(allJobs);
+      console.log(`💾 Total jobs saved to database: ${savedCount}`);
+    }
+    
+    console.log('\n✅ Muse scraper completed successfully!');
+    
+  } catch (error) {
+    console.error('❌ Muse scraper failed:', error);
+  }
+}
+
+// Run if this file is executed directly
+if (require.main === module) {
+  runMuseScraper().catch(console.error);
+}

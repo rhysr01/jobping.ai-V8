@@ -95,26 +95,18 @@ const JSEARCH_CONFIG = {
   baseUrl: 'https://jsearch.p.rapidapi.com/search',
   apiKey: process.env.RAPIDAPI_KEY || '',
   
-  // EU cities and countries for targeting
+  // Core EU cities for graduating students - standardized across all scrapers
   locations: [
-    'London, United Kingdom',
-    'Dublin, Ireland', 
-    'Berlin, Germany',
-    'Munich, Germany',
-    'Amsterdam, Netherlands',
-    'Rotterdam, Netherlands',
-    'Paris, France',
-    'Madrid, Spain',
-    'Barcelona, Spain',
-    'Stockholm, Sweden',
-    'Copenhagen, Denmark',
-    'Zurich, Switzerland',
-    'Vienna, Austria',
-    'Milan, Italy',
-    'Rome, Italy',
-    'Brussels, Belgium',
-    'Prague, Czech Republic',
-    'Warsaw, Poland'
+    'London, United Kingdom',    // Financial hub, tech, consulting
+    'Berlin, Germany',           // Tech startup capital, affordable
+    'Amsterdam, Netherlands',    // International business, English-friendly
+    'Dublin, Ireland',           // Tech giants (Google, Facebook, etc.)
+    'Paris, France',             // Consulting, luxury, finance
+    'Munich, Germany',           // Engineering, automotive, high salaries
+    'Madrid, Spain',             // Business hub, growing tech scene
+    'Stockholm, Sweden',         // Tech innovation, work-life balance
+    'Zurich, Switzerland',       // Finance, high salaries
+    'Copenhagen, Denmark'        // Design, sustainability, quality of life
   ],
   
   // Early-career focused search queries
@@ -157,10 +149,10 @@ const TRACK_QUERIES: Record<Track, string> = {
 
 const TRACK_LOCATIONS: Record<Track, string[]> = {
   A: ['London, United Kingdom', 'Berlin, Germany', 'Amsterdam, Netherlands'], // Tech hubs
-  B: ['Dublin, Ireland', 'Paris, France', 'Zurich, Switzerland'], // Business centers
-  C: ['Madrid, Spain', 'Stockholm, Sweden', 'Milan, Italy'], // Creative hubs
-  D: ['Copenhagen, Denmark', 'Vienna, Austria', 'Brussels, Belgium'], // Finance/Analytics
-  E: ['Munich, Germany', 'Barcelona, Spain', 'Prague, Czech Republic'] // Engineering/Ops
+  B: ['Dublin, Ireland', 'Paris, France', 'Zurich, Switzerland'], // Business centers  
+  C: ['Madrid, Spain', 'Stockholm, Sweden', 'Munich, Germany'], // Creative/Engineering hubs
+  D: ['Copenhagen, Denmark', 'London, United Kingdom', 'Amsterdam, Netherlands'], // Finance/Analytics
+  E: ['Berlin, Germany', 'Dublin, Ireland', 'Paris, France'] // General coverage
 };
 
 class JSearchScraper {

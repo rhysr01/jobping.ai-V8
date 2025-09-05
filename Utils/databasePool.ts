@@ -9,6 +9,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import * as Sentry from '@sentry/nextjs';
 
 class DatabasePool {
   private static instance: SupabaseClient | null = null;
@@ -54,6 +55,19 @@ class DatabasePool {
         
       } catch (error) {
         console.error('❌ Failed to initialize database pool:', error);
+        
+        // Sentry error tracking for database initialization failures
+        Sentry.captureException(error, {
+          tags: {
+            component: 'database-pool',
+            operation: 'initialization'
+          },
+          extra: {
+            supabaseUrl: supabaseUrl ? 'configured' : 'missing',
+            supabaseKey: supabaseKey ? 'configured' : 'missing'
+          }
+        });
+        
         throw error;
       } finally {
         this.isInitializing = false;
@@ -72,6 +86,14 @@ class DatabasePool {
       
       if (error) {
         console.warn('⚠️ Database health check failed:', error.message);
+        
+        // Sentry warning for database health check failures
+        Sentry.addBreadcrumb({
+          message: 'Database health check failed',
+          level: 'warning',
+          data: { error: error.message }
+        });
+        
         return false;
       }
       

@@ -3,14 +3,15 @@ import crypto from "crypto";
 
 const BASE = "https://boards-api.greenhouse.io/v1/boards";
 
-// Keep this small—tune later
+// Core EU cities for graduating students - standardized across all scrapers
 const EU_HINTS = [
-  "UK","United Kingdom","Ireland","Germany","France","Spain","Portugal","Italy","Netherlands","Belgium",
-  "Luxembourg","Denmark","Sweden","Norway","Finland","Iceland","Poland","Czech","Austria","Switzerland",
-  "Hungary","Greece","Romania","Bulgaria","Croatia","Slovenia","Slovakia","Estonia","Latvia","Lithuania",
-  "Amsterdam","Rotterdam","Eindhoven","London","Dublin","Paris","Berlin","Munich","Frankfurt","Zurich",
-  "Stockholm","Copenhagen","Oslo","Helsinki","Madrid","Barcelona","Lisbon","Milan","Rome","Athens","Warsaw",
-  "Prague","Vienna","Budapest","Bucharest","Tallinn","Riga","Vilnius","Brussels","Luxembourg City"
+  // Core countries
+  "UK","United Kingdom","Ireland","Germany","France","Spain","Netherlands","Denmark","Sweden","Switzerland",
+  // Core cities (must-haves for graduating students)
+  "London","Dublin","Berlin","Amsterdam","Paris","Munich","Madrid","Stockholm","Zurich","Copenhagen",
+  // Additional EU coverage
+  "Italy","Austria","Belgium","Poland","Czech","Portugal","Finland","Norway","Luxembourg","Greece",
+  "Vienna","Brussels","Prague","Warsaw","Lisbon","Helsinki","Oslo","Athens","Barcelona","Milan","Rome"
 ];
 
 export type GHJob = {

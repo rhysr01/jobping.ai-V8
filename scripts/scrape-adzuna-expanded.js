@@ -10,8 +10,16 @@ require('dotenv').config({ path: '.env.local' });
 require('dotenv').config();
 
 const axios = require('axios');
+const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto');
 
 console.log('🚀 Enhanced Adzuna Job Scraper - Collecting Maximum Jobs!\n');
+
+// Initialize Supabase
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // Check environment variables
 const adzunaAppId = process.env.ADZUNA_APP_ID;
@@ -26,46 +34,168 @@ console.log('✅ Adzuna credentials loaded');
 console.log(`   APP_ID: ${adzunaAppId.substring(0, 8)}...`);
 console.log(`   APP_KEY: ${adzunaAppKey.substring(0, 8)}...\n`);
 
+// Helper function to create job hash
+function makeJobHash(job) {
+  const content = `${job.title}${job.company}${job.location}`;
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
+
+// Helper function to save jobs to database
+async function saveJobsToDatabase(jobs) {
+  if (jobs.length === 0) return 0;
+  
+  console.log(`💾 Saving ${jobs.length} jobs to database...`);
+  
+  const jobData = jobs.map(job => ({
+    job_hash: makeJobHash(job),
+    source: 'adzuna',
+    title: job.title,
+    company: job.company,
+    location: job.location,
+    job_url: job.url,
+    description: job.description,
+    created_at: new Date().toISOString(),
+    is_sent: false,
+    status: 'active',
+    freshness_tier: 'fresh',
+    original_posted_date: job.posted ? new Date(job.posted).toISOString() : new Date().toISOString(),
+    last_seen_at: new Date().toISOString()
+  }));
+  
+  try {
+    const { data, error } = await supabase
+      .from('jobs')
+      .upsert(jobData, { 
+        onConflict: 'job_hash',
+        ignoreDuplicates: true 
+      })
+      .select();
+      
+    if (error) {
+      console.error('❌ Database error:', error);
+      return 0;
+    }
+    
+    console.log(`✅ Successfully saved ${data.length} new jobs to database`);
+    return data.length;
+  } catch (error) {
+    console.error('❌ Error saving jobs:', error);
+    return 0;
+  }
+}
+
 // Enhanced target cities with expanded keywords
 const targetCities = [
   { 
     name: 'London', 
     country: 'gb', 
     keywords: [
-      'graduate', 'intern', 'junior', 'entry-level', 'trainee', 'apprentice', 
-      'new graduate', 'recent graduate', 'student', 'entry level', 'first job'
+      'graduate trainee', 'graduate scheme', 'entry level', 'new graduate', 'recent graduate',
+      'junior assistant', 'graduate analyst', 'trainee', 'apprentice', 'internship', 'placement',
+      '1 year experience', '2 year experience', '1-2 years', 'up to 2 years', '0-2 years'
     ] 
   },
   { 
     name: 'Madrid', 
     country: 'es', 
     keywords: [
-      'becario', 'prácticas', 'junior', 'trainee', 'nivel inicial', 'primer empleo',
-      'estudiante', 'recién graduado', 'sin experiencia', 'formación', 'aprendiz'
+      'becario', 'prácticas', 'nivel inicial', 'recién graduado', 'sin experiencia',
+      'primer empleo', 'joven graduado', 'estudiante', 'aprendiz', 'formación', 'iniciación',
+      '1 año experiencia', '2 años experiencia', '1-2 años', 'hasta 2 años', '0-2 años'
+    ] 
+  },
+  { 
+    name: 'Barcelona', 
+    country: 'es', 
+    keywords: [
+      'becario', 'prácticas', 'nivel inicial', 'recién graduado', 'sin experiencia',
+      'primer empleo', 'joven graduado', 'estudiante', 'aprendiz', 'formación', 'iniciación',
+      '1 año experiencia', '2 años experiencia', '1-2 años', 'hasta 2 años', '0-2 años'
     ] 
   },
   { 
     name: 'Berlin', 
     country: 'de', 
     keywords: [
-      'praktikum', 'trainee', 'junior', 'einsteiger', 'berufseinsteiger', 'student',
-      'absolvent', 'neueinsteiger', 'anfänger', 'ausbildung', 'werkstudent'
+      'praktikum', 'trainee', 'einsteiger', 'berufseinsteiger', 'absolvent',
+      'neueinsteiger', 'anfänger', 'ausbildung', 'werkstudent', 'student', 'erstes jahr',
+      '1 jahr erfahrung', '2 jahre erfahrung', '1-2 jahre', 'bis 2 jahre', '0-2 jahre'
     ] 
   },
   { 
     name: 'Amsterdam', 
     country: 'nl', 
     keywords: [
-      'stagiair', 'werkstudent', 'junior', 'trainee', 'starter', 'student',
-      'afgestudeerde', 'eerste baan', 'entry level', 'beginnersfunctie', 'leerling'
+      'stagiair', 'werkstudent', 'starter', 'afgestudeerde', 'eerste baan',
+      'beginnersfunctie', 'leerling', 'trainee', 'junior', 'entry level', 'student',
+      '1 jaar ervaring', '2 jaar ervaring', '1-2 jaar', 'tot 2 jaar', '0-2 jaar'
     ] 
   },
   { 
     name: 'Paris', 
     country: 'fr', 
     keywords: [
-      'stagiaire', 'alternance', 'junior', 'trainee', 'débutant', 'premier emploi',
-      'étudiant', 'jeune diplômé', 'sans expérience', 'formation', 'apprenti'
+      'stagiaire', 'alternance', 'débutant', 'premier emploi', 'jeune diplômé',
+      'sans expérience', 'formation', 'apprenti', 'étudiant', 'trainee', 'junior',
+      '1 an expérience', '2 ans expérience', '1-2 ans', 'jusqu\'à 2 ans', '0-2 ans'
+    ] 
+  },
+  { 
+    name: 'Dublin', 
+    country: 'gb', 
+    keywords: [
+      'graduate trainee', 'graduate scheme', 'entry level', 'new graduate', 'recent graduate',
+      'junior assistant', 'graduate analyst', 'trainee', 'apprentice', 'internship', 'placement',
+      '1 year experience', '2 year experience', '1-2 years', 'up to 2 years', '0-2 years',
+      'springboard', 'springboard course', 'springboard graduate', 'springboard trainee',
+      'springboard internship', 'springboard placement', 'springboard entry level'
+    ] 
+  },
+  { 
+    name: 'Munich', 
+    country: 'de', 
+    keywords: [
+      'praktikum', 'trainee', 'einsteiger', 'berufseinsteiger', 'absolvent',
+      'neueinsteiger', 'anfänger', 'ausbildung', 'werkstudent', 'student', 'erstes jahr',
+      '1 jahr erfahrung', '2 jahre erfahrung', '1-2 jahre', 'bis 2 jahre', '0-2 jahre'
+    ] 
+  },
+  { 
+    name: 'Hamburg', 
+    country: 'de', 
+    keywords: [
+      'praktikum', 'trainee', 'einsteiger', 'berufseinsteiger', 'absolvent',
+      'neueinsteiger', 'anfänger', 'ausbildung', 'werkstudent', 'student', 'erstes jahr',
+      '1 jahr erfahrung', '2 jahre erfahrung', '1-2 jahre', 'bis 2 jahre', '0-2 jahre'
+    ] 
+  },
+  { 
+    name: 'Zurich', 
+    country: 'ch', 
+    keywords: [
+      'praktikum', 'trainee', 'einsteiger', 'berufseinsteiger', 'absolvent',
+      'neueinsteiger', 'anfänger', 'ausbildung', 'werkstudent', 'student', 'erstes jahr',
+      '1 jahr erfahrung', '2 jahre erfahrung', '1-2 jahre', 'bis 2 jahre', '0-2 jahre'
+    ] 
+  },
+  { 
+    name: 'Cork', 
+    country: 'gb', 
+    keywords: [
+      'graduate trainee', 'graduate scheme', 'entry level', 'new graduate', 'recent graduate',
+      'junior assistant', 'graduate analyst', 'trainee', 'apprentice', 'internship', 'placement',
+      '1 year experience', '2 year experience', '1-2 years', 'up to 2 years', '0-2 years',
+      'springboard', 'springboard course', 'springboard graduate', 'springboard trainee'
+    ] 
+  },
+  { 
+    name: 'Galway', 
+    country: 'gb', 
+    keywords: [
+      'graduate trainee', 'graduate scheme', 'entry level', 'new graduate', 'recent graduate',
+      'junior assistant', 'graduate analyst', 'trainee', 'apprentice', 'internship', 'placement',
+      '1 year experience', '2 year experience', '1-2 years', 'up to 2 years', '0-2 years',
+      'springboard', 'springboard course', 'springboard graduate', 'springboard trainee'
     ] 
   }
 ];
@@ -216,9 +346,14 @@ const scrapeAllCities = async () => {
     });
   }
   
+  // Save all jobs to database
+  console.log(`\n💾 Saving all jobs to database...`);
+  const savedCount = await saveJobsToDatabase(allJobs);
+  
   console.log('\n✅ Enhanced Adzuna job scraping completed successfully!');
   console.log('🚀 You now have maximum early-career job data for your pilot!');
   console.log(`💾 Total jobs collected: ${totalJobs} across ${targetCities.length} cities`);
+  console.log(`💾 Total jobs saved to database: ${savedCount}`);
 };
 
 // Run the enhanced scraper

@@ -57,23 +57,18 @@ const MUSE_CONFIG = {
   baseUrl: 'https://www.themuse.com/api/public/jobs',
   apiKey: process.env.MUSE_API_KEY || '', // Optional - works without key but has lower limits
   
-  // EU-focused locations (The Muse uses location names, not codes)
+  // Core EU cities for graduating students - standardized across all scrapers
   locations: [
-    'London, United Kingdom',
-    'Dublin, Ireland', 
-    'Berlin, Germany',
-    'Munich, Germany',
-    'Amsterdam, Netherlands',
-    'Paris, France',
-    'Madrid, Spain',
-    'Barcelona, Spain',
-    'Stockholm, Sweden',
-    'Copenhagen, Denmark',
-    'Zurich, Switzerland',
-    'Vienna, Austria',
-    'Milan, Italy',
-    'Brussels, Belgium',
-    'Prague, Czech Republic'
+    'London, United Kingdom',    // Financial hub, tech, consulting
+    'Berlin, Germany',           // Tech startup capital, affordable
+    'Amsterdam, Netherlands',    // International business, English-friendly
+    'Dublin, Ireland',           // Tech giants (Google, Facebook, etc.)
+    'Paris, France',             // Consulting, luxury, finance
+    'Munich, Germany',           // Engineering, automotive, high salaries
+    'Madrid, Spain',             // Business hub, growing tech scene
+    'Stockholm, Sweden',         // Tech innovation, work-life balance
+    'Zurich, Switzerland',       // Finance, high salaries
+    'Copenhagen, Denmark'        // Design, sustainability, quality of life
   ],
   
   // Early-career focused categories
