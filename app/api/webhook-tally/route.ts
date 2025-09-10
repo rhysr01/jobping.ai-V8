@@ -51,23 +51,23 @@ function getSupabaseClient() {
     if (process.env.NODE_ENV === 'test') {
       console.log('🧪 Test mode: Using mock Supabase client for webhook-tally');
       return {
-        from: (table: string) => ({
-          select: (columns?: string) => ({
-            eq: (column: string, value: any) => ({
+        from: (_table: string) => ({
+          select: (_columns?: string) => ({
+            eq: (_column: string, _value: any) => ({
               single: () => Promise.resolve({ data: null, error: null })
             }),
-            gte: (column: string, value: any) => ({
-              order: (column: string, options?: any) => ({
-                limit: (count: number) => Promise.resolve({ data: [], error: null })
+            gte: (_column: string, _value: any) => ({
+              order: (_column: string, _options?: any) => ({
+                limit: (_count: number) => Promise.resolve({ data: [], error: null })
               })
             }),
-            limit: (count: number) => Promise.resolve({ data: [], error: null }),
+            limit: (_count: number) => Promise.resolve({ data: [], error: null }),
             single: () => Promise.resolve({ data: null, error: null })
           }),
-          upsert: (data: any) => Promise.resolve({ data: null, error: null }),
-          insert: (data: any) => Promise.resolve({ data: null, error: null }),
-          update: (data: any) => ({
-            eq: (column: string, value: any) => Promise.resolve({ data: null, error: null })
+          upsert: (_data: any) => Promise.resolve({ data: null, error: null }),
+          insert: (_data: any) => Promise.resolve({ data: null, error: null }),
+          update: (_data: any) => ({
+            eq: (_column: string, _value: any) => Promise.resolve({ data: null, error: null })
           })
         })
       };
