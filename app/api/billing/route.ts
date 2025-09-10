@@ -3,15 +3,27 @@ import { paymentRecoverySystem, PAYMENT_CONFIG } from '../../../Utils/advancedPa
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-07-30.basil',
-  typescript: true,
-});
+// Initialize Stripe only when needed and with proper error handling
+function getStripeClient() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY environment variable is required');
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-07-30.basil',
+    typescript: true,
+  });
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase only when needed
+function getSupabaseClient() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error('Supabase environment variables are required');
+  }
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+}
 
 // GET: Retrieve billing information
 export async function GET(req: NextRequest) {
@@ -24,6 +36,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get user's Stripe customer ID
+    const supabase = getSupabaseClient();
     const { data: user } = await supabase
       .from('users')
       .select('stripe_customer_id')
@@ -71,6 +84,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get user's Stripe customer ID
+    const supabase = getSupabaseClient();
     const { data: user } = await supabase
       .from('users')
       .select('stripe_customer_id')
@@ -88,12 +102,13 @@ export async function POST(req: NextRequest) {
         }
 
         // Attach payment method to customer
-        await stripe.paymentMethods.attach(paymentMethodId, {
+        const stripeClient = getStripeClient();
+        await stripeClient.paymentMethods.attach(paymentMethodId, {
           customer: user.stripe_customer_id,
         });
 
         // Set as default payment method
-        await stripe.customers.update(user.stripe_customer_id, {
+        await stripeClient.customers.update(user.stripe_customer_id, {
           invoice_settings: {
             default_payment_method: paymentMethodId,
           },
@@ -107,7 +122,8 @@ export async function POST(req: NextRequest) {
         }
 
         // Detach payment method
-        await stripe.paymentMethods.detach(paymentMethodId);
+        const stripeClient2 = getStripeClient();
+        await stripeClient2.paymentMethods.detach(paymentMethodId);
         return NextResponse.json({ success: true, message: 'Payment method removed' });
 
       case 'generate_invoice':
@@ -142,6 +158,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Get user's current subscription
+    const supabase = getSupabaseClient();
     const { data: subscription } = await supabase
       .from('subscriptions')
       .select('stripe_subscription_id')
@@ -182,7 +199,8 @@ export async function PUT(req: NextRequest) {
         }
 
         // Get user's Stripe customer ID
-        const { data: user } = await supabase
+        const supabase = getSupabaseClient();
+    const { data: user } = await supabase
           .from('users')
           .select('stripe_customer_id')
           .eq('id', userId)
