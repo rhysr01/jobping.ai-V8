@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Menu, Search, Settings, Grid3X3, Edit, Inbox, Star, Send, FileText, 
   ChevronDown, Archive, Trash2, Mail, Clock, ChevronLeft, ChevronRight,
-  MapPin, Check, ExternalLink, Building2, Reply, MoreVertical, Target
+  MapPin, Check, ExternalLink, Reply, MoreVertical
 } from 'lucide-react';
 
 interface JobCardProps {

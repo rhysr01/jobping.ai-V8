@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import BillingDashboard from '../components/BillingDashboard';
 import PaymentMethodManager from '../components/PaymentMethodManager';
-import { CreditCard, Settings, FileText, Plus } from 'lucide-react';
+import { CreditCard, Settings, FileText } from 'lucide-react';
 
 interface BillingPageProps {
   params: Promise<{ userId: string }>;

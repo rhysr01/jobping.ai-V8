@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 type PlanKey = 'free' | 'premium';

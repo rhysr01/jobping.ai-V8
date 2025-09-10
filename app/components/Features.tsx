@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { 
   Brain, Globe, GraduationCap, Clock, 
-  Network, Mail, Target, Shield 
+  Network, Mail 
 } from 'lucide-react';
 
 export default function Features() {

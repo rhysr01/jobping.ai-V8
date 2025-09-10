@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   CreditCard, 
   Download, 
@@ -11,9 +11,7 @@ import {
   XCircle,
   Pause,
   Play,
-  Settings,
-  Shield,
-  ChevronRight
+  Settings
 } from 'lucide-react';
 
 interface BillingInfo {
@@ -64,11 +62,7 @@ export default function BillingDashboard({ userId }: BillingDashboardProps) {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'payment' | 'history'>('overview');
 
-  useEffect(() => {
-    fetchBillingInfo();
-  }, [userId]);
-
-  const fetchBillingInfo = async () => {
+  const fetchBillingInfo = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/billing?userId=${userId}`);
@@ -85,7 +79,11 @@ export default function BillingDashboard({ userId }: BillingDashboardProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    fetchBillingInfo();
+  }, [fetchBillingInfo]);
 
   const handleSubscriptionAction = async (action: string, newTier?: string) => {
     try {
