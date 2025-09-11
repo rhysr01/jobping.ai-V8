@@ -66,18 +66,18 @@ const JOOBLE_CONFIG = {
     'Milan, Italy'
   ],
   
-  // Multilingual early-career keywords
+  // Core early-career keywords (5 per language max to avoid burning API quota)
   keywords: {
-    en: ['graduate', 'intern', 'entry level', 'junior', 'trainee', 'new grad', 'campus hire'],
-    de: ['praktikum', 'werkstudent', 'trainee', 'berufseinsteiger', 'junior', 'absolvent'],
-    fr: ['stage', 'stagiaire', 'débutant', 'junior', 'alternant', 'diplômé'],
-    nl: ['stage', 'starter', 'junior', 'trainee', 'afgestudeerde'],
-    es: ['prácticas', 'becario', 'junior', 'recién graduado', 'nuevo graduado'],
-    it: ['tirocinio', 'stagista', 'junior', 'neo laureato'],
-    sv: ['praktikant', 'nyexaminerad', 'junior'],
-    da: ['praktikant', 'nyuddannet', 'junior'],
-    pl: ['stażysta', 'młodszy', 'absolwent'],
-    cs: ['praktikant', 'junior', 'absolvent']
+    en: ['graduate', 'intern', 'junior', 'trainee', 'entry level'],
+    de: ['praktikum', 'junior', 'absolvent', 'trainee', 'einsteiger'],
+    fr: ['stage', 'junior', 'diplômé', 'trainee', 'débutant'],
+    nl: ['stage', 'junior', 'trainee', 'starter', 'afgestudeerde'],
+    es: ['prácticas', 'junior', 'graduado', 'trainee', 'becario'],
+    it: ['tirocinio', 'junior', 'laureato', 'trainee', 'stagista'],
+    sv: ['praktikant', 'junior', 'nyexaminerad', 'trainee'],
+    da: ['praktikant', 'junior', 'nyuddannet', 'trainee'],
+    pl: ['stażysta', 'junior', 'absolwent', 'trainee'],
+    cs: ['praktikant', 'junior', 'absolvent', 'trainee']
   },
   
   // Rate limiting
@@ -292,13 +292,13 @@ class JoobleScraper {
           try {
             console.log(`\n📍 Processing ${location}...`);
             
-            // Get language-specific keywords for this location
+            // Get language-specific keywords for this location and combine them
             const locationKeywords = this.getKeywordsForLocation(location);
             
-            for (const keyword of locationKeywords) {
-              const locationJobs = await this.searchJobs(keyword, location);
-              allJobs.push(...locationJobs);
-            }
+            // Use first keyword only to avoid API issues with OR syntax
+            const primaryKeyword = locationKeywords[0];
+            const locationJobs = await this.searchJobs(primaryKeyword, location);
+            allJobs.push(...locationJobs);
             
             metrics.locationsProcessed++;
             metrics.earlyCareerJobs += allJobs.length;

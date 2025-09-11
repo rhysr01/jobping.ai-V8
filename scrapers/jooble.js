@@ -1,10 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 // ✅ Jooble Scraper - EU Early Career Jobs
-const axios_1 = __importDefault(require("axios"));
+const axios_1 = require("axios");
 const utils_js_1 = require("./utils.js");
 // ✅ Jooble Configuration
 const JOOBLE_CONFIG = {
@@ -29,18 +26,18 @@ const JOOBLE_CONFIG = {
         'Barcelona, Spain',
         'Milan, Italy'
     ],
-    // Multilingual early-career keywords
+    // Core early-career keywords (5 per language max to avoid burning API quota)
     keywords: {
-        en: ['graduate', 'intern', 'entry level', 'junior', 'trainee', 'new grad', 'campus hire'],
-        de: ['praktikum', 'werkstudent', 'trainee', 'berufseinsteiger', 'junior', 'absolvent'],
-        fr: ['stage', 'stagiaire', 'débutant', 'junior', 'alternant', 'diplômé'],
-        nl: ['stage', 'starter', 'junior', 'trainee', 'afgestudeerde'],
-        es: ['prácticas', 'becario', 'junior', 'recién graduado', 'nuevo graduado'],
-        it: ['tirocinio', 'stagista', 'junior', 'neo laureato'],
-        sv: ['praktikant', 'nyexaminerad', 'junior'],
-        da: ['praktikant', 'nyuddannet', 'junior'],
-        pl: ['stażysta', 'młodszy', 'absolwent'],
-        cs: ['praktikant', 'junior', 'absolvent']
+        en: ['graduate', 'intern', 'junior', 'trainee', 'entry level'],
+        de: ['praktikum', 'junior', 'absolvent', 'trainee', 'einsteiger'],
+        fr: ['stage', 'junior', 'diplômé', 'trainee', 'débutant'],
+        nl: ['stage', 'junior', 'trainee', 'starter', 'afgestudeerde'],
+        es: ['prácticas', 'junior', 'graduado', 'trainee', 'becario'],
+        it: ['tirocinio', 'junior', 'laureato', 'trainee', 'stagista'],
+        sv: ['praktikant', 'junior', 'nyexaminerad', 'trainee'],
+        da: ['praktikant', 'junior', 'nyuddannet', 'trainee'],
+        pl: ['stażysta', 'junior', 'absolwent', 'trainee'],
+        cs: ['praktikant', 'junior', 'absolvent', 'trainee']
     },
     // Rate limiting
     requestInterval: 2000, // 2 seconds between requests
@@ -90,7 +87,6 @@ class JoobleScraper {
         this.lastRequestTime = Date.now();
     }
     async makeRequest(request) {
-        var _a, _b;
         await this.throttleRequest();
         try {
             const url = `${JOOBLE_CONFIG.baseUrl}/${JOOBLE_CONFIG.apiKey}`;
@@ -104,11 +100,11 @@ class JoobleScraper {
             });
             this.requestCount++;
             this.dailyRequestCount++;
-            console.log(`📊 Jooble API response: ${((_a = response.data.jobs) === null || _a === void 0 ? void 0 : _a.length) || 0} jobs found`);
+            console.log(`📊 Jooble API response: ${response.data.jobs?.length || 0} jobs found`);
             return response.data;
         }
         catch (error) {
-            if (((_b = error.response) === null || _b === void 0 ? void 0 : _b.status) === 429) {
+            if (error.response?.status === 429) {
                 console.warn('🚫 Jooble rate limited, backing off...');
                 await new Promise(resolve => setTimeout(resolve, 10000));
                 return this.makeRequest(request);
@@ -188,7 +184,6 @@ class JoobleScraper {
         return jobs;
     }
     async scrapeAllLocations() {
-        var _a;
         const allJobs = [];
         const metrics = {
             locationsProcessed: 0,
@@ -218,12 +213,12 @@ class JoobleScraper {
                 for (const location of batch) {
                     try {
                         console.log(`\n📍 Processing ${location}...`);
-                        // Get language-specific keywords for this location
+                        // Get language-specific keywords for this location and combine them
                         const locationKeywords = this.getKeywordsForLocation(location);
-                        for (const keyword of locationKeywords) {
-                            const locationJobs = await this.searchJobs(keyword, location);
-                            allJobs.push(...locationJobs);
-                        }
+                        // Use first keyword only to avoid API issues with OR syntax
+                        const primaryKeyword = locationKeywords[0];
+                        const locationJobs = await this.searchJobs(primaryKeyword, location);
+                        allJobs.push(...locationJobs);
                         metrics.locationsProcessed++;
                         metrics.earlyCareerJobs += allJobs.length;
                         console.log(`✅ ${location}: ${allJobs.length} total early-career jobs found`);
@@ -232,7 +227,7 @@ class JoobleScraper {
                         console.error(`❌ Error processing ${location}:`, error.message);
                         metrics.errors++;
                         // If we get repeated errors, wait longer before continuing
-                        if (((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) >= 400) {
+                        if (error.response?.status >= 400) {
                             console.log('⏸️ API error encountered, waiting 30s before continuing...');
                             await new Promise(resolve => setTimeout(resolve, 30000));
                         }
