@@ -1,4 +1,0 @@
-[dotenv@17.2.1] injecting env (34) from .env.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
-[dotenv@17.2.1] injecting env (1) from .env -- tip: 📡 version env with Radar: https://dotenvx.com/radar
-[31m[2025-09-02T17:59:52.700Z] ❌ Unknown mode: lever[0m
-[33m[2025-09-02T17:59:52.701Z] Available modes: all, reed, adzuna[0m
