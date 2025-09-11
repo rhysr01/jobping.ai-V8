@@ -278,7 +278,7 @@ class ProductionScraperOrchestrator {
     
     try {
       // Try individual scraper endpoints
-      const scrapers = ['greenhouse', 'lever', 'workday'];
+      const scrapers = ['greenhouse', 'lever', 'workday', 'muse', 'jsearch', 'jooble', 'ashby'];
       
       for (const scraper of scrapers) {
         try {
@@ -298,7 +298,7 @@ class ProductionScraperOrchestrator {
             log('info', `✅ ${scraper} scraper: ${response.data.jobs.length} jobs`);
           }
           
-        } catch (error: any) {
+        } catch (error) {
           log('warn', `⚠️ ${scraper} scraper failed: ${error.message}`);
         }
       }
@@ -316,7 +316,7 @@ class ProductionScraperOrchestrator {
         };
       }
       
-    } catch (error: any) {
+    } catch (error) {
       log('error', `❌ Individual scrapers failed: ${error.message}`);
       return {
         success: false,
@@ -350,7 +350,7 @@ class ProductionScraperOrchestrator {
         throw new Error('Emergency backfill API returned failure');
       }
       
-    } catch (error: any) {
+    } catch (error) {
       log('error', `❌ Emergency backfill failed: ${error.message}`);
       return {
         success: false,
