@@ -1,7 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 // ✅ Jooble Scraper - EU Early Career Jobs
-const axios_1 = require("axios");
+const axios_1 = __importDefault(require("axios"));
 const utils_js_1 = require("./utils.js");
 const smart_strategies_js_1 = require("./smart-strategies.js");
 // ✅ Jooble Configuration
@@ -10,22 +13,24 @@ const JOOBLE_CONFIG = {
     apiKey: process.env.JOOBLE_API_KEY || '',
     // EU target cities
     locations: [
-        'Dublin, Ireland',
+        // Tier 1: Primary Graduate Markets
         'London, United Kingdom',
+        'Dublin, Ireland',
         'Berlin, Germany',
         'Amsterdam, Netherlands',
         'Paris, France',
-        'Munich, Germany',
         'Madrid, Spain',
         'Stockholm, Sweden',
+        // Tier 2: Secondary Graduate Markets
         'Zurich, Switzerland',
+        'Munich, Germany',
+        'Milan, Italy',
         'Copenhagen, Denmark',
         'Vienna, Austria',
+        // Tier 3: Emerging Graduate Markets
         'Brussels, Belgium',
-        'Prague, Czech Republic',
-        'Warsaw, Poland',
-        'Barcelona, Spain',
-        'Milan, Italy'
+        'Frankfurt, Germany',
+        'Barcelona, Spain'
     ],
     // Core early-career keywords (5 per language max to avoid burning API quota)
     keywords: {
@@ -45,7 +50,7 @@ const JOOBLE_CONFIG = {
     dailyBudget: 1000, // 1000 requests per day
     seenJobTTL: 7 * 24 * 60 * 60 * 1000, // 7 days
     resultsPerPage: 20,
-    maxPagesPerSearch: (0, smart_strategies_js_1.withFallback)(() => (0, smart_strategies_js_1.getSmartPaginationStrategy)('jooble').endPage, 3)
+    maxPagesPerSearch: 3 // Will be overridden by smart strategy at runtime
 };
 class JoobleScraper {
     constructor() {
@@ -88,6 +93,7 @@ class JoobleScraper {
         this.lastRequestTime = Date.now();
     }
     async makeRequest(request) {
+        var _a, _b;
         await this.throttleRequest();
         try {
             const url = `${JOOBLE_CONFIG.baseUrl}/${JOOBLE_CONFIG.apiKey}`;
@@ -101,11 +107,11 @@ class JoobleScraper {
             });
             this.requestCount++;
             this.dailyRequestCount++;
-            console.log(`📊 Jooble API response: ${response.data.jobs?.length || 0} jobs found`);
+            console.log(`📊 Jooble API response: ${((_a = response.data.jobs) === null || _a === void 0 ? void 0 : _a.length) || 0} jobs found`);
             return response.data;
         }
         catch (error) {
-            if (error.response?.status === 429) {
+            if (((_b = error.response) === null || _b === void 0 ? void 0 : _b.status) === 429) {
                 console.warn('🚫 Jooble rate limited, backing off...');
                 await new Promise(resolve => setTimeout(resolve, 10000));
                 return this.makeRequest(request);
@@ -187,6 +193,10 @@ class JoobleScraper {
         return jobs;
     }
     async scrapeAllLocations() {
+        var _a;
+        // Apply smart pagination strategy at runtime
+        const pagination = (0, smart_strategies_js_1.withFallback)(() => (0, smart_strategies_js_1.getSmartPaginationStrategy)('jooble'), { startPage: 1, endPage: 3 });
+        JOOBLE_CONFIG.maxPagesPerSearch = pagination.endPage;
         const allJobs = [];
         const metrics = {
             locationsProcessed: 0,
@@ -230,7 +240,7 @@ class JoobleScraper {
                         console.error(`❌ Error processing ${location}:`, error.message);
                         metrics.errors++;
                         // If we get repeated errors, wait longer before continuing
-                        if (error.response?.status >= 400) {
+                        if (((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) >= 400) {
                             console.log('⏸️ API error encountered, waiting 30s before continuing...');
                             await new Promise(resolve => setTimeout(resolve, 30000));
                         }
@@ -315,3 +325,39 @@ class JoobleScraper {
     }
 }
 exports.default = JoobleScraper;
+
+// Direct execution: scrape and save to Supabase
+if (require.main === module) {
+    (async () => {
+        try {
+            require('dotenv').config({ path: '.env.local' });
+            const { createClient } = require('@supabase/supabase-js');
+            const { convertToDatabaseFormat } = require('./utils.js');
+            const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+            const scraper = new JoobleScraper();
+            const { jobs } = await scraper.scrapeAllLocations();
+
+            // Exclude obvious remote roles per preference
+            const filtered = jobs.filter(j => !(j.location || '').toLowerCase().includes('remote'));
+
+            let saved = 0;
+            const batchSize = 50;
+            for (let i = 0; i < filtered.length; i += batchSize) {
+                const batch = filtered.slice(i, i + batchSize).map(job => {
+                    const dbJob = convertToDatabaseFormat(job);
+                    const { metadata, ...clean } = dbJob;
+                    return clean;
+                });
+                const { error } = await supabase.from('jobs').upsert(batch, { onConflict: 'job_hash', ignoreDuplicates: false });
+                if (!error) saved += batch.length;
+            }
+
+            console.log(`✅ Jooble: ${saved} jobs saved to database`);
+        }
+        catch (e) {
+            console.error('❌ Jooble direct run failed:', e.message);
+            process.exit(1);
+        }
+    })();
+}

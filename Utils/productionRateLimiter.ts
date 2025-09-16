@@ -172,6 +172,13 @@ export const SCRAPER_RATE_LIMITS = {
     maxDelayMs: 8000,
     burstLimit: 3,
     adaptiveThrottle: true
+  },
+  'serp-api': {
+    requestsPerHour: parseInt(process.env.SERP_HOURLY_LIMIT || '7'),
+    minDelayMs: parseInt(process.env.SERP_REQUEST_DELAY || '3000'),
+    maxDelayMs: 10000,
+    burstLimit: 1,
+    adaptiveThrottle: true
   }
 };
 

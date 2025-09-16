@@ -1,4 +1,40 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.verifyBoard = verifyBoard;
 exports.fetchGreenhouseJobs = fetchGreenhouseJobs;
@@ -6,8 +42,8 @@ exports.isEarlyCareer = isEarlyCareer;
 exports.isEU = isEU;
 exports.normalize = normalize;
 exports.scrapeGreenhouseBoard = scrapeGreenhouseBoard;
-const axios_1 = require("axios");
-const crypto = require("crypto");
+const axios_1 = __importDefault(require("axios"));
+const crypto = __importStar(require("crypto"));
 const smart_strategies_js_1 = require("./smart-strategies.js");
 const BASE = "https://boards-api.greenhouse.io/v1/boards";
 // Core EU cities for graduating students - standardized across all scrapers
@@ -33,13 +69,14 @@ async function verifyBoard(board) {
             if (r.status === 200)
                 return true;
         }
-        catch { /* ignore */ }
+        catch ( /* ignore */_a) { /* ignore */ }
         await sleep(250);
     }
     return false;
 }
 /** Fetch jobs with content=true; return [] for 404 (board not found). */
 async function fetchGreenhouseJobs(board) {
+    var _a, _b;
     // Use smart date strategy for filtering
     const smartMaxDays = (0, smart_strategies_js_1.withFallback)(() => (0, smart_strategies_js_1.getSmartDateStrategy)('greenhouse'), '7');
     const url = `${BASE}/${board}/jobs?content=true`;
@@ -53,7 +90,7 @@ async function fetchGreenhouseJobs(board) {
     });
     if (r.status === 404)
         return [];
-    const jobs = (r.data?.jobs ?? []);
+    const jobs = ((_b = (_a = r.data) === null || _a === void 0 ? void 0 : _a.jobs) !== null && _b !== void 0 ? _b : []);
     // Apply date filtering based on smart strategy
     if (smartMaxDays && smartMaxDays !== '7') {
         const cutoffDate = new Date();
@@ -69,10 +106,11 @@ async function fetchGreenhouseJobs(board) {
 }
 /** Heuristic: grad/entry detection across title, departments, content. */
 function isEarlyCareer(j) {
+    var _a, _b, _c;
     const hay = [
         j.title,
-        ...(j.departments?.map(d => d.name) ?? []),
-        (j.content ?? "")
+        ...((_b = (_a = j.departments) === null || _a === void 0 ? void 0 : _a.map(d => d.name)) !== null && _b !== void 0 ? _b : []),
+        ((_c = j.content) !== null && _c !== void 0 ? _c : "")
     ].join(" ").toLowerCase();
     const inc = /(graduate|new\s?grad|entry[-\s]?level|intern(ship)?|apprentice|early\s?career|junior|campus|working\sstudent)/i;
     const excl = /(senior|staff|principal|lead|manager|director|head)/i;
@@ -80,10 +118,11 @@ function isEarlyCareer(j) {
 }
 /** EU filter using location + offices best-effort. */
 function isEU(j) {
+    var _a, _b, _c, _d, _e;
     const txt = [
-        j.location?.name ?? "",
-        ...(j.offices?.map(o => o.name) ?? ""),
-        j.content ?? ""
+        (_b = (_a = j.location) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : "",
+        ...((_d = (_c = j.offices) === null || _c === void 0 ? void 0 : _c.map(o => o.name)) !== null && _d !== void 0 ? _d : ""),
+        (_e = j.content) !== null && _e !== void 0 ? _e : ""
     ].join(" ");
     return EU_HINTS.some(h => new RegExp(`\\b${escapeRegExp(h)}\\b`, "i").test(txt)) ||
         /\b(remote[, ]+)?europe\b/i.test(txt);
@@ -91,9 +130,10 @@ function isEU(j) {
 function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 /** Normalizer → your DB shape */
 function normalize(board, j, company = null) {
-    const departments = (j.departments ?? []).map(d => d.name);
-    const offices = (j.offices ?? []).map(o => o.name);
-    const loc = j.location?.name || offices.join(", ") || "Unspecified";
+    var _a, _b, _c, _d;
+    const departments = ((_a = j.departments) !== null && _a !== void 0 ? _a : []).map(d => d.name);
+    const offices = ((_b = j.offices) !== null && _b !== void 0 ? _b : []).map(o => o.name);
+    const loc = ((_c = j.location) === null || _c === void 0 ? void 0 : _c.name) || offices.join(", ") || "Unspecified";
     const job_hash = crypto
         .createHash("sha256")
         .update(`gh:${board}:${j.id}:${j.absolute_url}`)
@@ -109,7 +149,7 @@ function normalize(board, j, company = null) {
         location: loc,
         departments,
         offices,
-        updated_at: j.updated_at ?? null,
+        updated_at: (_d = j.updated_at) !== null && _d !== void 0 ? _d : null,
         is_early_career: isEarlyCareer(j)
     };
 }
@@ -119,9 +159,78 @@ async function scrapeGreenhouseBoard(board, opts) {
         return [];
     const raw = await fetchGreenhouseJobs(board);
     let jobs = raw;
-    if (opts?.earlyOnly !== false)
+    if ((opts === null || opts === void 0 ? void 0 : opts.earlyOnly) !== false)
         jobs = jobs.filter(isEarlyCareer);
-    if (opts?.euOnly !== false)
+    if ((opts === null || opts === void 0 ? void 0 : opts.euOnly) !== false)
         jobs = jobs.filter(isEU);
-    return jobs.map(j => normalize(board, j, opts?.company ?? null));
+    return jobs.map(j => { var _a; return normalize(board, j, (_a = opts === null || opts === void 0 ? void 0 : opts.company) !== null && _a !== void 0 ? _a : null); });
+}
+
+// Direct execution: scrape a small curated set and upsert, printing canonical success line
+if (require.main === module) {
+    (async () => {
+        try {
+            require('dotenv').config({ path: '.env' });
+            const { createClient } = require('@supabase/supabase-js');
+            const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+            const boards = [
+                // ✅ ACTUAL COMPANIES THAT USE GREENHOUSE FOR GRADUATE HIRING
+                { board: 'stripe', company: 'Stripe' },
+                { board: 'airbnb', company: 'Airbnb' },
+                { board: 'uber', company: 'Uber' },
+                { board: 'shopify', company: 'Shopify' },
+                { board: 'gitlab', company: 'GitLab' },
+                { board: 'coinbase', company: 'Coinbase' },
+                { board: 'spotify', company: 'Spotify' },
+                { board: 'dropbox', company: 'Dropbox' },
+                { board: 'twilio', company: 'Twilio' },
+                { board: 'palantir', company: 'Palantir' },
+                { board: 'databricks', company: 'Databricks' },
+                { board: 'figma', company: 'Figma' },
+                // EU companies that use Greenhouse
+                { board: 'deliveryhero', company: 'Delivery Hero' },
+                { board: 'klarna', company: 'Klarna' },
+                { board: 'revolut', company: 'Revolut' },
+                { board: 'wise', company: 'Wise' }
+            ];
+            let saved = 0;
+            console.log(`🔄 Processing ${boards.length} Greenhouse companies...`);
+            for (const b of boards) {
+                console.log(`🏢 Checking ${b.company} (${b.board})...`);
+                // ✅ TEMPORARILY RELAXED: Get ALL jobs first, then filter
+                const jobs = await scrapeGreenhouseBoard(b.board, { company: b.company, earlyOnly: false, euOnly: false });
+                console.log(`📊 ${b.company}: Found ${jobs?.length || 0} jobs`);
+                if (!jobs || jobs.length === 0) continue;
+                const batch = jobs.map(j => ({
+                    job_hash: j.job_hash,
+                    source: 'greenhouse',
+                    title: j.title,
+                    company: j.company,
+                    location: j.location,
+                    description: '',
+                    job_url: j.url,
+                    posted_at: j.updated_at || new Date().toISOString(),
+                    categories: ['early-career'],
+                    work_environment: 'on-site',
+                    experience_required: 'entry-level',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    is_active: true,
+                    status: 'active'
+                }));
+                const { error } = await supabase
+                    .from('jobs')
+                    .upsert(batch, { onConflict: 'job_hash', ignoreDuplicates: false });
+                if (!error) saved += batch.length;
+                
+                // ✅ RATE LIMITING: Wait 2 seconds between companies
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            console.log(`✅ Greenhouse: ${saved} jobs saved to database`);
+        }
+        catch (e) {
+            console.error('❌ Greenhouse direct run failed:', e.message);
+            process.exit(1);
+        }
+    })();
 }

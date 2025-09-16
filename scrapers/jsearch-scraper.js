@@ -25,12 +25,12 @@ const JSEARCH_CONFIG = {
         'Milan, Italy'
     ],
     // ✅ FIXED: Much more reasonable rate limiting
-    requestInterval: 300000, // 5 minutes default (reduced in test mode)
+    requestInterval: 1000, // 1s default; further reduced in test mode
     monthlyBudget: 2000,
-    dailyBudget: 65,
+    dailyBudget: 100,
     seenJobTTL: 7 * 24 * 60 * 60 * 1000,
     resultsPerPage: 10,
-    datePosted: (0, smart_strategies_js_1.withFallback)(() => (0, smart_strategies_js_1.getSmartDateStrategy)('jsearch'), 'week')
+    datePosted: 'week' // Will be overridden by smart strategy at runtime
 };
 const TRACK_QUERIES = {
     A: 'graduate scheme OR new grad OR campus hire OR recent graduate',
@@ -92,7 +92,7 @@ class JSearchScraper {
         // ✅ FIXED: Reasonable rate limiting; in test mode, reduce to 5 seconds
         const now = Date.now();
         const timeSinceLastRequest = now - this.lastRequestTime;
-        const interval = (process.env.JOBPING_TEST_MODE === '1') ? 5000 : JSEARCH_CONFIG.requestInterval;
+        const interval = (process.env.JOBPING_TEST_MODE === '1') ? 1000 : JSEARCH_CONFIG.requestInterval;
         if (timeSinceLastRequest < interval) {
             const delay = interval - timeSinceLastRequest;
             console.log(`⏰ Rate limiting: waiting ${Math.round(delay / 1000 / 60)} minutes...`);
@@ -169,6 +169,7 @@ class JSearchScraper {
         };
     }
     async searchJobs(query, location) {
+        var _a;
         const jobs = [];
         console.log(`🔍 Searching JSearch: "${query}" ${location ? `in ${location}` : ''}`);
         try {
@@ -186,7 +187,7 @@ class JSearchScraper {
                 job_requirements: 'under_3_years_experience,no_degree'
             };
             const response = await this.makeRequest(params);
-            console.log(`📊 Found ${response.data?.length || 0} jobs for "${query}"`);
+            console.log(`📊 Found ${((_a = response.data) === null || _a === void 0 ? void 0 : _a.length) || 0} jobs for "${query}"`);
             if (response.data && response.data.length > 0) {
                 for (const job of response.data) {
                     if (!this.seenJobs.has(job.job_id)) {
@@ -384,3 +385,39 @@ class JSearchScraper {
     }
 }
 exports.default = JSearchScraper;
+
+// Direct execution: scrape and save to Supabase
+if (require.main === module) {
+    (async () => {
+        try {
+            require('dotenv').config({ path: '.env.local' });
+            const { createClient } = require('@supabase/supabase-js');
+            const { convertToDatabaseFormat } = require('./utils.js');
+            const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+            const scraper = new JSearchScraper();
+            const { jobs } = await scraper.scrapeWithTrackRotation();
+
+            // Exclude obvious remote roles per preference
+            const filtered = jobs.filter(j => !(j.location || '').toLowerCase().includes('remote'));
+
+            let saved = 0;
+            const batchSize = 50;
+            for (let i = 0; i < filtered.length; i += batchSize) {
+                const batch = filtered.slice(i, i + batchSize).map(job => {
+                    const dbJob = convertToDatabaseFormat(job);
+                    const { metadata, ...clean } = dbJob;
+                    return clean;
+                });
+                const { error } = await supabase.from('jobs').upsert(batch, { onConflict: 'job_hash', ignoreDuplicates: false });
+                if (!error) saved += batch.length;
+            }
+
+            console.log(`✅ JSearch: ${saved} jobs saved to database`);
+        }
+        catch (e) {
+            console.error('❌ JSearch direct run failed:', e.message);
+            process.exit(1);
+        }
+    })();
+}

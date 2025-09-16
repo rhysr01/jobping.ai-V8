@@ -86,7 +86,7 @@ const JOOBLE_CONFIG = {
   dailyBudget: 1000, // 1000 requests per day
   seenJobTTL: 7 * 24 * 60 * 60 * 1000, // 7 days
   resultsPerPage: 20,
-  maxPagesPerSearch: withFallback(() => getSmartPaginationStrategy('jooble').endPage, 3)
+  maxPagesPerSearch: 3 // Will be overridden by smart strategy at runtime
 };
 
 class JoobleScraper {
@@ -260,6 +260,10 @@ class JoobleScraper {
   }
 
   public async scrapeAllLocations(): Promise<{ jobs: IngestJob[]; metrics: any }> {
+    // Apply smart pagination strategy at runtime
+    const pagination = withFallback(() => getSmartPaginationStrategy('jooble'), { startPage: 1, endPage: 3 });
+    this.JOOBLE_CONFIG.maxPagesPerSearch = pagination.endPage;
+    
     const allJobs: IngestJob[] = [];
     
     const metrics = {

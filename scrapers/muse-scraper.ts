@@ -90,11 +90,24 @@ const MUSE_CONFIG = {
     'HR & Recruiting'
   ],
   
-  // ✅ CORRECTED: Use exact level names from Muse API
+  // ✅ CORRECTED: Use only valid Muse API levels
   levels: [
     'Entry Level',
     'Internship',
     'Mid Level'  // Some mid-level roles are still early career
+  ],
+  
+  // ✅ ADDED: Search terms to find more early-career jobs
+  searchTerms: [
+    'graduate',
+    'junior',
+    'trainee',
+    'entry level',
+    'intern',
+    'associate',
+    'new grad',
+    'recent graduate',
+    'campus hire'
   ],
   
   // ✅ OPTIMIZED: Better rate limiting for 500 req/hour limit
@@ -251,7 +264,7 @@ class MuseScraper {
     await this.throttleRequest();
 
     try {
-      // ✅ CORRECTED: Build proper query parameters for Muse API
+      // ✅ ENHANCED: Build proper query parameters for Muse API with search terms
       const queryParams: Record<string, any> = {
         page: params.page || 1,
         descending: true
@@ -267,6 +280,11 @@ class MuseScraper {
 
       if (params.levels && params.levels.length > 0) {
         queryParams.level = params.levels.join(',');
+      }
+
+      // ✅ ADDED: Support for search terms to find more early-career jobs
+      if (params.search) {
+        queryParams.search = params.search;
       }
 
       if (MUSE_CONFIG.apiKey) {
@@ -362,6 +380,43 @@ class MuseScraper {
     console.log(`📍 Scraping ${location} for categories: ${categories.join(', ')}, levels: ${levels.join(', ')} (max ${smartMaxDays} days, pages ${pagination.startPage}-${pagination.endPage})`);
 
     try {
+      // ✅ ENHANCED: Search with both levels and search terms for better early-career discovery
+      
+      // First, search by levels (Entry Level, Internship, Mid Level)
+      const levelJobs = await this.searchWithParams(location, categories, levels, null, smartMaxDays, pagination);
+      jobs.push(...levelJobs);
+      
+      // Then, search with early-career terms to catch jobs that might not be tagged with levels
+      for (const searchTerm of MUSE_CONFIG.searchTerms) {
+        const termJobs = await this.searchWithParams(location, categories, [], searchTerm, smartMaxDays, pagination);
+        jobs.push(...termJobs);
+      }
+      
+      // Remove duplicates based on job URL
+      const uniqueJobs = jobs.filter((job, index, self) => 
+        index === self.findIndex(j => j.url === job.url)
+      );
+      
+      console.log(`✅ ${location}: ${uniqueJobs.length} unique early-career jobs found (${jobs.length} total before deduplication)`);
+      return uniqueJobs;
+      
+    } catch (error: any) {
+      console.error(`❌ Error fetching jobs for ${location}:`, error.message);
+      return [];
+    }
+  }
+
+  private async searchWithParams(
+    location: string,
+    categories: string[],
+    levels: string[],
+    searchTerm: string | null,
+    smartMaxDays: string,
+    pagination: any
+  ): Promise<IngestJob[]> {
+    const jobs: IngestJob[] = [];
+    
+    try {
       // ✅ Only include non-empty parameters to avoid API issues
       const params: any = {
         location: location,
@@ -382,128 +437,35 @@ class MuseScraper {
       if (levels.length > 0) {
         params.levels = levels;
       }
-
-      // Prefer API early-career levels if configured
-      const initialLevels = (MUSE_CONFIG.preferApiEarlyCareer ? MUSE_CONFIG.apiEarlyLevels : levels);
-      if (initialLevels && initialLevels.length > 0) {
-        params.levels = initialLevels as any;
+      
+      // Add search term if provided
+      if (searchTerm) {
+        params.search = searchTerm;
       }
 
+      // Make the API request
       const response = await this.makeRequest(params);
       
-      if (!response.results || response.results.length === 0) {
-        console.log(`📭 No jobs found for ${location}`);
-        return jobs;
-      }
-
-      console.log(`📊 Found ${response.results.length} jobs in ${location}`);
-
-      for (const job of response.results) {
-        if (!this.seenJobs.has(job.id)) {
-          this.seenJobs.set(job.id, Date.now());
+      if (response.results && response.results.length > 0) {
+        for (const job of response.results) {
+          const ingestJob = this.convertToIngestJob(job);
           
-          try {
-            const ingestJob = this.convertToIngestJob(job);
-            
-            // ✅ Apply early-career filtering with correct object structure
-            const isEarlyCareer = classifyEarlyCareer({
-              title: ingestJob.title || "",
-              description: ingestJob.description || "",
-              company: ingestJob.company,
-              location: ingestJob.location,
-              url: ingestJob.url,
-              posted_at: ingestJob.posted_at,
-              source: ingestJob.source
-            } as IngestJob);
-            // ✅ FIXED: Filter for EU locations only
-            const isEULocation = this.isEULocation(ingestJob);
-            
-            if (isEarlyCareer && isEULocation) {
+          // Apply EU location filtering
+          if (this.isEULocation(ingestJob)) {
+            // Apply early-career filtering
+            if (classifyEarlyCareer(ingestJob)) {
               jobs.push(ingestJob);
-              console.log(`✅ Early-career EU: ${ingestJob.title} at ${ingestJob.company} (${ingestJob.location})`);
-            } else if (isEarlyCareer && !isEULocation) {
-              console.log(`🚫 Skipped non-EU: ${ingestJob.title} at ${ingestJob.company} (${ingestJob.location})`);
-            } else {
-              console.log(`🚫 Skipped senior: ${ingestJob.title} at ${ingestJob.company}`);
-            }
-          } catch (error) {
-            console.warn(`Failed to process job ${job.id}:`, error);
-          }
-        }
-      }
-
-      // ✅ OPTIMIZED: Fetch remaining pages using smart pagination strategy
-      if (response.page_count && response.page_count > 1) {
-        const maxExtraPages = Math.min(response.page_count, pagination.endPage); // Use smart pagination
-        for (let page = pagination.startPage + 1; page <= maxExtraPages; page++) {
-          if (this.hourlyRequestCount >= MUSE_CONFIG.maxRequestsPerHour - 2) {
-            console.log('⏰ Approaching hourly rate limit during pagination, stopping.');
-            break;
-          }
-          console.log(`📄 Fetching page ${page} for ${location}...`);
-          const pageResponse = await this.makeRequest({
-            ...params,
-            page
-          });
-          for (const job of pageResponse.results || []) {
-            if (!this.seenJobs.has(job.id)) {
-              this.seenJobs.set(job.id, Date.now());
-              try {
-                const ingestJob = this.convertToIngestJob(job);
-                const isEarlyCareer = classifyEarlyCareer({
-                  title: ingestJob.title || "",
-                  description: ingestJob.description || "",
-                  company: ingestJob.company,
-                  location: ingestJob.location,
-                  url: ingestJob.url,
-                  posted_at: ingestJob.posted_at,
-                  source: ingestJob.source
-                } as IngestJob);
-                if (isEarlyCareer) {
-                  jobs.push(ingestJob);
-                  console.log(`✅ Early-career (p${page}): ${ingestJob.title} at ${ingestJob.company}`);
-                }
-              } catch (error) {
-                console.warn(`Failed to process job ${job.id} from page ${page}:`, error);
-              }
             }
           }
         }
       }
-
-      // Fallback: if very few early-career jobs, retry without API level filter and rely on local regex
-      if (jobs.length < 3 && MUSE_CONFIG.preferApiEarlyCareer && initialLevels && (initialLevels as any).length > 0) {
-        console.log(`↩️  Sparse results with API levels for ${location}, retrying without level filter...`);
-        const retryParams: any = { location, page: 1 };
-        const retryResponse = await this.makeRequest(retryParams);
-        for (const job of retryResponse.results || []) {
-          if (!this.seenJobs.has(job.id)) {
-            this.seenJobs.set(job.id, Date.now());
-            try {
-              const ingestJob = this.convertToIngestJob(job);
-              const isEarlyCareer = classifyEarlyCareer({
-                title: ingestJob.title || '',
-                description: ingestJob.description || '',
-                company: ingestJob.company,
-                location: ingestJob.location,
-                url: ingestJob.url,
-                posted_at: ingestJob.posted_at,
-                source: ingestJob.source
-              } as IngestJob);
-              if (isEarlyCareer) {
-                jobs.push(ingestJob);
-                console.log(`✅ Early-career (fallback): ${ingestJob.title} at ${ingestJob.company}`);
-              }
-            } catch (_e) {}
-          }
-        }
-      }
-
+      
+      return jobs;
+      
     } catch (error: any) {
-      console.error(`❌ Error fetching jobs for ${location}:`, error.message);
+      console.error(`❌ Error in searchWithParams for ${location}:`, error.message);
+      return [];
     }
-
-    return jobs;
   }
 
   public async scrapeAllLocations(): Promise<{ jobs: IngestJob[]; metrics: any }> {

@@ -24,8 +24,8 @@ export function classifyEarlyCareer(job: IngestJob): boolean {
   // ✅ COMPREHENSIVE: Multilingual early career detection based on user research
   const graduateRegex = /(graduate|new.?grad|recent.?graduate|campus.?hire|graduate.?scheme|graduate.?program|rotational.?program|university.?hire|college.?hire|entry.?level|junior|trainee|intern|internship|placement|analyst|assistant|fellowship|apprenticeship|apprentice|stagiaire|alternant|alternance|d[ée]butant|formation|dipl[oô]m[eé]|apprenti|poste.?d.?entr[ée]e|niveau.?d[ée]butant|praktikum|praktikant|traineeprogramm|berufseinstieg|absolvent|absolventenprogramm|ausbildung|auszubildende|werkstudent|einsteiger|becario|pr[aá]cticas|programa.?de.?graduados|reci[eé]n.?titulado|aprendiz|nivel.?inicial|puesto.?de.?entrada|j[uú]nior|formaci[oó]n.?dual|tirocinio|stagista|apprendista|apprendistato|neolaureato|formazione|inserimento.?lavorativo|stage|stagiair|starterfunctie|traineeship|afgestudeerde|leerwerkplek|instapfunctie|fresher|nyuddannet|nyutdannet|nyexaminerad|neo.?laureato|nuovo.?laureato|recién.?graduado|nuevo.?graduado|joven.?profesional|nieuwe.?medewerker)/i;
   
-  // ✅ FIXED: More precise senior role exclusion - don't exclude "specialist" or "expert" in junior roles
-  const seniorRegex = /(senior|lead|principal|manager|director|head.?of|vp|chief|executive|5\+.?years|7\+.?years|10\+.?years|experienced|architect|consultant|advisory|strategic|executive|management|team.?lead|tech.?lead|staff|distinguished)/i;
+  // Exclude clearly senior signals only; allow consultant/management trainee variants
+  const seniorRegex = /(senior|lead|principal|director|head.?of|vp|chief|executive\s+level|executive\s+director|5\+.?years|7\+.?years|10\+.?years|experienced\s+professional|architect\b|team.?lead|tech.?lead|staff\b|distinguished)/i;
   
   // ✅ FIXED: Only exclude roles requiring significant experience (3+ years), not 1-2 years
   const experienceRegex = /(proven.?track.?record|extensive.?experience|minimum.?3.?years|minimum.?5.?years|minimum.?7.?years|prior.?experience|relevant.?experience|3\+.?years|5\+.?years|7\+.?years|10\+.?years)/i;
@@ -95,30 +95,57 @@ export function parseLocation(location: string): {
     'denmark', 'estonia', 'finland', 'france', 'germany', 'greece', 'hungary',
     'ireland', 'italy', 'latvia', 'lithuania', 'luxembourg', 'malta',
     'netherlands', 'poland', 'portugal', 'romania', 'slovakia', 'slovenia',
-    'spain', 'sweden', 'united kingdom', 'uk', 'germany', 'france', 'spain',
-    'italy', 'netherlands', 'belgium', 'austria', 'switzerland', 'norway',
-    'denmark', 'sweden', 'finland', 'poland', 'czech republic', 'hungary',
-    'romania', 'bulgaria', 'croatia', 'slovenia', 'slovakia', 'estonia',
-    'latvia', 'lithuania', 'malta', 'cyprus', 'luxembourg', 'ireland',
-    'portugal', 'greece'
+    'spain', 'sweden', 'united kingdom', 'uk', 'switzerland', 'norway'
   ];
 
+  // Known EU/UK/CH city names to infer EU when country is absent
+  const euCities = new Set([
+    'london','manchester','birmingham','edinburgh','glasgow','leeds','liverpool',
+    'dublin','cork','galway',
+    'berlin','munich','hamburg','cologne','frankfurt','stuttgart','düsseldorf','duesseldorf',
+    'paris','marseille','lyon','toulouse','nice','nantes','strasbourg',
+    'madrid','barcelona','valencia','seville','bilbao','málaga','malaga',
+    'rome','milan','naples','turin','florence','bologna',
+    'amsterdam','rotterdam','the hague','den haag','utrecht','eindhoven',
+    'brussels','antwerp','ghent','bruges',
+    'vienna','salzburg','graz','innsbruck',
+    'zurich','geneva','basel','bern','lausanne',
+    'stockholm','gothenburg','goteborg','malmö','malmo','uppsala',
+    'copenhagen','aarhus','odense','aalborg',
+    'oslo','bergen','trondheim','stavanger',
+    'helsinki','espoo','tampere','vantaa',
+    'warsaw','krakow','gdansk','wroclaw','poznan','wrocław','poznań',
+    'prague','brno','ostrava','plzen','plzeň',
+    'budapest','debrecen','szeged','miskolc',
+    'lisbon','porto','braga','coimbra',
+    'athens','thessaloniki','patras','heraklion'
+  ]);
+  
   // Check if location contains EU country
-  const isEU = euCountries.some(country => loc.includes(country));
+  let isEU = euCountries.some(country => loc.includes(country));
   
-  // Extract city (simplified - first part before comma or space)
-  const cityMatch = loc.match(/^([^,]+)/);
-  const city = cityMatch ? cityMatch[1].trim() : location;
-  
-  // Extract country (after comma or from the end)
-  const countryMatch = loc.match(/,?\s*([a-z\s]+)$/);
-  const country = countryMatch ? countryMatch[1].trim() : '';
+  // Extract city and country using comma separation first
+  const parts = loc.split(',').map(p => p.trim()).filter(Boolean);
+  const city = parts.length > 0 ? parts[0] : loc;
+  let country = parts.length > 1 ? parts[parts.length - 1] : '';
+  // If there's only one part and it's a known city, leave country empty to allow EU city inference
+  if (parts.length === 1 && euCities.has(city)) {
+    country = '';
+  }
+
+  // If country was not detected but city is a known EU city, mark as EU
+  if (!isEU && country.length === 0) {
+    const cityOnly = city.replace(/\s+/g, ' ').trim();
+    if (euCities.has(cityOnly)) {
+      isEU = true;
+    }
+  }
 
   return {
     city: city || location,
     country: country,
     isRemote,
-    isEU: isEU || isRemote // Consider remote jobs as potentially EU
+    isEU: isEU || isRemote // Consider remote jobs as potentially EU (filtered elsewhere if needed)
   };
 }
 

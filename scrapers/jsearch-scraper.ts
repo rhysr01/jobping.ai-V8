@@ -120,7 +120,7 @@ const JSEARCH_CONFIG = {
   dailyBudget: 65,
   seenJobTTL: 7 * 24 * 60 * 60 * 1000,
   resultsPerPage: 10,
-  datePosted: withFallback(() => getSmartDateStrategy('jsearch'), 'week')
+  datePosted: 'week' // Will be overridden by smart strategy at runtime
 };
 
 // Query rotation for diverse job discovery  

@@ -13,12 +13,14 @@ const fs = require('fs');
 // const { initLang } = require('../scrapers/lang');
 
 // Load environment variables (Railway will provide these)
-// require('dotenv').config({ path: '.env.local' });
+require('dotenv').config({ path: '.env.local' });
 
-// Check required environment variables
+// Check required environment variables (support both public and server URL vars)
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 const requiredEnvVars = {
-  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
+  SUPABASE_URL,
+  SUPABASE_KEY
 };
 
 // Validate environment variables
@@ -31,14 +33,11 @@ for (const [key, value] of Object.entries(requiredEnvVars)) {
 }
 
 console.log('✅ Environment variables loaded successfully');
-console.log(`📡 Supabase URL: ${requiredEnvVars.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing'}`);
-console.log(`🔑 Supabase Key: ${requiredEnvVars.SUPABASE_SERVICE_ROLE_KEY ? 'Set' : 'Missing'}`);
+console.log(`📡 Supabase URL: ${requiredEnvVars.SUPABASE_URL ? 'Set' : 'Missing'}`);
+console.log(`🔑 Supabase Key: ${requiredEnvVars.SUPABASE_KEY ? 'Set' : 'Missing'}`);
 
 // Initialize Supabase
-const supabase = createClient(
-  requiredEnvVars.NEXT_PUBLIC_SUPABASE_URL,
-  requiredEnvVars.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createClient(requiredEnvVars.SUPABASE_URL, requiredEnvVars.SUPABASE_KEY);
 
 console.log('✅ Supabase client initialized successfully');
 
@@ -55,29 +54,37 @@ class RealJobRunner {
     try {
       console.log('🔄 Running Adzuna scraper...');
       
-      // Check if JavaScript file exists, otherwise use the script
-      if (fs.existsSync('scrapers/adzuna-scraper-standalone.js')) {
-        const { stdout } = await execAsync('node scrapers/adzuna-scraper-standalone.js', {
-          cwd: process.cwd(),
-          timeout: 300000 // 5 minutes
-        });
-        
-        console.log(`✅ Adzuna: Jobs processed`);
-        return 1; // Assume success
+      // Use the ultra-optimized Adzuna scraper that just saved 3,815 jobs
+      const { stdout } = await execAsync('INCLUDE_REMOTE=false RELAX_EU_FILTER=true NODE_ENV=production node scripts/adzuna-categories-scraper.js', {
+        cwd: process.cwd(),
+        timeout: 600000 // 10 minutes for full scraper suite
+      });
+      
+      // Parse the canonical success line first
+      let jobsSaved = 0;
+      const canonical = stdout.match(/^✅\s+Adzuna Multilingual Early-Career:\s+(\d+)\s+jobs saved to database$/m);
+      if (canonical) {
+        jobsSaved = parseInt(canonical[1]);
       } else {
-        // Fallback to the working script
-        const { stdout } = await execAsync('node scripts/populate-eu-jobs-minimal.js', {
-          cwd: process.cwd(),
-          timeout: 300000 // 5 minutes
-        });
-        
-        // Parse the output to get job count
-        const jobMatch = stdout.match(/Total NEW jobs saved: (\d+)/);
-        const jobsSaved = jobMatch ? parseInt(jobMatch[1]) : 0;
-        
-        console.log(`✅ Adzuna: ${jobsSaved} jobs processed`);
-        return jobsSaved;
+        // Fallback to legacy line if present
+        const legacy = stdout.match(/Total NEW jobs saved: (\d+)/);
+        jobsSaved = legacy ? parseInt(legacy[1]) : 0;
       }
+      // Fallback to DB count (last 5 minutes) if no log line matched
+      if (!jobsSaved) {
+        const { count, error } = await supabase
+          .from('jobs')
+          .select('id', { count: 'exact', head: false })
+          .eq('source', 'adzuna')
+          .gte('created_at', new Date(Date.now() - 5*60*1000).toISOString());
+        jobsSaved = error ? 0 : (count || 0);
+        if (jobsSaved) {
+          console.log(`ℹ️  Adzuna: DB fallback count: ${jobsSaved} jobs`);
+        }
+      }
+      
+      console.log(`✅ Adzuna: ${jobsSaved} jobs processed`);
+      return jobsSaved;
     } catch (error) {
       console.error('❌ Adzuna scraper failed:', error.message);
       return 0;
@@ -87,32 +94,76 @@ class RealJobRunner {
   // Run Reed scraper with real API
   async runReedScraper() {
     try {
-      console.log('🔄 Running Reed scraper with real API...');
+      console.log('🔄 Running enhanced Reed scraper...');
       
-      // Check if JavaScript file exists, otherwise use the script
-      if (fs.existsSync('scrapers/reed-scraper-standalone.js')) {
-        const { stdout } = await execAsync('node scrapers/reed-scraper-standalone.js', {
-          cwd: process.cwd(),
-          timeout: 300000 // 5 minutes
-        });
-        
-        console.log(`✅ Reed: Jobs processed`);
-        return 1; // Assume success
+      // Use the optimized Reed scraper
+      const { stdout } = await execAsync('node scripts/optimized-scrapers.js', {
+        cwd: process.cwd(),
+        timeout: 300000, // 5 minutes timeout
+        env: { ...process.env }
+      });
+      
+      // Prefer canonical success line
+      let reedJobs = 0;
+      const canonical = stdout.match(/^✅\s+Reed:\s+(\d+)\s+jobs saved to database$/m);
+      if (canonical) {
+        reedJobs = parseInt(canonical[1]);
       } else {
-        // Fallback to the working script
-        const { stdout } = await execAsync('node scripts/reed-real-scraper.js', {
-          cwd: process.cwd(),
-          timeout: 300000 // 5 minutes
-        });
-        
-        const jobMatch = stdout.match(/Total jobs saved: (\d+)/);
-        const jobsSaved = jobMatch ? parseInt(jobMatch[1]) : 0;
-        
-        console.log(`✅ Reed: ${jobsSaved} real jobs processed`);
-        return jobsSaved;
+        // Fallback to any legacy summary
+        const legacy = stdout.match(/✅ Reed: (\d+) total jobs, (\d+) early-career/);
+        reedJobs = legacy ? parseInt(legacy[1]) : 0;
       }
+      // DB fallback (last 5 minutes)
+      if (!reedJobs) {
+        const { count, error } = await supabase
+          .from('jobs')
+          .select('id', { count: 'exact', head: false })
+          .eq('source', 'reed')
+          .gte('created_at', new Date(Date.now() - 5*60*1000).toISOString());
+        reedJobs = error ? 0 : (count || 0);
+        if (reedJobs) {
+          console.log(`ℹ️  Reed: DB fallback count: ${reedJobs} jobs`);
+        }
+      }
+      
+      console.log(`✅ Reed: ${reedJobs} jobs processed`);
+      return reedJobs;
     } catch (error) {
       console.error('❌ Reed scraper failed:', error.message);
+      return 0;
+    }
+  }
+
+  // Run Muse scraper with API key
+  async runMuseScraper() {
+    try {
+      console.log('🔄 Running enhanced Muse scraper...');
+      
+      // Use the Muse scraper with API key
+      const { stdout } = await execAsync('node scrapers/muse-scraper.js', {
+        cwd: process.cwd(),
+        timeout: 180000, // 3 minutes timeout
+        env: { ...process.env }
+      });
+      
+      let museJobs = 0;
+      const m = stdout.match(/^✅\s+Muse:\s+(\d+)\s+jobs saved to database$/m);
+      if (m) {
+        museJobs = parseInt(m[1]);
+      } else {
+        // Fallback to DB count (last 60 minutes)
+        const { count, error } = await supabase
+          .from('jobs')
+          .select('id', { count: 'exact', head: false })
+          .eq('source', 'themuse')
+          .gte('created_at', new Date(Date.now() - 60*60*1000).toISOString());
+        museJobs = error ? 0 : (count || 0);
+      }
+      
+      console.log(`✅ Muse: ${museJobs} jobs processed`);
+      return museJobs;
+    } catch (error) {
+      console.error('❌ Muse scraper failed:', error.message);
       return 0;
     }
   }
@@ -120,23 +171,25 @@ class RealJobRunner {
   // Run standardized Greenhouse scraper
   async runGreenhouseScraper() {
     try {
-      console.log('🔄 Running verified Greenhouse scraper (10 companies only)...');
-      
-      // Check if verified scraper exists
-      if (!fs.existsSync('scrapers/verified-greenhouse-scraper.js')) {
-        console.log('⚠️ Verified Greenhouse scraper not found, falling back to standard');
-        return this.runStandardGreenhouseScraper();
-      }
-      
-      // Use the verified scraper with only the 10 companies worth scraping
-      const { stdout } = await execAsync('node scrapers/verified-greenhouse-scraper.js', {
+      console.log('🔄 Running enhanced Greenhouse scraper (standardized TS) ...');
+      const cmd = 'node -e "(async()=>{ const mod=await import(\'./scrapers/greenhouse-standardized.ts\'); await mod.runGreenhouseAndSave(); })().catch(e=>{ console.error(e?.message||e); process.exit(1); })"';
+      const { stdout } = await execAsync(cmd, {
         cwd: process.cwd(),
-        timeout: 300000
+        timeout: 600000,
+        env: { ...process.env }
       });
-      
-      // Parse output to get job count
-      const jobMatch = stdout.match(/✅ Greenhouse: (\d+) jobs saved to database/);
-      const jobsSaved = jobMatch ? parseInt(jobMatch[1]) : 0;
+      let jobsSaved = 0;
+      const ghSummary = stdout.match(/\[greenhouse\]\s+source=greenhouse\s+found=(\d+)\s+upserted=(\d+)/);
+      if (ghSummary) {
+        jobsSaved = parseInt(ghSummary[2]);
+      } else {
+        const { count, error } = await supabase
+          .from('jobs')
+          .select('id', { count: 'exact', head: false })
+          .eq('source', 'greenhouse')
+          .gte('created_at', new Date(Date.now() - 60*60*1000).toISOString());
+        jobsSaved = error ? 0 : (count || 0);
+      }
       
       console.log(`✅ Greenhouse: ${jobsSaved} jobs processed`);
       return jobsSaved;
@@ -149,23 +202,30 @@ class RealJobRunner {
   // Fallback to standard Greenhouse scraper
   async runStandardGreenhouseScraper() {
     try {
-      console.log('🔄 Running standard Greenhouse scraper...');
+      console.log('🔄 Running standard Greenhouse scraper (TS import)...');
       
-      // Check if JavaScript file exists
-      if (!fs.existsSync('scrapers/greenhouse-standardized.js')) {
-        console.log('⚠️ Greenhouse scraper JavaScript file not found, skipping');
-        return 0;
-      }
-      
-      // Use the working JavaScript version instead of tsx
-      const { stdout } = await execAsync('node scrapers/greenhouse-standardized.js', {
+      // Execute the TS module directly via dynamic import and run persistence entry
+      const cmd = 'node -e "(async()=>{ const mod=await import(\'./scrapers/greenhouse-standardized.ts\'); await mod.runGreenhouseAndSave(); })().catch(e=>{ console.error(e?.message||e); process.exit(1); })"';
+      const { stdout } = await execAsync(cmd, {
         cwd: process.cwd(),
-        timeout: 300000
+        timeout: 600000,
+        env: { ...process.env }
       });
       
-      // Parse output to get job count
-      const jobMatch = stdout.match(/✅ Greenhouse: (\d+) jobs saved to database/);
-      const jobsSaved = jobMatch ? parseInt(jobMatch[1]) : 0;
+      // Prefer parsing standardized summary from the TS scraper
+      let jobsSaved = 0;
+      const ghSummary = stdout.match(/\[greenhouse\]\s+source=greenhouse\s+found=(\d+)\s+upserted=(\d+)/);
+      if (ghSummary) {
+        jobsSaved = parseInt(ghSummary[2]);
+      } else {
+        // Fallback to DB count (last 60 minutes)
+        const { count, error } = await supabase
+          .from('jobs')
+          .select('id', { count: 'exact', head: false })
+          .eq('source', 'greenhouse')
+          .gte('created_at', new Date(Date.now() - 60*60*1000).toISOString());
+        jobsSaved = error ? 0 : (count || 0);
+      }
       
       console.log(`✅ Standard Greenhouse: ${jobsSaved} jobs saved to database`);
       return jobsSaved;
@@ -177,83 +237,158 @@ class RealJobRunner {
   }
 
   // Run Indeed scraper
-oka  // Indeed scraper removed - not working properly
+  // Indeed scraper removed - not working properly
 
-  // Run Muse scraper
-  async runMuseScraper() {
-    try {
-      console.log('🔄 Running Muse scraper...');
-      
-      // Use the new optimized location-based Muse scraper
-      if (fs.existsSync('scripts/muse-location-based.js')) {
-        const { stdout } = await execAsync('node scripts/muse-location-based.js', {
-          cwd: process.cwd(),
-          timeout: 300000
-        });
-        // Parse output to get job count
-        const jobMatch = stdout.match(/✅ Muse: (\d+) jobs saved to database/);
-        const jobsSaved = jobMatch ? parseInt(jobMatch[1]) : 0;
-        
-        console.log(`✅ Muse: ${jobsSaved} jobs processed`);
-        return jobsSaved;
-      } else {
-        console.log('⚠️ Muse location-based scraper not available, skipping');
-        return 0;
-      }
-    } catch (error) {
-      console.error('❌ Muse scraper failed:', error.message);
-      return 0;
-    }
-  }
 
-  // Run JSearch scraper
+
+  // (duplicate runMuseScraper removed; see the earlier implementation with DB fallback)
+
+  // Run enhanced JSearch scraper
   async runJSearchScraper() {
     try {
-      console.log('🔄 Running JSearch scraper...');
+      console.log('🔄 Running enhanced JSearch scraper...');
       
-      // Use the minimal JSearch scraper (optimized version has loop issues)
-      if (!fs.existsSync('scripts/jsearch-minimal.js')) {
-        console.log('⚠️ JSearch minimal scraper not found, skipping');
-        return 0;
-      }
-      
-      // Cost control: Check if we should run (once per day)
-      const now = new Date();
-      const today = now.toDateString();
-      const lastRunFile = '/tmp/jsearch_last_run.txt';
-      
-      try {
-        if (fs.existsSync(lastRunFile)) {
-          const lastRunDate = fs.readFileSync(lastRunFile, 'utf8');
-          if (lastRunDate === today) {
-            console.log(`⏭️ JSearch skipped: Already ran today (cost control)`);
-            return 0;
-          }
-        }
-      } catch (e) {
-        // File system check failed, continue anyway
-      }
-      
-      const { stdout } = await execAsync('node scripts/jsearch-minimal.js', {
+      // Use the enhanced JSearch scraper with smart strategies
+      const { stdout } = await execAsync('node scrapers/jsearch-scraper.js', {
         cwd: process.cwd(),
         timeout: 300000
       });
       
-      // Parse output to get job count
-      const jobMatch = stdout.match(/✅ JSearch: (\d+) jobs saved to database/);
-      const jobsSaved = jobMatch ? parseInt(jobMatch[1]) : 0;
-      
-      // Record that we ran today
-      try {
-        fs.writeFileSync(lastRunFile, today);
-      } catch (e) {
-        // File system write failed, continue anyway
+      let jobsSaved = 0;
+      const m = stdout.match(/^✅\s+JSearch:\s+(\d+)\s+jobs saved to database$/m);
+      if (m) {
+        jobsSaved = parseInt(m[1]);
+      } else {
+        const { count, error } = await supabase
+          .from('jobs')
+          .select('id', { count: 'exact', head: false })
+          .eq('source', 'jsearch')
+          .gte('created_at', new Date(Date.now() - 60*60*1000).toISOString());
+        jobsSaved = error ? 0 : (count || 0);
       }
       
       console.log(`✅ JSearch: ${jobsSaved} jobs processed`);
       return jobsSaved;
     } catch (error) {
       console.error('❌ JSearch scraper failed:', error.message);
+      return 0;
+    }
+  }
+
+  // Run enhanced Jooble scraper
+  async runJoobleScraper() {
+    try {
+      console.log('🔄 Running enhanced Jooble scraper...');
+      if (process.env.JOOBLE_ENABLED === 'false') {
+        console.log('⚠️ Jooble disabled by flag');
+        return 0;
+      }
+      
+      // Use the enhanced Jooble scraper with smart strategies
+      const { stdout } = await execAsync('node scrapers/jooble.js', {
+        cwd: process.cwd(),
+        timeout: 300000
+      });
+      
+      let jobsSaved = 0;
+      const m = stdout.match(/^✅\s+Jooble:\s+(\d+)\s+jobs saved to database$/m);
+      if (m) {
+        jobsSaved = parseInt(m[1]);
+      } else {
+        const { count, error } = await supabase
+          .from('jobs')
+          .select('id', { count: 'exact', head: false })
+          .eq('source', 'jooble')
+          .gte('created_at', new Date(Date.now() - 60*60*1000).toISOString());
+        jobsSaved = error ? 0 : (count || 0);
+      }
+      
+      console.log(`✅ Jooble: ${jobsSaved} jobs processed`);
+      return jobsSaved;
+    } catch (error) {
+      console.error('❌ Jooble scraper failed:', error.message);
+      return 0;
+    }
+  }
+
+  // Run enhanced Ashby scraper
+  async runAshbyScraper() {
+    try {
+      console.log('🔄 Running enhanced Ashby scraper...');
+      
+      // Use the enhanced Ashby scraper with smart strategies
+      const { stdout } = await execAsync('node scrapers/ashby.js', {
+        cwd: process.cwd(),
+        timeout: 300000
+      });
+      
+      let jobsSaved = 0;
+      const m = stdout.match(/^✅\s+Ashby:\s+(\d+)\s+jobs saved to database$/m);
+      if (m) {
+        jobsSaved = parseInt(m[1]);
+      } else {
+        const { count, error } = await supabase
+          .from('jobs')
+          .select('id', { count: 'exact', head: false })
+          .eq('source', 'ashby')
+          .gte('created_at', new Date(Date.now() - 60*60*1000).toISOString());
+        jobsSaved = error ? 0 : (count || 0);
+      }
+      
+      console.log(`✅ Ashby: ${jobsSaved} jobs processed`);
+      return jobsSaved;
+    } catch (error) {
+      console.error('❌ Ashby scraper failed:', error.message);
+      return 0;
+    }
+  }
+
+  // Run SERP API scraper
+  async runSerpAPIScraper() {
+    try {
+      console.log('🔍 Running SERP API scraper...');
+      
+      // Use the SERP API scraper with smart strategies
+      if (!fs.existsSync('scrapers/serp-api-scraper.js')) {
+        console.log('⚠️ SERP API scraper not found, skipping');
+        return 0;
+      }
+      const { stdout } = await execAsync('node scrapers/serp-api-scraper.js', {
+        cwd: process.cwd(),
+        timeout: 600000, // 10 minutes timeout for API calls
+        env: { ...process.env }
+      });
+      
+      const jobMatch = stdout.match(/✅ SERP API: (\d+) jobs saved to database/);
+      const jobsSaved = jobMatch ? parseInt(jobMatch[1]) : 0;
+      
+      console.log(`✅ SERP API: ${jobsSaved} jobs processed`);
+      return jobsSaved;
+    } catch (error) {
+      console.error('❌ SERP API scraper failed:', error.message);
+      return 0;
+    }
+  }
+
+  // Run RapidAPI Internships scraper
+  async runRapidAPIInternshipsScraper() {
+    try {
+      console.log('🎓 Running RapidAPI Internships scraper...');
+      
+      // Use the RapidAPI Internships scraper
+      const { stdout } = await execAsync('node -e "const RapidAPIInternshipsScraper = require(\'./scrapers/rapidapi-internships.js\').default; RapidAPIInternshipsScraper.scrapeAllQueries().then(result => console.log(\'RapidAPI Internships result:\', result)).catch(err => console.log(\'RapidAPI Internships error:\', err.message));"', {
+        cwd: process.cwd(),
+        timeout: 300000
+      });
+      
+      // Parse job count from the result
+      const insertedMatch = stdout.match(/inserted:\s*(\d+)/);
+      const jobsSaved = insertedMatch ? parseInt(insertedMatch[1]) : 0;
+      
+      console.log(`✅ RapidAPI Internships: ${jobsSaved} jobs processed`);
+      return jobsSaved;
+    } catch (error) {
+      console.error('❌ RapidAPI Internships scraper failed:', error.message);
       return 0;
     }
   }
@@ -336,7 +471,7 @@ oka  // Indeed scraper removed - not working properly
       console.log('\n🚀 STARTING AUTOMATED SCRAPING CYCLE');
       console.log('=====================================');
       
-      // Run all standardized scrapers
+      // Run all enhanced scrapers with smart strategies
       const adzunaJobs = await this.runAdzunaScraper();
       await new Promise(resolve => setTimeout(resolve, 5000)); // Rate limiting
       
@@ -346,15 +481,25 @@ oka  // Indeed scraper removed - not working properly
       const greenhouseJobs = await this.runGreenhouseScraper();
       await new Promise(resolve => setTimeout(resolve, 5000)); // Rate limiting
       
-      // Indeed scraper removed
-      
       const museJobs = await this.runMuseScraper();
       await new Promise(resolve => setTimeout(resolve, 5000)); // Rate limiting
       
       const jsearchJobs = await this.runJSearchScraper();
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Rate limiting
       
-      // Update stats (indeedJobs removed since Indeed scraper was removed)
-      this.totalJobsSaved += (adzunaJobs + reedJobs + greenhouseJobs + museJobs + jsearchJobs);
+      const joobleJobs = await this.runJoobleScraper();
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Rate limiting
+      
+      const ashbyJobs = await this.runAshbyScraper();
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Rate limiting
+      
+      const rapidapiInternshipsJobs = await this.runRapidAPIInternshipsScraper();
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Rate limiting
+      
+      const serpApiJobs = await this.runSerpAPIScraper();
+      
+      // Update stats with all enhanced scrapers
+      this.totalJobsSaved += (adzunaJobs + reedJobs + greenhouseJobs + museJobs + jsearchJobs + joobleJobs + ashbyJobs + rapidapiInternshipsJobs + serpApiJobs);
       this.runCount++;
       this.lastRun = new Date();
       
@@ -368,13 +513,14 @@ oka  // Indeed scraper removed - not working properly
       console.log('\n✅ SCRAPING CYCLE COMPLETE');
       console.log('============================');
       console.log(`⏱️  Duration: ${duration.toFixed(1)} seconds`);
-      console.log(`📊 Jobs processed this cycle: ${adzunaJobs + reedJobs + greenhouseJobs + museJobs + jsearchJobs}`);
+      console.log(`📊 Jobs processed this cycle: ${adzunaJobs + reedJobs + greenhouseJobs + museJobs + jsearchJobs + joobleJobs + ashbyJobs + rapidapiInternshipsJobs + serpApiJobs}`);
       console.log(`📈 Total jobs processed: ${this.totalJobsSaved}`);
       console.log(`🔄 Total cycles run: ${this.runCount}`);
       console.log(`📅 Last run: ${this.lastRun.toISOString()}`);
       console.log(`💾 Database total: ${dbStats.totalJobs} jobs`);
       console.log(`🆕 Database recent (24h): ${dbStats.recentJobs} jobs`);
       console.log(`🏷️  Sources: ${JSON.stringify(dbStats.sourceBreakdown)}`);
+      console.log(`🔍 SERP API contribution: ${serpApiJobs} jobs`);
       
     } catch (error) {
       console.error('❌ Scraping cycle failed:', error);
@@ -391,8 +537,8 @@ oka  // Indeed scraper removed - not working properly
     // Run immediately on startup
     this.runScrapingCycle();
     
-    // Schedule hourly runs
-    cron.schedule('0 * * * *', () => {
+    // Schedule runs 3 times per day (morning, lunch, evening) to avoid duplicate jobs
+    cron.schedule('0 8,13,18 * * *', () => {
       console.log('\n⏰ Scheduled scraping cycle starting...');
       this.runScrapingCycle();
     });
@@ -431,8 +577,13 @@ const jobRunner = new RealJobRunner();
 if (require.main === module) {
   (async () => {
     try {
-      await initLang();  // 👈 load CLD3 WASM once
-      console.log('✅ Language detection initialized');
+      if (process.env.LOG_LEVEL === 'debug') {
+        // Optional language initialization if available
+        if (typeof initLang === 'function') {
+          await initLang();
+          console.log('✅ Language detection initialized');
+        }
+      }
     } catch (e) {
       console.warn('[lang] init failed, falling back to franc-only', e);
     }

@@ -147,7 +147,7 @@ class AshbyScraper {
         try {
             const url = `${ASHBY_CONFIG.baseUrl}/${company.boardId}`;
             const ashbyJobs = await this.makeRequest(url);
-            if (!ashbyJobs || ashbyJobs.length === 0) {
+            if (!Array.isArray(ashbyJobs) || ashbyJobs.length === 0) {
                 console.log(`📭 No jobs found for ${company.name}`);
                 return jobs;
             }
@@ -263,3 +263,39 @@ class AshbyScraper {
     }
 }
 exports.default = AshbyScraper;
+
+// Direct execution: scrape and save to Supabase
+if (require.main === module) {
+    (async () => {
+        try {
+            require('dotenv').config({ path: '.env.local' });
+            const { createClient } = require('@supabase/supabase-js');
+            const { convertToDatabaseFormat } = require('./utils.js');
+            const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+            const scraper = new AshbyScraper();
+            const { jobs } = await scraper.scrapeAllCompanies();
+
+            // Exclude obvious remote roles per preference
+            const filtered = jobs.filter(j => !(j.location || '').toLowerCase().includes('remote'));
+
+            let saved = 0;
+            const batchSize = 50;
+            for (let i = 0; i < filtered.length; i += batchSize) {
+                const batch = filtered.slice(i, i + batchSize).map(job => {
+                    const dbJob = convertToDatabaseFormat(job);
+                    const { metadata, ...clean } = dbJob;
+                    return clean;
+                });
+                const { error } = await supabase.from('jobs').upsert(batch, { onConflict: 'job_hash', ignoreDuplicates: false });
+                if (!error) saved += batch.length;
+            }
+
+            console.log(`✅ Ashby: ${saved} jobs saved to database`);
+        }
+        catch (e) {
+            console.error('❌ Ashby direct run failed:', e.message);
+            process.exit(1);
+        }
+    })();
+}

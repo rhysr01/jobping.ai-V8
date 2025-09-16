@@ -1,0 +1,232 @@
+[dotenv@17.2.1] injecting env (43) from .env.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+✅ Environment variables loaded successfully
+📡 Supabase URL: Set
+🔑 Supabase Key: Set
+✅ Supabase client initialized successfully
+🚀 Starting JobPing Real Automation...
+=====================================
+
+🚀 STARTING AUTOMATED SCRAPING CYCLE
+=====================================
+🔄 Running Adzuna scraper...
+✅ Automation started successfully!
+   - Hourly scraping cycles
+   - Daily health checks
+   - Database monitoring
+   - All 6 working scrapers integrated
+✅ Adzuna: 0 jobs processed
+🔄 Running enhanced Reed scraper...
+🔄 Running enhanced Greenhouse scraper...
+✅ Greenhouse: 0 jobs processed
+🔄 Running enhanced Muse scraper...
+✅ Muse: 0 jobs processed
+🔄 Running enhanced JSearch scraper...
+✅ JSearch: 0 jobs processed
+🔄 Running enhanced Jooble scraper...
+✅ Jooble: 0 jobs processed
+🔄 Running enhanced Ashby scraper...
+✅ Ashby: 0 jobs processed
+🎓 Running RapidAPI Internships scraper...
+✅ RapidAPI Internships: 0 jobs processed
+🔍 Running SERP API scraper...
+
+✅ SCRAPING CYCLE COMPLETE
+============================
+⏱️  Duration: 496.8 seconds
+📊 Jobs processed this cycle: 0
+📈 Total jobs processed: 0
+🔄 Total cycles run: 1
+📅 Last run: 2025-09-16T07:44:48.356Z
+💾 Database total: 1000 jobs
+🆕 Database recent (24h): 0 jobs
+🏷️  Sources: {"reed":113,"adzuna":882,"muse":5}
+🔍 SERP API contribution: 0 jobs
+[dotenv@17.2.1] injecting env (43) from .env.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+✅ Environment variables loaded successfully
+📡 Supabase URL: Set
+🔑 Supabase Key: Set
+✅ Supabase client initialized successfully
+🚀 Starting JobPing Real Automation...
+=====================================
+
+🚀 STARTING AUTOMATED SCRAPING CYCLE
+=====================================
+🔄 Running Adzuna scraper...
+✅ Automation started successfully!
+   - Hourly scraping cycles
+   - Daily health checks
+   - Database monitoring
+   - All 6 working scrapers integrated
+[dotenv@17.2.1] injecting env (44) from .env.local -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar
+✅ Environment variables loaded successfully
+📡 Supabase URL: Set
+🔑 Supabase Key: Set
+✅ Supabase client initialized successfully
+🚀 Starting JobPing Real Automation...
+=====================================
+
+🚀 STARTING AUTOMATED SCRAPING CYCLE
+=====================================
+🔄 Running Adzuna scraper...
+✅ Automation started successfully!
+   - Hourly scraping cycles
+   - Daily health checks
+   - Database monitoring
+   - All 6 working scrapers integrated
+
+⏰ Scheduled scraping cycle starting...
+
+🚀 STARTING AUTOMATED SCRAPING CYCLE
+=====================================
+🔄 Running Adzuna scraper...
+
+⏰ Scheduled scraping cycle starting...
+⏸️ Scraping cycle already running, skipping...
+✅ Adzuna: 0 jobs processed
+🔄 Running enhanced Reed scraper...
+✅ Adzuna: 0 jobs processed
+🔄 Running enhanced Reed scraper...
+🔄 Running enhanced Greenhouse scraper...
+✅ Greenhouse: 0 jobs processed
+🔄 Running enhanced Muse scraper...
+🔄 Running enhanced Greenhouse scraper...
+✅ Greenhouse: 0 jobs processed
+🔄 Running enhanced Muse scraper...
+🔄 Running enhanced JSearch scraper...
+🔄 Running enhanced JSearch scraper...
+🔄 Running enhanced Jooble scraper...
+🔄 Running enhanced Jooble scraper...
+🔄 Running enhanced Ashby scraper...
+[dotenv@17.2.1] injecting env (44) from .env.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+✅ Environment variables loaded successfully
+📡 Supabase URL: Set
+🔑 Supabase Key: Set
+✅ Supabase client initialized successfully
+🚀 Starting JobPing Real Automation...
+=====================================
+
+🚀 STARTING AUTOMATED SCRAPING CYCLE
+=====================================
+🔄 Running Adzuna scraper...
+✅ Automation started successfully!
+   - Hourly scraping cycles
+   - Daily health checks
+   - Database monitoring
+   - All 6 working scrapers integrated
+🔄 Running enhanced Ashby scraper...
+[dotenv@17.2.1] injecting env (44) from .env.local -- tip: 📡 observe env with Radar: https://dotenvx.com/radar
+✅ Environment variables loaded successfully
+📡 Supabase URL: Set
+🔑 Supabase Key: Set
+✅ Supabase client initialized successfully
+🚀 Starting JobPing Real Automation...
+=====================================
+
+🚀 STARTING AUTOMATED SCRAPING CYCLE
+=====================================
+🔄 Running Adzuna scraper...
+✅ Automation started successfully!
+   - Hourly scraping cycles
+   - Daily health checks
+   - Database monitoring
+   - All 6 working scrapers integrated
+✅ Adzuna: 0 jobs processed
+🔄 Running enhanced Reed scraper...
+
+🛑 Shutting down gracefully...
+[dotenv@17.2.1] injecting env (44) from .env.local -- tip: ⚙️  suppress all logs with { quiet: true }
+✅ Environment variables loaded successfully
+📡 Supabase URL: Set
+🔑 Supabase Key: Set
+✅ Supabase client initialized successfully
+🚀 Starting JobPing Real Automation...
+=====================================
+
+🚀 STARTING AUTOMATED SCRAPING CYCLE
+=====================================
+🔄 Running Adzuna scraper...
+✅ Automation started successfully!
+   - Hourly scraping cycles
+   - Daily health checks
+   - Database monitoring
+   - All 6 working scrapers integrated
+✅ Adzuna: 0 jobs processed
+🔄 Running enhanced Reed scraper...
+🔄 Running enhanced Greenhouse scraper...
+✅ Greenhouse: 0 jobs processed
+🔄 Running enhanced Muse scraper...
+🔄 Running enhanced JSearch scraper...
+
+⏰ Scheduled scraping cycle starting...
+⏸️ Scraping cycle already running, skipping...
+🔄 Running enhanced Jooble scraper...
+⚠️ Jooble disabled by flag
+🔄 Running enhanced Ashby scraper...
+
+🛑 Shutting down gracefully...
+[dotenv@17.2.1] injecting env (44) from .env.local -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+✅ Environment variables loaded successfully
+📡 Supabase URL: Set
+🔑 Supabase Key: Set
+✅ Supabase client initialized successfully
+🚀 Starting JobPing Real Automation...
+=====================================
+
+🚀 STARTING AUTOMATED SCRAPING CYCLE
+=====================================
+🔄 Running Adzuna scraper...
+✅ Automation started successfully!
+   - Hourly scraping cycles
+   - Daily health checks
+   - Database monitoring
+   - All 6 working scrapers integrated
+
+🛑 Shutting down gracefully...
+[dotenv@17.2.1] injecting env (44) from .env.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+✅ Environment variables loaded successfully
+📡 Supabase URL: Set
+🔑 Supabase Key: Set
+✅ Supabase client initialized successfully
+🚀 Starting JobPing Real Automation...
+=====================================
+
+🚀 STARTING AUTOMATED SCRAPING CYCLE
+=====================================
+🔄 Running Adzuna scraper...
+✅ Automation started successfully!
+   - Hourly scraping cycles
+   - Daily health checks
+   - Database monitoring
+   - All 6 working scrapers integrated
+✅ Adzuna: 962 jobs processed
+🔄 Running enhanced Reed scraper...
+🔄 Running enhanced Greenhouse scraper...
+✅ Greenhouse: 0 jobs processed
+🔄 Running enhanced Muse scraper...
+🔄 Running enhanced JSearch scraper...
+🔄 Running enhanced Jooble scraper...
+⚠️ Jooble disabled by flag
+🔄 Running enhanced Ashby scraper...
+🎓 Running RapidAPI Internships scraper...
+✅ RapidAPI Internships: 2 jobs processed
+🔍 Running SERP API scraper...
+✅ SERP API: 0 jobs processed
+✅ Database healthy: Last job 0 hours ago
+
+✅ SCRAPING CYCLE COMPLETE
+============================
+⏱️  Duration: 1346.5 seconds
+📊 Jobs processed this cycle: 964
+📈 Total jobs processed: 964
+🔄 Total cycles run: 1
+📅 Last run: 2025-09-16T09:56:32.501Z
+💾 Database total: 1000 jobs
+🆕 Database recent (24h): 0 jobs
+🏷️  Sources: {"reed":113,"adzuna":882,"muse":5}
+🔍 SERP API contribution: 0 jobs
+
+⏰ Scheduled scraping cycle starting...
+
+🚀 STARTING AUTOMATED SCRAPING CYCLE
+=====================================
+🔄 Running Adzuna scraper...

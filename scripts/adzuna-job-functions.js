@@ -23,6 +23,14 @@ const TARGET_CITIES = [
     ] 
   },
   { 
+    name: 'Dublin', 
+    country: 'ie', 
+    keywords: [
+      'graduate', 'intern', 'junior', 'entry-level', 'trainee', 'apprentice', 
+      'new graduate', 'recent graduate', 'student', 'entry level', 'first job'
+    ] 
+  },
+  { 
     name: 'Madrid', 
     country: 'es', 
     keywords: [
@@ -53,6 +61,38 @@ const TARGET_CITIES = [
       'stagiaire', 'alternance', 'junior', 'trainee', 'débutant', 'premier emploi',
       'étudiant', 'jeune diplômé', 'sans expérience', 'formation', 'apprenti'
     ] 
+  },
+  { 
+    name: 'Zurich', 
+    country: 'ch', 
+    keywords: [
+      'praktikum', 'trainee', 'junior', 'einsteiger', 'berufseinsteiger', 'student',
+      'absolvent', 'neueinsteiger', 'anfänger', 'ausbildung', 'lehrling'
+    ] 
+  },
+  { 
+    name: 'Brussels', 
+    country: 'be', 
+    keywords: [
+      'stagiaire', 'stage', 'junior', 'trainee', 'débutant', 'premier emploi',
+      'étudiant', 'jeune diplômé', 'starter', 'student', 'apprenti'
+    ] 
+  },
+  { 
+    name: 'Milan', 
+    country: 'it', 
+    keywords: [
+      'stage', 'tirocinio', 'junior', 'trainee', 'neolaureato', 'primo lavoro',
+      'studente', 'laureato', 'principiante', 'formazione', 'apprendista'
+    ] 
+  },
+  { 
+    name: 'Rome', 
+    country: 'it', 
+    keywords: [
+      'stage', 'tirocinio', 'junior', 'trainee', 'neolaureato', 'primo lavoro',
+      'studente', 'laureato', 'principiante', 'formazione', 'apprendista'
+    ] 
   }
 ];
 
@@ -75,7 +115,9 @@ async function scrapeCityJobs(cityName, countryCode, keywords, options = {}) {
   } = options;
 
   // Use smart strategies for date filtering and pagination
-  const smartMaxDays = withFallback(() => getSmartDateStrategy('adzuna'), '7');
+  // Smart time strategy: 1-2 days for frequent runs, 7 days for initial/weekly runs
+  const isInitialRun = process.env.ADZUNA_INITIAL_RUN === 'true';
+  const smartMaxDays = isInitialRun ? '7' : withFallback(() => getSmartDateStrategy('adzuna'), '2');
   const pagination = withFallback(() => getSmartPaginationStrategy('adzuna'), { startPage: 1, endPage: 2 });
 
   if (!appId || !appKey) {
