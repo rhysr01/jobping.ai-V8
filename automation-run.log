@@ -226,3 +226,83 @@
    - Daily health checks
    - Database monitoring
    - All 6 working scrapers integrated
+✅ Adzuna: 0 jobs processed
+✅ Adzuna completed: 0 jobs
+🔄 Running enhanced Reed scraper...
+[dotenv@17.2.1] injecting env (0) from .env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+🚀 Starting Reed scrape for locations: London, Manchester, Birmingham, Edinburgh, Dublin
+📍 Reed: London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 0 }
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 0 }
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 0 }
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 0 }
+   ↪ fetching page: { kw: 'intern', loc: 'London', skip: 0 }
+   ↪ fetching page: { kw: 'internship', loc: 'London', skip: 0 }
+  ➜ London: 0 jobs
+📍 Reed: Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 0 }
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 0 }
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 0 }
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 0 }
+   ↪ fetching page: { kw: 'intern', loc: 'Manchester', skip: 0 }
+   ↪ fetching page: { kw: 'internship', loc: 'Manchester', skip: 0 }
+  ➜ Manchester: 0 jobs
+📍 Reed: Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 0 }
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 0 }
+   ↪ fetching page: { kw: 'junior', loc: 'Birmingham', skip: 0 }
+   ↪ fetching page: { kw: 'trainee', loc: 'Birmingham', skip: 0 }
+   ↪ fetching page: { kw: 'intern', loc: 'Birmingham', skip: 0 }
+   ↪ fetching page: { kw: 'internship', loc: 'Birmingham', skip: 0 }
+  ➜ Birmingham: 0 jobs
+📍 Reed: Edinburgh
+   ↪ fetching page: { kw: 'graduate', loc: 'Edinburgh', skip: 0 }
+   ↪ fetching page: { kw: 'entry level', loc: 'Edinburgh', skip: 0 }
+   ↪ fetching page: { kw: 'junior', loc: 'Edinburgh', skip: 0 }
+   ↪ fetching page: { kw: 'trainee', loc: 'Edinburgh', skip: 0 }
+   ↪ fetching page: { kw: 'intern', loc: 'Edinburgh', skip: 0 }
+   ↪ fetching page: { kw: 'internship', loc: 'Edinburgh', skip: 0 }
+  ➜ Edinburgh: 0 jobs
+📍 Reed: Dublin
+   ↪ fetching page: { kw: 'graduate', loc: 'Dublin', skip: 0 }
+   ↪ fetching page: { kw: 'entry level', loc: 'Dublin', skip: 0 }
+   ↪ fetching page: { kw: 'junior', loc: 'Dublin', skip: 0 }
+   ↪ fetching page: { kw: 'trainee', loc: 'Dublin', skip: 0 }
+   ↪ fetching page: { kw: 'intern', loc: 'Dublin', skip: 0 }
+   ↪ fetching page: { kw: 'internship', loc: 'Dublin', skip: 0 }
+  ➜ Dublin: 0 jobs
+📊 Reed total unique: 0
+✅ Reed: 0 jobs saved to database
+✅ Reed: 0 jobs processed
+✅ Reed completed: 0 jobs
+🔄 Running enhanced Greenhouse scraper (standardized JS) ...
+✅ Greenhouse completed: 0 jobs
+🔄 Running enhanced Muse scraper...
+✅ Muse completed: 0 jobs
+🔄 Running enhanced JSearch scraper...
+✅ JSearch completed: 0 jobs
+🔄 Running enhanced Jooble scraper...
+✅ Jooble completed: 0 jobs
+🔄 Running enhanced Ashby scraper...
+✅ Ashby completed: 0 jobs
+🎓 Running RapidAPI Internships scraper...
+[dotenv@17.2.1] injecting env (0) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+✅ RapidAPI Internships: 0 jobs processed
+✅ RapidAPI Internships completed: 0 jobs
+🔍 Running SERP API scraper...
+[dotenv@17.2.1] injecting env (0) from .env.local -- tip: ⚙️  suppress all logs with { quiet: true }
+[SERP] starting, apiKey set: true
+✅ SERP API: 0 jobs processed
+✅ SERP API completed: 0 jobs
+
+✅ SCRAPING CYCLE COMPLETE
+============================
+⏱️  Duration: 216.4 seconds
+📊 Jobs processed this cycle: 0
+📈 Total jobs processed: 0
+🔄 Total cycles run: 1
+📅 Last run: 2025-09-18T13:19:24.853Z
+💾 Database total: 0 jobs
+🆕 Database recent (24h): 0 jobs
+🏷️  Sources: {}
+🔍 SERP API contribution: 0 jobs

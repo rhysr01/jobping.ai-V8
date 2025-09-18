@@ -1,40 +1,38 @@
 export default function Hero() {
   return (
-    <section className="bg-black py-20 md:py-24 lg:py-28 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.01] via-transparent to-transparent pointer-events-none"></div>
-      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 text-center relative">
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-white leading-[0.9] tracking-[-0.04em] mb-4">
-            JobPing
-          </h1>
-          <div className="text-xl md:text-2xl text-[#CCCCCC] font-light tracking-wide">
-            Graduate jobs that don't suck
-          </div>
-        </div>
-        
-        <p className="text-base text-[#999999] leading-relaxed mb-8 max-w-sm mx-auto">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Background pattern */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-[#050505] to-black">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              `radial-gradient(circle at 20% 50%, rgba(255,255,255,0.02) 0%, transparent 50%),
+               radial-gradient(circle at 80% 80%, rgba(255,255,255,0.02) 0%, transparent 50%)`
+          }}
+        />
+      </div>
+
+      {/* Floating elements for depth */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-[10%] w-64 h-32 bg-white/[0.02] rounded-lg rotate-12 blur-xl" />
+        <div className="absolute bottom-1/3 right-[15%] w-48 h-24 bg-white/[0.02] rounded-lg -rotate-6 blur-xl" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
+        <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">
+          Graduate jobs that don't suck
+        </h1>
+        <p className="text-xl text-[#a0a0a0] mb-8">
           5 jobs. Every 48 hours. No spam.
         </p>
-        
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <a
-            href="#signup"
-            className="inline-flex items-center justify-center rounded-lg bg-white px-6 py-3 text-black font-medium text-sm hover:bg-[#F8F8F8] transition-colors duration-150"
-            data-testid="hero-cta-primary"
-            data-analytics="cta_click"
-            data-cta-type="primary"
-            data-cta-location="hero"
-          >
+
+        <div className="flex gap-4 justify-center">
+          <a href="#signup" className="btn-primary px-9 py-3.5 hover:scale-[1.02]">
             Find My Dream Job
           </a>
-          <a
-            href="#pricing"
-            className="text-[#999999] hover:text-[#CCCCCC] font-normal text-sm transition-colors duration-150"
-            data-testid="hero-cta-secondary"
-            data-analytics="cta_click"
-            data-cta-type="secondary"
-            data-cta-location="hero"
-          >
+          <a href="#pricing" className="btn-secondary px-9 py-3.5">
             View Pricing
           </a>
         </div>

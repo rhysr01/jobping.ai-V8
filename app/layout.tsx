@@ -101,7 +101,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           }}
         />
       </head>
-      <body className="bg-black text-white overflow-x-hidden font-inter selection:bg-white selection:text-black">
+      <body className="bg-black text-white overflow-x-hidden font-sans selection:bg-white selection:text-black">
         {children}
       </body>
     </html>
