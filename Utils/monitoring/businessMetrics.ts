@@ -149,10 +149,12 @@ export class BusinessMetricsCollector {
     const timeframeMs = this.getTimeframeMs(timeframe);
     const cutoffDate = new Date(now.getTime() - timeframeMs);
 
-    const totalUsers = users.length;
-    const activeUsers = users.filter(u => u.active).length;
-    const newUsers = users.filter(u => new Date(u.created_at) > cutoffDate).length;
-    const verifiedUsers = users.filter(u => u.email_verified).length;
+    type UserRow = { id: string; created_at: string; active: boolean; email_verified: boolean };
+    const rows = users as unknown as UserRow[];
+    const totalUsers = rows.length;
+    const activeUsers = rows.filter((u: UserRow) => u.active).length;
+    const newUsers = rows.filter((u: UserRow) => new Date(u.created_at) > cutoffDate).length;
+    const verifiedUsers = rows.filter((u: UserRow) => u.email_verified).length;
 
     // Calculate retention rate (simplified)
     const userRetentionRate = totalUsers > 0 ? (activeUsers / totalUsers) * 100 : 0;

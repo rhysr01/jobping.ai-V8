@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { HTTP_STATUS } from '@/Utils/constants';
+// removed unused import
 import { errorResponse } from '@/Utils/errorResponse';
 
 // Simple scrape endpoint for production

@@ -396,7 +396,20 @@ export function withErrorHandling<T extends any[], R>(
     try {
       return await fn(...args);
     } catch (error) {
-      throw errorHandler.normalizeError(error as Error, context);
+      // Re-throw as AppError using public types to avoid relying on private methods
+      const err = error as Error;
+      if (err instanceof AppError) {
+        throw err;
+      }
+      throw new AppError(
+        err.message || 'An unexpected error occurred',
+        ErrorCode.INTERNAL_ERROR,
+        500,
+        ErrorSeverity.HIGH,
+        context,
+        false,
+        false
+      );
     }
   };
 }

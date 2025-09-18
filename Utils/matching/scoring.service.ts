@@ -32,7 +32,7 @@ export class ScoringService {
   generateMatchExplanation(_job: Job, score: MatchScore, _user: UserPreferences) {
     return {
       reason: score.overall >= 90 ? 'Perfect for early-career professionals; Exact career path match; Perfect location match; Recently posted' : 'Potential match',
-      tags: score.overall >= 90 ? 'excellent-match' : JSON.stringify({ confidence: score.confidence ?? 0.7 })
+      tags: score.overall >= 90 ? 'excellent-match' : JSON.stringify({ confidence: this.calculateConfidenceScore(_job, _user) ?? 0.7 })
     };
   }
 

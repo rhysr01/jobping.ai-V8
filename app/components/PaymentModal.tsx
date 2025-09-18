@@ -10,7 +10,7 @@ interface PaymentModalProps {
 }
 
 export default function PaymentModal({ isOpen, onClose, onConfirm, isLoading }: PaymentModalProps) {
-  const [email, setEmail] = useState('');
+  const [_email, setEmail] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,13 +19,13 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, isLoading }: 
 
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(_email)) {
       setError('Please enter a valid email address.');
       return;
     }
 
     try {
-      await onConfirm(email);
+      await onConfirm(_email);
       setEmail('');
     } catch (err) {
       setError('Payment setup failed. Please try again.');
@@ -75,7 +75,7 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, isLoading }: 
             <input
               type="email"
               id="email"
-              value={email}
+              value={_email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email address"
               required
@@ -122,7 +122,7 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, isLoading }: 
             </button>
             <button
               type="submit"
-              disabled={isLoading || !email}
+              disabled={isLoading || !_email}
               className="flex-1 px-4 py-3 bg-white text-black font-semibold rounded-xl hover:bg-zinc-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (

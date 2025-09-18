@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 
 export function SignupHeader() {
   const params = useSearchParams();
-  const plan = (params.get('plan') === 'premium' ? 'Premium' : 'Free') as 'Free' | 'Premium';
+  const _plan = (params.get('plan') === 'premium' ? 'Premium' : 'Free') as 'Free' | 'Premium';
 
   return (
     <div className="mb-8">
