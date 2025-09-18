@@ -269,7 +269,13 @@ async function scrapeAllCitiesCategories(options = {}) {
   const allJobs = [];
   let totalCityCount = 0;
   
-  for (const city of EU_CITIES_CATEGORIES) {
+  // Optional single-city filter via env CITY (matches by name, case-insensitive)
+  const cityEnv = (process.env.CITY || '').trim().toLowerCase();
+  const targetCities = cityEnv
+    ? EU_CITIES_CATEGORIES.filter(c => c.name.toLowerCase() === cityEnv)
+    : EU_CITIES_CATEGORIES;
+
+  for (const city of targetCities) {
     try {
       const cityQueries = generateCityQueries(city.country);
       console.log(`\n🌍 Processing ${city.name} (${city.country.toUpperCase()}) - ${cityQueries.length} queries...`);
@@ -420,13 +426,15 @@ if (require.main === module) {
         
         console.log(`💾 Saving batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(finalJobs.length/batchSize)} (${batch.length} jobs)...`);
         
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('jobs')
-          .upsert(batch, { onConflict: 'job_hash', ignoreDuplicates: false });
+          .upsert(batch, { onConflict: 'job_hash', ignoreDuplicates: true })
+          .select('id');
         
         if (!error) {
-          savedCount += batch.length;
-          console.log(`✅ Saved ${savedCount}/${finalJobs.length} jobs`);
+          const inserted = Array.isArray(data) ? data.length : 0;
+          savedCount += inserted;
+          console.log(`✅ Inserted ${inserted} (cumulative ${savedCount}/${finalJobs.length})`);
         } else {
           console.error('❌ Batch error:', error.message);
         }

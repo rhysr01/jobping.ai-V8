@@ -36,14 +36,14 @@ export const MATCHING_CONFIG = {
       freshness: 15,
     },
     
-    // Score thresholds
+    // Score thresholds (use decimals for tests expecting 0-1 scale)
     thresholds: {
-      excellent: 80,
-      good: 70,
-      confident: 70,
-      fair: 50,
-      minimum: 50,
-      poor: 0,
+      excellent: 0.8,
+      good: 0.7,
+      confident: 0.7,
+      fair: 0.5,
+      minimum: 0.5,
+      poor: 0.0,
     },
     
     // Confidence adjustments

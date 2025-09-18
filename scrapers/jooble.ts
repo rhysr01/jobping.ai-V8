@@ -138,7 +138,7 @@ class JoobleScraper {
     this.lastRequestTime = Date.now();
   }
 
-  private async makeRequest(request: JoobleRequest): Promise<JoobleResponse> {
+  private async makeRequest(request: JoobleRequest, attempt: number = 0): Promise<JoobleResponse> {
     await this.throttleRequest();
 
     try {
@@ -149,6 +149,7 @@ class JoobleScraper {
       const response = await axios.post(url, request, {
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'User-Agent': 'JobPing/1.0 (https://jobping.com)'
         },
         timeout: 15000
@@ -165,7 +166,18 @@ class JoobleScraper {
       if (error.response?.status === 429) {
         console.warn('🚫 Jooble rate limited, backing off...');
         await new Promise(resolve => setTimeout(resolve, 10000));
-        return this.makeRequest(request);
+        return this.makeRequest(request, attempt);
+      }
+      if (error.response?.status === 403) {
+        const max403Retries = 2;
+        if (attempt < max403Retries) {
+          const backoff = 20000 * (attempt + 1);
+          console.warn(`🚫 Jooble 403 (CF). Backing off ${Math.round(backoff/1000)}s and retrying (attempt ${attempt+1}/${max403Retries})...`);
+          await new Promise(resolve => setTimeout(resolve, backoff));
+          return this.makeRequest(request, attempt + 1);
+        }
+        console.error('❌ Jooble 403 persisted after retries. Skipping this request.');
+        throw error;
       }
       
       console.error('❌ Jooble API error:', error.message);
@@ -254,8 +266,10 @@ class JoobleScraper {
                   continue;
                 }
               
+              // Loosen filtering when the query already targets early-career terms
+              const querySignalsEarly = true; // Jooble keywords are explicitly early-career
               const isEarlyCareer = classifyEarlyCareer(ingestJob);
-              if (isEarlyCareer) {
+              if (querySignalsEarly || isEarlyCareer) {
                 jobs.push(ingestJob);
                 console.log(`✅ Early-career: ${ingestJob.title} at ${ingestJob.company} (${ingestJob.location})`);
               } else {

@@ -6,11 +6,14 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (email: string) => Promise<void>;
+  onConfirmWithPromo?: (email: string, promoCode?: string) => Promise<void>;
   isLoading: boolean;
 }
 
-export default function PaymentModal({ isOpen, onClose, onConfirm, isLoading }: PaymentModalProps) {
+export default function PaymentModal({ isOpen, onClose, onConfirm, onConfirmWithPromo, isLoading }: PaymentModalProps) {
   const [_email, setEmail] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [showPromo, setShowPromo] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,8 +28,13 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, isLoading }: 
     }
 
     try {
-      await onConfirm(_email);
+      if (onConfirmWithPromo) {
+        await onConfirmWithPromo(_email, promoCode.trim() || undefined);
+      } else {
+        await onConfirm(_email);
+      }
       setEmail('');
+      setPromoCode('');
     } catch (err) {
       setError('Payment setup failed. Please try again.');
     }
@@ -85,6 +93,49 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, isLoading }: 
             {error && (
               <p className="mt-2 text-sm text-red-400">{error}</p>
             )}
+          </div>
+
+          <div className="mt-2">
+            {!showPromo ? (
+              <button
+                type="button"
+                onClick={() => setShowPromo(true)}
+                className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors underline-offset-2 hover:underline"
+                disabled={isLoading}
+              >
+                Have a promo code?
+              </button>
+            ) : (
+              <div className="mt-3">
+                <label htmlFor="promo" className="block text-xs font-medium text-zinc-400 mb-1">
+                  Promo Code <span className="text-zinc-500">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  id="promo"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                  placeholder="Enter code e.g. rhys"
+                  disabled={isLoading}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:border-white/20 focus:ring-2 focus:ring-white/10 transition-colors disabled:opacity-50 text-sm"
+                />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="promo" className="block text-sm font-medium text-zinc-300 mb-2">
+              Promo Code (optional)
+            </label>
+            <input
+              type="text"
+              id="promo"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value)}
+              placeholder="Enter code e.g. rhys"
+              disabled={isLoading}
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-zinc-400 focus:border-white/30 focus:ring-2 focus:ring-white/20 transition-colors disabled:opacity-50"
+            />
           </div>
 
           <div className="bg-zinc-800/50 rounded-xl p-4">

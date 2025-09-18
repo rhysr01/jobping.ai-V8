@@ -1,6 +1,6 @@
 // Minimal smart strategies helper (restored)
 
-function withFallback(fn, fallback) {
+export function withFallback(fn, fallback) {
   try {
     const val = fn();
     return val == null ? fallback : val;
@@ -9,7 +9,7 @@ function withFallback(fn, fallback) {
   }
 }
 
-function getSmartDateStrategy(scraper = 'default') {
+export function getSmartDateStrategy(scraper = 'default') {
   const hour = new Date().getHours();
   const day = new Date().getDay();
   try {
@@ -30,7 +30,7 @@ function getSmartDateStrategy(scraper = 'default') {
   }
 }
 
-function getSmartPaginationStrategy(scraper = 'default') {
+export function getSmartPaginationStrategy(scraper = 'default') {
   const hour = new Date().getHours();
   try {
     switch (String(scraper).toLowerCase()) {
@@ -49,6 +49,6 @@ function getSmartPaginationStrategy(scraper = 'default') {
   }
 }
 
-module.exports = { withFallback, getSmartDateStrategy, getSmartPaginationStrategy };
+// ESM exports above
 
 

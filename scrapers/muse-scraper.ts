@@ -1,7 +1,7 @@
 // ✅ FIXED Muse Scraper - Optimized for EU Early Career Jobs
 import axios from 'axios';
 import { classifyEarlyCareer, convertToDatabaseFormat } from './utils';
-import { getSmartDateStrategy, getSmartPaginationStrategy, withFallback } from './smart-strategies';
+import * as Smart from './smart-strategies';
 
 // Types
 interface IngestJob {
@@ -374,8 +374,8 @@ class MuseScraper {
     const jobs: IngestJob[] = [];
     
     // Use smart strategies for date filtering and pagination
-    const smartMaxDays = withFallback(() => getSmartDateStrategy('muse'), '7');
-    const pagination = withFallback(() => getSmartPaginationStrategy('muse'), { startPage: 1, endPage: 5 });
+    const smartMaxDays = Smart.withFallback(() => Smart.getSmartDateStrategy('muse'), '7');
+    const pagination = Smart.withFallback(() => Smart.getSmartPaginationStrategy('muse'), { startPage: 1, endPage: 5 });
     
     console.log(`📍 Scraping ${location} for categories: ${categories.join(', ')}, levels: ${levels.join(', ')} (max ${smartMaxDays} days, pages ${pagination.startPage}-${pagination.endPage})`);
 
@@ -457,8 +457,9 @@ class MuseScraper {
 
           // Apply EU location filtering
           if (this.isEULocation(ingestJob)) {
-            // Apply early-career filtering
-            if (classifyEarlyCareer(ingestJob)) {
+            // Loosen filtering when the query already targets early-career
+            const querySignalsEarly = Boolean(searchTerm) || (levels && levels.length > 0);
+            if (querySignalsEarly || classifyEarlyCareer(ingestJob)) {
               jobs.push(ingestJob);
             }
           }

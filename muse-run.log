@@ -1,0 +1,92 @@
+🔄 The Muse scraping - All Categories, All Levels (multilingual filtering)
+📋 Categories: All (no filter)
+🎯 Levels: All (filtered with multilingual early career detection)
+
+📍 Processing Dublin, Ireland...
+📍 Scraping Dublin, Ireland for categories: , levels:  (max 7 days, pages 1-3)
+🔗 Muse API request: https://www.themuse.com/api/public/jobs { page: 1, descending: true, location: 'Dublin, Ireland' }
+📊 Muse API response: 20 jobs found
+🔗 Muse API request: https://www.themuse.com/api/public/jobs {
+  page: 1,
+  descending: true,
+  location: 'Dublin, Ireland',
+  search: 'graduate'
+}
+📊 Muse API response: 20 jobs found
+🔗 Muse API request: https://www.themuse.com/api/public/jobs {
+  page: 1,
+  descending: true,
+  location: 'Dublin, Ireland',
+  search: 'junior'
+}
+📊 Muse API response: 20 jobs found
+🔗 Muse API request: https://www.themuse.com/api/public/jobs {
+  page: 1,
+  descending: true,
+  location: 'Dublin, Ireland',
+  search: 'trainee'
+}
+📊 Muse API response: 20 jobs found
+🔗 Muse API request: https://www.themuse.com/api/public/jobs {
+  page: 1,
+  descending: true,
+  location: 'Dublin, Ireland',
+  search: 'entry level'
+}
+📊 Muse API response: 20 jobs found
+🔗 Muse API request: https://www.themuse.com/api/public/jobs {
+  page: 1,
+  descending: true,
+  location: 'Dublin, Ireland',
+  search: 'intern'
+}
+📊 Muse API response: 20 jobs found
+🔗 Muse API request: https://www.themuse.com/api/public/jobs {
+  page: 1,
+  descending: true,
+  location: 'Dublin, Ireland',
+  search: 'associate'
+}
+📊 Muse API response: 20 jobs found
+🔗 Muse API request: https://www.themuse.com/api/public/jobs {
+  page: 1,
+  descending: true,
+  location: 'Dublin, Ireland',
+  search: 'new grad'
+}
+📊 Muse API response: 20 jobs found
+🔗 Muse API request: https://www.themuse.com/api/public/jobs {
+  page: 1,
+  descending: true,
+  location: 'Dublin, Ireland',
+  search: 'recent graduate'
+}
+📊 Muse API response: 20 jobs found
+🔗 Muse API request: https://www.themuse.com/api/public/jobs {
+  page: 1,
+  descending: true,
+  location: 'Dublin, Ireland',
+  search: 'campus hire'
+}
+📊 Muse API response: 20 jobs found
+✅ Dublin, Ireland: 0 unique early-career jobs found (0 total before deduplication)
+✅ Dublin, Ireland: 0 early-career jobs found
+
+📍 Processing Berlin, Germany...
+📍 Scraping Berlin, Germany for categories: , levels:  (max 7 days, pages 1-3)
+🔗 Muse API request: https://www.themuse.com/api/public/jobs { page: 1, descending: true, location: 'Berlin, Germany' }
+📊 Muse API response: 20 jobs found
+🔗 Muse API request: https://www.themuse.com/api/public/jobs {
+  page: 1,
+  descending: true,
+  location: 'Berlin, Germany',
+  search: 'graduate'
+}
+📊 Muse API response: 20 jobs found
+🔗 Muse API request: https://www.themuse.com/api/public/jobs {
+  page: 1,
+  descending: true,
+  location: 'Berlin, Germany',
+  search: 'junior'
+}
+📊 Muse API response: 20 jobs found

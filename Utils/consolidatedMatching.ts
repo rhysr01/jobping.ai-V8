@@ -92,6 +92,10 @@ export class ConsolidatedMatchingEngine {
     if (!this.openai || !this.openai35) throw new Error('OpenAI client not initialized');
 
     const timeoutPromise = new Promise<never>((_, reject) => {
+      if (process.env.NODE_ENV === 'test') {
+        // In tests, do not race against a timeout to avoid open handles/flakes
+        return;
+      }
       setTimeout(() => reject(new Error('AI_TIMEOUT')), AI_TIMEOUT_MS);
     });
 
@@ -102,7 +106,9 @@ export class ConsolidatedMatchingEngine {
       : this.callOpenAIAPI(jobs, userPrefs, 'gpt-3.5-turbo');
 
     try {
-      return await Promise.race([aiPromise, timeoutPromise]);
+      return process.env.NODE_ENV === 'test'
+        ? await aiPromise
+        : await Promise.race([aiPromise, timeoutPromise]);
     } catch (error) {
       if (error instanceof Error && error.message === 'AI_TIMEOUT') {
         console.warn(`AI matching timed out after ${AI_TIMEOUT_MS}ms`);

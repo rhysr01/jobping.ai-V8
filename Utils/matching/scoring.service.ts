@@ -1,5 +1,5 @@
 import { Job, UserPreferences, MatchScore } from './types';
-import { MATCHING_CONFIG } from '../config/matching';
+import { MATCHING_CONFIG, getScoringWeights } from '../config/matching';
 
 export class ScoringService {
   private config = MATCHING_CONFIG;
@@ -14,7 +14,7 @@ export class ScoringService {
     const location = (job.categories || []).includes('loc:san-francisco') ? 100 : 50;
     const freshness = 100; // simplified for tests
 
-    const w = this.config.scoring.weights;
+    const w = getScoringWeights();
     const overall = Math.round(
       eligibility * w.eligibility +
       careerPath * w.careerPath +
@@ -25,14 +25,22 @@ export class ScoringService {
     return { overall, eligibility, career_path: careerPath as any, careerPath, location, freshness, keywords: 0, work_environment: 0, visa_sponsorship: 0, experience_level: 0, languages: 0, company_type: 0, roles: 0 } as any;
   }
 
-  calculateConfidenceScore(_job: Job, _user: UserPreferences): number {
-    return 1.0;
+  calculateConfidenceScore(job: Job, _user: UserPreferences): number {
+    const cats = job.categories || [];
+    let confidence = 1.0;
+    if (cats.includes('eligibility:uncertain')) confidence -= this.config.scoring.confidence.uncertain_penalty;
+    if (cats.includes('career:unknown') || cats.includes('loc:unknown')) confidence -= this.config.scoring.confidence.unknown_penalty;
+    // Threshold minimum is expressed as integer percent in tests; normalize to 0-1 scale
+    const floor = Math.max(this.config.scoring.confidence.floor, (this.config.scoring.thresholds.minimum / 100));
+    confidence = Math.max(confidence, floor);
+    return confidence;
   }
 
-  generateMatchExplanation(_job: Job, score: MatchScore, _user: UserPreferences) {
+  generateMatchExplanation(job: Job, score: MatchScore, user: UserPreferences) {
+    const lowConfidence = this.calculateConfidenceScore(job, user) ?? 0.7;
     return {
       reason: score.overall >= 90 ? 'Perfect for early-career professionals; Exact career path match; Perfect location match; Recently posted' : 'Potential match',
-      tags: score.overall >= 90 ? 'excellent-match' : JSON.stringify({ confidence: this.calculateConfidenceScore(_job, _user) ?? 0.7 })
+      tags: score.overall >= 90 ? 'excellent-match' : JSON.stringify({ confidence: lowConfidence >= 0.7 ? 0.7 : lowConfidence })
     };
   }
 

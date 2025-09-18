@@ -42,6 +42,7 @@ exports.isEarlyCareer = isEarlyCareer;
 exports.isEU = isEU;
 exports.normalize = normalize;
 exports.scrapeGreenhouseBoard = scrapeGreenhouseBoard;
+exports.scrapeGreenhouse = scrapeGreenhouse;
 const axios_1 = __importDefault(require("axios"));
 const crypto = __importStar(require("crypto"));
 const smart_strategies_js_1 = require("./smart-strategies.js");
@@ -164,4 +165,24 @@ async function scrapeGreenhouseBoard(board, opts) {
     if ((opts === null || opts === void 0 ? void 0 : opts.euOnly) !== false)
         jobs = jobs.filter(isEU);
     return jobs.map(j => { var _a; return normalize(board, j, (_a = opts === null || opts === void 0 ? void 0 : opts.company) !== null && _a !== void 0 ? _a : null); });
+}
+
+// Backwards-compatible API used by tests: scrapeGreenhouse(company, runId)
+// Accepts a company object with a 'board' or a 'url' (e.g., test.greenhouse.io)
+async function scrapeGreenhouse(company, _runId) {
+    var _a;
+    let board = company.board;
+    if (!board && company.url) {
+        try {
+            const u = new URL(company.url);
+            const parts = u.hostname.split('.');
+            if (parts.length)
+                board = parts[0];
+        }
+        catch (_b) { }
+    }
+    if (!board)
+        return [];
+    const companyName = (_a = company.name) !== null && _a !== void 0 ? _a : undefined;
+    return scrapeGreenhouseBoard(board, { company: (companyName !== null && companyName !== void 0 ? companyName : null), euOnly: true, earlyOnly: true });
 }

@@ -1,0 +1,117 @@
+[dotenv@17.2.1] injecting env (46) from .env.local -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.1] injecting env (0) from .env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+🔄 Daily SERP API quota reset
+🚀 Starting SERP API scraping session
+📊 Quota available: 167 daily, 7 hourly
+
+🔍 Searching volume jobs (5 searches)
+🌍 Selected: London (weight: 3)
+🔍 Searching SERP API: "graduate jobs" in London,England,United Kingdom
+🔗 SERP API request: "graduate jobs" in London,England,United Kingdom
+📊 SERP API Usage: 1/167 daily, 1/7 hourly
+📊 SERP API response: 10 jobs found
+🚫 Skipped senior: Graduate Search Consultant (Business Graduates) April 2026 at Thurn Partners
+🚫 Skipped senior: 2026 Client and Product Graduate Rotational Programme - EMEA at BlackRock
+🚫 Skipped non-EU: Graduate Trainee Sales Manager at GraduateJobs (London Borough of Barking and Dagenham)
+✅ Early-career EU: Graduate Wealth Manager Programme at Rathbones Group (London)
+✅ Early-career EU: Audit Assistant - Graduate - London - January 2026 at RSM UK (London)
+✅ Early-career EU: Business Graduate Programme (FTSE Russell) 2026 at LSEG (London Stock Exchange Group) (London)
+🚫 Skipped senior: Graduate Careers at MI6
+🚫 Skipped senior: Graduate - Enterprise Leadership Programme at Royal London
+🚫 Skipped senior: STEM Graduate Software Sales Development Executive at Celsius Graduate Recruitment
+✅ Early-career EU: Graduate Analyst, Product Analytics at AlphaSights (London)
+🌍 Selected: Berlin (weight: 2.5)
+🔍 Searching SERP API: "entry level jobs" in Berlin,Germany
+⏰ SERP API rate limiting: waiting 2s...
+🔗 SERP API request: "entry level jobs" in Berlin,Germany
+📊 SERP API Usage: 2/167 daily, 2/7 hourly
+📊 SERP API response: 0 jobs found
+📭 No jobs found for "entry level jobs" in Berlin,Germany
+🌍 Selected: Paris (weight: 2.5)
+🔍 Searching SERP API: "junior roles" in Paris,France
+⏰ SERP API rate limiting: waiting 2s...
+🔗 SERP API request: "junior roles" in Paris,France
+📊 SERP API Usage: 3/167 daily, 3/7 hourly
+📊 SERP API response: 0 jobs found
+📭 No jobs found for "junior roles" in Paris,France
+🌍 Selected: Dublin (weight: 2)
+🔍 Searching SERP API: "trainee positions" in Dublin,County Dublin,Ireland
+⏰ SERP API rate limiting: waiting 0s...
+🔗 SERP API request: "trainee positions" in Dublin,County Dublin,Ireland
+📊 SERP API Usage: 4/167 daily, 4/7 hourly
+📊 SERP API response: 0 jobs found
+📭 No jobs found for "trainee positions" in Dublin,County Dublin,Ireland
+🌍 Selected: Amsterdam (weight: 2)
+🔍 Searching SERP API: "internships" in Amsterdam,Netherlands
+⏰ SERP API rate limiting: waiting 2s...
+🔗 SERP API request: "internships" in Amsterdam,Netherlands
+📊 SERP API Usage: 5/167 daily, 5/7 hourly
+📊 SERP API response: 10 jobs found
+✅ Early-career EU: Creative Design Intern at Firsty (Amsterdam)
+🚫 Skipped senior: Banking Off Cycle Internship Programme 2026 Amsterdam at Barclays
+✅ Early-career EU: Supply Chain Internship in Amsterdam! at Argent Energy (Amsterdam)
+✅ Early-career EU: Graduate Intern at Cushman & Wakefield (Amsterdam)
+🚫 Skipped senior: Internship Finance at Nike
+✅ Early-career EU: Content Creator / Social Media Specialist Internship at RoomViber (Amsterdam)
+🚫 Skipped non-EU: Internship Digital Commerce at Nike Inc. (Hilversum)
+✅ Early-career EU: Intern Venture Capital at Slingshot Ventures (Amsterdam)
+🚫 Skipped non-EU: Stage Sales & Sales Support Join Program - Jobbird.com at Jobster (Diemen)
+✅ Early-career EU: Online Content Intern at Gassan Diamonds (Amsterdam)
+
+🔍 Searching location jobs (4 searches)
+🌍 Selected: Madrid (weight: 1.8)
+🔍 Searching SERP API: "graduate roles" in Madrid,Spain
+⏰ SERP API rate limiting: waiting 2s...
+🔗 SERP API request: "graduate roles" in Madrid,Spain
+📊 SERP API Usage: 6/167 daily, 6/7 hourly
+📊 SERP API response: 10 jobs found
+🚫 Skipped senior: Aon Graduate Graduate Program Spain (Madrid) at Aon Corporation
+🚫 Skipped senior: Sales, Trading and Structuring Graduate Programme 2026 Madrid | Madrid, ES at Barclays
+🚫 Skipped senior: Associate Gen AI Consultant Engineer (Graduate role) at Strategy Big Data
+✅ Early-career EU: Transformation Assistant Analyst (graduate) at PepsiCo (Spain)
+✅ Early-career EU: Graduate Marketing Role at Tourism Ireland (Madrid)
+🚫 Skipped senior: Graduate Electrical Engineering at Airbus
+🚫 Skipped senior: Graduate Talent Scientist at Canonical
+🚫 Skipped senior: Graduate - Electrical System Engineer at Airbus
+🚫 Skipped senior: Graduate Legal Counsel at Canonical
+🚫 Skipped senior: NESTLÉ - GRADUATE PROGRAM SECURITY AND COMPLIANCE at JR Spain
+🌍 Selected: London (weight: 3)
+🔍 Searching SERP API: "entry level roles" in London,England,United Kingdom
+⏰ SERP API rate limiting: waiting 2s...
+🔗 SERP API request: "entry level roles" in London,England,United Kingdom
+📊 SERP API Usage: 7/167 daily, 7/7 hourly
+📊 SERP API response: 10 jobs found
+🚫 Skipped senior: Sales Associate - Entry Level at Blackwater Recruitment Ltd
+🚫 Skipped senior: Paid Media Executive (Entry-Level) at Herd Digital
+🚫 Skipped senior: Entry Level Executive Search Consultant at TRM Recruitment
+🚫 Skipped senior: Sales Executive - Entry level & experienced hire roles at AnyVan
+🚫 Skipped non-EU: Hachette UK internships, London (entry-level and career switchers) at Hachette UK (Anywhere)
+✅ Early-career EU: Entry level Customer Success Role (£30-£60k salary + commission) at Tangent (London)
+🚫 Skipped senior: Trainee/Entry Level Recruiter - Graduate Role at SW6 Associates Limited
+🚫 Skipped senior: Entry Level Customer Success Manager (global tech company) at Tangent
+🚫 Skipped senior: Data Consultant - No Prior Experience Required at Kubrick Group
+✅ Early-career EU: Entry-Level Data Analyst at How to Job Ltd (London)
+⚠️ Rate limit reached, stopping searches
+
+📊 SERP API scraping complete:
+   📍 Locations processed: 7
+   📋 Jobs found: 14
+   📞 API calls used: 0
+   📅 Daily budget remaining: 160
+   ⏰ Hourly budget remaining: 0
+{
+  "source": "serp-api",
+  "found": 14,
+  "metrics": {
+    "locationsProcessed": 7,
+    "totalJobsFound": 14,
+    "earlyCareerJobs": 14,
+    "requestsUsed": 0,
+    "dailyBudgetRemaining": 160,
+    "hourlyBudgetRemaining": 0,
+    "errors": 0,
+    "startTime": "2025-09-18T12:30:06.922Z"
+  }
+}
+[dotenv@17.2.1] injecting env (46) from .env.local -- tip: 📡 observe env with Radar: https://dotenvx.com/radar
+[SERP] starting, apiKey set: true

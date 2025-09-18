@@ -1,9 +1,23 @@
 "use strict";
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RapidAPIInternshipsScraper = void 0;
 // ✅ RapidAPI Internships Scraper - Properly Integrated with JobPing Pipeline
-const axios_1 = require("axios");
-const utils_1 = require("./utils.js");
+const axios_1 = __importDefault(require("axios"));
+const utils_js_1 = require("./utils.js");
 const supabase_js_1 = require("@supabase/supabase-js");
 // Simple location normalization function
 function normalizeLocation(location) {
@@ -68,7 +82,7 @@ class FunnelTelemetryTracker {
         this.metrics.samples.push(sample);
     }
     getMetrics() {
-        return { ...this.metrics };
+        return Object.assign({}, this.metrics);
     }
 }
 // Rate limiting
@@ -81,6 +95,7 @@ class RapidAPIInternshipsScraper {
         this.supabase = (0, supabase_js_1.createClient)(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
     }
     async fetchInternships(page = 1) {
+        var _a;
         try {
             const response = await axios_1.default.get(`${RAPIDAPI_CONFIG.baseUrl}${RAPIDAPI_CONFIG.endpoint}`, {
                 headers: RAPIDAPI_CONFIG.headers,
@@ -90,7 +105,7 @@ class RapidAPIInternshipsScraper {
             return response.data;
         }
         catch (error) {
-            if (error.response?.status === 429) {
+            if (((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) === 429) {
                 console.log('⏳ Rate limited, waiting 2 seconds...');
                 await sleep(2000);
                 return this.fetchInternships(page);
@@ -123,12 +138,13 @@ class RapidAPIInternshipsScraper {
         return allInternships;
     }
     normalizeInternship(internship) {
+        var _a, _b;
         // Create description from available data
         const description = [
             internship.linkedin_org_description || '',
             `Industry: ${internship.linkedin_org_industry || 'Unknown'}`,
             `Seniority: ${internship.seniority || 'Unknown'}`,
-            `Employment Type: ${internship.employment_type?.join(', ') || 'Unknown'}`
+            `Employment Type: ${((_a = internship.employment_type) === null || _a === void 0 ? void 0 : _a.join(', ')) || 'Unknown'}`
         ].filter(Boolean).join('\n\n');
         // Combine all possible location hints to improve EU detection downstream
         const combinedLocationParts = [];
@@ -147,7 +163,7 @@ class RapidAPIInternshipsScraper {
             combinedLocationParts.push(anyInternship.city);
         if (anyInternship.country)
             combinedLocationParts.push(anyInternship.country);
-        const combinedLocation = (combinedLocationParts.filter(Boolean).join(', ') || internship.locations_derived?.[0] || 'Unknown Location');
+        const combinedLocation = (combinedLocationParts.filter(Boolean).join(', ') || ((_b = internship.locations_derived) === null || _b === void 0 ? void 0 : _b[0]) || 'Unknown Location');
         return {
             title: internship.title || 'Unknown Title',
             company: internship.organization || 'Unknown Company',
@@ -250,10 +266,7 @@ class RapidAPIInternshipsScraper {
                     careerPath = 'product';
                 }
                 const categories = createJobCategories(careerPath, [`loc:${job.location}`, 'type:internship']);
-                return {
-                    ...job,
-                    categories: categories.split('|')
-                };
+                return Object.assign(Object.assign({}, job), { categories: categories.split('|') });
             });
             this.telemetry.trackCareerTagged(careerTaggedJobs.length);
             // Convert to database format and save
@@ -273,20 +286,11 @@ class RapidAPIInternshipsScraper {
                     try {
                         // Convert to database format
                         const dbJobs = batch.map(job => {
-                            const dbJob = (0, utils_1.convertToDatabaseFormat)(job);
+                            const dbJob = (0, utils_js_1.convertToDatabaseFormat)(job);
                             // Remove metadata field and ensure we only use existing columns
-                            const { metadata, ...cleanDbJob } = dbJob;
-                            return {
-                                ...cleanDbJob,
-                                categories: job.categories || [],
-                                source: 'rapidapi-internships',
-                                created_at: new Date().toISOString(),
-                                updated_at: new Date().toISOString(),
-                                is_internship: true, // Mark as internship
-                                is_graduate: true, // Mark as graduate-level
-                                is_active: true, // Mark as active
-                                status: 'active' // Set status
-                            };
+                            const { metadata } = dbJob, cleanDbJob = __rest(dbJob, ["metadata"]);
+                            return Object.assign(Object.assign({}, cleanDbJob), { categories: job.categories || [], source: 'rapidapi-internships', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), is_internship: true, is_graduate: true, is_active: true, status: 'active' // Set status
+                             });
                         });
                         // Save to database
                         const { data, error } = await this.supabase

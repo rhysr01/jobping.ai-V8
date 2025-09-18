@@ -2,7 +2,7 @@
 
 // REAL JobPing Automation - This Actually Works
 const cron = require('node-cron');
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
 const { createClient } = require('@supabase/supabase-js');
@@ -47,6 +47,18 @@ class RealJobRunner {
     this.lastRun = null;
     this.totalJobsSaved = 0;
     this.runCount = 0;
+  }
+
+  /** Run a command and stream its stdout/stderr live to this process */
+  runCommandLive(cmd, args, options = {}) {
+    return new Promise((resolve, reject) => {
+      const child = spawn(cmd, args, { stdio: ['ignore', 'inherit', 'inherit'], ...options });
+      child.on('error', reject);
+      child.on('close', (code) => {
+        if (code === 0) return resolve(0);
+        reject(new Error(`${cmd} exited with code ${code}`));
+      });
+    });
   }
 
   // Actually run your working scrapers
@@ -95,9 +107,10 @@ class RealJobRunner {
   async runReedScraper() {
     try {
       console.log('🔄 Running enhanced Reed scraper...');
-      
-      // Optimized Reed script not present - skip gracefully
-      console.log('⚠️ Reed optimized script not found, skipping Reed for now');
+      await this.runCommandLive('node', ['scrapers/reed-scraper-standalone.cjs'], {
+        cwd: process.cwd(),
+        env: { ...process.env }
+      });
       const stdout = '';
       
       // Prefer canonical success line
@@ -136,8 +149,8 @@ class RealJobRunner {
     try {
       console.log('🔄 Running enhanced Muse scraper...');
       
-      // Use the Muse scraper via tsx (handles TS/ESM interop)
-      const { stdout } = await execAsync('npx -y tsx scrapers/muse-scraper.ts', {
+      // Use the Muse scraper with API key (TS/ESM wrapper via ts-node/tsx if needed)
+      const { stdout } = await execAsync('node scrapers/muse-scraper.js', {
         cwd: process.cwd(),
         timeout: 180000, // 3 minutes timeout
         env: { ...process.env }
@@ -168,11 +181,6 @@ class RealJobRunner {
   // Run standardized Greenhouse scraper
   async runGreenhouseScraper() {
     try {
-      // Greenhouse standardized requires config present; skip if missing
-      if (!fs.existsSync('scrapers/greenhouse-standardized.js') || !fs.existsSync('scrapers/config/greenhouse-companies.js')) {
-        console.log('⚠️ Greenhouse standardized dependencies missing, skipping');
-        return 0;
-      }
       console.log('🔄 Running enhanced Greenhouse scraper (standardized JS) ...');
       const cmd = 'node scrapers/greenhouse-standardized.js';
       const { stdout } = await execAsync(cmd, {
@@ -250,8 +258,8 @@ class RealJobRunner {
     try {
       console.log('🔄 Running enhanced JSearch scraper...');
       
-      // Use the enhanced JSearch scraper via tsx
-      const { stdout } = await execAsync('npx -y tsx scrapers/jsearch-scraper.ts', {
+      // Use the enhanced JSearch scraper with smart strategies
+      const { stdout } = await execAsync('node scrapers/jsearch-scraper.js', {
         cwd: process.cwd(),
         timeout: 300000
       });
@@ -286,8 +294,8 @@ class RealJobRunner {
         return 0;
       }
       
-      // Use the enhanced Jooble scraper via tsx
-      const { stdout } = await execAsync('npx -y tsx scrapers/jooble.ts', {
+      // Use the enhanced Jooble scraper with smart strategies
+      const { stdout } = await execAsync('node scrapers/jooble.js', {
         cwd: process.cwd(),
         timeout: 300000
       });
@@ -318,8 +326,8 @@ class RealJobRunner {
     try {
       console.log('🔄 Running enhanced Ashby scraper...');
       
-      // Use the enhanced Ashby scraper (CommonJS)
-      const { stdout } = await execAsync('node scrapers/ashby.cjs', {
+      // Use the enhanced Ashby scraper with smart strategies
+      const { stdout } = await execAsync('node scrapers/ashby.js', {
         cwd: process.cwd(),
         timeout: 300000
       });
@@ -349,23 +357,21 @@ class RealJobRunner {
   async runSerpAPIScraper() {
     try {
       console.log('🔍 Running SERP API scraper...');
-      
-      // Use the SERP API scraper with smart strategies
-      if (!fs.existsSync('scrapers/serp-api-scraper.ts') && !fs.existsSync('scrapers/serp-api-scraper.js')) {
-        console.log('⚠️ SERP API scraper not found, skipping');
-        return 0;
-      }
-      const serpCmd = fs.existsSync('scrapers/serp-api-scraper.ts')
-        ? 'npx -y tsx scrapers/serp-api-scraper.ts'
-        : 'node scrapers/serp-api-scraper.js';
-      const { stdout } = await execAsync(serpCmd, {
+      // Run TS implementation via tsx and stream live
+      await this.runCommandLive('npx', ['-y', 'tsx', 'scrapers/serp-api-scraper.ts'], {
         cwd: process.cwd(),
-        timeout: 600000, // 10 minutes timeout for API calls
         env: { ...process.env }
       });
-      
-      const jobMatch = stdout.match(/✅ SERP API: (\d+) jobs saved to database/);
-      let jobsSaved = jobMatch ? parseInt(jobMatch[1]) : 0;
+      const stdout = '';
+
+      // Parse jobs found from logs or fallback to DB
+      let jobsSaved = 0;
+      const { count, error } = await supabase
+        .from('jobs')
+        .select('id', { count: 'exact', head: false })
+        .eq('source', 'serp-api')
+        .gte('created_at', new Date(Date.now() - 60*60*1000).toISOString());
+      jobsSaved = error ? 0 : (count || 0);
       if (!jobsSaved) {
         if (stdout.includes('API key missing')) {
           console.log('❌ SERP API: Missing API key');
@@ -386,16 +392,19 @@ class RealJobRunner {
   async runRapidAPIInternshipsScraper() {
     try {
       console.log('🎓 Running RapidAPI Internships scraper...');
-      
-      // Use the RapidAPI Internships scraper
-      const { stdout } = await execAsync('npx -y tsx scrapers/rapidapi-internships.ts', {
+      // Run the TS implementation and stream live
+      await this.runCommandLive('npx', ['-y', 'tsx', 'scrapers/rapidapi-internships.ts'], {
         cwd: process.cwd(),
-        timeout: 300000
+        env: { ...process.env }
       });
-      
-      // Parse job count from the result
-      const insertedMatch = stdout.match(/inserted:\s*(\d+)/);
-      const jobsSaved = insertedMatch ? parseInt(insertedMatch[1]) : 0;
+      // DB fallback (last 60 minutes)
+      let jobsSaved = 0;
+      const { count, error } = await supabase
+        .from('jobs')
+        .select('id', { count: 'exact', head: false })
+        .eq('source', 'rapidapi-internships')
+        .gte('created_at', new Date(Date.now() - 60*60*1000).toISOString());
+      jobsSaved = error ? 0 : (count || 0);
       
       console.log(`✅ RapidAPI Internships: ${jobsSaved} jobs processed`);
       return jobsSaved;

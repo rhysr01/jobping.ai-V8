@@ -89,13 +89,14 @@ export function parseLocation(location: string): {
   // Check for remote indicators
   const isRemote = /remote|work\s+from\s+home|wfh|anywhere/i.test(loc);
   
-  // EU countries
+  // EU countries + UK, Switzerland, Norway
   const euCountries = [
     'austria', 'belgium', 'bulgaria', 'croatia', 'cyprus', 'czech republic',
     'denmark', 'estonia', 'finland', 'france', 'germany', 'greece', 'hungary',
     'ireland', 'italy', 'latvia', 'lithuania', 'luxembourg', 'malta',
     'netherlands', 'poland', 'portugal', 'romania', 'slovakia', 'slovenia',
-    'spain', 'sweden', 'united kingdom', 'uk', 'switzerland', 'norway'
+    'spain', 'sweden', 'united kingdom', 'uk', 'gb', 'great britain', 'england', 'scotland', 'wales', 'northern ireland',
+    'switzerland', 'ch', 'norway', 'no'
   ];
 
   // Known EU/UK/CH city names to infer EU when country is absent

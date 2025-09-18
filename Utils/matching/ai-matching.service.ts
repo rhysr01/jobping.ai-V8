@@ -279,11 +279,12 @@ JOB ${index}:
     return aiMatches
       .filter(match => match.job_index >= 0 && match.job_index < jobs.length)
       .map(match => ({
-        job: jobs[match.job_index],
+          job: jobs[match.job_index],
         match_score: match.match_score,
         match_reason: match.match_reason,
         confidence_score: match.confidence_score
-      }));
+      }))
+      .sort((a, b) => b.match_score - a.match_score);
   }
 
   async testConnection(): Promise<boolean> {

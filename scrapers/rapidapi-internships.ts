@@ -1,4 +1,6 @@
 // ✅ RapidAPI Internships Scraper - Properly Integrated with JobPing Pipeline
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
 import axios from 'axios';
 import { classifyEarlyCareer, convertToDatabaseFormat } from './utils';
 import { getSmartDateStrategy, getSmartPaginationStrategy, withFallback } from './smart-strategies';
@@ -250,9 +252,9 @@ export class RapidAPIInternshipsScraper {
       this.telemetry.trackEligible(earlyCareerJobs.length);
       console.log(`🎯 Early career jobs: ${earlyCareerJobs.length} (100% - all internships are early career)`);
       
-      // Apply EU location filtering with focus on EU capital cities
+      // Apply EU/UK/IE location filtering with broader heuristics
       const euJobs = earlyCareerJobs.filter(job => {
-        const location = job.location.toLowerCase();
+        const location = (job.location || '').toLowerCase();
         
         // EU Capital Cities (Priority Focus)
         const euCapitalCities = [
@@ -306,7 +308,16 @@ export class RapidAPIInternshipsScraper {
         const isMajorCity = majorEuCities.some(city => location.includes(city));
         const isEuRegion = euRegions.some(region => location.includes(region));
         
-        return isCapitalCity || isEuCountry || isMajorCity || isEuRegion;
+        // Strong UK/IE priority list
+        const ukIeSignals = [
+          'united kingdom','uk','england','scotland','wales','northern ireland',
+          'london','manchester','birmingham','edinburgh','glasgow','leeds','liverpool',
+          'ireland','dublin','cork','galway'
+        ];
+
+        const isUkIe = ukIeSignals.some(sig => location.includes(sig));
+        const isUnknown = location.length === 0 || location.includes('unknown');
+        return isUkIe || isCapitalCity || isEuCountry || isMajorCity || isEuRegion || isUnknown;
       });
       
       this.telemetry.trackLocationTagged(euJobs.length);
@@ -361,31 +372,29 @@ export class RapidAPIInternshipsScraper {
           const batch = uniqueJobs.slice(i, i + batchSize);
           
           try {
-            // Convert to database format
+            // Convert to database format with minimal, schema-safe columns
             const dbJobs = batch.map(job => {
-              const dbJob = convertToDatabaseFormat(job);
-              // Remove metadata field and ensure we only use existing columns
-              const { metadata, ...cleanDbJob } = dbJob;
+              const base = convertToDatabaseFormat(job) as any;
+              // minimal set (avoid non-existent columns like metadata, status, etc.)
               return {
-                ...cleanDbJob,
-                categories: job.categories || [],
+                job_hash: base.job_hash,
+                title: base.title,
+                company: base.company,
+                location: base.location,
+                description: base.description,
+                job_url: base.job_url,
                 source: 'rapidapi-internships',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                is_internship: true, // Mark as internship
-                is_graduate: true,   // Mark as graduate-level
-                is_active: true,     // Mark as active
-                status: 'active'     // Set status
+                posted_at: base.posted_at || new Date().toISOString(),
+                last_seen_at: new Date().toISOString(),
+                is_active: true,
+                created_at: new Date().toISOString()
               };
             });
             
             // Save to database
             const { data, error } = await this.supabase
               .from('jobs')
-              .upsert(dbJobs, { 
-                onConflict: 'job_hash',
-                ignoreDuplicates: false 
-              });
+              .upsert(dbJobs, { onConflict: 'job_hash', ignoreDuplicates: false });
 
             if (error) {
               console.error(`❌ Batch ${Math.floor(i/batchSize) + 1} failed:`, error.message);

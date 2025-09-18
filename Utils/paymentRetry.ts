@@ -82,13 +82,14 @@ function isNonRetryableError(error: Error): boolean {
 export async function createCheckoutSessionWithRetry(
   email: string,
   priceId: string,
-  userId: string
-): Promise<{ success: boolean; url?: string; error?: string }> {
+  userId: string,
+  promoCode?: string
+): Promise<{ success: boolean; url?: string; error?: string; promoApplied?: boolean }> {
   const result = await retryWithBackoff(async () => {
     const response = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, priceId, userId })
+      body: JSON.stringify({ email, priceId, userId, promoCode })
     });
 
     if (!response.ok) {
@@ -97,18 +98,19 @@ export async function createCheckoutSessionWithRetry(
     }
 
     const data = await response.json();
-    
+    // Promo path: success without URL
+    if (data && data.success && data.promoApplied) return data;
     if (!data.success || !data.url) {
       throw new Error(data.error || 'Failed to create checkout session');
     }
-
     return data;
   });
 
   if (result.success && result.data) {
     return {
       success: true,
-      url: result.data.url
+      url: (result.data as any).url,
+      promoApplied: (result.data as any).promoApplied,
     };
   }
 

@@ -1,0 +1,791 @@
+⚠️ REED_API_KEY missing; skipping Reed run
+⚠️ REED_API_KEY missing; skipping Reed run
+[dotenv@17.2.1] injecting env (46) from .env.local -- tip: 📡 version env with Radar: https://dotenvx.com/radar
+📍 Reed: London
+  ➜ London: 92 jobs
+📍 Reed: Manchester
+  ➜ Manchester: 212 jobs
+📍 Reed: Birmingham
+  ➜ Birmingham: 174 jobs
+📍 Reed: Edinburgh
+  ➜ Edinburgh: 238 jobs
+📍 Reed: Dublin
+[dotenv@17.2.1] injecting env (46) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+📍 Reed: London
+  ➜ London: 91 jobs
+📍 Reed: Manchester
+  ➜ Manchester: 210 jobs
+📍 Reed: Birmingham
+  ➜ Birmingham: 171 jobs
+📍 Reed: Edinburgh
+  ➜ Edinburgh: 237 jobs
+📍 Reed: Dublin
+[dotenv@17.2.1] injecting env (46) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+📍 Reed: London
+  ➜ London: 94 jobs
+📍 Reed: Manchester
+[dotenv@17.2.1] injecting env (46) from .env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+🚀 Starting Reed scrape for locations: London, Manchester, Birmingham, Edinburgh, Dublin
+📍 Reed: London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 5 valid jobs so far for London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 14 valid jobs so far for London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 16 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 19 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 26 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 32 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 37 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 52 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 60 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 64 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 71 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 79 valid jobs so far for London
+   ↪ fetching page: { kw: 'intern', loc: 'London', skip: 0 }
+   ← got 9 results
+   ✓ accumulated 84 valid jobs so far for London
+   ↪ fetching page: { kw: 'intern', loc: 'London', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'London', skip: 0 }
+   ← got 20 results
+   ✓ accumulated 92 valid jobs so far for London
+   ↪ fetching page: { kw: 'internship', loc: 'London', skip: 50 }
+   ← got 0 results
+  ➜ London: 92 jobs
+📍 Reed: Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 11 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 20 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 28 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 49 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 67 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 92 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 106 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 134 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 157 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 170 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 194 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 210 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'intern', loc: 'Manchester', skip: 0 }
+   ← got 10 results
+   ✓ accumulated 210 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'intern', loc: 'Manchester', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'Manchester', skip: 0 }
+   ← got 11 results
+   ✓ accumulated 211 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'internship', loc: 'Manchester', skip: 50 }
+   ← got 0 results
+  ➜ Manchester: 211 jobs
+📍 Reed: Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 14 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 24 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 27 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 44 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 61 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 73 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'junior', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 78 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'junior', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 108 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'junior', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 124 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'trainee', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 141 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'trainee', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 157 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'trainee', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 171 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'intern', loc: 'Birmingham', skip: 0 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'Birmingham', skip: 0 }
+   ← got 2 results
+   ✓ accumulated 173 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'internship', loc: 'Birmingham', skip: 50 }
+   ← got 0 results
+  ➜ Birmingham: 173 jobs
+📍 Reed: Edinburgh
+   ↪ fetching page: { kw: 'graduate', loc: 'Edinburgh', skip: 0 }
+   ← got 16 results
+   ✓ accumulated 5 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'graduate', loc: 'Edinburgh', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'entry level', loc: 'Edinburgh', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 42 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'entry level', loc: 'Edinburgh', skip: 50 }
+   ← got 35 results
+   ✓ accumulated 69 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'entry level', loc: 'Edinburgh', skip: 100 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'junior', loc: 'Edinburgh', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 107 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'junior', loc: 'Edinburgh', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 143 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'junior', loc: 'Edinburgh', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 153 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'trainee', loc: 'Edinburgh', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 193 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'trainee', loc: 'Edinburgh', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 228 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'trainee', loc: 'Edinburgh', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 237 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'intern', loc: 'Edinburgh', skip: 0 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'Edinburgh', skip: 0 }
+   ← got 1 results
+   ✓ accumulated 237 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'internship', loc: 'Edinburgh', skip: 50 }
+   ← got 0 results
+  ➜ Edinburgh: 237 jobs
+📍 Reed: Dublin
+   ↪ fetching page: { kw: 'graduate', loc: 'Dublin', skip: 0 }
+   ← got 7 results
+   ✓ accumulated 6 valid jobs so far for Dublin
+   ↪ fetching page: { kw: 'graduate', loc: 'Dublin', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'entry level', loc: 'Dublin', skip: 0 }
+   ← got 4 results
+   ✓ accumulated 9 valid jobs so far for Dublin
+   ↪ fetching page: { kw: 'entry level', loc: 'Dublin', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'junior', loc: 'Dublin', skip: 0 }
+   ← got 12 results
+   ✓ accumulated 13 valid jobs so far for Dublin
+   ↪ fetching page: { kw: 'junior', loc: 'Dublin', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'trainee', loc: 'Dublin', skip: 0 }
+   ← got 12 results
+   ✓ accumulated 17 valid jobs so far for Dublin
+   ↪ fetching page: { kw: 'trainee', loc: 'Dublin', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'intern', loc: 'Dublin', skip: 0 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'Dublin', skip: 0 }
+   ← got 0 results
+  ➜ Dublin: 17 jobs
+📊 Reed total unique: 260
+✅ Reed: 0 jobs saved to database
+[dotenv@17.2.1] injecting env (46) from .env.local -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar
+🚀 Starting Reed scrape for locations: London, Manchester, Birmingham, Edinburgh, Dublin
+📍 Reed: London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 7 valid jobs so far for London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 16 valid jobs so far for London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 18 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 21 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 28 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 34 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 39 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 54 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 61 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 65 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 72 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 80 valid jobs so far for London
+   ↪ fetching page: { kw: 'intern', loc: 'London', skip: 0 }
+   ← got 9 results
+   ✓ accumulated 85 valid jobs so far for London
+   ↪ fetching page: { kw: 'intern', loc: 'London', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'London', skip: 0 }
+   ← got 20 results
+   ✓ accumulated 93 valid jobs so far for London
+   ↪ fetching page: { kw: 'internship', loc: 'London', skip: 50 }
+   ← got 0 results
+  ➜ London: 93 jobs
+📍 Reed: Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 11 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 20 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 28 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 49 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 68 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 93 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 107 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 135 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 158 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 173 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 199 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 215 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'intern', loc: 'Manchester', skip: 0 }
+   ← got 10 results
+   ✓ accumulated 215 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'intern', loc: 'Manchester', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'Manchester', skip: 0 }
+   ← got 11 results
+   ✓ accumulated 216 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'internship', loc: 'Manchester', skip: 50 }
+   ← got 0 results
+  ➜ Manchester: 216 jobs
+📍 Reed: Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 14 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 24 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 27 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 44 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 61 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 73 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'junior', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 78 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'junior', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 109 valid jobs so far for Birmingham
+[dotenv@17.2.1] injecting env (46) from .env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+🚀 Starting Reed scrape for locations: London, Manchester, Birmingham, Edinburgh, Dublin
+📍 Reed: London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 5 valid jobs so far for London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 12 valid jobs so far for London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 13 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 16 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 23 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 29 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 34 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 49 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 57 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 61 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 67 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 75 valid jobs so far for London
+   ↪ fetching page: { kw: 'intern', loc: 'London', skip: 0 }
+   ← got 9 results
+   ✓ accumulated 80 valid jobs so far for London
+   ↪ fetching page: { kw: 'intern', loc: 'London', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'London', skip: 0 }
+   ← got 20 results
+   ✓ accumulated 88 valid jobs so far for London
+   ↪ fetching page: { kw: 'internship', loc: 'London', skip: 50 }
+   ← got 0 results
+  ➜ London: 88 jobs
+📍 Reed: Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 11 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 20 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 28 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 49 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 67 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 92 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 106 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 134 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 157 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 170 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 195 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 211 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'intern', loc: 'Manchester', skip: 0 }
+   ← got 10 results
+   ✓ accumulated 211 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'intern', loc: 'Manchester', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'Manchester', skip: 0 }
+   ← got 11 results
+   ✓ accumulated 212 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'internship', loc: 'Manchester', skip: 50 }
+   ← got 0 results
+  ➜ Manchester: 212 jobs
+📍 Reed: Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 14 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 24 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 26 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 43 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 60 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 72 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'junior', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 77 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'junior', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 108 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'junior', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 124 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'trainee', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 140 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'trainee', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 155 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'trainee', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 167 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'intern', loc: 'Birmingham', skip: 0 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'Birmingham', skip: 0 }
+   ← got 2 results
+   ✓ accumulated 169 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'internship', loc: 'Birmingham', skip: 50 }
+   ← got 0 results
+  ➜ Birmingham: 169 jobs
+📍 Reed: Edinburgh
+   ↪ fetching page: { kw: 'graduate', loc: 'Edinburgh', skip: 0 }
+   ← got 16 results
+   ✓ accumulated 5 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'graduate', loc: 'Edinburgh', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'entry level', loc: 'Edinburgh', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 42 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'entry level', loc: 'Edinburgh', skip: 50 }
+   ← got 35 results
+   ✓ accumulated 69 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'entry level', loc: 'Edinburgh', skip: 100 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'junior', loc: 'Edinburgh', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 107 valid jobs so far for Edinburgh
+[dotenv@17.2.1] injecting env (46) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+🚀 Starting Reed scrape for locations: London, Manchester, Birmingham, Edinburgh, Dublin
+📍 Reed: London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 5 valid jobs so far for London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 14 valid jobs so far for London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 16 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 19 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 26 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 32 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 36 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 52 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 60 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 64 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 70 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 78 valid jobs so far for London
+   ↪ fetching page: { kw: 'intern', loc: 'London', skip: 0 }
+   ← got 11 results
+   ✓ accumulated 85 valid jobs so far for London
+   ↪ fetching page: { kw: 'intern', loc: 'London', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'London', skip: 0 }
+   ← got 22 results
+   ✓ accumulated 95 valid jobs so far for London
+   ↪ fetching page: { kw: 'internship', loc: 'London', skip: 50 }
+   ← got 0 results
+  ➜ London: 95 jobs
+📍 Reed: Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 11 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 20 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 28 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 49 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 68 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'entry level', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 92 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 106 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 134 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'junior', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 157 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 170 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 195 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'trainee', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 211 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'intern', loc: 'Manchester', skip: 0 }
+   ← got 10 results
+   ✓ accumulated 211 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'intern', loc: 'Manchester', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'Manchester', skip: 0 }
+   ← got 11 results
+   ✓ accumulated 212 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'internship', loc: 'Manchester', skip: 50 }
+   ← got 0 results
+  ➜ Manchester: 212 jobs
+📍 Reed: Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 14 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 24 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'graduate', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 26 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 43 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 60 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'entry level', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 72 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'junior', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 77 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'junior', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 107 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'junior', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 124 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'trainee', loc: 'Birmingham', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 141 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'trainee', loc: 'Birmingham', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 157 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'trainee', loc: 'Birmingham', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 170 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'intern', loc: 'Birmingham', skip: 0 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'Birmingham', skip: 0 }
+   ← got 2 results
+   ✓ accumulated 172 valid jobs so far for Birmingham
+   ↪ fetching page: { kw: 'internship', loc: 'Birmingham', skip: 50 }
+   ← got 0 results
+  ➜ Birmingham: 172 jobs
+📍 Reed: Edinburgh
+   ↪ fetching page: { kw: 'graduate', loc: 'Edinburgh', skip: 0 }
+   ← got 16 results
+   ✓ accumulated 5 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'graduate', loc: 'Edinburgh', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'entry level', loc: 'Edinburgh', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 42 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'entry level', loc: 'Edinburgh', skip: 50 }
+   ← got 35 results
+   ✓ accumulated 69 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'entry level', loc: 'Edinburgh', skip: 100 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'junior', loc: 'Edinburgh', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 108 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'junior', loc: 'Edinburgh', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 144 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'junior', loc: 'Edinburgh', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 154 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'trainee', loc: 'Edinburgh', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 194 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'trainee', loc: 'Edinburgh', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 230 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'trainee', loc: 'Edinburgh', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 239 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'intern', loc: 'Edinburgh', skip: 0 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'Edinburgh', skip: 0 }
+   ← got 1 results
+   ✓ accumulated 239 valid jobs so far for Edinburgh
+   ↪ fetching page: { kw: 'internship', loc: 'Edinburgh', skip: 50 }
+   ← got 0 results
+  ➜ Edinburgh: 239 jobs
+📍 Reed: Dublin
+   ↪ fetching page: { kw: 'graduate', loc: 'Dublin', skip: 0 }
+   ← got 7 results
+   ✓ accumulated 6 valid jobs so far for Dublin
+   ↪ fetching page: { kw: 'graduate', loc: 'Dublin', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'entry level', loc: 'Dublin', skip: 0 }
+   ← got 4 results
+   ✓ accumulated 9 valid jobs so far for Dublin
+   ↪ fetching page: { kw: 'entry level', loc: 'Dublin', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'junior', loc: 'Dublin', skip: 0 }
+   ← got 12 results
+   ✓ accumulated 13 valid jobs so far for Dublin
+   ↪ fetching page: { kw: 'junior', loc: 'Dublin', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'trainee', loc: 'Dublin', skip: 0 }
+   ← got 12 results
+   ✓ accumulated 17 valid jobs so far for Dublin
+   ↪ fetching page: { kw: 'trainee', loc: 'Dublin', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'intern', loc: 'Dublin', skip: 0 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'Dublin', skip: 0 }
+   ← got 0 results
+  ➜ Dublin: 17 jobs
+📊 Reed total unique: 263
+✅ Reed: 0 jobs saved to database
+[dotenv@17.2.1] injecting env (46) from .env.local -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+🚀 Starting Reed scrape for locations: London, Manchester, Birmingham, Edinburgh, Dublin
+📍 Reed: London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 5 valid jobs so far for London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 12 valid jobs so far for London
+   ↪ fetching page: { kw: 'graduate', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 13 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 16 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 23 valid jobs so far for London
+   ↪ fetching page: { kw: 'entry level', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 29 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 33 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 49 valid jobs so far for London
+   ↪ fetching page: { kw: 'junior', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 57 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 61 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 67 valid jobs so far for London
+   ↪ fetching page: { kw: 'trainee', loc: 'London', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 75 valid jobs so far for London
+   ↪ fetching page: { kw: 'intern', loc: 'London', skip: 0 }
+   ← got 11 results
+   ✓ accumulated 82 valid jobs so far for London
+   ↪ fetching page: { kw: 'intern', loc: 'London', skip: 50 }
+   ← got 0 results
+   ↪ fetching page: { kw: 'internship', loc: 'London', skip: 0 }
+   ← got 22 results
+   ✓ accumulated 92 valid jobs so far for London
+   ↪ fetching page: { kw: 'internship', loc: 'London', skip: 50 }
+   ← got 0 results
+  ➜ London: 92 jobs
+📍 Reed: Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 0 }
+   ← got 50 results
+   ✓ accumulated 11 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 50 }
+   ← got 50 results
+   ✓ accumulated 20 valid jobs so far for Manchester
+   ↪ fetching page: { kw: 'graduate', loc: 'Manchester', skip: 100 }
+   ← got 50 results
+   ✓ accumulated 28 valid jobs so far for Manchester

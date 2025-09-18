@@ -37,7 +37,8 @@ export class MemoryManager {
       maxMemoryUsage: config.maxMemoryUsage || 512, // 512MB default
       gcThreshold: config.gcThreshold || 0.8, // 80% threshold
       cleanupInterval: config.cleanupInterval || 30000, // 30 seconds
-      enableMonitoring: config.enableMonitoring !== false
+      // Disable background monitoring in test to avoid timers/logs after tests finish
+      enableMonitoring: process.env.NODE_ENV === 'test' ? false : (config.enableMonitoring !== false)
     };
 
     if (this.config.enableMonitoring) {

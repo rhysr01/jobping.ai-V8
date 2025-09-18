@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+console.log('[SERP] starting, apiKey set:', Boolean(process.env.SERP_API_KEY));
 // ✅ SERP API Scraper - High Volume Graduate Job Collection
 // Follows existing JobPing scraper architecture patterns
 // Implements PRD: €75/month plan, 167 daily searches, EU early-career focus

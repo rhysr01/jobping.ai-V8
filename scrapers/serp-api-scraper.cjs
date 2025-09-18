@@ -188,17 +188,6 @@ class SerpApiScraper {
         const applyLink = ((_b = (_a = serpJob.apply_options) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.link) || serpJob.apply_link || serpJob.link || '';
         const desc = serpJob.description || '';
         const loc = serpJob.location || fallbackLocation || '';
-        // Determine canonical source by domain if available
-        let source = 'serp-api';
-        try {
-            const u = new URL(applyLink);
-            const host = u.hostname.toLowerCase();
-            if (host.includes('reed.co.uk')) source = 'reed';
-            else if (host.includes('greenhouse.io')) source = 'greenhouse';
-            else if (host.includes('ashbyhq.com')) source = 'ashby';
-            else if (host.includes('themuse.com')) source = 'themuse';
-        }
-        catch (_d) { /* ignore URL parse errors */ }
         return {
             title: serpJob.title || '',
             company: serpJob.company_name || '',
@@ -206,7 +195,7 @@ class SerpApiScraper {
             description: desc,
             url: applyLink,
             posted_at: ((_c = serpJob.detected_extensions) === null || _c === void 0 ? void 0 : _c.posted_at) || new Date().toISOString(),
-            source
+            source: 'serp-api'
         };
     }
     isEULocation(job) {
@@ -239,33 +228,19 @@ class SerpApiScraper {
                     this.seenJobs.set(jobHash, Date.now());
                     try {
                         const ingestJob = this.convertToIngestJob(serpJob, location);
-                        // Optional site filter for targeted runs (e.g., Reed)
-                        const siteFilter = (process.env.SERP_SITE_FILTER || '').toLowerCase();
-                        if (siteFilter) {
-                            const link = (ingestJob.url || '').toLowerCase();
-                            const matches = siteFilter === 'reed' ? link.includes('reed.co.uk') : link.includes(siteFilter);
-                            if (!matches) {
-                                continue;
-                            }
-                        }
                         // Apply validation
                         const validation = (0, utils_js_1.validateJob)(ingestJob);
                         if (!validation.valid) {
                             console.log(`🚫 Invalid job: ${ingestJob.title} at ${ingestJob.company}`);
                             continue;
                         }
-                        // Relax early-career filtering if query implies early intent
-                        const q = (query || '').toLowerCase();
-                        const earlyIntent = /(graduate|intern|internship|junior|entry\s*level|trainee)/i.test(q);
-                        const isEarly = earlyIntent || (0, utils_js_1.classifyEarlyCareer)(ingestJob);
-                        if (!isEarly) {
+                        // Apply early career filtering
+                        if (!(0, utils_js_1.classifyEarlyCareer)(ingestJob)) {
                             console.log(`🚫 Skipped senior: ${ingestJob.title} at ${ingestJob.company}`);
                             continue;
                         }
-                        // Apply EU/UK/IE filtering; allow unknown to pass for downstream classification
-                        const loc = (ingestJob.location || '').toLowerCase();
-                        const isUnknownLoc = loc.length === 0 || loc.includes('unknown');
-                        if (!this.isEULocation(ingestJob) && !isUnknownLoc) {
+                        // Apply EU location filtering
+                        if (!this.isEULocation(ingestJob)) {
                             console.log(`🚫 Skipped non-EU: ${ingestJob.title} at ${ingestJob.company} (${ingestJob.location})`);
                             continue;
                         }

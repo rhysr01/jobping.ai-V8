@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createCheckoutSession, STRIPE_CONFIG } from '@/Utils/stripe';
+import { validatePromoCode } from '@/Utils/promo';
 import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import { errorResponse } from '@/Utils/errorResponse';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -40,14 +41,64 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { email, priceId, userId } = await req.json();
+    const { email, priceId, userId, promoCode } = await req.json();
 
     // Validate required fields
     if (!email || !priceId || !userId) {
       return errorResponse.badRequest(req, 'Missing required fields: email, priceId, userId');
     }
 
-    // Validate price ID
+    // Promo path: if promoCode valid, bypass Stripe and mark premium
+    if (promoCode) {
+      const validation = await validatePromoCode(promoCode, email);
+      if (!validation.isValid) {
+        return errorResponse.badRequest(req, validation.reason || 'Invalid promo code');
+      }
+
+      const supabase = getSupabaseClient();
+      const now = new Date().toISOString();
+
+      // Idempotency: if already premium, return success
+      const { data: existingUser, error: fetchUserError } = await supabase
+        .from('users')
+        .select('subscription_active')
+        .eq('email', email)
+        .single();
+
+      if (!fetchUserError && existingUser?.subscription_active === true) {
+        return NextResponse.json({ success: true, promoApplied: true, alreadyActive: true });
+      }
+
+      // Prevent multiple promo uses per email
+      const { data: prior } = await supabase
+        .from('promo_activations')
+        .select('id')
+        .eq('email', email)
+        .limit(1);
+
+      if (prior && prior.length > 0) {
+        return errorResponse.badRequest(req, 'Promo already used for this email');
+      }
+
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ subscription_active: true, updated_at: now })
+        .eq('email', email);
+
+      if (updateError) {
+        return errorResponse.internal(req, 'Failed to activate promo', updateError.message);
+      }
+
+      // Audit (best-effort)
+      const { error: logError } = await supabase
+        .from('promo_activations')
+        .insert({ email, code: promoCode, activated_at: now });
+      // Non-fatal if audit insert fails
+
+      return NextResponse.json({ success: true, promoApplied: true });
+    }
+
+    // Validate price ID for normal Stripe flow
     const validPriceIds = Object.values(STRIPE_CONFIG.PRODUCTS);
     if (!validPriceIds.includes(priceId)) {
       return errorResponse.badRequest(req, 'Invalid price ID');

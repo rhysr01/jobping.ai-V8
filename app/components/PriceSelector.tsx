@@ -45,7 +45,7 @@ export default function PriceSelector() {
     }
   };
 
-  const handlePaymentConfirm = async (email: string) => {
+  const handlePaymentConfirm = async (email: string, promoCode?: string) => {
     setIsLoading(true);
     
     try {
@@ -61,9 +61,16 @@ export default function PriceSelector() {
       const result = await createCheckoutSessionWithRetry(
         email,
         priceId,
-        'temp-user-id' // Replace with actual user ID when you have auth
+        'temp-user-id', // Replace with actual user ID when you have auth
+        promoCode
       );
       
+      if (result.success && result.promoApplied) {
+        // Promo applied: mark success and close modal
+        setShowPaymentModal(false);
+        return;
+      }
+
       if (result.success && result.url) {
         window.location.href = result.url;
       } else {

@@ -284,8 +284,10 @@ export class BusinessMetricsCollector {
     const timeframeMs = this.getTimeframeMs(timeframe);
     const cutoffDate = new Date(now.getTime() - timeframeMs);
 
-    const totalSubscribers = subscriptions.length;
-    const monthlyRevenue = subscriptions.reduce((sum, s) => sum + (s.amount || 0), 0);
+    type SubscriptionRow = { amount?: number; status?: string; created_at?: string };
+    const subs = subscriptions as unknown as SubscriptionRow[];
+    const totalSubscribers = subs.length;
+    const monthlyRevenue = subs.reduce((sum: number, s: SubscriptionRow) => sum + (s.amount || 0), 0);
 
     // Get total users for conversion rate
     const { data: users } = await this.supabase

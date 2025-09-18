@@ -212,7 +212,7 @@ export async function POST(req: NextRequest) {
     // Handle cases where data might be undefined
     if (!rawPayload || !rawPayload.data) {
       console.warn('Webhook received without data field:', rawPayload);
-      return errorResponse.badRequest(req, 'Invalid webhook payload: missing data field', { received: rawPayload });
+      return NextResponse.json({ error: 'Invalid webhook payload: missing data field' }, { status: 400 });
     }
     
     const payload = TallyWebhookSchema.parse(rawPayload);
@@ -228,13 +228,13 @@ export async function POST(req: NextRequest) {
     console.log('🧪 Test mode: User data extracted:', userData);
     
     if (!userData.email) {
-      return errorResponse.badRequest(req, 'Email is required');
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userData.email as string)) {
-      return errorResponse.badRequest(req, 'Invalid email format');
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
     }
 
     console.log(`Processing submission for: ${userData.email}`);
