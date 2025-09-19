@@ -4,9 +4,10 @@ export default function HowItWorks() {
   return (
     <section className="section-spacing bg-[#030303] scroll-mt-20 md:scroll-mt-28">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
-        <h2 className="text-white font-semibold text-2xl md:text-3xl mb-12 text-center tracking-[-0.01em]">
-          How it works
-        </h2>
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-white mb-4">How it works</h2>
+          <p className="text-xl text-[#808080]">Get matched with your dream job in three simple steps</p>
+        </div>
 
         <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
           <div className="flex items-center gap-4 group">

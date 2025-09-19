@@ -20,8 +20,9 @@ export default function Home() {
         <Hero />
         
         {/* Features Section */}
-        <section className="section-spacing bg-[#030303]">
-          <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
+        <section className="section-spacing bg-[#030303] relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.01] to-transparent"></div>
+          <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 relative">
             <Features />
           </div>
         </section>
@@ -29,10 +30,11 @@ export default function Home() {
         {/* Removed redundant email preview section */}
 
         {/* Job Preview Section (Gmail-like) */}
-        <section className="section-spacing bg-black">
-          <div className="max-w-4xl mx-auto px-6">
-            <h2 className="text-3xl font-semibold text-center mb-3 text-white">What you'll receive</h2>
-            <p className="text-center text-[#808080] mb-10">Premium job matches delivered to your inbox</p>
+        <section className="section-spacing bg-black relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.01] to-transparent"></div>
+          <div className="max-w-4xl mx-auto px-6 relative">
+            <h2 className="text-4xl font-bold text-center mb-4 text-white">What you'll receive</h2>
+            <p className="text-center text-[#808080] mb-12 text-lg">Premium job matches delivered to your inbox</p>
             <div className="bg-gradient-to-br from-[#0f0f0f] to-[#0a0a0a] rounded-2xl p-8 border border-white/10 shadow-[0_0_40px_rgba(255,255,255,0.03)]">
               <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/[0.06]">
                 <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
@@ -74,7 +76,12 @@ export default function Home() {
         </section>
 
         {/* How It Works Section */}
-        <HowItWorks />
+        <section className="relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.01] to-transparent"></div>
+          <div className="relative">
+            <HowItWorks />
+          </div>
+        </section>
 
         {/* Pricing Section */}
         <section className="section-spacing bg-gray-50">
