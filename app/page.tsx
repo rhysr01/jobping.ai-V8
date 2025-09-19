@@ -86,7 +86,7 @@ export default function Home() {
             <div className="max-w-md mx-auto">
               <div className="relative">
                 <iframe
-                  className="h-[450px] md:h-[600px] w-full border-none focus-visible:ring-2 ring-white/10 rounded-xl"
+                  className="h-[400px] sm:h-[500px] md:h-[600px] w-full border-none focus-visible:ring-2 ring-white/10 rounded-xl"
                 src="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
                 data-testid="tally-iframe"
                 title="JobPing Signup Form"
@@ -100,7 +100,9 @@ export default function Home() {
         </section>
 
         {/* FAQ Section */}
-        <FAQ />
+        <section className="section-spacing bg-[#030303]">
+          <FAQ />
+        </section>
       </main>
 
       <Footer />
