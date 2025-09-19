@@ -77,7 +77,15 @@ export default function Home() {
         <HowItWorks />
 
         {/* Pricing Section */}
-        <PriceSelector />
+        <section className="section-spacing bg-gray-50">
+          <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
+              <p className="text-xl text-gray-600">Choose the plan that works for your job search</p>
+            </div>
+            <PriceSelector />
+          </div>
+        </section>
 
         {/* Signup Section */}
         <section id="signup" className="section-spacing bg-black relative">
@@ -100,8 +108,14 @@ export default function Home() {
         </section>
 
         {/* FAQ Section */}
-        <section className="section-spacing bg-[#030303]">
-          <FAQ />
+        <section className="section-spacing bg-gray-50">
+          <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
+              <p className="text-xl text-gray-600">Everything you need to know about JobPing</p>
+            </div>
+            <FAQ />
+          </div>
         </section>
       </main>
 

@@ -20,36 +20,36 @@ export default function FAQ() {
   };
 
   return (
-    <section className="py-20 md:py-28 bg-black scroll-mt-20 md:scroll-mt-28">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="bg-white/5 rounded-xl p-6 md:p-8 border border-white/10">
-          <h2 className="text-white font-semibold text-lg md:text-xl mb-6 text-center">
-            Frequently Asked Questions
-          </h2>
+    <div className="max-w-4xl mx-auto">
+      <div className="space-y-4">
+        {FAQ_DATA.map((item: FAQItem, index: number) => (
+          <div key={index} className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <button
+              onClick={() => toggleItem(index)}
+              className="w-full text-left flex items-center justify-between p-6 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-xl group"
+            >
+              <h3 className="text-gray-900 font-semibold text-lg pr-4 group-hover:text-blue-600 transition-colors">
+                {item.question}
+              </h3>
+              <ChevronDown
+                className={`w-5 h-5 text-gray-500 group-hover:text-blue-600 transition-all duration-300 ${
+                  openItems.has(index) ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
 
-          <div className="space-y-3">
-            {FAQ_DATA.map((item: FAQItem, index: number) => (
-              <button
-                key={index}
-                onClick={() => toggleItem(index)}
-                className="w-full bg-[#0a0a0a] hover:bg-[#111111] rounded-xl p-6 border border-white/5 hover:border-white/10 transition-all text-left group"
-              >
-                <div className="flex justify-between items-center">
-                  <h3 className="text-white font-medium">{item.question}</h3>
-                  <span className="text-white/40 group-hover:text-white/60 transition transform group-hover:scale-110">
-                    {openItems.has(index) ? '−' : '+'}
-                  </span>
-                </div>
-                {openItems.has(index) && (
-                  <p className="text-[#a0a0a0] mt-4 leading-relaxed">
-                    {item.answer}
-                  </p>
-                )}
-              </button>
-            ))}
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+              openItems.has(index) ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            }`}>
+              <div className="px-6 pb-6">
+                <p className="text-gray-600 leading-relaxed">
+                  {item.answer}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
-    </section>
+    </div>
   );
 }

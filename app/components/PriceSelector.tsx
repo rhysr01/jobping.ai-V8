@@ -85,68 +85,67 @@ export default function PriceSelector() {
   };
 
   return (
-    <section id="pricing" className="section-spacing bg-[#030303] scroll-mt-20 md:scroll-mt-28">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="">
-          {/* Minimal billing toggle */}
-          <div className="flex items-center justify-center gap-4 mb-8">
-            <button
-              onClick={() => setBilling('monthly')}
-              className={`text-sm font-medium transition-colors ${billing === 'monthly' ? 'text-white' : 'text-[#888888] hover:text-white'}`}
-              aria-pressed={billing === 'monthly'}
-            >
-              Monthly (€15)
-            </button>
-            <span className="w-px h-4 bg-white/20" />
-            <button
-              onClick={() => setBilling('quarterly')}
-              className={`text-sm font-medium transition-colors ${billing === 'quarterly' ? 'text-white' : 'text-[#888888] hover:text-white'}`}
-              aria-pressed={billing === 'quarterly'}
-            >
-              3 months (€30)
-            </button>
-          </div>
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {/* Free tier */}
-            <div className="relative bg-[#000000] rounded-2xl p-8 border border-white/[0.04] shadow-[0_2px_20px_rgba(0,0,0,0.5)]">
-              <h3 className="text-2xl font-bold mb-2">Free</h3>
-              <div className="text-5xl font-bold mb-6">€0</div>
-              <ul className="space-y-3 mb-8 text-[#a0a0a0]">
-                <li className="flex items-center gap-2"><span className="text-white/40">✓</span> 3 jobs per send</li>
-                <li className="flex items-center gap-2"><span className="text-white/40">✓</span> Early-career targeting</li>
-                <li className="flex items-center gap-2"><span className="text-white/40">✓</span> Cancel anytime</li>
-              </ul>
-              <button onClick={() => handlePlanClick('free')} className="w-full btn-secondary">
-                Get started free
-              </button>
-            </div>
+    <>
+    <div className="max-w-4xl mx-auto">
+      {/* Minimal billing toggle */}
+      <div className="flex items-center justify-center gap-4 mb-12">
+        <button
+          onClick={() => setBilling('monthly')}
+          className={`text-sm font-medium transition-colors px-4 py-2 rounded-lg ${billing === 'monthly' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'}`}
+          aria-pressed={billing === 'monthly'}
+        >
+          Monthly (€15)
+        </button>
+        <span className="w-px h-4 bg-gray-300" />
+        <button
+          onClick={() => setBilling('quarterly')}
+          className={`text-sm font-medium transition-colors px-4 py-2 rounded-lg ${billing === 'quarterly' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'}`}
+          aria-pressed={billing === 'quarterly'}
+        >
+          3 months (€30)
+        </button>
+      </div>
+      
+      <div className="grid md:grid-cols-2 gap-8">
+        {/* Free tier */}
+        <div className="relative bg-white rounded-2xl p-8 border border-gray-200 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gray-400 to-gray-600 rounded-t-2xl"></div>
+          <h3 className="text-2xl font-bold mb-2 text-gray-900">Free</h3>
+          <div className="text-5xl font-bold mb-6 text-gray-900">€0</div>
+          <ul className="space-y-3 mb-8 text-gray-600">
+            <li className="flex items-center gap-2"><span className="text-green-500">✓</span> 3 jobs per send</li>
+            <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Early-career targeting</li>
+            <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Cancel anytime</li>
+          </ul>
+          <button onClick={() => handlePlanClick('free')} className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
+            Get started free
+          </button>
+        </div>
 
-            {/* Premium tier - highlighted */}
-            <div className="relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-white/[0.06] to-transparent rounded-2xl blur-md opacity-75" />
-              <div className="relative bg-gradient-to-b from-[#141414] to-[#0a0a0a] rounded-2xl p-8 border border-white/[0.15] shadow-[0_0_50px_rgba(255,255,255,0.05)]">
-              <div className="absolute -top-3 left-8 bg-white/10 backdrop-blur text-white text-xs px-3 py-1 rounded-full border border-white/20">
-                MOST POPULAR
-              </div>
-              <div className="relative">
-                <h3 className="text-2xl font-bold mb-2">Premium</h3>
-              </div>
-              <div className="text-5xl font-bold mb-6 relative">
-                €15<span className="text-lg text-[#707070] font-normal">/month</span>
-              </div>
-              <ul className="space-y-3 mb-8 text-[#a0a0a0]">
-                <li className="flex items-center gap-2"><span className="text-white/70">✓</span> 6 jobs per send</li>
-                <li className="flex items-center gap-2"><span className="text-white/70">✓</span> Early access to fresh jobs</li>
-                <li className="flex items-center gap-2"><span className="text-white/70">✓</span> Cancel anytime</li>
-              </ul>
-              <button onClick={() => handlePlanClick('premium')} disabled={isLoading} className="w-full btn-primary">
-                Upgrade to Premium
-              </button>
-              </div>
+        {/* Premium tier - highlighted */}
+        <div className="relative">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur opacity-75"></div>
+          <div className="relative bg-white rounded-2xl p-8 border border-gray-200 shadow-xl">
+            <div className="absolute -top-3 left-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs px-3 py-1 rounded-full font-medium">
+              MOST POPULAR
             </div>
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-t-2xl"></div>
+            <h3 className="text-2xl font-bold mb-2 text-gray-900">Premium</h3>
+            <div className="text-5xl font-bold mb-6 text-gray-900">
+              €15<span className="text-lg text-gray-500 font-normal">/month</span>
+            </div>
+            <ul className="space-y-3 mb-8 text-gray-600">
+              <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> 6 jobs per send</li>
+              <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> Early access to fresh jobs</li>
+              <li className="flex items-center gap-2"><span className="text-blue-500">✓</span> Cancel anytime</li>
+            </ul>
+            <button onClick={() => handlePlanClick('premium')} disabled={isLoading} className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105">
+              Upgrade to Premium
+            </button>
           </div>
         </div>
       </div>
+    </div>
 
       {/* Payment Modal */}
       <PaymentModal
@@ -155,6 +154,6 @@ export default function PriceSelector() {
         onConfirm={handlePaymentConfirm}
         isLoading={isLoading}
       />
-    </section>
+    </>
   );
 }
