@@ -11,6 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  // Force new deployment
   metadataBase: new URL('https://jobping.ai'),
   alternates: {
     canonical: '/',
