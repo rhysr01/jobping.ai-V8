@@ -42,44 +42,28 @@ jobs:
       
     - name: Run scraping
       env:
-        SCRAPE_API_URL: ${{ secrets.SCRAPE_API_URL }}
-        CLEANUP_API_URL: ${{ secrets.CLEANUP_API_URL }}
-        SCRAPE_API_KEY: ${{ secrets.SCRAPE_API_KEY }}
-        SCRAPE_PLATFORMS: ${{ github.event.inputs.platforms || 'all' }}
-        CLEANUP_THRESHOLD_DAYS: '7'
-        RAILWAY_ENVIRONMENT: production
-        DISABLE_PUPPETEER: 'true'
-        ENABLE_BROWSER_POOL: 'false'
-        ENABLE_RATE_LIMITING: 'true'
-        SCRAPER_REQUESTS_PER_MINUTE: '12'
-        SCRAPER_REQUESTS_PER_HOUR: '360'
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+        ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+        REED_API_KEY: ${{ secrets.REED_API_KEY }}
+        NODE_ENV: production
+        JOBPING_PRODUCTION_MODE: 'true'
+        CITY: ${{ github.event.inputs.city }}
       run: |
-<<<<<<< HEAD
-        if [ "${{ github.event.inputs.cleanup_only }}" = "true" ]; then
-          node scripts/schedule-scraping.js cleanup
-        else
-          node scripts/schedule-scraping.js
-=======
         echo "🚀 Starting JobPing scraping..."
         SCRAPERS_INPUT="${{ github.event.inputs.scrapers }}"
-        MODE_INPUT="${{ github.event.inputs.mode }}"
-
-        # Default to orchestrator if no specific scrapers requested
         if [ -z "$SCRAPERS_INPUT" ] || [ "$SCRAPERS_INPUT" = "orchestrator" ]; then
           echo "▶️ Running full orchestrator (single cycle)"
           node automation/real-job-runner.cjs --single-run
         else
-          # Run individual scrapers via standardized wrappers
           IFS=',' read -ra NAMES <<< "$SCRAPERS_INPUT"
           for s in "${NAMES[@]}"; do
             case "$s" in
               adzuna)
                 echo "▶️ Running Adzuna wrapper (CITY=$CITY)"
-                if [ -n "$CITY" ]; then 
-                  CITY="$CITY" node scrapers/wrappers/adzuna-wrapper.cjs
-                else 
-                  node scrapers/wrappers/adzuna-wrapper.cjs
-                fi
+                if [ -n "$CITY" ]; then CITY="$CITY" node scrapers/wrappers/adzuna-wrapper.cjs; else node scrapers/wrappers/adzuna-wrapper.cjs; fi
                 ;;
               jobspy)
                 echo "▶️ Running JobSpy wrapper"
@@ -94,7 +78,6 @@ jobs:
                 ;;
             esac
           done
->>>>>>> f1ca744 (feat(ci): add selectable scraper wrappers and inputs; orchestrator single-run; remove Slack dependency)
         fi
 
   # Optional: Add a job to run cleanup more frequently
