@@ -25,12 +25,12 @@ export default function Hero() {
       <div className="relative text-center max-w-4xl mx-auto px-6">
         {/* Ultra Premium Typography */}
         <h1 className="text-7xl md:text-9xl font-bold text-transparent bg-gradient-to-b from-white via-zinc-100 to-zinc-300 bg-clip-text mb-6 tracking-[-0.04em] leading-[0.9] drop-shadow-sm">
-          JobPing
+          Stop searching for jobs
         </h1>
         
         {/* Refined Subtitle */}
         <p className="text-2xl md:text-3xl text-zinc-300 mb-16 font-light leading-relaxed tracking-[-0.01em] max-w-2xl mx-auto">
-          Graduate jobs that find you
+          Real personalised jobs into your inbox for EU students and graduates
         </p>
         
         {/* Premium CTA with Advanced Effects */}
@@ -40,7 +40,7 @@ export default function Hero() {
             onClick={scrollToSignup}
             className="relative bg-gradient-to-r from-white via-zinc-50 to-white text-black px-12 py-5 rounded-2xl text-lg font-medium hover:from-zinc-50 hover:via-zinc-100 hover:to-zinc-50 transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-105 border border-zinc-100/20"
           >
-            Find Jobs Now
+            Sign up and check your inbox
           </button>
         </div>
       </div>

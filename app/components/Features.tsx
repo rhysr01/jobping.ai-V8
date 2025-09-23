@@ -12,10 +12,10 @@ export default function Features() {
       <div className="max-w-6xl mx-auto px-6 relative">
         <div className="text-center mb-20">
           <h2 className="text-5xl md:text-6xl font-bold text-transparent bg-gradient-to-b from-white to-zinc-300 bg-clip-text mb-8 tracking-[-0.02em]">
-            Stop scrolling. Start landing.
+            Real personalised jobs into your inbox
           </h2>
           <p className="text-2xl text-zinc-400 max-w-3xl mx-auto leading-relaxed">
-            AI-curated jobs from 50+ sources, delivered every 48 hours.
+            AI-curated opportunities from 50+ sources, delivered every 48 hours to EU students and graduates.
           </p>
         </div>
 
@@ -24,20 +24,20 @@ export default function Features() {
           {[
             { 
               icon: Target, 
-              title: "Graduate-Focused", 
-              desc: "Entry-level positions only",
+              title: "EU Student-Focused", 
+              desc: "Graduate programmes, internships & entry-level roles",
               gradient: "from-zinc-900/50 to-zinc-900/20"
             },
             { 
               icon: Search, 
               title: "AI-Curated", 
-              desc: "Hand-picked from hundreds of sources",
+              desc: "Hand-picked from 50+ job sources across Europe",
               gradient: "from-zinc-800/60 to-zinc-900/30"
             },
             { 
               icon: Mail, 
-              title: "Email Delivered", 
-              desc: "No dashboards or logins required",
+              title: "Inbox Delivery", 
+              desc: "Personalised job matches delivered twice weekly",
               gradient: "from-zinc-900/40 to-zinc-900/10"
             }
           ].map((item, i) => (
