@@ -4,6 +4,7 @@ import { HTTP_STATUS, ERROR_CODES } from '@/Utils/constants';
 import { errorResponse } from '@/Utils/errorResponse';
 import { getSupabaseClient } from '@/Utils/supabase';
 import { sendMatchedJobsEmail } from '@/Utils/email';
+import { buildPersonalizedSubject } from '@/Utils/email/subjectBuilder';
 import {
   generateRobustFallbackMatches
 } from '@/Utils/matching';
@@ -125,8 +126,8 @@ export async function POST(req: NextRequest) {
           // Premium: every 48 hours
           return timeSinceLastEmail >= 48 * 60 * 60 * 1000;
         } else {
-          // Free: every 7 days (168 hours)
-          return timeSinceLastEmail >= 168 * 60 * 60 * 1000;
+          // Free: every 72 hours
+          return timeSinceLastEmail >= 72 * 60 * 60 * 1000;
         }
       }
 
@@ -284,12 +285,34 @@ export async function POST(req: NextRequest) {
           );
 
           if (matches.length > 0) {
+            // Build personalized subject from user preferences and matches
+            const subject = buildPersonalizedSubject({
+              jobs: matches.map((m: any) => ({
+                title: (m as any).title,
+                company: (m as any).company,
+                location: (m as any).location,
+                match_score: (m as any).match_score
+              })),
+              preferences: {
+                rolePreference: (user as any).professional_expertise || null,
+                locationPreference: Array.isArray((user as any).target_cities) ? (user as any).target_cities[0] : (user as any).target_cities,
+                salaryPreference: undefined
+              }
+            });
             await sendMatchedJobsEmail({
               to: user.email,
               jobs: matches,
               userName: user.email.split('@')[0],
               subscriptionTier: userTier,
-              isSignupEmail: false
+              isSignupEmail: false,
+              subjectOverride: subject,
+              personalization: {
+                role: (user as any).professional_expertise || undefined,
+                location: Array.isArray((user as any).target_cities) ? (user as any).target_cities[0] : (user as any).target_cities,
+                salaryRange: undefined,
+                dayText: new Date().toLocaleDateString('en-GB', { weekday: 'long' }),
+                entryLevelLabel: (user as any).entry_level_preference ? 'Graduate-level' : undefined
+              }
             });
 
             const updateData: any = {

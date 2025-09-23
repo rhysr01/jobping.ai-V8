@@ -1,48 +1,62 @@
 import { Search, Mail, Target } from 'lucide-react';
 
 export default function Features() {
-  const features = [
-    {
-      icon: Search,
-      title: "Curated",
-      description: "Hand-picked from hundreds of sources."
-    },
-    {
-      icon: Mail,
-      title: "Delivered",
-      description: "Clean emails. No dashboards."
-    },
-    {
-      icon: Target,
-      title: "Graduate-focused",
-      description: "Entry-level and junior roles only."
-    }
-  ];
-
   return (
-    <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
-      <div className="text-center spacing-section-header">
-        <h2 className="text-4xl font-bold text-white spacing-medium">Why JobPing Works</h2>
-        <p className="text-xl text-[#808080]">Three simple reasons why graduates choose us</p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
-        {features.map((feature, index) => (
-          <div key={index} className="text-center group">
-            <div className="relative spacing-large">
-              <div className="absolute inset-0 bg-white/[0.02] rounded-xl blur-xl group-hover:bg-white/[0.04] transition duration-300" />
-              <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#111] to-[#0a0a0a] border border-white/10 rounded-xl group-hover:border-white/20 transition-all duration-200 group-hover:-translate-y-1 group-hover:scale-105">
-                <feature.icon className="w-7 h-7 text-white/70 group-hover:text-white/90 transition-colors" />
+    <section className="py-32 bg-gradient-to-b from-black via-zinc-950 to-black relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)`,
+        backgroundSize: '50px 50px'
+      }} />
+      
+      <div className="max-w-6xl mx-auto px-6 relative">
+        <div className="text-center mb-20">
+          <h2 className="text-5xl md:text-6xl font-bold text-transparent bg-gradient-to-b from-white to-zinc-300 bg-clip-text mb-8 tracking-[-0.02em]">
+            Stop scrolling. Start landing.
+          </h2>
+          <p className="text-2xl text-zinc-400 max-w-3xl mx-auto leading-relaxed">
+            AI-curated jobs from 50+ sources, delivered every 48 hours.
+          </p>
+        </div>
+
+        {/* Premium Glass Cards */}
+        <div className="grid md:grid-cols-3 gap-8">
+          {[
+            { 
+              icon: Target, 
+              title: "Graduate-Focused", 
+              desc: "Entry-level positions only",
+              gradient: "from-zinc-900/50 to-zinc-900/20"
+            },
+            { 
+              icon: Search, 
+              title: "AI-Curated", 
+              desc: "Hand-picked from hundreds of sources",
+              gradient: "from-zinc-800/60 to-zinc-900/30"
+            },
+            { 
+              icon: Mail, 
+              title: "Email Delivered", 
+              desc: "No dashboards or logins required",
+              gradient: "from-zinc-900/40 to-zinc-900/10"
+            }
+          ].map((item, i) => (
+            <div key={i} className={`relative group text-center p-10 rounded-3xl bg-gradient-to-br ${item.gradient} backdrop-blur-xl border border-zinc-700/30 hover:border-zinc-600/50 transition-all duration-500 hover:scale-105`}>
+              
+              {/* Glass Effect Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-white/[0.01] rounded-3xl pointer-events-none" />
+              
+              {/* Premium Icon Container */}
+              <div className="relative w-20 h-20 bg-gradient-to-br from-zinc-700/50 to-zinc-800/30 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:from-zinc-600/60 group-hover:to-zinc-700/40 transition-all duration-500 border border-zinc-600/30 group-hover:border-zinc-500/50 group-hover:scale-110">
+                <item.icon className="w-9 h-9 text-zinc-300 group-hover:text-white transition-colors duration-300" />
               </div>
+              
+              <h3 className="text-2xl font-semibold text-white mb-4 tracking-[-0.01em]">{item.title}</h3>
+              <p className="text-zinc-400 leading-relaxed text-lg">{item.desc}</p>
             </div>
-            <h3 className="text-white font-semibold text-xl spacing-small leading-tight tracking-tight">
-              {feature.title}
-            </h3>
-            <p className="text-[#808080] text-base leading-relaxed">
-              {feature.description}
-            </p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -17,6 +17,7 @@ import {
 } from '@/Utils/matching/logging.service';
 import type { UserPreferences } from '@/Utils/matching/types';
 import { sendMatchedJobsEmail, sendWelcomeEmail } from '@/Utils/email';
+import { buildPersonalizedSubject } from '@/Utils/email/subjectBuilder';
 import { EmailVerificationOracle } from '@/Utils/emailVerification';
 
 // Test mode helper
@@ -480,12 +481,35 @@ export async function POST(req: NextRequest) {
     // Send matched jobs email if matches were generated
     if (matches.length > 0) {
       try {
+        // Build personalized subject
+        const subject = buildPersonalizedSubject({
+          jobs: matches.map((m: any) => ({
+            title: (m as any).title,
+            company: (m as any).company,
+            location: (m as any).location,
+            match_score: (m as any).match_score
+          })),
+          preferences: {
+            rolePreference: (userData as any).professional_expertise || ((userData as any).career_path?.[0] || undefined),
+            locationPreference: Array.isArray((userData as any).target_cities) ? (userData as any).target_cities[0] : (userData as any).target_cities as any,
+            salaryPreference: undefined
+          }
+        });
+
         await sendMatchedJobsEmail({
           to: userData.email as string,
           jobs: matches,
           userName: userData.full_name as string,
           subscriptionTier: 'free', // New users start as free
-          isSignupEmail: true
+          isSignupEmail: true,
+          subjectOverride: subject,
+          personalization: {
+            role: (userData as any).professional_expertise || ((userData as any).career_path?.[0] || undefined),
+            location: Array.isArray((userData as any).target_cities) ? (userData as any).target_cities[0] : (userData as any).target_cities as any,
+            salaryRange: undefined,
+            dayText: new Date().toLocaleDateString('en-GB', { weekday: 'long' }),
+            entryLevelLabel: (userData as any).entry_level_preference ? 'Graduate-level' : undefined
+          }
         });
         console.log(`📧 Matched jobs email sent to: ${userData.email}`);
         

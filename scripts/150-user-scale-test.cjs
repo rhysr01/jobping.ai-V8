@@ -242,21 +242,18 @@ async function run150UserScaleTest() {
     const hasNextConfig = fs.existsSync('next.config.ts');
     const hasDockerfile = fs.existsSync('Dockerfile') || fs.existsSync('Dockerfile.automation');
     const hasVercelConfig = fs.existsSync('vercel.json');
-    const hasRailwayConfig = fs.existsSync('railway.json');
     
     console.log(`   ${hasNextConfig ? '✅' : '❌'} Next.js config: ${hasNextConfig ? 'OPTIMIZED' : 'MISSING'}`);
     console.log(`   ${hasDockerfile ? '✅' : '⚠️'} Docker support: ${hasDockerfile ? 'AVAILABLE' : 'RECOMMENDED'}`);
     console.log(`   ${hasVercelConfig ? '✅' : '⚠️'} Vercel ready: ${hasVercelConfig ? 'CONFIGURED' : 'CAN BE ADDED'}`);
-    console.log(`   ${hasRailwayConfig ? '✅' : '⚠️'} Railway ready: ${hasRailwayConfig ? 'CONFIGURED' : 'CAN BE ADDED'}`);
     
     // Hosting recommendations for 150 users
     console.log('\n   🏗️  Hosting recommendations for 150 users:');
     console.log('      • Vercel Pro plan: $20/month (recommended)');
-    console.log('      • Railway Pro plan: $20/month (alternative)');
     console.log('      • Supabase Pro plan: $25/month (database)');
     console.log('      • Total infrastructure: ~$65-90/month');
     
-    if (hasNextConfig && (hasVercelConfig || hasRailwayConfig)) {
+    if (hasNextConfig && hasVercelConfig) {
       console.log('   ✅ Infrastructure: READY for 150-user scale');
       testResults.passed++;
     } else {

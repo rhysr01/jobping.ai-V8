@@ -4,10 +4,10 @@ export default function HowItWorks() {
   return (
     <section className="section-spacing bg-[#030303] scroll-mt-20 md:scroll-mt-28">
       <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
-        <div className="text-center spacing-section-header">
-          <h2 className="text-4xl font-bold text-white spacing-medium">How it works</h2>
-          <p className="text-xl text-[#808080]">Get matched with your dream job in three simple steps</p>
-        </div>
+            <div className="text-center spacing-section-header">
+              <h2 className="text-4xl font-bold text-white spacing-medium">How it works</h2>
+              <p className="text-xl text-white/70">Get matched with your dream job in three simple steps</p>
+            </div>
 
         <div className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-16">
           <div className="flex items-center gap-4 group">

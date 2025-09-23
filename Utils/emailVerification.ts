@@ -306,22 +306,70 @@ export class EmailVerificationOracle {
 
   private static async sendWelcomeEmail(user: any) {
     const resend = this.getResendClient();
+    const supabase = this.getSupabaseClient();
 
-    // Compute a user-friendly local time string for "first matches"
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    // Keep 11:11 to preserve brand voice, but show user's local TZ abbreviation
-    tomorrow.setHours(11, 11, 0, 0);
-    const timeString = tomorrow.toLocaleString('en-GB', {
-      weekday: 'long',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short'
-    });
+    // Derive simple personalization from user profile
+    const firstName = (user.full_name || user.email || '').split(' ')[0];
+    const rolePref = user.professional_expertise || user.career_path || '';
+    const locationPref = Array.isArray(user.target_cities) ? (user.target_cities[0] || '') : (user.target_cities || '');
+    const salaryPref = user.salary_preference || '';
+
+    // Fetch 3 sample jobs immediately based on preferences
+    let sampleJobs: Array<{ title: string; company: string; location: string; description?: string; created_at?: string; salary?: string; job_type?: string }>= [];
+    try {
+      const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+      let query = supabase
+        .from('jobs')
+        .select('title, company, location, description, created_at, salary, job_type')
+        .eq('status', 'active')
+        .gte('created_at', fourteenDaysAgo)
+        .limit(100);
+
+      if (locationPref) {
+        query = query.ilike('location', `%${locationPref}%`);
+      }
+      const { data } = await query;
+      const pool = Array.isArray(data) ? data : [];
+
+      // Rank by naive relevance: role term match in title first, then recency
+      const roleTerm = String(rolePref || '').toLowerCase();
+      const ranked = pool.sort((a, b) => {
+        const aTitle = (a.title || '').toLowerCase();
+        const bTitle = (b.title || '').toLowerCase();
+        const aHit = roleTerm && aTitle.includes(roleTerm) ? 1 : 0;
+        const bHit = roleTerm && bTitle.includes(roleTerm) ? 1 : 0;
+        const aDate = a.created_at ? Date.parse(a.created_at) : 0;
+        const bDate = b.created_at ? Date.parse(b.created_at) : 0;
+        if (aHit !== bHit) return bHit - aHit;
+        return bDate - aDate;
+      });
+
+      sampleJobs = ranked.slice(0, 3);
+    } catch {
+      sampleJobs = [];
+    }
+
+    const subjectRole = rolePref ? String(rolePref).toString() : 'matches';
+    const subjectLoc = locationPref ? ` ${locationPref}` : '';
+    const subject = `Welcome ${firstName}! Your${subjectLoc ? subjectLoc : ''} ${subjectRole} matches are ready`;
+
+    const jobCardsHtml = sampleJobs.map(j => `
+              <div class="highlight-box">
+                <div class="highlight-title">${j.title || 'Opportunity'}</div>
+                <ul class="list">
+                  <li><strong style="color: #FFFFFF;">Company:</strong> ${j.company || 'Unknown'}</li>
+                  <li><strong style="color: #FFFFFF;">Location:</strong> ${j.location || 'Unknown'}</li>
+                  <li><strong style="color: #FFFFFF;">Salary:</strong> ${j.salary || 'Unknown'}</li>
+                  <li><strong style="color: #FFFFFF;">Type:</strong> ${j.job_type || 'Unknown'}</li>
+                </ul>
+                ${(j.description && j.description.trim().length > 0) ? `<p style="color:#888888;margin-top:8px;">${(j.description || '').slice(0, 140)}...</p>` : `<p style="color:#888888;margin-top:8px;">Description: Unknown</p>`}
+              </div>
+    `).join('');
+
     await resend.emails.send({
       from: 'JobPing <noreply@jobping.ai>',
       to: [user.email],
-      subject: '🎉 Welcome to JobPing - Your job hunt starts now!',
+      subject,
       html: `
         <!DOCTYPE html>
         <html lang="en">
@@ -458,8 +506,10 @@ export class EmailVerificationOracle {
             
             <div class="content">
               <h1 class="title">Welcome, ${user.full_name}</h1>
-              <p class="text">Your account is active. First job matches arrive <strong style="color: #FFFFFF;">${timeString}</strong>.</p>
-              
+              <p class="text">Your account is active. Here are <strong style="color: #FFFFFF;">${sampleJobs.length || 3}</strong> sample matches based on your preferences.</p>
+
+              ${jobCardsHtml}
+
               <div class="profile-section">
                 <div class="profile-title">Your Profile Summary:</div>
                 <ul class="list">
@@ -475,7 +525,7 @@ export class EmailVerificationOracle {
               </a>
               
               <p class="footer-text">
-                Questions? Reply to this email.
+                Questions? Reply to this email. Premium users receive new matches every 48 hours. Free users every 72 hours.
               </p>
             </div>
           </div>

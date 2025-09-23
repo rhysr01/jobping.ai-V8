@@ -1,39 +1,18 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
   "framework": "nextjs",
+  "buildCommand": "npm run build",
   "functions": {
-    "app/api/**/*.ts": {
+    "pages/api/**/*.js": {
       "maxDuration": 60
     },
-    "app/api/send-scheduled-emails/route.ts": {
-      "maxDuration": 300
-    },
-    "app/api/match-users/route.ts": {
-      "maxDuration": 120
+    "pages/api/**/*.ts": {
+      "maxDuration": 60
     }
   },
   "env": {
-    "NODE_ENV": "production"
-  },
-  "regions": ["iad1"],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        }
-      ]
-    }
-  ]
-} 
+    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
+    "OPENAI_API_KEY": "@openai_api_key",
+    "RAPIDAPI_KEY": "@rapidapi_key"
+  }
+}

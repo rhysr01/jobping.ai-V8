@@ -134,6 +134,19 @@ body {
   position: relative;
 }
 
+.trending-badge {
+  display: inline-block;
+  background: linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-bottom: 12px;
+}
+
 .job-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
@@ -427,7 +440,14 @@ export function createJobMatchesEmail(
   jobCards: EmailJobCard[],
   userName?: string,
   subscriptionTier: 'free' | 'premium' = 'free',
-  isSignupEmail: boolean = false
+  isSignupEmail: boolean = false,
+  personalization?: {
+    role?: string;
+    location?: string;
+    salaryRange?: string;
+    dayText?: string;
+    entryLevelLabel?: string;
+  }
 ): string {
   const premiumBadge = subscriptionTier === 'premium' 
     ? '<div class="premium-badge">⭐ Premium Member</div>' 
@@ -439,21 +459,22 @@ export function createJobMatchesEmail(
 
   const jobCardsHtml = jobCards.map(card => `
     <div class="job-card">
+      ${((card.matchResult?.match_score || 0) >= 90) ? `<div class="trending-badge">🔥 Trending</div>` : ''}
       <div class="job-title">${card.job.title || 'Job Title'}</div>
       <div class="job-company">${card.job.company || 'Company'}</div>
       <div class="job-location">📍 ${card.job.location || 'Location'}</div>
       
       <div class="job-meta">
         <span class="match-score">${card.matchResult?.match_score || 85}% Match</span>
-        ${card.job.salary ? `<span style="color: #888888; font-size: 14px;">💰 ${card.job.salary}</span>` : ''}
-        ${card.job.job_type ? `<span style="color: #888888; font-size: 14px;">⏰ ${card.job.job_type}</span>` : ''}
+        <span style="color: #888888; font-size: 14px;">💰 ${card.job.salary || 'Unknown'}</span>
+        <span style="color: #888888; font-size: 14px;">⏰ ${card.job.job_type || 'Unknown'}</span>
       </div>
       
-      ${card.job.description ? `
-        <p style="color: #888888; font-size: 14px; margin-top: 12px; line-height: 1.5;">
-          ${card.job.description.length > 150 ? card.job.description.substring(0, 150) + '...' : card.job.description}
-        </p>
-      ` : ''}
+      <p style="color: #888888; font-size: 14px; margin-top: 12px; line-height: 1.5;">
+        ${(card.job.description && card.job.description.trim().length > 0) 
+          ? (card.job.description.length > 150 ? card.job.description.substring(0, 150) + '...' : card.job.description)
+          : 'Description: Unknown'}
+      </p>
       
       ${createFeedbackSection(card.job.job_hash || 'unknown', card.job.user_email || '')}
     </div>
@@ -478,9 +499,17 @@ export function createJobMatchesEmail(
       <div class="greeting">
         ${premiumBadge}
         <h1 class="greeting-title">Hi ${userName || 'there'} 👋</h1>
-        <p class="greeting-text">
-          ${titleText} ${jobCards.length} AI-curated job matches based on your profile:
+        ${personalization?.dayText || personalization?.role ? `
+        <p class="greeting-text" style="margin-top:8px;">
+          ${personalization?.dayText ? `${personalization.dayText}'s` : 'Your'} ${personalization?.role || ''} matches${personalization?.location ? ` in ${personalization.location}` : ''}
+        </p>` : ''}
+        <p class="greeting-text" style="margin-top:8px;">
+          ${titleText} ${jobCards.length} ${personalization?.location ? `${personalization.location} ` : ''}AI-curated job matches
         </p>
+        ${personalization?.salaryRange || personalization?.entryLevelLabel ? `
+        <p class="greeting-text" style="color:#666;">
+          ${[personalization.entryLevelLabel, personalization.salaryRange].filter(Boolean).join(' • ')}
+        </p>` : ''}
       </div>
       
       ${jobCardsHtml}
@@ -504,6 +533,18 @@ export function createJobMatchesEmail(
     </div>
     
     ${FOOTER}
+    ${personalization?.role || personalization?.location || personalization?.salaryRange ? `
+      <div class="content" style="padding-top:0;">
+        <p class="greeting-text" style="text-align:center; color:#666; font-size:12px;">
+          These matches are based on your preferences: ${[
+            personalization.location,
+            personalization.role,
+            personalization.salaryRange,
+            personalization.entryLevelLabel
+          ].filter(Boolean).join(', ')}
+        </p>
+      </div>
+    ` : ''}
   </div>
   
   <style>${BRAND_CSS}</style>

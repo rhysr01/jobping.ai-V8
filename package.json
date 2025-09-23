@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "node automation/real-job-runner.js",
+    "start": "node automation/real-job-runner.cjs",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test": "jest",
@@ -21,7 +21,6 @@
     "test:all": "bash scripts/run-all-tests.sh all",
     "test:production": "node scripts/comprehensive-production-test.js",
     "test:database": "node scripts/production-database-test.js",
-    "test:railway": "node scripts/test-railway-automation.js",
     "test:onboarding": "node scripts/test-user-onboarding-flow.js",
     "cleanup:jobs": "node scripts/cleanup-old-jobs.js",
     "cleanup:jobs:dry-run": "node scripts/cleanup-old-jobs.js --dry-run",
@@ -35,8 +34,6 @@
     "scrape:start": "node production-scraper.js",
     "scrape:dev": "nodemon production-scraper.js --once",
     "scrape:test": "node test-reliable-scrapers.js",
-    "railway:start": "node railway-server.js",
-    "railway:dev": "nodemon railway-server.js",
     "scrape:smoke": "tsx scripts/smoke-scrape.ts",
     "build:prod": "next build && next start -p 4173",
     "test:e2e": "playwright test -c ./",
@@ -93,11 +90,13 @@
     "apply:indexes": "node scripts/apply-ingestjob-indexes.js",
     "db:migrate": "echo 'Run migrations in Supabase dashboard'",
     "health:check": "curl -f http://localhost:3000/api/health || exit 1",
-    "automation:start": "node automation/real-job-runner.js",
+    "automation:start": "node automation/real-job-runner.cjs",
     "build:scrapers": "echo 'Skipping scraper build for now'",
     "build:all": "npm run build && npm run build:scrapers",
     "prebuild": "npm run build:scrapers",
-    "railway:build": "node railway-build.js"
+    "jobspy:test": "node scripts/jobspy-integration.cjs",
+    "jobspy:save": "node scripts/jobspy-save.cjs",
+    "jobspy:preview": "node scripts/jobspy-preview.cjs"
   },
   "dependencies": {
     "@sentry/nextjs": "10.10.0",

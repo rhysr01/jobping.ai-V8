@@ -3,6 +3,7 @@
 import { EmailJobCard } from './types';
 import { getResendClient, getSupabaseClient, EMAIL_CONFIG } from './clients';
 import { createWelcomeEmail, createJobMatchesEmail } from './optimizedTemplates';
+import { buildPersonalizedSubject } from './subjectBuilder';
 
 // Performance optimizations
 const EMAIL_CACHE = new Map<string, { html: string; timestamp: number }>();
@@ -90,12 +91,22 @@ export async function sendMatchedJobsEmail({
   userName,
   subscriptionTier = 'free',
   isSignupEmail = false,
+  subjectOverride,
+  personalization,
 }: {
   to: string;
   jobs: any[];
   userName?: string;
   subscriptionTier?: 'free' | 'premium';
   isSignupEmail?: boolean;
+  subjectOverride?: string;
+  personalization?: {
+    role?: string;
+    location?: string;
+    salaryRange?: string;
+    dayText?: string;
+    entryLevelLabel?: string;
+  };
 }) {
   try {
     // Generate idempotency token
@@ -120,12 +131,12 @@ export async function sendMatchedJobsEmail({
     // Generate email with caching
     const cacheKey = `matches_${jobs.length}_${subscriptionTier}_${isSignupEmail}`;
     const html = getCachedEmail(cacheKey, () => 
-      createJobMatchesEmail(jobCards, userName, subscriptionTier, isSignupEmail)
+      createJobMatchesEmail(jobCards, userName, subscriptionTier, isSignupEmail, personalization)
     );
     
-    const subject = isSignupEmail 
+    const subject = subjectOverride ?? (isSignupEmail 
       ? `🎯 Welcome to JobPing - ${jobs.length} Job Matches Found!`
-      : `🎯 ${jobs.length} Fresh Job Matches - JobPing`;
+      : `🎯 ${jobs.length} Fresh Job Matches - JobPing`);
 
     // Send email with optimized retry logic
     const resend = getResendClient();

@@ -118,15 +118,20 @@ function classifyEarlyCareer(title, description) {
 }
 
 /**
- * Check if a job should be kept based on the north-star rule
- * "If it's early-career and in Europe, keep it"
+ * Check if a job should be kept:
+ * - North-star rule (early-career AND in Europe)
+ * - Must have useful user info (non-empty company and sufficiently detailed description)
  */
-function shouldKeepJob(title, description, location) {
+function shouldKeepJob(title, description, location, company, url) {
   const { isEU } = parseLocation(location);
   const isEarlyCareer = classifyEarlyCareer(title, description);
+  const hasCompany = typeof company === 'string' && company.trim().length > 0;
+  const hasLocation = typeof location === 'string' && location.trim().length > 0;
+  const hasUrl = typeof url === 'string' && url.trim().length > 0;
+  const hasUsefulDescription = typeof description === 'string' && description.trim().length >= 120; // require at least 120 chars of detail
   
-  // North-star rule: keep if early-career and in Europe
-  return isEarlyCareer && isEU;
+  // Keep only if passes north-star AND has useful user-facing information
+  return isEarlyCareer && isEU && hasCompany && hasLocation && hasUrl && hasUsefulDescription;
 }
 
 /**
@@ -148,57 +153,59 @@ async function getCurrentJobCount() {
 /**
  * Get jobs that should be deleted
  */
-async function getJobsToDelete() {
-  console.log('🔍 Analyzing jobs to determine which ones to delete...');
+async function getJobsToDeletePaginated(pageSize = 10000) {
+  console.log('🔍 Analyzing jobs to determine which ones to delete (paginated)...');
   
-  // Get all jobs
-  const { data: jobs, error } = await supabase
+  const { count: total, error: countError } = await supabase
     .from('jobs')
-    .select('id, title, description, location, company, source, created_at');
-    
-  if (error) {
-    console.error('❌ Error fetching jobs:', error);
+    .select('*', { count: 'exact', head: true });
+  if (countError) {
+    console.error('❌ Error counting jobs:', countError);
     return [];
   }
+  console.log(`📊 Total jobs in DB: ${total || 0}`);
   
-  if (!jobs || jobs.length === 0) {
-    console.log('📭 No jobs found in database');
-    return [];
-  }
-  
-  console.log(`📊 Found ${jobs.length} total jobs to analyze`);
-  
+  let offset = 0;
   const jobsToDelete = [];
-  const jobsToKeep = [];
+  let kept = 0;
+  let printed = false;
   
-  jobs.forEach(job => {
-    const shouldKeep = shouldKeepJob(job.title, job.description, job.location);
-    
-    if (shouldKeep) {
-      jobsToKeep.push(job);
-    } else {
-      jobsToDelete.push(job);
+  while (typeof total === 'number' ? offset < total : true) {
+    console.log(`\n📦 Fetching jobs ${offset} – ${typeof total === 'number' ? Math.min(offset + pageSize - 1, total - 1) : offset + pageSize - 1} ...`);
+    const { data: jobs, error } = await supabase
+      .from('jobs')
+      .select('id, title, description, location, company, source, created_at, job_url')
+      .range(offset, offset + pageSize - 1);
+    if (error) {
+      console.error('❌ Error fetching jobs page:', error);
+      break;
     }
-  });
-  
-  console.log(`✅ Jobs to keep: ${jobsToKeep.length}`);
-  console.log(`🗑️  Jobs to delete: ${jobsToDelete.length}`);
-  
-  // Show some examples of jobs being deleted
-  if (jobsToDelete.length > 0) {
-    console.log('\n📋 Examples of jobs being deleted:');
-    jobsToDelete.slice(0, 5).forEach(job => {
-      const { isEU } = parseLocation(job.location);
-      const isEarlyCareer = classifyEarlyCareer(job.title, job.description);
-      console.log(`  - "${job.title}" at ${job.company} (${job.location})`);
-      console.log(`    EU: ${isEU}, Early Career: ${isEarlyCareer}`);
-    });
-    
-    if (jobsToDelete.length > 5) {
-      console.log(`  ... and ${jobsToDelete.length - 5} more`);
+    if (!jobs || jobs.length === 0) {
+      break;
     }
+    for (const job of jobs) {
+      const keep = shouldKeepJob(job.title, job.description, job.location, job.company, job.job_url);
+      if (keep) kept++; else jobsToDelete.push(job);
+    }
+    if (!printed && jobsToDelete.length > 0) {
+      console.log('\n📋 Examples of jobs being deleted:');
+      jobsToDelete.slice(0, 5).forEach(job => {
+        const { isEU } = parseLocation(job.location);
+        const isEarlyCareer = classifyEarlyCareer(job.title, job.description);
+        const hasCompany = !!(job.company && job.company.trim().length > 0);
+        const hasLocation = !!(job.location && job.location.trim().length > 0);
+        const hasUrl = !!(job.job_url && job.job_url.trim().length > 0);
+        const descLen = (job.description || '').trim().length;
+        console.log(`  - "${job.title}" at ${job.company || '—'} (${job.location})`);
+        console.log(`    EU: ${isEU}, Early Career: ${isEarlyCareer}, Company: ${hasCompany ? 'yes' : 'no'}, Location: ${hasLocation ? 'yes' : 'no'}, URL: ${hasUrl ? 'yes' : 'no'}, Description chars: ${descLen}`);
+      });
+      printed = true;
+    }
+    console.log(`✅ Page analyzed. To delete so far: ${jobsToDelete.length}, kept: ${kept}`);
+    offset += pageSize;
+    if (jobs.length < pageSize) break; // last page
   }
-  
+  console.log(`\n📊 Analysis complete. Total to delete: ${jobsToDelete.length}, kept: ${kept}`);
   return jobsToDelete;
 }
 
@@ -213,7 +220,7 @@ async function deleteJobs(jobsToDelete) {
   
   console.log(`🗑️  Deleting ${jobsToDelete.length} jobs...`);
   
-  const batchSize = 100; // Process in batches to avoid timeouts
+  const batchSize = parseInt(process.env.CLEANUP_DELETE_BATCH_SIZE || '2000'); // Larger batches for faster cleanup
   let deletedCount = 0;
   
   for (let i = 0; i < jobsToDelete.length; i += batchSize) {
@@ -261,8 +268,8 @@ async function main() {
       return;
     }
     
-    // Get jobs to delete
-    const jobsToDelete = await getJobsToDelete();
+    // Get jobs to delete (paginated, larger scale)
+    const jobsToDelete = await getJobsToDeletePaginated(parseInt(process.env.CLEANUP_PAGE_SIZE || '10000'));
     
     if (jobsToDelete.length === 0) {
       console.log('✅ No irrelevant jobs found - database is already clean!');

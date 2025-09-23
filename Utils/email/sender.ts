@@ -2,7 +2,8 @@
 
 import { EmailJobCard } from './types';
 import { getResendClient, getSupabaseClient, EMAIL_CONFIG } from './clients';
-import { createWelcomeEmail, createJobMatchesEmail } from './optimizedTemplates';
+// Deprecated: prefer optimizedSender with personalization. Keep compatibility by delegating.
+import { sendMatchedJobsEmail as optimizedSendMatched, sendWelcomeEmail as optimizedSendWelcome } from './optimizedSender';
 
 // Performance optimizations
 const EMAIL_CACHE = new Map<string, { html: string; timestamp: number }>();
@@ -50,139 +51,27 @@ function getCachedEmail(key: string, generator: () => string): string {
 }
 
 // Optimized welcome email sender
-export async function sendWelcomeEmail({
-  to,
-  userName,
-  matchCount,
-}: {
-  to: string;
-  userName?: string;
-  matchCount: number;
-}) {
-  try {
-    const resend = getResendClient();
-    
-    // Generate email with caching
-    const cacheKey = `welcome_${userName}_${matchCount}`;
-    const html = getCachedEmail(cacheKey, () => createWelcomeEmail(userName, matchCount));
-    
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_CONFIG.from,
-      to: [to],
-      subject: '🎯 Welcome to JobPing - Your AI Career Assistant is Ready!',
-      html: html,
-    });
-
-    if (error) throw error;
-
-    console.log('✅ Welcome email sent successfully');
-    return data;
-  } catch (error) {
-    console.error('❌ Welcome email failed:', error);
-    throw error;
-  }
+export async function sendWelcomeEmail(args: { to: string; userName?: string; matchCount: number; }) {
+  return optimizedSendWelcome(args);
 }
 
 // Optimized job matches email sender
-export async function sendMatchedJobsEmail({
-  to,
-  jobs,
-  userName,
-  subscriptionTier = 'free',
-  isSignupEmail = false,
-}: {
+export async function sendMatchedJobsEmail(args: {
   to: string;
   jobs: any[];
   userName?: string;
   subscriptionTier?: 'free' | 'premium';
   isSignupEmail?: boolean;
+  subjectOverride?: string;
+  personalization?: {
+    role?: string;
+    location?: string;
+    salaryRange?: string;
+    dayText?: string;
+    entryLevelLabel?: string;
+  };
 }) {
-  try {
-    // Generate idempotency token
-    const sendToken = generateSendToken(to, jobs);
-    
-    // Check if email already sent (idempotency)
-    const supabase = getSupabaseClient();
-    const { data: existingSend } = await supabase
-      .from('email_sends')
-      .select('id')
-      .eq('send_token', sendToken)
-      .single();
-    
-    if (existingSend) {
-      console.log(`📧 Email already sent: ${sendToken}`);
-      return { id: existingSend.id, alreadySent: true };
-    }
-
-    // Process job data efficiently
-    const jobCards = processJobData(jobs, to);
-    
-    // Generate email with caching
-    const cacheKey = `matches_${jobs.length}_${subscriptionTier}_${isSignupEmail}`;
-    const html = getCachedEmail(cacheKey, () => 
-      createJobMatchesEmail(jobCards, userName, subscriptionTier, isSignupEmail)
-    );
-    
-    const subject = isSignupEmail 
-      ? `🎯 Welcome to JobPing - ${jobs.length} Job Matches Found!`
-      : `🎯 ${jobs.length} Fresh Job Matches - JobPing`;
-
-    // Send email with optimized retry logic
-    const resend = getResendClient();
-    let lastError: any;
-    
-    for (let attempt = 1; attempt <= EMAIL_CONFIG.maxRetries; attempt++) {
-      try {
-        const { data, error } = await resend.emails.send({
-          from: EMAIL_CONFIG.from,
-          to: [to],
-          subject: subject,
-          html: html,
-        });
-
-        if (error) throw error;
-
-        // Record successful send
-        await supabase.from('email_sends').insert({
-          send_token: sendToken,
-          user_email: to,
-          email_type: isSignupEmail ? 'welcome' : 'job_matches',
-          jobs_count: jobs.length,
-          sent_at: new Date().toISOString(),
-          status: 'sent'
-        });
-
-        console.log(`✅ Email sent successfully (attempt ${attempt})`);
-        return { ...data, sendToken };
-        
-      } catch (error) {
-        lastError = error;
-        console.error(`❌ Email attempt ${attempt} failed:`, error instanceof Error ? error.message : String(error));
-        
-        if (attempt < EMAIL_CONFIG.maxRetries) {
-          const delay = Math.pow(2, attempt) * EMAIL_CONFIG.retryDelay;
-          console.log(`⏳ Retrying in ${delay}ms...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
-    }
-    
-    // Record failure
-    await supabase.from('email_sends').insert({
-      send_token: sendToken,
-      user_email: to,
-      email_type: isSignupEmail ? 'welcome' : 'job_matches',
-      jobs_count: jobs.length,
-      sent_at: new Date().toISOString(),
-      status: 'failed',
-      error_message: lastError?.message || 'Unknown error'
-    });
-    
-    throw lastError;
-  } catch (error) {
-    console.error('❌ Email sending failed:', error);
-    throw error;
-  }
+  return optimizedSendMatched(args);
 }
 
 // Batch email sender for multiple recipients
