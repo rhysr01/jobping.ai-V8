@@ -95,7 +95,7 @@ class IndeedScraper {
       const response = await axios.get(url, {
         headers: {
           'Authorization': `Bearer ${INDEED_CONFIG.apiKey}`,
-          'User-Agent': 'JobPing/1.0 (https://jobping.com)',
+          'User-Agent': 'JobPingBot/1.0 (+https://jobping.ai/bot; contact: support@jobping.ai)',
           'Accept': 'application/json',
           ...headers
         },

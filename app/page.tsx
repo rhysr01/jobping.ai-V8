@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { ArrowRight, Sparkles, Zap, Target, Mail, TrendingUp, MapPin, Check, ChevronRight, Star, Globe, Shield, Award, Menu, X } from 'lucide-react';
+import SignupForm from './components/SignupForm';
 
 export default function JobPingPro() {
   const [billing, setBilling] = useState('monthly');
@@ -13,8 +14,9 @@ export default function JobPingPro() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white antialiased" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif' }}>
+    <div className="min-h-screen bg-black text-white antialiased">
       {/* Clean background - no patterns */}
+      
       
       {/* HEADER - Centered, prominent */}
       <header className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-lg border-b border-white/[0.06]">
@@ -388,20 +390,9 @@ export default function JobPingPro() {
             Join 10,000+ graduates getting personalized matches twice weekly. No credit card required.
           </p>
 
-          {/* Tally embed */}
-          <div className="max-w-xl mx-auto">
-            <div className="bg-white/[0.02] backdrop-blur-xl rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden">
-              <div className="bg-white/[0.02] border-b border-white/[0.08] px-4 py-3 flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-                <span className="text-xs text-gray-400">Signup form</span>
-              </div>
-              <iframe
-                className="w-full h-[560px] bg-transparent"
-                src="https://tally.so/r/mJEqx4?alignLeft=1&transparentBackground=1&hideTitle=1"
-                title="JobPing Signup Form"
-                loading="lazy"
-              />
-            </div>
+          {/* Native Signup Form */}
+          <div className="max-w-md mx-auto">
+            <SignupForm />
             <p className="text-sm text-gray-500 mt-4 text-center">
               Free forever plan available • No credit card required
             </p>
@@ -439,10 +430,10 @@ export default function JobPingPro() {
             </div>
             
             <div className="flex items-center gap-8 text-sm">
-              <a href="#" className="text-gray-500 hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="text-gray-500 hover:text-white transition-colors">Terms</a>
+              <a href="/legal/privacy-policy" className="text-gray-500 hover:text-white transition-colors">Privacy</a>
+              <a href="/legal/terms-of-service" className="text-gray-500 hover:text-white transition-colors">Terms</a>
+              <a href="/legal/unsubscribe" className="text-gray-500 hover:text-white transition-colors">Unsubscribe</a>
               <a href="#" className="text-gray-500 hover:text-white transition-colors">Contact</a>
-              <a href="#" className="text-gray-500 hover:text-white transition-colors">Blog</a>
             </div>
             
             <p className="text-sm text-gray-500">

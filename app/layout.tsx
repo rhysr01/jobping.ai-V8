@@ -3,16 +3,11 @@ import type { Metadata } from 'next';
 import { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
 
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  display: 'swap',
-  variable: '--font-inter'
-});
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   // Force new deployment
-  metadataBase: new URL('https://jobping.ai'),
+  metadataBase: new URL('https://www.jobping.ai'),
   alternates: {
     canonical: '/',
   },
@@ -74,10 +69,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} antialiased`} suppressHydrationWarning>
+    <html lang="en" className="dark">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <meta name="theme-color" content="#000000" />
         <meta name="color-scheme" content="dark" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
@@ -89,7 +82,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               "@type": "SoftwareApplication",
               "name": "JobPing",
               "description": "AI-powered job matching for students and graduates",
-              "url": "https://jobping.ai",
+              "url": "https://www.jobping.ai",
               "applicationCategory": "BusinessApplication",
               "operatingSystem": "Web",
               "offers": {
@@ -101,7 +94,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           }}
         />
       </head>
-      <body className="bg-black text-white overflow-x-hidden font-sans selection:bg-white selection:text-black">
+      <body className={`${inter.className} bg-black text-white antialiased`}>
         {children}
       </body>
     </html>

@@ -233,7 +233,7 @@ class JSearchScraper {
           'X-RapidAPI-Key': JSEARCH_CONFIG.apiKey,
           'X-RapidAPI-Host': JSEARCH_CONFIG.apiHost,
           'Accept': 'application/json',
-          'User-Agent': 'JobPing/1.0 (https://jobping.com)'
+          'User-Agent': 'JobPingBot/1.0 (+https://jobping.ai/bot; contact: support@jobping.ai)'
         }
       });
 

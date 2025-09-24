@@ -153,7 +153,7 @@ class GreenhouseScraper {
       const response = await axios.get(url, {
         timeout: 15000,
         headers: {
-          'User-Agent': 'JobPing/1.0 (https://jobping.com)',
+          'User-Agent': 'JobPingBot/1.0 (+https://jobping.ai/bot; contact: support@jobping.ai)',
           'Accept': 'application/json'
         },
         validateStatus: (status) => status === 200 || status === 404

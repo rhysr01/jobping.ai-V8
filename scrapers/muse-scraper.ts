@@ -296,7 +296,7 @@ class MuseScraper {
       const response = await axios.get(MUSE_CONFIG.baseUrl, {
         params: queryParams,
         headers: {
-          'User-Agent': 'JobPing/1.0 (https://jobping.com)',
+          'User-Agent': 'JobPingBot/1.0 (+https://jobping.ai/bot; contact: support@jobping.ai)',
           'Accept': 'application/json'
         },
         timeout: 15000

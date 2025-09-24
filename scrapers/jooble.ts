@@ -150,7 +150,7 @@ class JoobleScraper {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'User-Agent': 'JobPing/1.0 (https://jobping.com)'
+          'User-Agent': 'JobPingBot/1.0 (+https://jobping.ai/bot; contact: support@jobping.ai)'
         },
         timeout: 15000
       });
