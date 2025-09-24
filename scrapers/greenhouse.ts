@@ -70,7 +70,7 @@ export async function fetchGreenhouseJobs(board: string): Promise<GHJob[]> {
   const r = await axios.get(url, {
     timeout: 20000,
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; JobPingBot/1.0; +https://jobping.ai/bot)",
+      "User-Agent": "Mozilla/5.0 (compatible; JobPingBot/1.0; +https://jobping.ai/bot; contact: support@jobping.ai)",
       "Accept": "application/json"
     },
     validateStatus: s => s === 200 || s === 404

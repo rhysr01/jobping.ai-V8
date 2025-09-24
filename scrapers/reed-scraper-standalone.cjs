@@ -82,7 +82,7 @@ async function fetchReedPage(params) {
   const headers = {
     'Authorization': buildAuthHeader(),
     'Accept': 'application/json',
-    'User-Agent': 'JobPing/1.0 (+https://jobping.com)'
+    'User-Agent': 'JobPingBot/1.0 (+https://jobping.ai/bot; contact: support@jobping.ai)'
   };
   const resp = await axios.get(REED_API, { params, headers, timeout: 20000 });
   const len = Array.isArray(resp.data?.results) ? resp.data.results.length : 0;

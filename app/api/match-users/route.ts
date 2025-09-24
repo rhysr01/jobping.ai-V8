@@ -1,5 +1,7 @@
 // app/api/match-users/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { hmacVerify } from '@/Utils/security/hmac';
+const HMAC_SECRET = process.env.INTERNAL_API_HMAC_SECRET;
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import { getSupabaseClient } from '@/Utils/supabase';
@@ -327,6 +329,16 @@ export async function POST(req: NextRequest) {
   });
 
   try {
+    // Optional HMAC verification (no-op if secret not set)
+    if (HMAC_SECRET) {
+      const raw = await req.text();
+      const sig = req.headers.get('x-jobping-signature');
+      if (!hmacVerify(raw, sig, HMAC_SECRET)) {
+        return NextResponse.json({ error: 'invalid_signature' }, { status: 401 });
+      }
+      // Reconstruct request since body was consumed
+      req = new Request(req.url, { method: 'POST', headers: req.headers, body: raw }) as any;
+    }
     const performanceTracker = trackPerformance();
   const reservationId = `batch_${Date.now()}`;
   const requestStartTime = Date.now();
