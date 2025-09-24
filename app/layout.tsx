@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   // Force new deployment
-  metadataBase: new URL('https://www.getjobping.com'),
+  metadataBase: new URL('https://jobping-6pcpggc73-rhys-rowlands-projects.vercel.app'),
   alternates: {
     canonical: '/',
   },
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'JobPing - Stop searching for jobs',
     description: 'Real personalised jobs into your inbox for EU students and graduates. AI-curated opportunities delivered every 48 hours.',
-    url: 'https://www.getjobping.com',
+    url: 'https://jobping-6pcpggc73-rhys-rowlands-projects.vercel.app',
     siteName: 'JobPing',
     images: [
       {
@@ -86,7 +86,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               "@type": "SoftwareApplication",
               "name": "JobPing",
               "description": "AI-powered job matching for students and graduates",
-              "url": "https://www.getjobping.com",
+              "url": "https://jobping-6pcpggc73-rhys-rowlands-projects.vercel.app",
               "applicationCategory": "BusinessApplication",
               "operatingSystem": "Web",
               "offers": {
