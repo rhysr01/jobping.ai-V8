@@ -1,10 +1,56 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './Utils/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/**/*.{ts,tsx,mdx}',
+    './components/**/*.{ts,tsx}',
+    './pages/**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx}',
+  ],
+  safelist: [
+    // Dynamic classes that might get purged
+    'bg-gradient-radial',
+    'shadow-3xl',
+    'shadow-4xl',
+    'shadow-5xl',
+    'backdrop-blur-4xl',
+    'from-purple-400',
+    'to-purple-600',
+    'from-purple-500',
+    'to-purple-700',
+    'from-purple-600',
+    'to-purple-800',
+    'bg-purple-600',
+    'hover:bg-purple-700',
+    'border-purple-600/30',
+    'text-purple-400',
+    'bg-purple-500/10',
+    'border-purple-500/20',
+    'text-purple-300',
+    // Animation classes
+    'animate-pulse',
+    'animate-pulse-slow',
+    'animate-glow',
+    'animate-float',
+    'animate-shimmer',
+    // Glass morphism effects
+    'backdrop-blur-xl',
+    'backdrop-blur-2xl',
+    'backdrop-blur-3xl',
+    // Gradient text
+    'bg-clip-text',
+    'text-transparent',
+    'bg-gradient-to-r',
+    'bg-gradient-to-b',
+    'bg-gradient-to-br',
+    'from-white',
+    'via-zinc-100',
+    'to-zinc-300',
+    // Hover states
+    'hover:scale-105',
+    'hover:shadow-3xl',
+    'hover:shadow-4xl',
+    'group-hover:opacity-100',
+    'group-hover:scale-110',
   ],
   theme: {
     extend: {

@@ -15,6 +15,7 @@ import type { UserPreferences } from '@/Utils/matching/types';
 import { createConsolidatedMatcher } from '@/Utils/consolidatedMatching';
 import { aiCostManager } from '@/Utils/ai-cost-manager';
 import { jobQueue } from '@/Utils/job-queue.service';
+import { withAuth } from '@/Utils/auth/withAuth';
 import OpenAI from 'openai';
 
 // Helper function to safely normalize string/array fields
@@ -38,7 +39,7 @@ function getOpenAIClient() {
   });
 }
 
-export async function POST(req: NextRequest) {
+async function handleSendScheduledEmails(req: NextRequest) {
   // PRODUCTION: Rate limiting for scheduled emails (should only be called by automation)
   let rateLimitResult: NextResponse | null = null;
   try {
@@ -52,12 +53,6 @@ export async function POST(req: NextRequest) {
   }
   if (rateLimitResult) {
     return rateLimitResult;
-  }
-
-  // Verify API key for security
-  const apiKey = req.headers.get('x-api-key');
-  if (apiKey !== process.env.SCRAPE_API_KEY) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -374,6 +369,12 @@ export async function POST(req: NextRequest) {
     }, { status: 500 });
   }
 }
+
+// Apply auth middleware
+export const POST = withAuth(handleSendScheduledEmails, {
+  requireSystemKey: true,
+  allowedMethods: ['POST']
+});
 
 export async function GET() {
   return NextResponse.json({ 

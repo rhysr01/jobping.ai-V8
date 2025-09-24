@@ -3,7 +3,9 @@
 import { EmailJobCard } from './types';
 import { getResendClient, getSupabaseClient, EMAIL_CONFIG } from './clients';
 import { createWelcomeEmail, createJobMatchesEmail } from './optimizedTemplates';
+import { createWelcomeEmailText, createJobMatchesEmailText } from './textGenerator';
 import { buildPersonalizedSubject } from './subjectBuilder';
+import crypto from 'crypto';
 
 // Performance optimizations
 const EMAIL_CACHE = new Map<string, { html: string; timestamp: number }>();
@@ -32,10 +34,29 @@ function processJobData(jobs: any[], recipientEmail: string): EmailJobCard[] {
 // Efficient idempotency token generation
 function generateSendToken(recipientEmail: string, jobs: any[]): string {
   const date = new Date().toISOString().split('T')[0];
-  const jobsHash = require('crypto').createHash('md5')
+  const jobsHash = crypto.createHash('md5')
     .update(jobs.map(j => j.job_hash || j.id).join('|'))
     .digest('hex').slice(0, 8);
   return `${recipientEmail}_${date}_${jobsHash}`;
+}
+
+// Generate unsubscribe token for List-Unsubscribe header
+function generateUnsubscribeToken(email: string): string {
+  const secret = process.env.UNSUBSCRIBE_SECRET || 'fallback-secret';
+  return crypto.createHmac('sha256', secret)
+    .update(email)
+    .digest('hex').slice(0, 16);
+}
+
+// Create List-Unsubscribe headers
+function createUnsubscribeHeaders(email: string): Record<string, string> {
+  const token = generateUnsubscribeToken(email);
+  const oneClickUrl = `${EMAIL_CONFIG.unsubscribeBase}/one-click?u=${encodeURIComponent(email)}&t=${token}`;
+  
+  return {
+    'List-Unsubscribe': `<mailto:${EMAIL_CONFIG.listUnsubscribeEmail}>, <${oneClickUrl}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+  };
 }
 
 // Cached email generation
@@ -50,6 +71,23 @@ function getCachedEmail(key: string, generator: () => string): string {
   return html;
 }
 
+// Check email suppression before sending
+async function isEmailSuppressed(email: string): Promise<boolean> {
+  try {
+    const supabase = getSupabaseClient();
+    const { data } = await supabase
+      .from('email_suppression')
+      .select('user_email')
+      .eq('user_email', email)
+      .single();
+    
+    return !!data;
+  } catch {
+    // If table doesn't exist or query fails, don't suppress
+    return false;
+  }
+}
+
 // Optimized welcome email sender
 export async function sendWelcomeEmail({
   to,
@@ -61,17 +99,27 @@ export async function sendWelcomeEmail({
   matchCount: number;
 }) {
   try {
+    // Check suppression list
+    if (await isEmailSuppressed(to)) {
+      console.log(`📧 Email suppressed: ${to}`);
+      return { suppressed: true };
+    }
+
     const resend = getResendClient();
     
     // Generate email with caching
     const cacheKey = `welcome_${userName}_${matchCount}`;
     const html = getCachedEmail(cacheKey, () => createWelcomeEmail(userName, matchCount));
+    const text = createWelcomeEmailText(userName, matchCount);
+    const unsubscribeHeaders = createUnsubscribeHeaders(to);
     
     const { data, error } = await resend.emails.send({
       from: EMAIL_CONFIG.from,
       to: [to],
       subject: '🎯 Welcome to JobPing - Your AI Career Assistant is Ready!',
       html: html,
+      text: text,
+      headers: unsubscribeHeaders,
     });
 
     if (error) throw error;
@@ -109,6 +157,12 @@ export async function sendMatchedJobsEmail({
   };
 }) {
   try {
+    // Check suppression list first
+    if (await isEmailSuppressed(to)) {
+      console.log(`📧 Email suppressed: ${to}`);
+      return { suppressed: true };
+    }
+
     // Generate idempotency token
     const sendToken = generateSendToken(to, jobs);
     
@@ -133,6 +187,8 @@ export async function sendMatchedJobsEmail({
     const html = getCachedEmail(cacheKey, () => 
       createJobMatchesEmail(jobCards, userName, subscriptionTier, isSignupEmail, personalization)
     );
+    const text = createJobMatchesEmailText(jobs, userName, subscriptionTier, isSignupEmail, personalization);
+    const unsubscribeHeaders = createUnsubscribeHeaders(to);
     
     const subject = subjectOverride ?? (isSignupEmail 
       ? `🎯 Welcome to JobPing - ${jobs.length} Job Matches Found!`
@@ -149,6 +205,8 @@ export async function sendMatchedJobsEmail({
           to: [to],
           subject: subject,
           html: html,
+          text: text,
+          headers: unsubscribeHeaders,
         });
 
         if (error) throw error;

@@ -3,11 +3,14 @@ import type { Metadata } from 'next';
 import { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ 
+  subsets: ['latin'],
+  weight: ['400', '600']
+});
 
 export const metadata: Metadata = {
   // Force new deployment
-  metadataBase: new URL('https://www.jobping.ai'),
+  metadataBase: new URL('https://jobping.ai'),
   alternates: {
     canonical: '/',
   },
@@ -25,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'JobPing - Stop searching for jobs',
     description: 'Real personalised jobs into your inbox for EU students and graduates. AI-curated opportunities delivered every 48 hours.',
-    url: 'https://www.jobping.ai',
+    url: 'https://jobping.ai',
     siteName: 'JobPing',
     images: [
       {
@@ -82,7 +85,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               "@type": "SoftwareApplication",
               "name": "JobPing",
               "description": "AI-powered job matching for students and graduates",
-              "url": "https://www.jobping.ai",
+              "url": "https://jobping.ai",
               "applicationCategory": "BusinessApplication",
               "operatingSystem": "Web",
               "offers": {
@@ -95,6 +98,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body className={`${inter.className} bg-black text-white antialiased`}>
+        <a className="skip-link" href="#main">Skip to content</a>
         {children}
       </body>
     </html>
