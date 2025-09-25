@@ -4,9 +4,15 @@
  */
 
 import { Job } from '../../scrapers/types';
+import type { Tables } from '../../lib/db-types';
 
 // Re-export Job type for convenience
 export type { Job } from '../../scrapers/types';
+
+// Use generated database types
+export type UserRow = Tables<'users'>;
+export type JobRow = Tables<'jobs'>;
+export type MatchRow = Tables<'matches'>;
 
 // Freshness tiers for job prioritization
 export enum FreshnessTier {
@@ -29,60 +35,7 @@ export interface AiProvenance {
   fallback_reason?: string;
 }
 
-export interface JobRow {
-  id: string;
-  title: string;
-  company: string;
-  location: string | null;
-  description: string | null;
-  categories: string[];
-  languages_required: string[] | null;
-  work_environment: string | null;
-  source: string | null;
-  job_hash: string;
-  posted_at: string | null;
-  created_at: string;
-  updated_at: string;
-  last_run_at: string | null;
-  last_parsed_at: string | null;
-  company_profile_url: string | null;
-  job_url: string;
-}
-
-export interface MatchRow {
-  id: string;
-  user_email: string;
-  job_hash: string;
-  match_reason: string | null;
-  match_score: number | null;
-  match_quality: string | null;
-  match_tags: any;
-  matched_at: string;
-  freshness_law: string | null;
-}
-
-export interface UserRow {
-  id: string;
-  email: string;
-  full_name: string | null;
-  professional_experience: string | null;
-  languages_spoken: string[] | null;
-  start_date: string | null;
-  work_authorization: string | null;
-  visa_related: boolean | null;
-  entry_level_preference: string | null;
-  company_types: string[] | null;
-  career_path: string[] | null;
-  roles_selected: any | null;
-  target_cities: string[] | null;
-  work_environment: string | null;
-  target_employment_start_date: string | null;
-  professional_expertise: string | null;
-  email_verified: boolean | null;
-  active: boolean | null;
-  created_at: string;
-  updated_at: string;
-}
+// JobRow, MatchRow, and UserRow are now imported from generated database types above
 
 // ================================
 // NORMALIZED USER PROFILE

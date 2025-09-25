@@ -94,7 +94,7 @@ export const normalizeUser = (u: Partial<UserRow> & { email: string }): Normaliz
   entry_level_preference: toOptString(u.entry_level_preference),
   work_environment: toWorkEnv(u.work_environment),
   start_date: toOptString(u.start_date),
-  careerFocus: reqFirst(u.career_path, 'unknown')
+  careerFocus: reqFirst(u.career_path as unknown as string[] | null, 'unknown')
 });
 
 export const normalizeUserPreferences = (userPrefs: UserPreferences): NormalizedUser => {

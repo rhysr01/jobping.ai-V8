@@ -24,13 +24,13 @@ ALTER TABLE public.email_suppression ENABLE ROW LEVEL SECURITY;
 -- 2. Add RLS policies for tables that have RLS but no policies
 -- API Keys - only authenticated users can access their own keys
 CREATE POLICY "Users can manage their own API keys" ON public.api_keys
-    FOR ALL USING (auth.uid()::text = user_id);
+    FOR ALL USING (auth.uid() = user_id::uuid);
 
 -- API Key Usage - only authenticated users can access their own usage
 CREATE POLICY "Users can view their own API key usage" ON public.api_key_usage
     FOR SELECT USING (
         api_key_id IN (
-            SELECT id FROM public.api_keys WHERE user_id = auth.uid()::text
+            SELECT id FROM public.api_keys WHERE user_id::uuid = auth.uid()
         )
     );
 
@@ -191,7 +191,7 @@ DROP POLICY IF EXISTS "Analytics are viewable by authenticated users" ON public.
 
 -- Recreate with optimized auth calls
 CREATE POLICY "jobping_users_own_data" ON public.users
-    FOR ALL USING ((SELECT auth.uid())::text = id);
+    FOR ALL USING ((SELECT auth.uid()) = id::uuid);
 
 CREATE POLICY "jobping_matches_own_email" ON public.matches
     FOR ALL USING (user_email = (SELECT auth.jwt() ->> 'email'));

@@ -69,6 +69,7 @@ function convertToDatabaseFormat(job) {
 const REED_API = 'https://www.reed.co.uk/api/1.0/search';
 const LOCATIONS = [ 'Belfast','Dublin','London','Manchester','Birmingham' ];
 const EARLY_TERMS = [ 'graduate','entry level','junior','trainee','intern','internship' ];
+const MAX_PAGES = parseInt(process.env.REED_MAX_PAGES || '10', 10);
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 function buildAuthHeader() {
@@ -106,7 +107,8 @@ async function scrapeLocation(location) {
   const jobs = [];
   const resultsPerPage = 50;
   for (const term of EARLY_TERMS) {
-    for (let page = 0; page < 3; page++) {
+    let page = 0;
+    while (page < MAX_PAGES) {
       const params = {
         keywords: term,
         locationName: location,
@@ -137,6 +139,9 @@ async function scrapeLocation(location) {
         }
         console.log(`   ✓ accumulated ${jobs.length} valid jobs so far for ${location}`);
         await sleep(800);
+        // Stop paginating if fewer than a full page returned
+        if (items.length < resultsPerPage) break;
+        page++;
       } catch (e) {
         if (e.response && e.response.status === 429) { await sleep(6000); page--; continue; }
         console.warn(`Reed error for ${location} ${term}:`, e.message);

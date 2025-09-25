@@ -123,6 +123,7 @@ async function main() {
   };
   const cities = [ 'London','Madrid','Berlin','Amsterdam','Paris','Zurich','Milan','Dublin' ];
   const MAX_Q_PER_CITY = parseInt(process.env.JOBSPY_MAX_Q_PER_CITY || '8', 10);
+  const RESULTS_WANTED = parseInt(process.env.JOBSPY_RESULTS_WANTED || '15', 10);
 
   const collected = [];
   const pythonCmd = pickPythonCommand();
@@ -157,7 +158,7 @@ df = scrape_jobs(
   search_term='''${term.replace(/'/g, "''")}''',
   location='''${city}''',
   country_indeed='''${country}''',
-  results_wanted=15,
+  results_wanted=${RESULTS_WANTED},
   hours_old=504,
   distance=20,
   sort='date'
@@ -264,6 +265,7 @@ print(df[cols].to_csv(index=False))
     });
   }
   await saveJobs(capped, 'jobspy-indeed');
+  console.log(`✅ JobSpy: total_saved=${capped.length}`);
   console.log('🎉 Done');
 }
 

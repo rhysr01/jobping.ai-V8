@@ -98,7 +98,7 @@ class RealJobRunner {
       
       // Parse job count from the result
       let jobsSaved = 0;
-      const savedMatch = stdout.match(/✅ Saved (\d+) jobs/);
+      const savedMatch = stdout.match(/✅ JobSpy: total_saved=(\d+)/);
       if (savedMatch) {
         jobsSaved = parseInt(savedMatch[1]);
       } else {
@@ -501,7 +501,7 @@ class RealJobRunner {
     try {
       console.log('\n🚀 STARTING AUTOMATED SCRAPING CYCLE');
       console.log('=====================================');
-      console.log('🎯 Running streamlined scrapers: JobSpy, Adzuna, Reed, Muse');
+      console.log('🎯 Running streamlined scrapers: JobSpy, Adzuna, Reed');
       
       // Run JobSpy first for fast signal
       let jobspyJobs = 0;
@@ -536,16 +536,8 @@ class RealJobRunner {
       }
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      let museJobs = 0;
-      try {
-        museJobs = await this.runMuseScraper();
-        console.log(`✅ Muse completed: ${museJobs} jobs`);
-      } catch (error) {
-        console.error('❌ Muse scraper failed, continuing with other scrapers:', error.message);
-      }
-      
       // Update stats with all scrapers
-      this.totalJobsSaved += (adzunaJobs + jobspyJobs + reedJobs + museJobs);
+      this.totalJobsSaved += (adzunaJobs + jobspyJobs + reedJobs);
       this.runCount++;
       this.lastRun = new Date();
       
@@ -559,7 +551,7 @@ class RealJobRunner {
       console.log('\n✅ SCRAPING CYCLE COMPLETE');
       console.log('============================');
       console.log(`⏱️  Duration: ${duration.toFixed(1)} seconds`);
-      console.log(`📊 Jobs processed this cycle: ${adzunaJobs + jobspyJobs + reedJobs + museJobs}`);
+      console.log(`📊 Jobs processed this cycle: ${adzunaJobs + jobspyJobs + reedJobs}`);
       console.log(`📈 Total jobs processed: ${this.totalJobsSaved}`);
       console.log(`🔄 Total cycles run: ${this.runCount}`);
       console.log(`📅 Last run: ${this.lastRun.toISOString()}`);
@@ -570,7 +562,6 @@ class RealJobRunner {
       console.log(`   - JobSpy: ${jobspyJobs} jobs`);
       console.log(`   - Adzuna: ${adzunaJobs} jobs`);
       console.log(`   - Reed: ${reedJobs} jobs`);
-      console.log(`   - Muse: ${museJobs} jobs`);
       
     } catch (error) {
       console.error('❌ Scraping cycle failed:', error);

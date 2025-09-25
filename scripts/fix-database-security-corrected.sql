@@ -63,7 +63,7 @@ CREATE POLICY "Authenticated users can view email suppression" ON public.email_s
 -- 🟡 HIGH PRIORITY FIXES (Run Second)
 -- ============================================================================
 
--- 3. Remove duplicate indexes (saves ~20MB)
+-- 3. Remove duplicate indexes and constraints (saves ~20MB)
 -- Keep the most recent/named ones, drop the duplicates
 
 DROP INDEX IF EXISTS idx_api_usage_time;  -- Keep idx_api_key_usage_used_at
@@ -71,9 +71,11 @@ DROP INDEX IF EXISTS idx_api_keys_key_hash;  -- Keep api_keys_key_hash_key
 DROP INDEX IF EXISTS idx_jobs_hash;  -- Keep idx_jobs_job_hash
 DROP INDEX IF EXISTS idx_jobs_posted_at;  -- Keep idx_jobs_posted_at_desc
 DROP INDEX IF EXISTS jobs_source_idx;  -- Keep idx_jobs_source
-DROP INDEX IF EXISTS jobs_job_hash_key;  -- Keep jobs_job_hash_unique
-DROP INDEX IF EXISTS matches_user_job_unique;  -- Keep matches_user_email_job_hash_key
-DROP INDEX IF EXISTS users_email_key;  -- Keep users_email_unique
+
+-- Drop duplicate unique constraints (these are constraints, not just indexes)
+ALTER TABLE public.jobs DROP CONSTRAINT IF EXISTS jobs_job_hash_key;  -- Keep jobs_job_hash_unique
+ALTER TABLE public.matches DROP CONSTRAINT IF EXISTS matches_user_job_unique;  -- Keep matches_user_email_job_hash_key
+ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_email_key;  -- Keep users_email_unique
 
 -- 4. Remove unused indexes (saves ~50MB)
 -- These indexes have never been used according to pg_stat_user_indexes

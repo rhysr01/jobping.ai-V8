@@ -937,22 +937,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
-// Convenience type aliases for common operations
-export type User = Tables<'users'>
-export type Job = Tables<'jobs'>
-export type Match = Tables<'matches'>
-export type UserFeedback = Tables<'user_feedback'>
-export type MatchLog = Tables<'match_logs'>
-
-export type UserInsert = TablesInsert<'users'>
-export type JobInsert = TablesInsert<'jobs'>
-export type MatchInsert = TablesInsert<'matches'>
-export type UserFeedbackInsert = TablesInsert<'user_feedback'>
-export type MatchLogInsert = TablesInsert<'match_logs'>
-
-export type UserUpdate = TablesUpdate<'users'>
-export type JobUpdate = TablesUpdate<'jobs'>
-export type MatchUpdate = TablesUpdate<'matches'>
-export type UserFeedbackUpdate = TablesUpdate<'user_feedback'>
-export type MatchLogUpdate = TablesUpdate<'match_logs'>
