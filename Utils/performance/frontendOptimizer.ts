@@ -153,25 +153,25 @@ export class FrontendOptimizer {
   generateResourceHints(options: BundleOptimizationOptions = {}): string {
     const { preload = [], prefetch = [], defer = [], async = [] } = options;
     
-    const hints = [];
+    const hints: string[] = [];
 
     // Preload critical resources
-    preload.forEach(resource => {
+    preload.forEach((resource: string) => {
       hints.push(`<link rel="preload" href="${resource}" as="script" />`);
     });
 
     // Prefetch likely next resources
-    prefetch.forEach(resource => {
+    prefetch.forEach((resource: string) => {
       hints.push(`<link rel="prefetch" href="${resource}" />`);
     });
 
     // Defer non-critical scripts
-    defer.forEach(resource => {
+    defer.forEach((resource: string) => {
       hints.push(`<script src="${resource}" defer></script>`);
     });
 
     // Async non-blocking scripts
-    async.forEach(resource => {
+    async.forEach((resource: string) => {
       hints.push(`<script src="${resource}" async></script>`);
     });
 

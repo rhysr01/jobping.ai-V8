@@ -305,11 +305,11 @@ export class QueryOptimizer {
         total: data.length,
         bySource: {},
         byTier: {},
-        active: data.filter(job => job.is_active).length,
-        inactive: data.filter(job => !job.is_active).length
+        active: data.filter((job: any) => job.is_active).length,
+        inactive: data.filter((job: any) => !job.is_active).length
       };
 
-      data.forEach(job => {
+      data.forEach((job: any) => {
         // Source stats
         if (!stats.bySource[job.source]) {
           stats.bySource[job.source] = 0;

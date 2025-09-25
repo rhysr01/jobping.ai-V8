@@ -214,10 +214,10 @@ export class MetricsCollector {
         .select('status')
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-      const pendingJobs = queueStats?.filter(job => job.status === 'pending').length || 0;
-      const processingJobs = queueStats?.filter(job => job.status === 'processing').length || 0;
-      const failedJobs = queueStats?.filter(job => job.status === 'failed').length || 0;
-      const completedJobsToday = queueStats?.filter(job => job.status === 'completed').length || 0;
+      const pendingJobs = queueStats?.filter((job: any) => job.status === 'pending').length || 0;
+      const processingJobs = queueStats?.filter((job: any) => job.status === 'processing').length || 0;
+      const failedJobs = queueStats?.filter((job: any) => job.status === 'failed').length || 0;
+      const completedJobsToday = queueStats?.filter((job: any) => job.status === 'completed').length || 0;
 
       const metrics = {
         pending_jobs: pendingJobs,
