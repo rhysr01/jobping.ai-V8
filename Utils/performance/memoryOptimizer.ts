@@ -286,7 +286,7 @@ export class MemoryOptimizer {
       recommendations.push('Memory usage is consistently increasing. Check for memory leaks.');
     }
     
-    if (stats.heapUsed > this.options.maxCacheSize) {
+    if (stats.heapUsed > (this.options.maxCacheSize || 100 * 1024 * 1024)) {
       recommendations.push('Heap usage exceeds cache size limit. Consider reducing cache size.');
     }
     
