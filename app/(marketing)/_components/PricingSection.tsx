@@ -12,7 +12,7 @@ export default function PricingSection() {
         {/* Free */}
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-8">
           <h3 className="font-display text-xl font-semibold">Free</h3>
-          <p className="mt-2 text-zinc-400">Perfect for getting started</p>
+          <p className="mt-2 text-zinc-300">Perfect for getting started</p>
           <ul className="mt-6 space-y-3 text-sm text-zinc-300">
             <li>• 5 job matches per day</li>
             <li>• Weekly delivery</li>
@@ -23,7 +23,7 @@ export default function PricingSection() {
             href="https://tally.so/r/wLqWxQ?utm_source=landing&utm_medium=pricing&utm_campaign=free"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-6 inline-block rounded-2xl px-5 py-3 border border-zinc-700 text-white hover:border-zinc-600 transition"
+            className="mt-6 inline-block rounded-2xl px-5 py-3 border border-zinc-700 text-white hover:border-zinc-600 transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             Get Started — Free
           </a>
@@ -35,7 +35,7 @@ export default function PricingSection() {
             <span className="bg-indigo-500 text-white text-xs px-3 py-1 rounded-full">Popular</span>
           </div>
           <h3 className="font-display text-xl font-semibold">Premium</h3>
-          <p className="mt-2 text-zinc-400">For serious job seekers</p>
+          <p className="mt-2 text-zinc-300">For serious job seekers</p>
           <ul className="mt-6 space-y-3 text-sm text-zinc-300">
             <li>• 15 job matches per day</li>
             <li>• Daily delivery</li>
@@ -47,7 +47,7 @@ export default function PricingSection() {
             href="https://tally.so/r/wLqWxQ?utm_source=landing&utm_medium=pricing&utm_campaign=premium"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-6 inline-block rounded-2xl px-5 py-3 bg-indigo-500 text-white font-semibold hover:bg-indigo-600 transition"
+            className="mt-6 inline-block rounded-2xl px-5 py-3 bg-indigo-500 text-white font-semibold hover:bg-indigo-600 transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             Upgrade to Premium
           </a>
