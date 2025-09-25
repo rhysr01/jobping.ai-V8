@@ -303,8 +303,8 @@ export class QueryOptimizer {
       // Process stats in memory
       const stats = {
         total: data.length,
-        bySource: {},
-        byTier: {},
+        bySource: {} as Record<string, number>,
+        byTier: {} as Record<string, number>,
         active: data.filter((job: any) => job.is_active).length,
         inactive: data.filter((job: any) => !job.is_active).length
       };
