@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { processEmailQueue } from '../../../../Utils/email/queueProcessor';
+import { withAuth } from '../../../../lib/auth';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,16 +16,10 @@ const supabase = createClient(
 const BATCH_SIZE = parseInt(process.env.QUEUE_BATCH_SIZE || '10');
 const MAX_PROCESSING_TIME = parseInt(process.env.MAX_PROCESSING_TIME || '25000'); // 25 seconds (Vercel limit)
 
-export async function GET(request: NextRequest) {
+const processQueueHandler = async (request: NextRequest) => {
   const startTime = Date.now();
   
   try {
-    // Verify this is a legitimate cron request (Vercel Cron)
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      console.log('❌ Unauthorized cron request');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     console.log('🚀 Starting cron queue processing...');
 
@@ -145,7 +140,14 @@ export async function GET(request: NextRequest) {
       duration: Date.now() - startTime
     }, { status: 500 });
   }
-}
+};
+
+// Export with auth wrapper
+export const GET = withAuth(processQueueHandler, {
+  requireSystemKey: true,
+  allowedMethods: ['GET'],
+  rateLimit: true
+});
 
 // Health check endpoint
 export async function HEAD() {

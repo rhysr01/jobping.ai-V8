@@ -81,118 +81,37 @@ export class JobQueueService {
   }
 
   /**
-   * Start processing jobs
+   * Start processing jobs - DEPRECATED: Use cron endpoints instead
+   * @deprecated This method is deprecated. Use cron endpoints for reliable processing.
    */
   async startProcessing(): Promise<void> {
-    if (this.processing) return;
+    console.warn('⚠️ startProcessing() is deprecated. Use cron endpoints instead:');
+    console.warn('  - GET /api/cron/process-email-queue');
+    console.warn('  - GET /api/cron/process-scraping-queue');
+    console.warn('  - GET /api/cron/process-ai-matching');
+    console.warn('  - GET /api/cron/process-queue (general)');
     
-    this.processing = true;
-    console.log('🚀 Starting job queue processing...');
-
-    // Start different worker types
-    this.startWorker('email_send', this.processEmailJob.bind(this), 2);
-    this.startWorker('job_scrape', this.processScrapingJob.bind(this), 1);
-    this.startWorker('ai_match', this.processAIMatchingJob.bind(this), 3);
-    this.startWorker('user_processing', this.processUserJob.bind(this), 2);
+    // Don't start workers - they're unreliable with setInterval
+    throw new Error('setInterval workers are deprecated. Use cron endpoints for reliable processing.');
   }
 
   /**
-   * Stop processing jobs
+   * Stop processing jobs - DEPRECATED
+   * @deprecated This method is deprecated. Cron endpoints don't need stopping.
    */
   async stopProcessing(): Promise<void> {
-    this.processing = false;
-    
-    for (const [type, worker] of this.workers) {
-      clearInterval(worker.interval);
-      console.log(`🛑 Stopped ${type} worker`);
-    }
-    
-    this.workers.clear();
+    console.warn('⚠️ stopProcessing() is deprecated. Cron endpoints handle their own lifecycle.');
   }
 
   /**
-   * Start a worker for a specific job type
-   */
-  private startWorker(
-    type: string, 
-    processor: (job: JobQueueItem) => Promise<any>,
-    concurrency: number
-  ): void {
-    const worker: Worker = {
-      type,
-      processor,
-      concurrency,
-      running: 0,
-      interval: setInterval(async () => {
-        if (worker.running < concurrency) {
-          await this.processNextJob(type, processor);
-        }
-      }, 1000) // Check every second
-    };
-
-    this.workers.set(type, worker);
-    console.log(`👷 Started ${type} worker with concurrency ${concurrency}`);
-  }
-
-  /**
-   * Process next job of a specific type
+   * Process next job of a specific type - DEPRECATED
+   * @deprecated Use cron endpoints instead of this method
    */
   private async processNextJob(
     type: string, 
     processor: (job: JobQueueItem) => Promise<any>
   ): Promise<void> {
-    const worker = this.workers.get(type);
-    if (!worker || worker.running >= worker.concurrency) return;
-
-    try {
-      // Get next job from database
-      const { data: jobs } = await this.supabase
-        .from('job_queue')
-        .select('*')
-        .eq('type', type)
-        .eq('status', 'pending')
-        .lte('scheduled_for', new Date().toISOString())
-        .order('priority', { ascending: false })
-        .order('created_at', { ascending: true })
-        .limit(1);
-
-      if (!jobs || jobs.length === 0) return;
-
-      const jobData = jobs[0];
-      const job: JobQueueItem = {
-        id: jobData.id,
-        type: jobData.type,
-        priority: jobData.priority,
-        payload: jobData.payload,
-        attempts: jobData.attempts,
-        maxAttempts: jobData.max_attempts,
-        createdAt: new Date(jobData.created_at),
-        scheduledFor: new Date(jobData.scheduled_for),
-        status: jobData.status
-      };
-
-      // Mark as processing
-      await this.updateJobStatus(job.id, 'processing');
-      worker.running++;
-
-      try {
-        // Process the job
-        const result = await processor(job);
-        
-        // Mark as completed
-        await this.updateJobStatus(job.id, 'completed', undefined, result);
-        console.log(`✅ Completed job ${job.id} of type ${type}`);
-
-      } catch (error) {
-        // Handle failure
-        await this.handleJobFailure(job, error);
-      } finally {
-        worker.running--;
-      }
-
-    } catch (error) {
-      console.error(`❌ Error processing ${type} jobs:`, error);
-    }
+    console.warn(`⚠️ processNextJob(${type}) is deprecated. Use cron endpoints instead.`);
   }
 
   /**

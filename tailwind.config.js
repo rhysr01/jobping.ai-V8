@@ -14,19 +14,6 @@ module.exports = {
     'shadow-4xl',
     'shadow-5xl',
     'backdrop-blur-4xl',
-    'from-purple-400',
-    'to-purple-600',
-    'from-purple-500',
-    'to-purple-700',
-    'from-purple-600',
-    'to-purple-800',
-    'bg-purple-600',
-    'hover:bg-purple-700',
-    'border-purple-600/30',
-    'text-purple-400',
-    'bg-purple-500/10',
-    'border-purple-500/20',
-    'text-purple-300',
     // Animation classes
     'animate-pulse',
     'animate-pulse-slow',
@@ -123,7 +110,9 @@ module.exports = {
       
       // Premium typography
       fontFamily: {
-        'inter': ['Inter', 'sans-serif'],
+        sans: ['var(--font-geist-sans)', 'system-ui', 'ui-sans-serif'],
+        mono: ['var(--font-geist-mono)', 'ui-monospace', 'SFMono-Regular'],
+        display: ['var(--font-geist-sans)', 'system-ui', 'ui-sans-serif'],
       },
       
       // Enhanced backdrop filters

@@ -2,6 +2,15 @@
 
 import React, { useState } from 'react';
 
+// Analytics tracking
+const trackEvent = (eventName: string, properties?: Record<string, any>) => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', eventName, properties);
+  }
+  // Fallback for other analytics providers
+  console.log('Analytics:', eventName, properties);
+};
+
 export default function JobPingPro() {
   const [billing, setBilling] = useState('monthly');
 
@@ -20,7 +29,7 @@ export default function JobPingPro() {
           </nav>
           {/* Right: CTA + mobile menu */}
           <div className="flex items-center gap-3">
-            <a href="#signup" className="btn btn-primary hidden sm:inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black">Start Free</a>
+            <a href="#signup" className="btn btn-primary hidden sm:inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black" onClick={() => trackEvent('hero_cta_click', { location: 'header' })}>Start Free</a>
             <details className="relative md:hidden">
               <summary className="list-none btn btn-ghost px-3 py-2 min-h-[44px] min-w-[44px] flex items-center justify-center">
                 <svg aria-hidden className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="1.25" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -45,24 +54,29 @@ export default function JobPingPro() {
           <div className="text-[clamp(4rem,8vw,8rem)] leading-[0.95] font-semibold tracking-tight mb-4">
             JobPing
           </div>
-          <h1 className="text-xl md:text-2xl font-semibold mb-4">
+          <h1 className="text-2xl md:text-3xl font-semibold mb-4">
             Personalised roles, delivered daily to your inbox.
           </h1>
-          <p className="text-base md:text-lg muted max-w-[55ch] mx-auto">
+          <p className="text-lg md:text-xl muted max-w-[55ch] mx-auto">
             Weekly job matches for early-career roles across Europe.
           </p>
           
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#signup" className="btn btn-primary px-8 text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black min-h-[44px]">Get 5 jobs/day free</a>
-            <a href="/sample-email.html" target="_blank" rel="noopener" className="btn btn-ghost px-8 text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black min-h-[44px]">View a sample email</a>
+            <a href="#signup" className="btn btn-primary px-8 text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black min-h-[44px]" onClick={() => trackEvent('hero_cta_click', { location: 'hero' })}>Get 5 jobs/day free</a>
+            <a href="/sample-email.html" target="_blank" rel="noopener" className="btn btn-ghost px-8 text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black min-h-[44px]" onClick={() => trackEvent('sample_email_click', { location: 'hero' })}>View a sample email</a>
           </div>
-          <p className="text-xs subtle mt-6">GDPR-friendly · Email-only · Unsubscribe anytime</p>
+          <p className="text-sm subtle mt-6">GDPR-friendly · Email-only · Unsubscribe anytime</p>
         </div>
         
         {/* add background indigo bubbles */}
         <div className="bg-orb bg-orb--tl" aria-hidden />
         <div className="bg-orb bg-orb--br" aria-hidden />
       </section>
+      
+      {/* Skip to pricing anchor */}
+      <a href="#pricing" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-1/2 focus:-translate-x-1/2 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-lg focus:font-semibold">
+        Skip to pricing
+      </a>
 
       {/* PRODUCT PREVIEW - Visual proof */}
       <section id="preview" className="section-y">
@@ -126,12 +140,12 @@ export default function JobPingPro() {
                 <span className="subtle text-xs">Cancel anytime</span>
               </div>
             <h3 className="text-xl font-semibold mt-4">Free</h3>
-            <p className="muted text-sm mt-2">Try it out</p>
+            <p className="muted text-base mt-2">Try it out</p>
             <div className="mb-8">
               <span className="text-5xl font-bold">€0</span>
               <span className="muted text-sm">/month</span>
             </div>
-            <ul className="mt-5 space-y-2 subtle text-sm">
+            <ul className="mt-5 space-y-2 subtle text-base">
               <li>5 jobs daily</li>
               <li>Basic matching</li>
             </ul>
@@ -145,12 +159,12 @@ export default function JobPingPro() {
                 <span className="subtle text-xs">Cancel anytime</span>
               </div>
             <h3 className="text-xl font-semibold mt-4">Premium</h3>
-            <p className="muted text-sm mt-2">More jobs, faster</p>
+            <p className="muted text-base mt-2">More jobs, faster</p>
             <div className="mb-8">
               <span className="text-5xl font-bold">€{billing === 'monthly' ? '15' : '30'}</span>
               <span className="muted text-sm">/{billing === 'monthly' ? 'month' : '3 months'}</span>
             </div>
-            <ul className="mt-5 space-y-2 subtle text-sm">
+            <ul className="mt-5 space-y-2 subtle text-base">
               <li>10 jobs daily</li>
               <li>Advanced matching</li>
               <li>Priority support</li>
@@ -158,7 +172,7 @@ export default function JobPingPro() {
             <button className="btn btn-primary mt-6 w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black min-h-[44px]">Upgrade to Premium</button>
             </div>
           </div>
-          <p className="text-center text-xs subtle mt-8">Cancel anytime</p>
+          <p className="text-center text-sm subtle mt-8">Cancel anytime</p>
         </div>
       </section>
 
@@ -167,13 +181,14 @@ export default function JobPingPro() {
         <div className="container-x">
           <div className="card p-8 text-center">
             <h3 className="text-2xl md:text-3xl font-semibold tracking-tight">Ready to try JobPing?</h3>
-            <p className="muted mt-2">It opens in a new tab.</p>
+            <p className="muted text-base mt-2">It opens in a new tab.</p>
             <div className="mt-6">
               <a
                 href="https://tally.so/r/mJEqx4?utm_source=landing&utm_medium=cta&utm_campaign=homepage"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary px-10 py-4 text-lg"
+                onClick={() => trackEvent('signup_click', { location: 'signup_section', utm_source: 'landing', utm_medium: 'cta', utm_campaign: 'homepage' })}
               >
                 Get Started — Free
               </a>
@@ -187,9 +202,6 @@ export default function JobPingPro() {
         <div className="container-x">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-white/10 border border-white/20 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-sm">JP</span>
-              </div>
               <span className="font-semibold text-xl tracking-tight">JobPing</span>
             </div>
             
@@ -200,7 +212,7 @@ export default function JobPingPro() {
               <a href="/contact" className="font-semibold">Contact</a>
             </div>
             
-            <p className="text-white/50 mt-8">© 2025 JobPing. All rights reserved.</p>
+            <p className="text-white/50 text-base mt-8">© 2025 JobPing. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -1,6 +1,7 @@
 // app/api/match-users/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { hmacVerify } from '@/Utils/security/hmac';
+import { withAuth } from '../../../lib/auth';
 const HMAC_SECRET = process.env.INTERNAL_API_HMAC_SECRET;
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
@@ -306,7 +307,7 @@ function preFilterJobsByUserPreferences(jobs: JobWithFreshness[], user: UserPref
 
 // OpenAI client creation moved to ConsolidatedMatchingEngine
 
-export async function POST(req: NextRequest) {
+const matchUsersHandler = async (req: NextRequest) => {
   const startTime = Date.now();
   const requestId = crypto.randomUUID();
   
@@ -820,7 +821,14 @@ export async function POST(req: NextRequest) {
     message: error instanceof Error ? error.message : 'Unknown error' 
   }, { status: 500 });
 }
-}
+};
+
+// Export with auth wrapper
+export const POST = withAuth(matchUsersHandler, {
+  requireSystemKey: true,
+  allowedMethods: ['POST'],
+  rateLimit: true
+});
 
 // Enhanced GET endpoint with tier analytics  
 export async function GET(req: NextRequest) {

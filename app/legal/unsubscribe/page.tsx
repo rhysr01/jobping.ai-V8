@@ -2,51 +2,51 @@ import React from 'react';
 
 export default function UnsubscribePage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-black py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white shadow-lg rounded-lg p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8 border-b-2 border-blue-600 pb-4">
+        <div className="bg-white/[0.06] border border-white/12 shadow-lg rounded-lg p-8">
+          <h1 className="text-3xl font-bold text-white mb-8 border-b border-white/10 pb-4">
             Unsubscribe & Email Preferences
           </h1>
           
-          <div className="bg-blue-50 p-4 rounded-lg mb-8">
-            <p className="text-sm text-blue-800">
+          <div className="bg-white/[0.06] p-4 rounded-lg mb-8 border border-white/12">
+            <p className="text-sm text-white/80">
               <strong>Last Updated:</strong> {new Date().toLocaleDateString()}
             </p>
           </div>
 
           <div className="prose prose-lg max-w-none">
-            <h2 className="text-2xl font-semibold text-gray-800 mt-8 mb-4">Manage Your Email Preferences</h2>
-            <p className="text-gray-700 mb-6">
+            <h2 className="text-2xl font-semibold text-white mt-8 mb-4">Manage Your Email Preferences</h2>
+            <p className="text-white/80 mb-6">
               We respect your privacy and give you control over the emails you receive from JobPing.
             </p>
 
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <div className="bg-white/[0.06] border-l-4 border-white/20 p-4 mb-6 border border-white/12">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <svg className="h-5 w-5 text-white/60" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm text-yellow-700">
+                  <p className="text-sm text-white/80">
                     <strong>Important:</strong> Unsubscribing from all emails will prevent you from receiving job recommendations and important service updates.
                   </p>
                 </div>
               </div>
             </div>
 
-            <h3 className="text-xl font-semibold text-gray-800 mt-8 mb-4">Email Categories</h3>
+            <h3 className="text-xl font-semibold text-white mt-8 mb-4">Email Categories</h3>
             <div className="space-y-4 mb-8">
               <div className="border rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-gray-900">Job Recommendations</h4>
-                    <p className="text-sm text-gray-600">Personalized job matches based on your profile</p>
+                    <h4 className="font-medium text-white">Job Recommendations</h4>
+                    <p className="text-sm text-white/70">Personalized job matches based on your profile</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-white/20 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-white/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-white/30 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                   </label>
                 </div>
               </div>
@@ -59,7 +59,7 @@ export default function UnsubscribePage() {
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-white/20 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-white/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-white/30 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                   </label>
                 </div>
               </div>
@@ -72,7 +72,7 @@ export default function UnsubscribePage() {
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-white/20 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-white/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-white/30 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                   </label>
                 </div>
               </div>

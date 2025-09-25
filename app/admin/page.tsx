@@ -127,7 +127,7 @@ function MetricCard({ title, value, subtitle, color }: {
   color: string;
 }) {
   const colorClasses = {
-    blue: 'bg-blue-500',
+    blue: 'bg-indigo-500',
     green: 'bg-white/60',
     purple: 'bg-white/80',
     orange: 'bg-white/40'

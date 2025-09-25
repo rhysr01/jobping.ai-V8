@@ -1,16 +1,12 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { ReactNode } from 'react';
-import { Inter } from 'next/font/google';
-
-const inter = Inter({ 
-  subsets: ['latin'],
-  weight: ['400', '600']
-});
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 
 export const metadata: Metadata = {
   // Force new deployment
-  metadataBase: new URL('https://jobping-6pcpggc73-rhys-rowlands-projects.vercel.app'),
+  metadataBase: new URL('https://www.getjobping.com'),
   alternates: {
     canonical: '/',
   },
@@ -28,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'JobPing - Stop searching for jobs',
     description: 'Real personalised jobs into your inbox for EU students and graduates. AI-curated opportunities delivered every 48 hours.',
-    url: 'https://jobping-6pcpggc73-rhys-rowlands-projects.vercel.app',
+    url: 'https://www.getjobping.com',
     siteName: 'JobPing',
     images: [
       {
@@ -86,7 +82,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               "@type": "SoftwareApplication",
               "name": "JobPing",
               "description": "AI-powered job matching for students and graduates",
-              "url": "https://jobping-6pcpggc73-rhys-rowlands-projects.vercel.app",
+              "url": "https://www.getjobping.com",
               "applicationCategory": "BusinessApplication",
               "operatingSystem": "Web",
               "offers": {
@@ -98,7 +94,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           }}
         />
       </head>
-      <body className={`${inter.className} bg-black text-white antialiased`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} bg-black text-white antialiased`}>
         <a className="skip-link" href="#main">Skip to content</a>
         {children}
       </body>
