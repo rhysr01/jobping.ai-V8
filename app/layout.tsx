@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
-  title: 'JobPing - Stop searching for jobs',
-        description: 'Real personalised jobs into your inbox for EU students and graduates. AI-curated opportunities delivered every 48 hours.',
+  title: 'JobPing - Weekly job matches for early-career roles',
+        description: 'Weekly job matches for early-career roles across Europe—delivered to your inbox.',
   keywords: ['jobs', 'students', 'graduates', 'AI', 'career', 'recruitment', 'internships', 'job matching'],
   authors: [{ name: 'JobPing Team' }],
   creator: 'JobPing',
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: 'JobPing - Stop searching for jobs',
-    description: 'Real personalised jobs into your inbox for EU students and graduates. AI-curated opportunities delivered every 48 hours.',
+    title: 'JobPing - Weekly job matches for early-career roles',
+    description: 'Weekly job matches for early-career roles across Europe—delivered to your inbox.',
     url: 'https://www.getjobping.com',
     siteName: 'JobPing',
     images: [
@@ -39,8 +39,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'JobPing - AI-powered job matching for students',
-    description: 'AI-curated job opportunities delivered every 48 hours to ambitious students and graduates.',
+    title: 'JobPing - Weekly job matches for early-career roles',
+    description: 'Weekly job matches for early-career roles across Europe—delivered to your inbox.',
     images: ['/og-image.png'],
     site: '@jobping'
   },

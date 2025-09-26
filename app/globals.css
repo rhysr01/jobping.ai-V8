@@ -12,9 +12,12 @@ body {
   -moz-osx-font-smoothing: grayscale; 
 }
 
-/* Brand indigo tokens */
+/* Brand indigo tokens - using Tailwind brand scale */
 :root {
+  --brand-300: #A5B4FC;
+  --brand-400: #818CF8;
   --brand-500: #6366F1;
+  --brand-600: #4F46E5;
 }
 
 /* Indigo page frame */
@@ -53,8 +56,8 @@ body::before{
 
 @layer base {
   :root{
-    --indigo: #6366F1;       /* accent (Indigo 500) */
-    --indigo-600:#5457F0;    /* hover/darker */
+    --indigo: var(--brand-500);       /* accent (Indigo 500) */
+    --indigo-600: var(--brand-600);    /* hover/darker */
     --border: rgba(255,255,255,0.12);
     --muted: rgba(255,255,255,0.70);
     --subtle: rgba(255,255,255,0.50);
@@ -90,8 +93,7 @@ body::before{
 
 @layer components {
   .btn { @apply inline-flex items-center justify-center rounded-full px-6 py-3 font-semibold transition; }
-  .btn-primary { background: var(--indigo); color: #000; }
-  .btn-primary:hover { background: var(--indigo-600); }
+  .btn-primary { @apply bg-brand-500 text-white hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400/50; }
   .btn-ghost { background: transparent; color: #fff; border: 1px solid var(--border); }
   .btn-ghost:hover { background: rgba(255,255,255,0.05); }
 
@@ -115,13 +117,16 @@ body::before{
   .btn:hover { transform: translateY(-1px); }
 }
 
-/* Shared utility classes for pill styles */
-.btn-primary {
-  @apply inline-block rounded-2xl px-6 py-3.5 text-lg font-semibold
-         bg-brand-500 text-white hover:bg-brand-600
-         focus:outline-none focus:ring-2 focus:ring-brand-500
-         transition will-change-transform hover:-translate-y-0.5;
+/* Motion-safe animations */
+@media (prefers-reduced-motion: reduce) {
+  .btn:hover { transform: none; }
+  .animate-pulse-slow,
+  .animate-glow,
+  .animate-float,
+  .animate-shimmer { animation: none; }
 }
+
+/* Shared utility classes for pill styles */
 .pill-brand {
   @apply inline-flex items-center rounded-2xl bg-brand-500 text-white
          px-5 py-2.5 text-base md:text-lg font-semibold

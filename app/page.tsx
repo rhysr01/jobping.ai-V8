@@ -18,6 +18,18 @@ export default function Page() {
       <HowItWorks />
       <hr className="mx-auto my-12 w-full max-w-[80rem] border-t border-white/10" />
       <PricingSection />
+      
+      {/* Sticky mobile CTA */}
+      <div className="fixed bottom-4 left-4 right-4 z-50 sm:hidden">
+        <a 
+          href="https://tally.so/r/wLqWxQ?utm_source=landing&utm_medium=sticky&utm_campaign=free"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-primary w-full text-center text-lg py-4 shadow-2xl"
+        >
+          Get 5 matches — Free
+        </a>
+      </div>
     </div>
   );
 }

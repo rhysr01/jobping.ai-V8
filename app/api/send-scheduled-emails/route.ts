@@ -17,6 +17,7 @@ import { aiCostManager } from '@/Utils/ai-cost-manager';
 import { jobQueue } from '@/Utils/job-queue.service';
 import { withAuth } from '@/Utils/auth/withAuth';
 import OpenAI from 'openai';
+import { shouldSendEmailToUser, updateUserEngagement } from '@/Utils/engagementTracker';
 
 // Helper function to safely normalize string/array fields
 function normalizeStringToArray(value: unknown): string[] {
@@ -87,8 +88,10 @@ async function handleSendScheduledEmails(req: NextRequest) {
       }, { status: 200 });
     }
 
-    // Filter users based on tier-based timing rules using tracking fields
-    const eligibleUsers = allUsers.filter(user => {
+    // Filter users based on tier-based timing rules AND engagement
+    const eligibleUsers = [];
+    
+    for (const user of allUsers) {
       const userTier = user.subscription_tier || 'free';
       const signupTime = new Date(user.created_at);
       const lastEmailTime = user.last_email_sent ? new Date(user.last_email_sent) : null;
@@ -97,37 +100,53 @@ async function handleSendScheduledEmails(req: NextRequest) {
       const emailPhase = user.email_phase || 'welcome';
       const onboardingComplete = user.onboarding_complete || false;
 
+      // Check if user should receive emails based on engagement
+      const shouldReceiveEmail = await shouldSendEmailToUser(user.email);
+      
+      if (!shouldReceiveEmail) {
+        console.log(`⏸️ Skipping ${user.email} - delivery paused or not engaged`);
+        continue;
+      }
+
       // Testing mode: 5 minutes instead of normal intervals
       if (testingMode) {
         const testThreshold = 5 * 60 * 1000; // 5 minutes
-        return timeSinceLastEmail >= testThreshold;
+        if (timeSinceLastEmail >= testThreshold) {
+          eligibleUsers.push(user);
+        }
+        continue;
       }
 
       // Phase 1: Welcome email (immediate) - handled by webhook-tally
       // Skip if user hasn't received their welcome email yet
       if (emailPhase === 'welcome' && !lastEmailTime) {
-        return false;
+        continue;
       }
 
       // Phase 2: 48-hour follow-up (exactly 48 hours after signup)
       if (emailPhase === 'welcome' && timeSinceSignup >= 48 * 60 * 60 * 1000 && timeSinceSignup < 72 * 60 * 60 * 1000) {
         // User is in the 48-72 hour window and hasn't received the follow-up email
-        return timeSinceLastEmail >= 48 * 60 * 60 * 1000;
+        if (timeSinceLastEmail >= 48 * 60 * 60 * 1000) {
+          eligibleUsers.push(user);
+        }
+        continue;
       }
 
       // Phase 3: Regular distribution (tier-based) - only after onboarding is complete
       if (onboardingComplete && emailPhase === 'regular') {
         if (userTier === 'premium') {
           // Premium: every 48 hours
-          return timeSinceLastEmail >= 48 * 60 * 60 * 1000;
+          if (timeSinceLastEmail >= 48 * 60 * 60 * 1000) {
+            eligibleUsers.push(user);
+          }
         } else {
           // Free: every 72 hours
-          return timeSinceLastEmail >= 72 * 60 * 60 * 1000;
+          if (timeSinceLastEmail >= 72 * 60 * 60 * 1000) {
+            eligibleUsers.push(user);
+          }
         }
       }
-
-      return false;
-    });
+    }
 
     console.log(`📧 Found ${eligibleUsers.length} eligible users out of ${allUsers.length} total users`);
     console.log('🔍 Eligibility breakdown:', {
@@ -327,6 +346,10 @@ async function handleSendScheduledEmails(req: NextRequest) {
             if (updateError) {
               console.error(`❌ Failed to update tracking fields for ${user.email}:`, updateError);
             }
+
+            // Track email engagement (email sent)
+            await updateUserEngagement(user.email, 'email_sent');
+            
             console.log(`✅ Email sent to ${user.email} with ${matches.length} matches (${userTier} tier, ${isOnboardingPhase ? 'onboarding' : 'regular'} phase)`);
             return { success: true, email: user.email };
           } else {

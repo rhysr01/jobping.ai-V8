@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "node automation/real-job-runner.cjs",
+    "start": "next start",
+    "automation:start": "node automation/real-job-runner.cjs",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test": "jest",

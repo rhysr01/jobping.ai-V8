@@ -58,18 +58,18 @@ interface PerformanceMetrics {
 
 // Rate limiting and job caps managed by production middleware and SEND_PLAN
 
-// Freshness tier distribution with fallback logic
+// Freshness tier distribution with fallback logic - MVP Final (exactly 5 jobs)
 const TIER_DISTRIBUTION = {
   free: {
-    ultra_fresh: parseInt(process.env.FREE_ULTRA_FRESH || '1'),
+    ultra_fresh: parseInt(process.env.FREE_ULTRA_FRESH || '2'),
     fresh: parseInt(process.env.FREE_FRESH || '2'),
-    comprehensive: parseInt(process.env.FREE_COMPREHENSIVE || '0'),
+    comprehensive: parseInt(process.env.FREE_COMPREHENSIVE || '1'),
     fallback_order: ['fresh', 'ultra_fresh', 'comprehensive'] // If tier is empty, try these
   },
   premium: {
-    ultra_fresh: parseInt(process.env.PREMIUM_ULTRA_FRESH || '5'),
-    fresh: parseInt(process.env.PREMIUM_FRESH || '7'),
-    comprehensive: parseInt(process.env.PREMIUM_COMPREHENSIVE || '3'),
+    ultra_fresh: parseInt(process.env.PREMIUM_ULTRA_FRESH || '2'),
+    fresh: parseInt(process.env.PREMIUM_FRESH || '2'),
+    comprehensive: parseInt(process.env.PREMIUM_COMPREHENSIVE || '1'),
     fallback_order: ['fresh', 'ultra_fresh', 'comprehensive']
   }
 };

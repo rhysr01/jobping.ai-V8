@@ -34,8 +34,10 @@ export default function BuiltForStudents() {
         {items.map((x) => (
           <div
             key={x.num}
-            className="rounded-2xl border border-white/10 bg-zinc-900/30 p-6"
+            className="rounded-2xl bg-neutral-900/60 ring-1 ring-brand-500/10 p-8 md:p-10 relative overflow-hidden"
           >
+            {/* Faint top gradient */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-500/20 to-transparent"></div>
             <div className="h-10 w-10 rounded-full border border-brand-500/45 bg-brand-500/15 text-brand-100 grid place-items-center text-sm font-medium shadow-[0_0_40px_rgba(99,102,241,0.20)]">
               {x.num}
             </div>

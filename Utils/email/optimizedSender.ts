@@ -5,6 +5,7 @@ import { getResendClient, getSupabaseClient, EMAIL_CONFIG } from './clients';
 import { createWelcomeEmail, createJobMatchesEmail } from './optimizedTemplates';
 import { createWelcomeEmailText, createJobMatchesEmailText } from './textGenerator';
 import { buildPersonalizedSubject } from './subjectBuilder';
+import { addEngagementTracking } from './engagementTracking';
 import crypto from 'crypto';
 
 // Performance optimizations
@@ -128,7 +129,10 @@ export async function sendWelcomeEmail({
     
     // Generate email with caching
     const cacheKey = `welcome_${userName}_${matchCount}`;
-    const html = getCachedEmail(cacheKey, () => createWelcomeEmail(userName, matchCount));
+    const baseHtml = getCachedEmail(cacheKey, () => createWelcomeEmail(userName, matchCount));
+    
+    // Add engagement tracking to HTML
+    const html = addEngagementTracking(baseHtml, to);
     const text = createWelcomeEmailText(userName, matchCount);
     const unsubscribeHeaders = createDeliverabilityHeaders(to);
     
@@ -203,9 +207,12 @@ export async function sendMatchedJobsEmail({
     
     // Generate email with caching
     const cacheKey = `matches_${jobs.length}_${subscriptionTier}_${isSignupEmail}`;
-    const html = getCachedEmail(cacheKey, () => 
+    const baseHtml = getCachedEmail(cacheKey, () => 
       createJobMatchesEmail(jobCards, userName, subscriptionTier, isSignupEmail, personalization)
     );
+    
+    // Add engagement tracking to HTML
+    const html = addEngagementTracking(baseHtml, to);
     const text = createJobMatchesEmailText(jobs, userName, subscriptionTier, isSignupEmail, personalization);
     const unsubscribeHeaders = createDeliverabilityHeaders(to);
     

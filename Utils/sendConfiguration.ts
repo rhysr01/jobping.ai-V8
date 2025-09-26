@@ -16,17 +16,17 @@ export interface MatchRules {
   maxPerCompanyPerSend: number; // Max jobs per company per send
 }
 
-// Core send configuration
+// Core send configuration - MVP Final
 export const SEND_PLAN = {
   free: {
-    days: ["Thu"],
-    perSend: 3,
+    days: ["Thu"], // Weekly on Thursday
+    perSend: 5,    // Exactly 5 jobs per email
     pullsPerWeek: 1,
   },
   premium: {
-    days: ["Tue", "Sat"],
-    perSend: 6,
-    pullsPerWeek: 2,
+    days: ["Mon", "Wed", "Fri"], // Mon/Wed/Fri at 07:30 local
+    perSend: 5,    // Exactly 5 jobs per email
+    pullsPerWeek: 3,
     earlyAccessHours: 24
   }
 };

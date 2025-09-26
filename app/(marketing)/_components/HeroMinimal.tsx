@@ -2,10 +2,10 @@ import LogoWordmark from './LogoWordmark';
 
 export default function HeroMinimal() {
   return (
-    <section className="relative isolate text-center py-20 md:py-24">
+    <section className="relative isolate text-center py-16 sm:py-20 md:py-24">
       <div className="mx-auto max-w-[80rem] px-6 md:px-8">
         <LogoWordmark />
-        <p className="mt-6 text-xl md:text-2xl text-zinc-200 max-w-[60ch] mx-auto leading-8 md:leading-9 font-medium">
+        <p className="mt-6 text-lg md:text-xl text-zinc-200 max-w-2xl mx-auto leading-7 md:leading-8 tracking-[0.005em] font-medium">
           Weekly job matches for early-career roles across Europe—delivered to your inbox.
         </p>
         <a 
