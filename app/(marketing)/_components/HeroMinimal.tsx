@@ -1,5 +1,6 @@
 import LogoWordmark from './LogoWordmark';
-import { HERO_TITLE, HERO_SUBTITLE } from '@/lib/copy';
+import { ButtonPrimary } from '@/components/ui/Button';
+import { HERO_TITLE, HERO_SUBTITLE, CTA_FREE } from '@/lib/copy';
 
 export default function HeroMinimal() {
   return (
@@ -7,9 +8,17 @@ export default function HeroMinimal() {
       <div className="mx-auto max-w-[80rem] px-6 md:px-8">
         <LogoWordmark />
         <h1 className="sr-only">{HERO_TITLE}</h1>
-        <p className="mt-6 text-lg md:text-xl text-zinc-300 max-w-[60ch] mx-auto leading-7 md:leading-8 tracking-[0.005em] font-medium">
+        <p className="mt-6 text-lg md:text-xl text-zinc-300 max-w-[60ch] mx-auto leading-7 md:leading-8 tracking-[0.005em] font-medium whitespace-pre-line">
           {HERO_SUBTITLE}
         </p>
+        <ButtonPrimary 
+          href="https://tally.so/r/mJEqx4?utm_source=landing&utm_medium=hero&utm_campaign=free"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-7 text-xl px-8 py-4"
+        >
+          {CTA_FREE}
+        </ButtonPrimary>
       </div>
 
       {/* spotlight behind the wordmark */}
