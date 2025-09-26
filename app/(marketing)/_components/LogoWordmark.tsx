@@ -3,7 +3,7 @@ export default function LogoWordmark() {
     <h1 className="inline-flex items-baseline gap-3 font-semibold tracking-tight leading-none text-7xl md:text-8xl">
       <span aria-hidden className="text-white/95">
         <svg
-          className="h-[42px] w-[42px] md:h-[54px] md:w-[54px] -translate-y-1"
+          className="h-[56px] w-[56px] md:h-[72px] md:w-[72px] -translate-y-1"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

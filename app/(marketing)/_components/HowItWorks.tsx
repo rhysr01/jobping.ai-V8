@@ -6,15 +6,21 @@ export default function HowItWorks() {
   ];
   return (
     <section id="how" className="mx-auto max-w-[80rem] px-6 md:px-8 py-20 md:py-24">
-      <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-center">How it works</h2>
-      <div className="mt-10 grid md:grid-cols-3 gap-10 text-center">
+      <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-center mb-16">How it works</h2>
+      <div className="grid md:grid-cols-3 gap-12 text-center">
         {items.map((x, i) => (
-          <div key={x.t}>
-            <div className="mx-auto h-10 w-10 rounded-full border border-brand-500/40 bg-brand-500/12 text-brand-200 grid place-items-center text-sm font-medium">
+          <div key={x.t} className="relative">
+            {/* Indigo bubble background */}
+            <div className="mx-auto h-20 w-20 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 
+                          shadow-2xl shadow-brand-500/25 grid place-items-center text-2xl font-bold text-white
+                          border-2 border-brand-300/30 relative z-10">
               {i + 1}
             </div>
-            <h3 className="mt-3 font-semibold">{x.t}</h3>
-            <p className="mt-1 text-zinc-300">{x.s}</p>
+            {/* Glow effect behind bubble */}
+            <div className="mx-auto h-20 w-20 rounded-full bg-brand-500/20 blur-xl absolute top-0 left-1/2 transform -translate-x-1/2"></div>
+            
+            <h3 className="mt-6 text-xl font-bold text-white">{x.t}</h3>
+            <p className="mt-2 text-base text-zinc-300 font-medium">{x.s}</p>
           </div>
         ))}
       </div>
