@@ -245,21 +245,11 @@ print(df[cols].to_csv(index=False))
     if (!titleHasExplicitEarly && !excludesAll(` ${t} `, consultantExclusion)) return false;
     return true;
   });
-  // Cap per city+term to prevent volume spikes
-  const capPerCombo = 200;
-  const perKey = new Map();
-  const capped = [];
-  for (const j of qualityFiltered) {
-    const keyCity = (j.location||'').split(',')[0].trim().toLowerCase();
-    const key = `${keyCity}`;
-    const used = perKey.get(key) || 0;
-    if (used < capPerCombo) {
-      capped.push(j); perKey.set(key, used+1);
-    }
-  }
+  // No per-city cap - collect all quality jobs
+  const capped = qualityFiltered;
   console.log(`\n🧾 Total collected: ${collected.length}`);
   console.log(`✅ Passing quality gate (fields + biz/early terms, no senior/noise): ${qualityFiltered.length}`);
-  console.log(`🎚️ After per-city cap (${capPerCombo}): ${capped.length}`);
+  console.log(`🎚️ All quality jobs included (no cap): ${capped.length}`);
   
   // Debug: show sample titles that failed
   if (collected.length > 0 && qualityFiltered.length === 0) {
