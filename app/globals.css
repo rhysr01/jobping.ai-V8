@@ -92,8 +92,6 @@ body::before{
 }
 
 @layer components {
-  .btn { @apply inline-flex items-center justify-center rounded-full px-6 py-3 font-semibold transition; }
-  .btn-primary { @apply bg-brand-500 text-white hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400/50; }
   .btn-ghost { background: transparent; color: #fff; border: 1px solid var(--border); }
   .btn-ghost:hover { background: rgba(255,255,255,0.05); }
 
