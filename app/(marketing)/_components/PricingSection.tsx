@@ -1,14 +1,10 @@
 export default function PricingSection() {
   return (
-    <section className="mx-auto max-w-[72rem] px-6 md:px-8 py-24 md:py-28">
-      <h2 className="font-display text-3xl md:text-4xl font-semibold tracking-tight leading-[1.05] text-center">
-        Choose your plan
-      </h2>
-      <p className="mt-4 text-[15px] md:text-base leading-7 md:leading-8 text-zinc-300 max-w-[65ch] mx-auto text-center">
-        Get 5 instant matches when you sign up, then weekly deliveries.
-      </p>
-      
-      <div className="grid md:grid-cols-2 gap-8 mt-16">
+    <section className="mx-auto max-w-[80rem] px-6 md:px-8 py-20 md:py-24">
+      <h2 className="font-semibold text-3xl md:text-4xl tracking-tight text-center">Choose your plan</h2>
+      <p className="mt-2 text-zinc-300 text-center">5 instant matches now, then weekly deliveries.</p>
+
+      <div className="mt-10 grid md:grid-cols-2 gap-8">
         {/* Free */}
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-8">
           <h3 className="font-display text-xl font-semibold">Free</h3>
@@ -31,11 +27,9 @@ export default function PricingSection() {
         </div>
         
         {/* Premium */}
-        <div className="rounded-2xl border border-zinc-700 bg-zinc-900/40 ring-1 ring-indigo-500/20 p-8 relative">
-          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-            <span className="bg-indigo-500 text-white text-xs px-3 py-1 rounded-full">Popular</span>
-          </div>
-          <h3 className="font-display text-xl font-semibold">Premium</h3>
+        <div className="rounded-2xl border border-zinc-700 bg-zinc-900/40 ring-1 ring-indigo-500/20 p-8">
+          <span className="inline-block text-xs px-2 py-1 rounded-full bg-indigo-500/15 text-indigo-300">Popular</span>
+          <h3 className="font-semibold text-xl mt-2">Premium</h3>
           <p className="mt-2 text-zinc-300">For serious job seekers</p>
           <ul className="mt-6 space-y-3 text-sm text-zinc-300">
             <li>• 5 instant matches on signup</li>
