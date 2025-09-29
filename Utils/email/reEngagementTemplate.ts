@@ -40,7 +40,8 @@ export function generateReEngagementEmail(data: ReEngagementEmailData): string {
             border: 1px solid #1A1A1A;
         }
         .header {
-            background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+            /* Match site brand gradient: indigo → purple */
+            background: linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #8B5CF6 100%);
             padding: 40px 32px;
             text-align: center;
             position: relative;
@@ -111,18 +112,20 @@ export function generateReEngagementEmail(data: ReEngagementEmailData): string {
             line-height: 1.5;
         }
         .cta-button {
-            background: #6366F1;
-            color: white;
-            padding: 16px 32px;
-            border-radius: 8px;
+            /* Match site CTA: gradient + larger, rounded pill */
+            background: linear-gradient(90deg, #6366F1, #7C3AED, #8B5CF6);
+            color: #FFFFFF !important;
+            padding: 16px 28px;
+            border-radius: 16px;
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 800;
+            letter-spacing: -0.01em;
             display: inline-block;
             margin: 24px 0;
-            transition: background-color 0.2s;
+            box-shadow: 0 18px 48px rgba(99,102,241,0.35);
         }
         .cta-button:hover {
-            background: #4F46E5;
+            filter: brightness(1.06);
         }
         .benefits {
             background: #111111;
@@ -148,7 +151,7 @@ export function generateReEngagementEmail(data: ReEngagementEmailData): string {
             width: 16px;
             height: 16px;
             margin-right: 12px;
-            color: #6366F1;
+            color: #6366F1; /* brand-500 */
         }
         .footer {
             background: #000000;
