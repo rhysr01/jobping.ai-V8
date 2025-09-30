@@ -196,11 +196,144 @@ function extractUserData(fields: NonNullable<TallyWebhookData['data']>['fields']
 }
 
 export async function POST(req: NextRequest) {
-  // WEBHOOK DISABLED: Reverted to iframe implementation
-  return NextResponse.json({ 
-    error: 'Webhook endpoint disabled - using iframe implementation',
-    status: 'disabled'
-  }, { status: 410 }); // 410 Gone - indicates the resource is no longer available
+  try {
+    // Rate limiting
+    const rateLimiter = getProductionRateLimiter();
+    const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    
+    const rateLimit = await rateLimiter.checkRateLimit('webhook-tally', clientIp);
+    if (!rateLimit.allowed) {
+      return NextResponse.json({ 
+        error: 'Rate limit exceeded. Please try again later.',
+        retryAfter: rateLimit.retryAfter 
+      }, { status: 429 });
+    }
+
+    // Security validation
+    const validationResult = await validateTallyWebhook(req);
+    if (!validationResult.isValid) {
+      console.error('❌ Tally webhook validation failed:', validationResult.error);
+      return NextResponse.json({ 
+        error: 'Invalid webhook signature' 
+      }, { status: 401 });
+    }
+
+    // Parse and validate the webhook payload
+    const body = await req.json();
+    const validatedData = TallyWebhookSchema.parse(body);
+    
+    console.log('✅ Tally webhook received:', {
+      eventId: validatedData.eventId,
+      formId: validatedData.formId,
+      responseId: validatedData.responseId
+    });
+
+    // Extract user data from form fields
+    const userData = extractUserData(
+      validatedData.data?.fields || [], 
+      req.headers.get('referer') || undefined
+    );
+
+    if (!userData.email) {
+      console.error('❌ No email found in form data');
+      return NextResponse.json({ 
+        error: 'Email is required' 
+      }, { status: 400 });
+    }
+
+    // Get database client
+    const supabase = getSupabaseClient();
+    
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id, email, subscription_tier')
+      .eq('email', userData.email)
+      .single();
+
+    if (existingUser) {
+      console.log('👤 User already exists:', existingUser.email);
+      return NextResponse.json({ 
+        success: true, 
+        message: 'User already registered',
+        userId: existingUser.id 
+      });
+    }
+
+    // Create new user
+    const insertData = {
+      email: userData.email,
+      full_name: userData.full_name || '',
+      professional_expertise: userData.professional_expertise || '',
+      start_date: userData.start_date || '',
+      work_environment: userData.work_environment || '',
+      work_authorization: userData.work_authorization || '',
+      entry_level_preference: userData.entry_level_preference || '',
+      career_path: userData.career_path || [],
+      professional_experience: userData.professional_experience || '',
+      languages_spoken: userData.languages_spoken || [],
+      company_types: userData.company_types || [],
+      roles_selected: userData.roles_selected || [],
+      target_cities: userData.target_cities || [],
+      subscription_tier: userData.subscriptionTier || 'free',
+      created_at: new Date().toISOString()
+    };
+    
+    // Properly typed Supabase insert with select
+    // Using PostgrestBuilder pattern to avoid type inference issues
+    const query = supabase.from('users').insert([insertData]);
+    const selectQuery = (query as any).select();
+    const singleQuery = selectQuery.single();
+    const insertResult = await singleQuery;
+    
+    const newUser = insertResult.data;
+    const userError = insertResult.error;
+
+    if (userError) {
+      console.error('❌ Failed to create user:', userError);
+      return NextResponse.json({ 
+        error: 'Failed to create user account' 
+      }, { status: 500 });
+    }
+
+    console.log('✅ User created successfully:', newUser.email);
+
+    // Send welcome email
+    try {
+      await sendWelcomeEmail({
+        to: userData.email as string,
+        userName: (typeof userData.full_name === 'string' ? userData.full_name : 'there'),
+        matchCount: 5
+      });
+      console.log('✅ Welcome email sent to:', userData.email);
+    } catch (emailError) {
+      console.error('⚠️ Failed to send welcome email:', emailError);
+      // Don't fail the webhook for email errors
+    }
+
+    // Cleanup memory
+    performMemoryCleanup();
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'User registered successfully',
+      userId: newUser.id 
+    }, { 
+      status: 200,
+      headers: getSecurityHeaders()
+    });
+
+  } catch (error) {
+    console.error('❌ Tally webhook error:', error);
+    
+    // Cleanup memory on error
+    performMemoryCleanup();
+    
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+    }, { status: 500 });
+  }
 }
 
 // Test handler for email verification testing

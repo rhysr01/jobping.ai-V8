@@ -205,9 +205,10 @@ async function main() {
 from jobspy import scrape_jobs
 import pandas as pd
 df = scrape_jobs(
-  site_name=['linkedin'],
+  site_name=['indeed'],
   search_term='''${term.replace(/'/g, "''")}''',
   location='''${city}''',
+  country_indeed='''${country}''',
   results_wanted=${RESULTS_WANTED},
   hours_old=720,
   distance=20
@@ -306,7 +307,7 @@ print(df[cols].to_csv(index=False))
       console.log(`   Raw job object:`, JSON.stringify(j, null, 2));
     });
   }
-  await saveJobs(capped, 'jobspy-linkedin');
+  await saveJobs(capped, 'jobspy-indeed');
   console.log(`✅ JobSpy: total_saved=${capped.length}`);
   console.log('🎉 Done');
 }
