@@ -208,11 +208,9 @@ df = scrape_jobs(
   site_name=['linkedin'],
   search_term='''${term.replace(/'/g, "''")}''',
   location='''${city}''',
-  country_indeed='''${country}''',
   results_wanted=${RESULTS_WANTED},
   hours_old=720,
-  distance=20,
-  sort='date'
+  distance=20
 )
 import sys
 print('Available columns:', list(df.columns), file=sys.stderr)
@@ -308,7 +306,7 @@ print(df[cols].to_csv(index=False))
       console.log(`   Raw job object:`, JSON.stringify(j, null, 2));
     });
   }
-  await saveJobs(capped, 'jobspy-indeed');
+  await saveJobs(capped, 'jobspy-linkedin');
   console.log(`✅ JobSpy: total_saved=${capped.length}`);
   console.log('🎉 Done');
 }
