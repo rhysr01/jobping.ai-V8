@@ -29,7 +29,7 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, onConfirmWith
 
     try {
       if (onConfirmWithPromo) {
-        await onConfirmWithPromo(_email, promoCode.trim() || undefined);
+        await onConfirmWithPromo(_promoCode.trim() || undefined);
       } else {
         await onConfirm(_email);
       }

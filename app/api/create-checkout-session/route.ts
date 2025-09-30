@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Audit (best-effort)
-      const { error: logError } = await supabase
+      await supabase
         .from('promo_activations')
         .insert({ email, code: promoCode, activated_at: now });
       // Non-fatal if audit insert fails

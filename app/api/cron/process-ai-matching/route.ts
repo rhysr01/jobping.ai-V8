@@ -11,7 +11,7 @@ const supabase = createClient(
 const BATCH_SIZE = parseInt(process.env.AI_MATCHING_BATCH_SIZE || '5');
 const MAX_PROCESSING_TIME = parseInt(process.env.MAX_PROCESSING_TIME || '25000'); // 25 seconds (Vercel limit)
 
-const processAIMatchingHandler = async (request: NextRequest) => {
+const processAIMatchingHandler = async (_request: NextRequest) => {
   const startTime = Date.now();
   
   try {

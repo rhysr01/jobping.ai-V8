@@ -21,7 +21,6 @@ export function scoreJob(
   description: string,
   postedAt: string,
   track: JobTrack,
-  preferredCountry?: string
 ) {
   let score = 0;
   const days = dayjs().diff(dayjs(postedAt), "day");

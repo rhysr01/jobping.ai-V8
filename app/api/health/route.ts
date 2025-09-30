@@ -1,8 +1,4 @@
 import { NextResponse } from 'next/server';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { HTTP_STATUS } from '@/Utils/constants';
-import { Resend } from 'resend';
-import { validateProductionSecrets, validateEnvHygiene } from '../../../lib/auth';
 import { healthChecker } from '../../../Utils/monitoring/healthChecker';
 
 export async function GET() {

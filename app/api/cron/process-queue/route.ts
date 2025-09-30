@@ -16,7 +16,7 @@ const supabase = createClient(
 const BATCH_SIZE = parseInt(process.env.QUEUE_BATCH_SIZE || '10');
 const MAX_PROCESSING_TIME = parseInt(process.env.MAX_PROCESSING_TIME || '25000'); // 25 seconds (Vercel limit)
 
-const processQueueHandler = async (request: NextRequest) => {
+const processQueueHandler = async (_request: NextRequest) => {
   const startTime = Date.now();
   
   try {

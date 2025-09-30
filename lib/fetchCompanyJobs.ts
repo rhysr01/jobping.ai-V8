@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import { mantiks } from "./mantiks";
 import { englishSeeds, localPacks, excludeNoise } from "./config";
 

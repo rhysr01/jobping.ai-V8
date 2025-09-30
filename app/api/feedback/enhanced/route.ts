@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { HTTP_STATUS } from '@/Utils/constants';
-import { errorResponse } from '@/Utils/errorResponse';
 import { getSupabaseClient } from '@/Utils/supabase';
 
 // Enhanced feedback data interface
