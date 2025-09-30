@@ -11,7 +11,7 @@ interface PaymentModalProps {
 }
 
 export default function PaymentModal({ isOpen, onClose, onConfirm, onConfirmWithPromo, isLoading }: PaymentModalProps) {
-  const [_email, setEmail] = useState('');
+  const [email, setEmail] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [showPromo, setShowPromo] = useState(false);
   const [error, setError] = useState('');
@@ -22,16 +22,16 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, onConfirmWith
 
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(_email)) {
+    if (!emailRegex.test(email)) {
       setError('Please enter a valid email address.');
       return;
     }
 
     try {
       if (onConfirmWithPromo) {
-        await onConfirmWithPromo(_promoCode.trim() || undefined);
+        await onConfirmWithPromo(email, promoCode.trim() || undefined);
       } else {
-        await onConfirm(_email);
+        await onConfirm(email);
       }
       setEmail('');
       setPromoCode('');
@@ -83,7 +83,7 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, onConfirmWith
             <input
               type="email"
               id="email"
-              value={_email}
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email address"
               required
@@ -173,7 +173,7 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, onConfirmWith
             </button>
             <button
               type="submit"
-              disabled={isLoading || !_email}
+              disabled={isLoading || !email}
               className="flex-1 px-4 py-3 bg-white text-black font-semibold rounded-xl hover:bg-zinc-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
