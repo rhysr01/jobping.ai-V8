@@ -16,7 +16,7 @@ export default function Pricing() {
               <li>• Curated, de-duped</li>
               <li>• Email support</li>
             </ul>
-            <a href="https://tally.so/r/mJEqx4" className="btn-primary mt-6">Get 5 matches — Free</a>
+            <a href="https://tally.so/r/mJEqx4?tier=free&source=pricing" className="btn-primary mt-6">Get 5 matches — Free</a>
           </div>
 
           {/* Premium */}
@@ -31,7 +31,7 @@ export default function Pricing() {
               <li>• Finer filters</li>
               <li>• Priority support</li>
             </ul>
-            <a href="https://tally.so/r/mJEqx4" className="btn-outline mt-6">Upgrade to Premium</a>
+            <a href="https://tally.so/r/mJEqx4?tier=premium&source=pricing" className="btn-outline mt-6">Upgrade to Premium</a>
           </div>
         </div>
 
