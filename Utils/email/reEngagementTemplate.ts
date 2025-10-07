@@ -24,6 +24,11 @@ export function generateReEngagementEmail(data: ReEngagementEmailData): string {
             margin: 0;
             padding: 0;
             background: #000000;
+            background-image:
+                radial-gradient(80% 55% at 50% 0%, rgba(139,92,246,0.15), transparent 60%),
+                radial-gradient(60% 45% at 50% 100%, rgba(124,58,237,0.12), transparent 60%);
+            background-repeat: no-repeat;
+            background-position: center top, center bottom;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
             line-height: 1.6;
             color: #FFFFFF;

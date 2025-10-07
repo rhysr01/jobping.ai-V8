@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import LogoWordmark from '@/components/LogoWordmark';
 
 export default function UpgradePage() {
   const [email, setEmail] = useState('');
@@ -56,10 +58,44 @@ export default function UpgradePage() {
   };
 
   return (
-    <div className="min-h-screen premium-bg flex items-center justify-center px-6">
+    <div className="min-h-screen premium-bg flex items-center justify-center px-6 py-20 relative">
+      {/* Background animations matching Hero */}
+      <motion.div
+        aria-hidden
+        initial={{ opacity: 0, y: -20, scale: 0.8 }}
+        animate={{ 
+          opacity: 1, 
+          y: 0, 
+          scale: 1,
+          rotate: [0, 1, -1, 0]
+        }}
+        transition={{ 
+          duration: 2, 
+          ease: [0.23, 1, 0.32, 1],
+          repeat: Infinity,
+          repeatType: "reverse"
+        }}
+        className="pointer-events-none absolute inset-0 -z-10 enhanced-grid"
+      />
+      
       <div className="max-w-md w-full">
-        <div className="glass-card rounded-2xl p-8">
-          <h1 className="text-3xl font-bold text-center mb-2">Upgrade to Premium</h1>
+        {/* Logo at top */}
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-8"
+        >
+          <LogoWordmark />
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="glass-card rounded-2xl p-8 md:p-10 interactive-hover"
+        >
+          <h1 className="text-3xl md:text-4xl font-bold text-center mb-2 tracking-tight">Upgrade to Premium</h1>
           <p className="text-zinc-400 text-center mb-8">
             Get 3 emails per week with 5 hand-picked roles each
           </p>
