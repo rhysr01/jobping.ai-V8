@@ -10,26 +10,26 @@ html, body {
   background-color: #000;
 }
 
-/* Enhanced purple/indigo vignette across the page */
+/* STRONG purple/indigo vignette across the page */
 body {
   background-image:
-    radial-gradient(80% 55% at 50% -10%, rgba(139,92,246,0.22), transparent 60%),
-    radial-gradient(65% 50% at 100% 0%,  rgba(99,102,241,0.18), transparent 60%),
-    radial-gradient(60% 45% at 0% 100%,  rgba(124,58,237,0.15), transparent 60%),
-    radial-gradient(50% 40% at 50% 50%,  rgba(139,92,246,0.08), transparent 70%);
+    radial-gradient(70% 50% at 50% -15%, rgba(139,92,246,0.45), transparent 55%),
+    radial-gradient(60% 45% at 100% 0%,  rgba(99,102,241,0.35), transparent 58%),
+    radial-gradient(55% 40% at 0% 100%,  rgba(124,58,237,0.32), transparent 56%),
+    radial-gradient(50% 40% at 50% 50%,  rgba(139,92,246,0.18), transparent 65%);
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-position: center top, right top, left bottom, center center;
 }
 
-/* Premium background + grid (from Figma) */
+/* Premium background + grid (from Figma) - STRONGER */
 .premium-bg {
   position: relative;
   background-color: transparent;
   background-image:
-    radial-gradient(120% 80% at 50% -30%, rgba(139,92,246,0.15), transparent 60%),
-    radial-gradient(100% 70% at 0% 50%, rgba(99,102,241,0.12), transparent 65%),
-    radial-gradient(100% 70% at 100% 50%, rgba(124,58,237,0.12), transparent 65%),
+    radial-gradient(120% 80% at 50% -30%, rgba(139,92,246,0.28), transparent 60%),
+    radial-gradient(100% 70% at 0% 50%, rgba(99,102,241,0.22), transparent 65%),
+    radial-gradient(100% 70% at 100% 50%, rgba(124,58,237,0.22), transparent 65%),
     linear-gradient(#000 0%, #050505 25%, #0a0a0a 75%, #000 100%);
   background-attachment: fixed;
 }
