@@ -41,7 +41,7 @@
    - Name: `JobPing Premium Quarterly`
    - Description: `Premium job matching - Quarterly subscription (3 months)`
    - Pricing model: `Recurring`
-   - Price: `€59.00 EUR`
+   - Price: `€15.00 EUR`
    - Billing period: `Every 3 months`
    - Click "Save product"
    - **Copy the Price ID** (starts with `price_...`)
