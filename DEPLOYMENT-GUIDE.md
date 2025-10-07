@@ -1,206 +1,375 @@
-# 🚀 JobPing Deployment Architecture - Vercel + GitHub Actions
+# 🚀 JobPing Production Deployment Guide
 
-## ✅ Recommended Architecture: Vercel + GitHub Actions
+**Status**: Ready to deploy  
+**Last Updated**: 2025-01-30  
+**Estimated Time**: 30 minutes
 
-### The Problem with Vercel for Job Scraping
-- Vercel functions have 10-minute execution limit
-- Your scrapers take 10+ minutes to run all sources
-- **Solution**: Use GitHub Actions for scraping, Vercel for the app
+---
 
-## 🏗️ Architecture Overview
+## ✅ PRE-DEPLOYMENT CHECKLIST
 
-### Vercel (Primary - Application)
-- **Hosts**: Your Next.js app (frontend + API routes)
-- **Handles**: User dashboard, job matching, API endpoints
-- **Perfect for**: Fast serverless functions, automatic deployments
-- **Does NOT**: Run long job scraping processes
+- [x] Production build passes (`npm run build`)
+- [x] E2E tests pass (26/26)
+- [x] TypeScript errors resolved
+- [x] ESLint warnings minimized
+- [x] All code committed and pushed to GitHub
+- [ ] Production environment variables configured
+- [ ] Stripe products created
+- [ ] Stripe webhook configured
+- [ ] Domain DNS configured (if using custom domain)
 
-### GitHub Actions (Job Scraping)
-- **Runs**: Your scrapers via scheduled workflows
-- **Schedule**: 3x daily (8am, 1pm, 6pm UTC)
-- **Uses**: Your existing `automation/real-job-runner.js`
-- **Saves**: Directly to Supabase (same database as Vercel app)
+---
 
-### Railway (Disabled)
-- **Status**: Remove Railway deployment
-- **Reason**: Using Vercel instead
+## 📋 STEP-BY-STEP DEPLOYMENT
 
-## 🔧 Implementation Steps
+### **STEP 1: Configure Stripe Products** ⚡
 
-### 1. Set up Vercel Project
+1. **Go to Stripe Dashboard** → [Products](https://dashboard.stripe.com/products)
 
-1. **Connect to GitHub**:
-   - Go to [vercel.com](https://vercel.com)
-   - Import your GitHub repository
-   - Select "Next.js" framework
+2. **Create Monthly Product**:
+   - Click "+ New product"
+   - Name: `JobPing Premium Monthly`
+   - Description: `Premium job matching - 3 emails per week with 5 hand-picked roles each`
+   - Pricing model: `Recurring`
+   - Price: `€7.00 EUR`
+   - Billing period: `Monthly`
+   - Click "Save product"
+   - **Copy the Price ID** (starts with `price_...`)
 
-2. **Add Environment Variables** in Vercel Dashboard:
-   ```bash
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-   OPENAI_API_KEY=your_openai_key
-   RAPIDAPI_KEY=your_rapidapi_key
+3. **Create Annual Product**:
+   - Click "+ New product"
+   - Name: `JobPing Premium Annual`
+   - Description: `Premium job matching - Annual subscription (save €25)`
+   - Pricing model: `Recurring`
+   - Price: `€59.00 EUR`
+   - Billing period: `Yearly`
+   - Click "Save product"
+   - **Copy the Price ID** (starts with `price_...`)
+
+**Save these for Step 3!**
+
+---
+
+### **STEP 2: Configure Stripe Webhook** 🔗
+
+1. **Go to Stripe Dashboard** → [Webhooks](https://dashboard.stripe.com/webhooks)
+
+2. **Click "+ Add endpoint"**
+
+3. **Endpoint URL**: 
    ```
+   https://getjobping.com/api/webhooks/stripe
+   ```
+   *(Or your production domain)*
 
-3. **Deploy**: Vercel will auto-deploy on push to main
+4. **Select events to listen to**:
+   - ✅ `checkout.session.completed`
+   - ✅ `customer.subscription.created`
+   - ✅ `customer.subscription.updated`
+   - ✅ `customer.subscription.deleted`
+   - ✅ `invoice.payment_succeeded`
+   - ✅ `invoice.payment_failed`
 
-### 2. Set up GitHub Actions Secrets
+5. **Click "Add endpoint"**
 
-Go to your GitHub repo → Settings → Secrets and variables → Actions
+6. **Copy the Signing Secret** (starts with `whsec_...`)
 
-Add these secrets:
+**Save this for Step 3!**
+
+---
+
+### **STEP 3: Set Production Environment Variables** 🔐
+
+**If using Vercel**:
+1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+2. Select your project
+3. Go to Settings → Environment Variables
+4. Add each variable below
+
+**If using Railway**:
+1. Go to [Railway Dashboard](https://railway.app/dashboard)
+2. Select your project
+3. Go to Variables tab
+4. Add each variable below
+
+**Required Variables**:
 ```bash
 # Database
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
 
-# API Keys (add all your working keys)
-RAPIDAPI_KEY=your_rapidapi_key
-ADZUNA_APP_ID=your_adzuna_app_id
-ADZUNA_APP_KEY=your_adzuna_app_key
-REED_API_KEY=your_reed_api_key
-MUSE_API_KEY=your_muse_api_key
-JOOBLE_API_KEY=your_jooble_api_key
-GREENHOUSE_API_KEY=your_greenhouse_api_key
-SERP_API_KEY=your_serp_api_key
+# Stripe LIVE Keys (from Stripe Dashboard)
+STRIPE_SECRET_KEY=sk_live_YOUR_SECRET_KEY
+NEXT_PUBLIC_STRIPE_KEY=pk_live_YOUR_PUBLISHABLE_KEY
+STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET
+STRIPE_PREMIUM_MONTHLY_PRICE_ID=price_YOUR_MONTHLY_PRICE
+STRIPE_PREMIUM_QUARTERLY_PRICE_ID=price_YOUR_ANNUAL_PRICE
 
-# OpenAI for job processing
-OPENAI_API_KEY=your_openai_api_key
+# Email (Resend)
+RESEND_API_KEY=re_YOUR_API_KEY
 
-# Vercel deployment (optional)
-VERCEL_TOKEN=your_vercel_token
-VERCEL_ORG_ID=your_vercel_org_id
-VERCEL_PROJECT_ID=your_vercel_project_id
+# System
+NODE_ENV=production
+NEXT_PUBLIC_URL=https://getjobping.com
+
+# Optional but Recommended
+SENTRY_DSN=https://YOUR_SENTRY_DSN
+ENABLE_TEST_ENDPOINTS=false
 ```
 
-### 3. Test the Setup
+**⚠️ CRITICAL**: Make sure you're using **LIVE** Stripe keys (`sk_live_...`, `pk_live_...`), not test keys!
 
-1. **Test Vercel Deployment**:
+---
+
+### **STEP 4: Deploy to Production** 🌐
+
+#### **Option A: Deploy via Vercel (Recommended)**
+
+1. **Connect GitHub repo** (if not already connected):
    ```bash
-   git add .
-   git commit -m "Add Vercel + GitHub Actions architecture"
-   git push origin main
+   npx vercel --prod
    ```
-   - Check Vercel dashboard for successful deployment
-   - Visit your app URL to verify it's working
+   - Follow prompts to link your GitHub repo
+   - Vercel will auto-detect Next.js
 
-2. **Test GitHub Actions Scraping**:
-   - Go to GitHub repo → Actions tab
-   - Click "JobPing Automated Scraping" workflow
-   - Click "Run workflow" → "Run workflow" (manual trigger)
-   - Monitor the logs for successful scraping
+2. **Trigger deployment**:
+   - Push to `main` branch (already done ✅)
+   - Vercel will automatically build and deploy
 
-### 4. Monitor the System
+3. **Verify deployment**:
+   - Go to [Vercel Dashboard](https://vercel.com/dashboard)
+   - Check deployment status
+   - Click on deployment to see build logs
 
-#### Vercel Monitoring:
-- **App Performance**: Vercel dashboard → Analytics
-- **API Routes**: Vercel dashboard → Functions
-- **Build Logs**: Vercel dashboard → Deployments
+#### **Option B: Deploy via Railway**
 
-#### GitHub Actions Monitoring:
-- **Scraping Logs**: GitHub repo → Actions tab
-- **Success/Failure**: Email notifications (if configured)
-- **Job Database**: Check Supabase for new jobs
+1. **Connect GitHub repo**:
+   ```bash
+   railway link
+   ```
 
-#### Supabase Monitoring:
-- **Job Data**: Supabase dashboard → Table Editor → jobs
-- **Database Metrics**: Supabase dashboard → Reports
-- **Real-time**: Supabase dashboard → Logs
+2. **Deploy**:
+   ```bash
+   railway up
+   ```
 
-## 🎯 New Workflow
+3. **Verify**:
+   - Check Railway dashboard
+   - View deployment logs
 
-```mermaid
-graph TD
-    A[Code Push] --> B[GitHub Actions: Test & Build]
-    B --> C[Deploy to Vercel]
-    C --> D[Vercel: Serves Next.js App]
-    
-    E[GitHub Actions Cron: 3x Daily] --> F[Run Scrapers]
-    F --> G[Save Jobs to Supabase]
-    
-    D --> H[Users Access App]
-    H --> I[App Reads Jobs from Supabase]
-    G --> I
-```
-
-## ✅ Benefits of This Architecture
-
-- **Vercel Strengths**: Fast app deployment, automatic scaling, great Next.js integration
-- **GitHub Actions Strengths**: No time limits, perfect for long-running scrapers
-- **Clean Separation**: App logic vs. data collection
-- **Cost Effective**: GitHub Actions generous free tier for cron jobs
-- **Reliable**: If scraping fails, app still works (reads existing jobs)
-
-## 🚀 Migration Steps
-
-1. ✅ Set up Vercel project and connect to your GitHub repo
-2. ✅ Add environment variables to Vercel dashboard
-3. ✅ Add GitHub secrets for scraping
-4. ✅ Update workflow files (completed above)
-5. ✅ Test deploy - push to main branch
-6. ⏳ Disable Railway deployment
-7. ⏳ Monitor first scraping run in GitHub Actions
-
-## 🔍 How to Monitor
-
-### Vercel:
-- App performance and API routes
-- Real user metrics
-- Build and deploy logs
-
-### GitHub Actions:
-- Scraping job logs
-- Success/failure notifications
-- Job database metrics
-
-### Supabase:
-- Job data and database metrics
-- Real-time job insertion monitoring
-
-## 🛠️ Troubleshooting
-
-### Common Issues:
-
-1. **Vercel Build Fails**:
-   - Check environment variables are set
-   - Verify `vercel.json` configuration
-   - Check build logs in Vercel dashboard
-
-2. **GitHub Actions Scraping Fails**:
-   - Verify all secrets are set correctly
-   - Check Python dependencies (JobSpy)
-   - Review scraping logs for specific errors
-
-3. **No Jobs Being Saved**:
-   - Check Supabase connection in GitHub Actions
-   - Verify API keys are valid
-   - Check scraping logs for errors
-
-### Debug Commands:
+#### **Option C: Manual Deploy (VPS/AWS/etc.)**
 
 ```bash
-# Test scraping locally
-node automation/real-job-runner.js --single-run
-
-# Test Vercel build locally
+# On your server
+git clone https://github.com/yourusername/jobping.git
+cd jobping
+npm ci --production
 npm run build
-
-# Check environment variables
-echo $NEXT_PUBLIC_SUPABASE_URL
+npm start
 ```
 
-## 📊 Expected Results
+---
 
-After successful setup:
-- **Vercel**: App accessible at `https://your-app.vercel.app`
-- **GitHub Actions**: Scraping runs 3x daily automatically
-- **Supabase**: Jobs being saved with source breakdown
-- **Users**: Can access job matching through the web app
+### **STEP 5: Configure Domain DNS** 🌍
 
-## 🎉 Success Metrics
+If using custom domain `getjobping.com`:
 
-- ✅ Vercel app loads successfully
-- ✅ GitHub Actions scraping completes without errors
-- ✅ Jobs appear in Supabase database
-- ✅ User can access job matching features
-- ✅ Email system works with new job data
+1. **Add DNS Records** (in your domain registrar):
+   ```
+   Type: A
+   Name: @
+   Value: [Your server IP or Vercel IP]
+   
+   Type: CNAME
+   Name: www
+   Value: cname.vercel-dns.com (or your host's CNAME)
+   ```
+
+2. **Verify in Vercel/Railway**:
+   - Add custom domain in dashboard
+   - Wait for SSL certificate (automatic)
+   - Verify HTTPS works
+
+---
+
+### **STEP 6: Post-Deployment Verification** ✅
+
+**Test these immediately after deployment**:
+
+1. **Landing Page**:
+   - [ ] Visit `https://getjobping.com`
+   - [ ] Check all sections load correctly
+   - [ ] Verify branding (indigo→purple gradient)
+   - [ ] Test mobile responsiveness
+
+2. **Tally Form**:
+   - [ ] Click "Get my weekly 5" in Pricing
+   - [ ] Verify Tally form opens with `?tier=free&source=pricing`
+   - [ ] Click "Get 3 times weekly matches"
+   - [ ] Verify Tally form opens with `?tier=premium&source=pricing`
+
+3. **Webhook Integration**:
+   - [ ] Submit test signup via Tally form
+   - [ ] Check Supabase → `users` table for new entry
+   - [ ] Verify welcome email sent (check email inbox)
+   - [ ] Check Stripe Dashboard → no webhook errors
+
+4. **Payment Flow** (Use Stripe test mode first):
+   - [ ] Go to `/billing/test-user-id`
+   - [ ] Verify page loads with premium styling
+   - [ ] Test payment method addition
+
+5. **API Health**:
+   - [ ] Visit `https://getjobping.com/api/health`
+   - [ ] Should return `{ status: 'healthy' }`
+
+---
+
+### **STEP 7: Monitor for 24 Hours** 👀
+
+**Watch these metrics**:
+
+1. **Vercel/Railway Dashboard**:
+   - Build status
+   - Response times
+   - Error rates
+
+2. **Stripe Dashboard**:
+   - Webhook deliveries
+   - Payment attempts
+   - Customer creation
+
+3. **Supabase Dashboard**:
+   - User signups
+   - Database queries
+   - Error logs
+
+4. **Resend Dashboard**:
+   - Email delivery rate
+   - Bounce rate
+   - Open rate
+
+---
+
+## 🐛 TROUBLESHOOTING
+
+### **Issue: Stripe webhook not working**
+```bash
+# Check webhook in Stripe Dashboard
+# Verify STRIPE_WEBHOOK_SECRET matches
+# Check /api/webhooks/stripe logs
+```
+
+### **Issue: Tally signups not creating users**
+```bash
+# Check /api/webhook-tally logs in Vercel
+# Verify Tally webhook URL is correct
+# Test with curl:
+curl -X POST https://getjobping.com/api/webhook-tally \
+  -H "Content-Type: application/json" \
+  -d '{"eventType": "FORM_RESPONSE", ...}'
+```
+
+### **Issue: Emails not sending**
+```bash
+# Verify RESEND_API_KEY is correct
+# Check Resend dashboard for failures
+# Check /api/send-scheduled-emails logs
+```
+
+### **Issue: Build fails on Vercel**
+```bash
+# Check build logs in Vercel dashboard
+# Verify all env vars are set
+# Try local build: npm run build
+```
+
+---
+
+## 📊 SUCCESS METRICS (Week 1)
+
+Track these KPIs:
+
+- [ ] **10+ signups** (Free tier)
+- [ ] **1+ premium conversion** (€7 MRR)
+- [ ] **< 5% error rate** (API/webhooks)
+- [ ] **> 25% email open rate**
+- [ ] **< 2% unsubscribe rate**
+- [ ] **< 3s page load time**
+- [ ] **Zero critical bugs**
+
+---
+
+## 🔄 ROLLBACK PLAN (If things go wrong)
+
+### **Quick Rollback**:
+```bash
+# Vercel
+vercel rollback
+
+# Railway
+railway rollback
+
+# Manual
+git revert HEAD
+git push origin main
+```
+
+### **Emergency Disable**:
+If emails are broken or sending spam:
+```sql
+-- In Supabase SQL Editor
+UPDATE users SET email_paused = true;
+```
+
+---
+
+## 🎯 FINAL CHECKLIST
+
+Before you click deploy:
+
+- [ ] Stripe LIVE keys configured (not test keys!)
+- [ ] Domain DNS pointing to production server
+- [ ] Webhook URLs use production domain
+- [ ] All secrets in production env (not in code)
+- [ ] Test Tally form submission manually
+- [ ] Backup database (Supabase auto-backups enabled)
+- [ ] Set up error monitoring (Sentry recommended)
+- [ ] Prepare for customer support (email ready)
+
+---
+
+## 🚀 DEPLOY COMMAND
+
+**Vercel**:
+```bash
+git push origin main
+# Auto-deploys via GitHub integration
+```
+
+**Railway**:
+```bash
+railway up --detach
+```
+
+**Manual**:
+```bash
+npm run build
+npm start
+```
+
+---
+
+## 📞 POST-LAUNCH
+
+1. **Tweet/post** your launch
+2. **Share in student groups** (university Discord, Slack, Facebook)
+3. **Monitor first 10 signups** closely
+4. **Reply to feedback** within 24 hours
+5. **Fix critical bugs** immediately
+6. **Iterate on copy** based on conversion data
+
+---
+
+**Ready? Let's ship this! 🎉**
+
+Which deployment platform are you using? (Vercel / Railway / Other)
