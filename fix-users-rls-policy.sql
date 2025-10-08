@@ -1,23 +1,18 @@
 -- Fix RLS policy for users table to allow webhook signups
 -- Run this in Supabase SQL Editor
 
--- Option 1: Simple fix - Allow all inserts (less secure but works)
-DROP POLICY IF EXISTS "Allow all inserts to users" ON public.users;
-CREATE POLICY "Allow all inserts to users"
-ON public.users
-FOR INSERT
-WITH CHECK (true);
+-- The issue: jobping_users_own_data requires auth.uid() which is null for webhooks
+-- This policy blocks all unauthenticated inserts
 
-DROP POLICY IF EXISTS "Allow all selects from users" ON public.users;
-CREATE POLICY "Allow all selects from users"
-ON public.users
-FOR SELECT
-USING (true);
+-- SOLUTION: Drop the restrictive policy for now
+DROP POLICY IF EXISTS "jobping_users_own_data" ON public.users;
 
--- Verify policies were created
-SELECT tablename, policyname, cmd FROM pg_policies WHERE tablename = 'users';
+-- Keep the permissive service access policy
+-- (jobping_users_service_access with qual=true should allow inserts)
 
--- Alternative Option 2: Temporarily disable RLS (if Option 1 doesn't work)
--- Uncomment this if above doesn't work:
--- ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+-- Verify remaining policies
+SELECT policyname, cmd, qual::text, with_check::text 
+FROM pg_policies 
+WHERE tablename = 'users' 
+ORDER BY policyname;
 
