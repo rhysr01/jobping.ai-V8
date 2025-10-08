@@ -23,19 +23,19 @@ import { EmailVerificationOracle } from '@/Utils/emailVerification';
 // Test mode helper
 const isTestMode = () => process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1';
 
-// Validation Schema
+// Validation Schema - Relaxed to accept any Tally field value types
 const TallyWebhookSchema = z.object({
   eventId: z.string(),
   eventType: z.literal('FORM_RESPONSE'),
   createdAt: z.string(),
-  formId: z.string(),
-  responseId: z.string(),
+  formId: z.string().optional(), // Make optional to handle missing fields
+  responseId: z.string().optional(), // Make optional to handle missing fields
   data: z.object({
     fields: z.array(z.object({
       key: z.string(),
       label: z.string(),
       type: z.string(),
-      value: z.union([z.string(), z.array(z.string()), z.null()]).optional()
+      value: z.any().optional() // Accept any value type from Tally
     })).min(1)
   }).optional()
 });
