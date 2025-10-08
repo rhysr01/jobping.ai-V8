@@ -136,6 +136,8 @@ export async function sendWelcomeEmail({
     const text = createWelcomeEmailText(userName, matchCount);
     const unsubscribeHeaders = createDeliverabilityHeaders(to);
     
+    console.log(`📧 Sending welcome email from: ${EMAIL_CONFIG.from} to: ${to}`);
+    
     const { data, error } = await resend.emails.send({
       from: EMAIL_CONFIG.from,
       to: [to],
@@ -145,9 +147,12 @@ export async function sendWelcomeEmail({
       headers: unsubscribeHeaders,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Resend API error:', error);
+      throw error;
+    }
 
-    console.log('✅ Welcome email sent successfully');
+    console.log('✅ Welcome email sent successfully, Email ID:', data?.id);
     return data;
   } catch (error) {
     console.error('❌ Welcome email failed:', error);

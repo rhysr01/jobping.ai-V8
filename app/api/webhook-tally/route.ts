@@ -323,22 +323,24 @@ export async function POST(req: NextRequest) {
         
         // Send job matches email immediately
         if (jobMatches.length > 0) {
-          await sendMatchedJobsEmail({
+          console.log(`📧 Attempting to send email to: ${userData.email}`);
+          const emailResult = await sendMatchedJobsEmail({
             to: userData.email as string,
             userName: (typeof userData.full_name === 'string' ? userData.full_name : 'there'),
             jobs: jobMatches,
             subscriptionTier: newUser.subscription_tier || 'free',
             isSignupEmail: true,
           });
-          console.log(`✅ First job matches email sent with ${jobMatches.length} jobs`);
+          console.log(`✅ First job matches email sent with ${jobMatches.length} jobs`, emailResult);
         } else {
           // No jobs found, send welcome email instead
-          await sendWelcomeEmail({
+          console.log(`📧 No job matches, sending welcome email to: ${userData.email}`);
+          const welcomeResult = await sendWelcomeEmail({
             to: userData.email as string,
             userName: (typeof userData.full_name === 'string' ? userData.full_name : 'there'),
             matchCount: 0
           });
-          console.log('⚠️ No jobs found, sent welcome email without matches');
+          console.log('⚠️ No jobs found, sent welcome email without matches', welcomeResult);
         }
       } else {
         console.error('⚠️ Instant matching failed, user will receive jobs on next scheduled send');
