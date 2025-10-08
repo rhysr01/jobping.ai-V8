@@ -120,12 +120,14 @@ function extractUserData(fields: NonNullable<TallyWebhookData['data']>['fields']
     if (!field.value) return;
     
     const key = field.key.toLowerCase();
+    const label = (field.label || '').toLowerCase();
+    const type = (field.type || '').toLowerCase();
     console.log(`🧪 Test mode: Processing field ${key} with value:`, field.value);
     
     // Map Tally form fields to your actual database columns
-    if (key.includes('name')) {
+    if (key.includes('name') || label.includes('name')) {
       userData.full_name = Array.isArray(field.value) ? field.value[0] : field.value;
-    } else if (key.includes('email')) {
+    } else if (key.includes('email') || label.includes('email') || type === 'input_email') {
       userData.email = Array.isArray(field.value) ? field.value[0] : field.value;
     } else if (key.includes('location') || key.includes('cities')) {
       // Handle target cities as array (TEXT[] in database)
