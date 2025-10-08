@@ -1,3 +1,0 @@
-❌ Reed failed: Cannot find module '../../scrapers/reed-scraper-standalone.cjs'
-Require stack:
-- /Users/rhysrowlands/jobping/scrapers/wrappers/reed-wrapper.cjs
