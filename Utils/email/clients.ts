@@ -30,11 +30,22 @@ export function getSupabaseClient() {
   });
 }
 
-// Email configuration
+// Get base domain from environment
+function getBaseDomain(): string {
+  return process.env.NEXT_PUBLIC_DOMAIN || process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
+    : 'https://getjobping.com';
+}
+
+function getEmailDomain(): string {
+  return process.env.EMAIL_DOMAIN || 'getjobping.com';
+}
+
+// Email configuration - uses environment variables
 export const EMAIL_CONFIG = {
-  from: 'JobPing <noreply@getjobping.com>',
+  from: `JobPing <noreply@${getEmailDomain()}>`,
   maxRetries: 3,
   retryDelay: 2000, // 2 seconds base delay,
-  unsubscribeBase: 'https://www.getjobping.com/api/unsubscribe',
-  listUnsubscribeEmail: 'unsubscribe@getjobping.com'
+  unsubscribeBase: `${getBaseDomain()}/api/unsubscribe`,
+  listUnsubscribeEmail: `unsubscribe@${getEmailDomain()}`
 } as const;

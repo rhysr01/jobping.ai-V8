@@ -153,7 +153,7 @@ export async function GET(req: NextRequest) {
           </p>
           <p style="color: #6b7280; font-size: 14px;">
             If you change your mind, you can always sign up again at 
-            <a href="https://getjobping.com" style="color: #667eea;">JobPing</a>
+            <a href="${process.env.NEXT_PUBLIC_URL || 'https://getjobping.com'}" style="color: #667eea;">JobPing</a>
           </p>
         </div>
       </body>

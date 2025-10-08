@@ -6,7 +6,26 @@ Go to: Vercel Dashboard → Your Project → Settings → Environment Variables
 Add each variable below:
 
 ════════════════════════════════════════════════════════════════
-1. DATABASE_URL
+1. NEXT_PUBLIC_DOMAIN (NEW - Required for email/links)
+════════════════════════════════════════════════════════════════
+Name: NEXT_PUBLIC_DOMAIN
+Value: getjobping.com
+Environment: ✅ Production  ✅ Preview  ✅ Development
+
+This is used for all domain references in your app.
+
+════════════════════════════════════════════════════════════════
+2. EMAIL_DOMAIN (NEW - Required for email addresses)
+════════════════════════════════════════════════════════════════
+Name: EMAIL_DOMAIN
+Value: getjobping.com
+Environment: ✅ Production  ✅ Preview  ✅ Development
+
+This is used for email sender addresses (noreply@, support@, etc.)
+IMPORTANT: Verify this domain in Resend first!
+
+════════════════════════════════════════════════════════════════
+3. DATABASE_URL
 ════════════════════════════════════════════════════════════════
 Name: DATABASE_URL
 Value: [PASTE YOUR SUPABASE CONNECTION STRING]
