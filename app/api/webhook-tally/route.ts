@@ -318,9 +318,8 @@ export async function POST(req: NextRequest) {
           'x-system-api-key': process.env.SYSTEM_API_KEY || 'internal-system-key',
         },
         body: JSON.stringify({
-          userId: newUser.id,
-          tier: 'free', // All new signups are free tier
-          isSignupEmail: true, // Flag for first email
+          limit: 1, // Only process this new user (match-users API accepts limit and forceReprocess)
+          forceReprocess: false,
         }),
       });
 
