@@ -249,7 +249,7 @@ export async function POST(req: NextRequest) {
     // Check if user already exists
     const { data: existingUser } = await supabase
       .from('users')
-      .select('id, email, subscription_tier')
+      .select('id, email, subscription_active')
       .eq('email', userData.email)
       .single();
 
@@ -267,17 +267,18 @@ export async function POST(req: NextRequest) {
       email: userData.email,
       full_name: userData.full_name || '',
       professional_expertise: userData.professional_expertise || '',
-      start_date: userData.start_date || '',
+      start_date: userData.start_date || null,
       work_environment: userData.work_environment || '',
-      work_authorization: userData.work_authorization || '',
+      visa_status: userData.work_authorization || '',
       entry_level_preference: userData.entry_level_preference || '',
-      career_path: userData.career_path || [],
+      career_path: userData.career_path || '',
       professional_experience: userData.professional_experience || '',
       languages_spoken: userData.languages_spoken || [],
       company_types: userData.company_types || [],
       roles_selected: userData.roles_selected || [],
       target_cities: userData.target_cities || [],
-      subscription_tier: userData.subscriptionTier || 'free',
+      subscription_active: false, // Use subscription_active instead of subscription_tier
+      email_verified: false,
       created_at: new Date().toISOString()
     };
     
@@ -313,7 +314,7 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           userId: newUser.id,
-          tier: newUser.subscription_tier || 'free',
+          tier: 'free', // All new signups are free tier
           isSignupEmail: true, // Flag for first email
         }),
       });
@@ -330,7 +331,7 @@ export async function POST(req: NextRequest) {
             to: userData.email as string,
             userName: (typeof userData.full_name === 'string' ? userData.full_name : 'there'),
             jobs: jobMatches,
-            subscriptionTier: newUser.subscription_tier || 'free',
+            subscriptionTier: 'free', // All new signups are free tier
             isSignupEmail: true,
           });
           console.log(`✅ First job matches email sent with ${jobMatches.length} jobs`, emailResult);
