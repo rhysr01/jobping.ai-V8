@@ -831,7 +831,7 @@ const matchUsersHandler = async (req: NextRequest) => {
               target: jobsPerCity + (index < extraJobs ? 1 : 0)
             }));
             
-            console.log(`📍 Target distribution: ${cityAllocations.map(c => `${c.city}:${c.target}`).join(', ')}`);
+            console.log(`📍 Target distribution: ${cityAllocations.map((c: { city: string; target: number }) => `${c.city}:${c.target}`).join(', ')}`);
             
             // Rebuild matches with even city distribution + relevance scoring
             const newMatches: JobMatch[] = [];
