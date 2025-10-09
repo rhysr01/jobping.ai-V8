@@ -399,7 +399,7 @@ export async function POST(req: NextRequest) {
               to: userData.email as string,
               userName: (typeof userData.full_name === 'string' ? userData.full_name : 'there'),
               jobs: matchedJobs,
-              isFirstEmail: true
+              isSignupEmail: true
             });
             
             console.log('✅ Welcome email with jobs sent successfully');
