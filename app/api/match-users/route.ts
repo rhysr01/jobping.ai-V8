@@ -376,10 +376,11 @@ function preFilterJobsByUserPreferences(jobs: JobWithFreshness[], user: UserPref
       if (hasLanguageMatch) score += 10;
     }
     
-    // Career path scoring
-    if (user.career_path && user.career_path.length > 0) {
-      const hasCareerMatch = user.career_path.some(path => 
-        jobTitle.includes(path.toLowerCase()) || jobDesc.includes(path.toLowerCase())
+    // Career path scoring (handle string or array)
+    if (user.career_path) {
+      const careerPaths = Array.isArray(user.career_path) ? user.career_path : [user.career_path];
+      const hasCareerMatch = careerPaths.some(path => 
+        path && (jobTitle.includes(path.toLowerCase()) || jobDesc.includes(path.toLowerCase()))
       );
       if (hasCareerMatch) score += 20;
     }
@@ -632,11 +633,6 @@ const matchUsersHandler = async (req: NextRequest) => {
 
     // Note: Filter building commented out - not currently used in query
 
-    console.log(`🔍 Fetching jobs with criteria:
-      - status: 'active'
-      - created_at >= ${thirtyDaysAgo.toISOString()}
-      - limit: ${jobCap}`);
-    
     const { data: jobs, error: jobsError } = await supabase
       .from('jobs')
       .select('*')
@@ -646,8 +642,6 @@ const matchUsersHandler = async (req: NextRequest) => {
       .limit(jobCap);
 
     const jobFetchTime = Date.now() - jobFetchStart;
-    
-    console.log(`🔍 Jobs query result: ${jobs?.length || 0} jobs, error: ${jobsError?.message || 'none'}`);
 
     if (jobsError) {
       console.error('Failed to fetch jobs:', jobsError);
@@ -657,8 +651,7 @@ const matchUsersHandler = async (req: NextRequest) => {
     }
 
     if (!jobs || jobs.length === 0) {
-      console.log('❌ No active jobs to process - this is unexpected!');
-      console.log(`   Database should have ~10,000 active jobs from last 30 days`);
+      console.log('No active jobs to process');
       return NextResponse.json({ message: 'No active jobs to process' });
     }
 
