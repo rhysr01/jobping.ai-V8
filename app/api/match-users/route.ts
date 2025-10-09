@@ -22,7 +22,7 @@ import { Job } from '@/scrapers/types';
 // Environment flags and limits
 const IS_TEST = process.env.NODE_ENV === 'test';
 const USER_LIMIT = IS_TEST ? 3 : 50;
-const JOB_LIMIT = IS_TEST ? 300 : 1200;
+const JOB_LIMIT = IS_TEST ? 300 : 10000; // Increased to handle full job catalog
 
 // Lock key helper
 const LOCK_KEY = (rid: string) => `${IS_TEST ? 'jobping:test' : 'jobping:prod'}:lock:match-users:${rid}`;

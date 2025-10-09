@@ -174,7 +174,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
       .eq('status', 'active')
       .gte('created_at', sevenDaysAgo.toISOString())
       .order('created_at', { ascending: false })
-      .limit(1000);
+      .limit(10000); // Increased to fetch more jobs for better matching
 
     if (jobsError) {
       console.error('❌ Failed to fetch jobs:', jobsError);
