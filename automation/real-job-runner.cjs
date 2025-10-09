@@ -150,39 +150,6 @@ class RealJobRunner {
     }
   }
 
-  // Run Muse scraper with API key
-  async runMuseScraper() {
-    try {
-      console.log('🔄 Running enhanced Muse scraper...');
-      
-      // Use the Muse scraper via tsx (handles TS/ESM interop)
-      const { stdout } = await execAsync('npx -y tsx scrapers/muse-scraper.ts', {
-        cwd: process.cwd(),
-        timeout: 180000, // 3 minutes timeout
-        env: { ...process.env }
-      });
-      
-      let museJobs = 0;
-      const m = stdout.match(/^✅\s+Muse:\s+(\d+)\s+jobs saved to database$/m);
-      if (m) {
-        museJobs = parseInt(m[1]);
-      } else {
-        // Fallback to DB count (last 60 minutes)
-        const { count, error } = await supabase
-          .from('jobs')
-          .select('id', { count: 'exact', head: false })
-          .eq('source', 'themuse')
-          .gte('created_at', new Date(Date.now() - 60*60*1000).toISOString());
-        museJobs = error ? 0 : (count || 0);
-      }
-      
-      console.log(`✅ Muse: ${museJobs} jobs processed`);
-      return museJobs;
-    } catch (error) {
-      console.error('❌ Muse scraper failed:', error.message);
-      return 0;
-    }
-  }
 
   // Run standardized Greenhouse scraper
   async runGreenhouseScraper() {
@@ -262,107 +229,8 @@ class RealJobRunner {
 
 
 
-  // (duplicate runMuseScraper removed; see the earlier implementation with DB fallback)
-
-  // Run enhanced JSearch scraper
-  async runJSearchScraper() {
-    try {
-      console.log('🔄 Running enhanced JSearch scraper...');
-      
-      // Use the enhanced JSearch scraper via tsx
-      const { stdout } = await execAsync('npx -y tsx scrapers/jsearch-scraper.ts', {
-        cwd: process.cwd(),
-        timeout: 300000
-      });
-      
-      let jobsSaved = 0;
-      const m = stdout.match(/^✅\s+JSearch:\s+(\d+)\s+jobs saved to database$/m);
-      if (m) {
-        jobsSaved = parseInt(m[1]);
-      } else {
-        const { count, error } = await supabase
-          .from('jobs')
-          .select('id', { count: 'exact', head: false })
-          .eq('source', 'jsearch')
-          .gte('created_at', new Date(Date.now() - 60*60*1000).toISOString());
-        jobsSaved = error ? 0 : (count || 0);
-      }
-      
-      console.log(`✅ JSearch: ${jobsSaved} jobs processed`);
-      return jobsSaved;
-    } catch (error) {
-      console.error('❌ JSearch scraper failed:', error.message);
-      return 0;
-    }
-  }
-
-  // Run enhanced Jooble scraper
-  async runJoobleScraper() {
-    try {
-      console.log('🔄 Running enhanced Jooble scraper...');
-      if (process.env.JOOBLE_ENABLED === 'false') {
-        console.log('⚠️ Jooble disabled by flag');
-        return 0;
-      }
-      
-      // Use the enhanced Jooble scraper via tsx
-      const { stdout } = await execAsync('npx -y tsx scrapers/jooble.ts', {
-        cwd: process.cwd(),
-        timeout: 300000
-      });
-      
-      let jobsSaved = 0;
-      const m = stdout.match(/^✅\s+Jooble:\s+(\d+)\s+jobs saved to database$/m);
-      if (m) {
-        jobsSaved = parseInt(m[1]);
-      } else {
-        const { count, error } = await supabase
-          .from('jobs')
-          .select('id', { count: 'exact', head: false })
-          .eq('source', 'jooble')
-          .gte('created_at', new Date(Date.now() - 60*60*1000).toISOString());
-        jobsSaved = error ? 0 : (count || 0);
-      }
-      
-      console.log(`✅ Jooble: ${jobsSaved} jobs processed`);
-      return jobsSaved;
-    } catch (error) {
-      console.error('❌ Jooble scraper failed:', error.message);
-      return 0;
-    }
-  }
-
-  // Run enhanced Ashby scraper
-  async runAshbyScraper() {
-    try {
-      console.log('🔄 Running enhanced Ashby scraper...');
-      
-      // Use the enhanced Ashby scraper (CommonJS)
-      const { stdout } = await execAsync('node scrapers/ashby.cjs', {
-        cwd: process.cwd(),
-        timeout: 300000
-      });
-      
-      let jobsSaved = 0;
-      const m = stdout.match(/^✅\s+Ashby:\s+(\d+)\s+jobs saved to database$/m);
-      if (m) {
-        jobsSaved = parseInt(m[1]);
-      } else {
-        const { count, error } = await supabase
-          .from('jobs')
-          .select('id', { count: 'exact', head: false })
-          .eq('source', 'ashby')
-          .gte('created_at', new Date(Date.now() - 60*60*1000).toISOString());
-        jobsSaved = error ? 0 : (count || 0);
-      }
-      
-      console.log(`✅ Ashby: ${jobsSaved} jobs processed`);
-      return jobsSaved;
-    } catch (error) {
-      console.error('❌ Ashby scraper failed:', error.message);
-      return 0;
-    }
-  }
+  // Removed deprecated scrapers: JSearch, Jooble, Ashby, Muse
+  // Current active scrapers: JobSpy (LinkedIn/Indeed/Glassdoor), Adzuna, Reed
 
   // Run SERP API scraper
   async runSerpAPIScraper() {

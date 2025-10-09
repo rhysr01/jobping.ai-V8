@@ -31,7 +31,7 @@ function getScraperMetrics() {
   // const config = getScraperConfig();
   
   return {
-    enabledPlatforms: ['adzuna', 'reed', 'muse', 'jsearch', 'greenhouse'],
+    enabledPlatforms: ['jobspy', 'adzuna', 'reed', 'greenhouse'],
     
     disabledPlatforms: [],
     

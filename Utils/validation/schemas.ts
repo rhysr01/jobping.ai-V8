@@ -111,7 +111,7 @@ export const StripeWebhookSchema = z.object({
 
 // Job Scraping Request Schema
 export const JobScrapingRequestSchema = z.object({
-  source: z.enum(['greenhouse', 'lever', 'workday', 'jooble', 'rapidapi-internships', 'serp-api']),
+  source: z.enum(['greenhouse', 'lever', 'workday', 'adzuna', 'reed', 'jobspy-indeed', 'jobspy-linkedin', 'jobspy-glassdoor']),
   location: z.string().min(1, 'Location is required').max(100, 'Location too long').optional(),
   keywords: z.array(z.string().max(100, 'Keyword too long')).max(10, 'Too many keywords').optional(),
   maxPages: z.number().int().min(1).max(50).optional(),
