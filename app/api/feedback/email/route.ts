@@ -252,87 +252,110 @@ function generateThankYouPage(action: string, jobHash: string, email: string, sc
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Feedback Received</title>
       <style>
+        * { box-sizing: border-box; }
         body { 
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
           margin: 0; 
-          padding: 0; 
-          background: #000000;
+          padding: 20px; 
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           min-height: 100vh;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #FFFFFF;
+          color: #1D1D1F;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
         }
         .container {
-          background: #111111;
-          padding: 48px 40px;
-          border-radius: 20px;
-          border: 1px solid #1A1A1A;
+          background: #FFFFFF;
+          padding: 56px 48px;
+          border-radius: 24px;
           text-align: center;
-          max-width: 480px;
-          box-shadow: 0 16px 48px rgba(0,0,0,0.2);
-          backdrop-filter: blur(8px);
+          max-width: 520px;
+          width: 100%;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         h1 { 
-          color: #FFFFFF; 
-          margin-bottom: 20px; 
-          font-size: 28px;
-          font-weight: 600;
-          letter-spacing: -0.02em;
+          color: #1D1D1F; 
+          margin-bottom: 16px; 
+          font-size: 32px;
+          font-weight: 700;
+          letter-spacing: -0.5px;
         }
         p { 
-          color: #E5E5E5; 
+          color: #6E6E73; 
           line-height: 1.6; 
           margin-bottom: 40px; 
-          font-size: 16px;
+          font-size: 17px;
+          font-weight: 400;
+        }
+        .success-icon {
+          font-size: 64px;
+          margin-bottom: 24px;
+          animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        @keyframes bounceIn {
+          0% { transform: scale(0); opacity: 0; }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); opacity: 1; }
         }
         .buttons {
           display: flex;
           gap: 12px;
           justify-content: center;
-          margin-bottom: 24px;
+          margin-bottom: 28px;
+          flex-wrap: wrap;
         }
         .btn {
-          padding: 12px 24px;
+          padding: 14px 28px;
           border: none;
-          border-radius: 8px;
+          border-radius: 12px;
           cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
+          font-size: 15px;
+          font-weight: 600;
           text-decoration: none;
           display: inline-block;
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .close-btn {
-          background: #1F1F1F;
-          color: #FFFFFF;
-          border: 1px solid #262626;
+          background: #F5F5F7;
+          color: #1D1D1F;
+          border: 1px solid #E5E5E7;
         }
         .close-btn:hover { 
-          background: #262626; 
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          background: #E5E5E7; 
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .view-jobs-btn {
-          background: linear-gradient(135deg, #FFFFFF 0%, #CCCCCC 100%);
-          color: #000000;
-          box-shadow: 0 0 20px rgba(255,255,255,0.1);
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: #FFFFFF;
+          box-shadow: 0 4px 16px rgba(102,126,234,0.4);
         }
         .view-jobs-btn:hover { 
           transform: translateY(-2px);
-          box-shadow: 0 0 30px rgba(255,255,255,0.15);
+          box-shadow: 0 6px 24px rgba(102,126,234,0.5);
         }
         .auto-close-notice {
-          font-size: 12px;
-          color: #A3A3A3;
-          margin-top: 20px;
+          font-size: 13px;
+          color: #86868B;
+          margin-top: 24px;
+          font-weight: 500;
+        }
+        @media (max-width: 600px) {
+          body { padding: 12px; }
+          .container { padding: 40px 28px; border-radius: 20px; }
+          h1 { font-size: 26px; }
+          p { font-size: 16px; }
+          .success-icon { font-size: 56px; }
+          .buttons { flex-direction: column; }
+          .btn { width: 100%; }
         }
       </style>
     </head>
     <body>
       <div class="container">
+        <div class="success-icon">✅</div>
         <h1>${title}</h1>
         <p>${message}</p>
         <div class="buttons">
