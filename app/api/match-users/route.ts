@@ -795,7 +795,10 @@ const matchUsersHandler = async (req: NextRequest) => {
         totalAIProcessingTime += aiMatchingTime;
 
         // DIVERSITY: Ensure matches include multiple job boards AND multiple cities
+        // This runs EVEN for cached results to ensure city distribution!
         if (matches && matches.length >= 3) {
+          console.log(`📊 Running diversity check (method: ${result.method}, cached: ${result.method === 'ai_success' && aiMatchingTime < 100})`);
+
           const matchedJobs = matches.map(m => {
             const job = distributedJobs.find(j => j.job_hash === m.job_hash);
             return job ? { ...m, source: (job as any).source, location: job.location } : m;
