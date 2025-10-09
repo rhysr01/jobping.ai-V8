@@ -276,14 +276,21 @@ print(df[cols].to_csv(index=False))
   const bizAxesLoose = ['business','analyst','scheme','program','operations','marketing','sales','finance','account','audit','logistics','supply','chain','consult','strategy','hr','human resources','risk','project','management','data','analytics','product','tech','technology','engineering'];
   const seniorTerms = ['senior','lead','principal','director','head of','vp','vice president','architect','specialist','manager'];
   const noisyExclusions = [
-    // Healthcare & Medical
+    // Healthcare & Medical (strict!)
     'nurse','nhs','pharmacist','doctor','veterinary','dental','physiotherap','medical assistant',
+    'biomedical scientist','medical science liaison','medical liaison','clinical',
+    'healthcare assistant','paramedic','radiographer','sonographer',
+    'tecnico elettromedicale','quality assurance analyst ii - medical',
+    'molecular technician','pharmasource technician',
     // Trades & Manual Labor
     'teacher','chef','cleaner','warehouse','driver','barista','waiter','waitress','hairdresser',
     'electrician','plumber','mechanic','welder','carpenter','painter','landscap','janitor',
     'hgv','truck driver','delivery driver','courier','postal',
-    // Retail & Service (non-graduate)
+    'heating technician','motor technician','service technician','power station',
+    'deskside technician','service desk','wardrobe technician','projections technician',
+    // Retail & Service (non-graduate) - but KEEP "delivery consultant" (consulting role)
     'store assistant','shop assistant','cashier','retail assistant','shelf stacker',
+    'beauty consultant','sales consultant loewe','beauty advisor',
     // Other Irrelevant
     'laboratory technician','field technician','acoustic consultant','environmental scientist',
     'social worker','care worker','support worker'
