@@ -5,11 +5,14 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="relative isolate text-center section-pad">
+    <section className="relative isolate text-center py-24 md:py-32 lg:py-40">
       <div className="container-page">
         <LogoWordmark />
-        <p className="mt-6 text-xl md:text-2xl text-zinc-200 max-w-[62ch] mx-auto leading-8">
-          Graduate jobs that actually match you. Five per week, straight to your inbox.
+        <h1 className="mt-8 text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-white leading-[1.1] max-w-[20ch] mx-auto">
+          Graduate jobs that actually match you
+        </h1>
+        <p className="mt-6 text-xl md:text-2xl text-zinc-300 max-w-[62ch] mx-auto leading-relaxed">
+          Five per week, straight to your inbox.
         </p>
         <p className="mt-4 text-base md:text-lg text-zinc-400 max-w-[58ch] mx-auto">
           Set up takes 2 minutes. No CV upload. No endless scrolling.

@@ -1,8 +1,23 @@
 export default function BuiltForStudents() {
   const features = [
-    { num: 1, title: "Your profile drives everything", body: "Matches based on your location, visa status, and interests. Zero generic spam." },
-    { num: 2, title: "EU and UK coverage", body: "We pull from major job boards and directly from company pages across European markets." },
-    { num: 3, title: "Designed for speed", body: "Short emails. Predictable timing. No logins, no dashboards, no doomscrolling." },
+    { 
+      num: 1, 
+      title: "Your profile drives everything", 
+      body: "Matches based on your location, visa status, and interests. Zero generic spam.",
+      stats: "200+ user preferences tracked"
+    },
+    { 
+      num: 2, 
+      title: "EU and UK coverage", 
+      body: "We pull from major job boards and directly from company pages across European markets.",
+      stats: "15+ cities · 5 job boards · Daily updates"
+    },
+    { 
+      num: 3, 
+      title: "Designed for speed", 
+      body: "Short emails. Predictable timing. No logins, no dashboards, no doomscrolling.",
+      stats: "Under 60 seconds to read"
+    },
   ];
 
   return (
@@ -14,8 +29,11 @@ export default function BuiltForStudents() {
           {features.map((feature) => (
             <div key={feature.num} className="glass-card rounded-2xl p-8 md:p-10 interactive-hover relative overflow-hidden">
               <div className="number-chip">{feature.num}</div>
-              <h3 className="mt-4 font-semibold">{feature.title}</h3>
+              <h3 className="mt-4 text-xl font-semibold">{feature.title}</h3>
               <p className="mt-2 p-muted">{feature.body}</p>
+              <div className="mt-4 pt-4 border-t border-zinc-800">
+                <p className="text-sm font-semibold text-brand-400">{feature.stats}</p>
+              </div>
             </div>
           ))}
         </div>

@@ -113,14 +113,20 @@ body::before{
   .section-pad   { @apply py-20 md:py-24; }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-2xl px-8 py-5 text-lg font-bold tracking-tight
+    @apply inline-flex items-center justify-center rounded-2xl px-6 py-4 text-lg font-bold tracking-tight
            text-white focus:outline-none focus:ring-4 focus:ring-brand-500 focus:ring-offset-4 focus:ring-offset-black;
     background-image: linear-gradient(to right, #6366F1, #7C3AED, #8B5CF6);
     box-shadow: 0 20px 60px -18px rgba(99,102,241,.6);
-    min-height: 64px;
+    min-height: 56px;
     transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
     position: relative;
     overflow: hidden;
+  }
+  @media (min-width: 768px) {
+    .btn-primary {
+      @apply px-8 py-5;
+      min-height: 64px;
+    }
   }
   .btn-primary::before {
     content: '';
@@ -141,9 +147,15 @@ body::before{
     filter: brightness(1.1);
   }
   .btn-outline {
-    @apply inline-flex items-center justify-center rounded-2xl px-8 py-5 font-semibold text-white border border-white/15;
+    @apply inline-flex items-center justify-center rounded-2xl px-6 py-4 font-semibold text-white border border-white/15;
     transition: transform .25s ease, box-shadow .25s ease;
-    min-height: 64px;
+    min-height: 56px;
+  }
+  @media (min-width: 768px) {
+    .btn-outline {
+      @apply px-8 py-5;
+      min-height: 64px;
+    }
   }
   .btn-outline:hover { @apply border-brand-500/40; transform: translateY(-2px); }
 
@@ -155,11 +167,12 @@ body::before{
   }
 }
 
-/* Number chip base (80px) - DRAMATIC VERSION */
+/* Number chip base - Responsive sizing */
 .number-chip {
-  width: 80px; height: 80px; border-radius: 9999px;
+  width: 64px; height: 64px; /* Smaller on mobile */
+  border-radius: 9999px;
   display: grid; place-items: center;
-  color: #fff; font-weight: 900; font-size: 1.5rem;
+  color: #fff; font-weight: 900; font-size: 1.25rem;
   border: 3px solid rgba(99,102,241,.7);
   background: linear-gradient(135deg, rgba(99,102,241,.4), rgba(139,92,246,.3) 60%, rgba(168,85,247,.2));
   box-shadow: 
@@ -168,6 +181,14 @@ body::before{
     inset 0 1px 0 rgba(255,255,255,.2);
   position: relative;
   overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .number-chip {
+    width: 80px;
+    height: 80px;
+    font-size: 1.5rem;
+  }
 }
 .number-chip::before {
   content: '';
