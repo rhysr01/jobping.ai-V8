@@ -65,4 +65,3 @@ fi
 echo "💡 TIP: Set up a daily reminder to run this script"
 echo "   Or add to cron: 0 9 * * * cd /path/to/jobping && ./scripts/run-jobspy-daily.sh"
 echo ""
-
