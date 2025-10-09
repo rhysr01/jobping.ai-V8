@@ -28,17 +28,16 @@ export async function POST(req: NextRequest) {
     // Check if user already exists
     const { data: existingUser } = await supabase
       .from('users')
-      .select('id, subscription_tier')
+      .select('id, subscription_active')
       .eq('email', email)
       .single();
 
     if (existingUser) {
-      // Update existing user to premium
+      // Update existing user to premium (activate subscription)
       const { error: updateError } = await supabase
         .from('users')
         .update({
-          subscription_tier: 'premium',
-          promo_code_used: 'rhys',
+          subscription_active: true,
           updated_at: new Date().toISOString()
         })
         .eq('email', email);
@@ -57,13 +56,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create new user with premium tier
+    // Create new user with premium tier (subscription active)
     const { error: insertError } = await supabase
       .from('users')
       .insert({
         email,
-        subscription_tier: 'premium',
-        promo_code_used: 'rhys',
+        subscription_active: true,
+        email_verified: true,
+        target_cities: [], // Required field with default
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
