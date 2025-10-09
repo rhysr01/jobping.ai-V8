@@ -205,17 +205,18 @@ async function main() {
 from jobspy import scrape_jobs
 import pandas as pd
 df = scrape_jobs(
-  site_name=['indeed'],
+  site_name=['linkedin', 'indeed', 'glassdoor', 'zip_recruiter'],
   search_term='''${term.replace(/'/g, "''")}''',
   location='''${city}''',
   country_indeed='''${country}''',
+  linkedin_fetch_description=True,
   results_wanted=${RESULTS_WANTED},
   hours_old=720,
   distance=20
 )
 import sys
 print('Available columns:', list(df.columns), file=sys.stderr)
-cols=[c for c in ['title','company','location','job_url','company_description','skills'] if c in df.columns]
+cols=[c for c in ['title','company','location','job_url','company_description','skills','description'] if c in df.columns]
 print(df[cols].to_csv(index=False))
 `], { 
   encoding: 'utf8', 
