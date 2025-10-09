@@ -794,18 +794,63 @@ const matchUsersHandler = async (req: NextRequest) => {
         const aiMatchingTime = Date.now() - aiMatchingStart;
         totalAIProcessingTime += aiMatchingTime;
 
-        // SOURCE DIVERSITY: Ensure matches include multiple job boards (preferred: at least 2)
+        // DIVERSITY: Ensure matches include multiple job boards AND multiple cities
         if (matches && matches.length >= 3) {
           const matchedJobs = matches.map(m => {
             const job = distributedJobs.find(j => j.job_hash === m.job_hash);
-            return job ? { ...m, source: (job as any).source } : m;
+            return job ? { ...m, source: (job as any).source, location: job.location } : m;
           });
           
           // Check current source diversity
           const sources = matchedJobs.map(m => (m as any).source).filter(Boolean);
           const uniqueSources = new Set(sources);
           
-          // If all jobs from ONE source, try to add diversity
+          // Check current city diversity
+          const targetCities = Array.isArray(user.target_cities) ? user.target_cities : [user.target_cities];
+          const matchedCities = new Set(
+            matchedJobs.map(m => {
+              const loc = (m as any).location?.toLowerCase() || '';
+              // Find which target city this job matches
+              return targetCities.find(city => city && loc.includes(city.toLowerCase()));
+            }).filter(Boolean)
+          );
+          
+          console.log(`📊 City diversity: ${matchedCities.size}/${targetCities.length} cities covered (${Array.from(matchedCities).join(', ')})`);
+          
+          // CITY DIVERSITY: If user selected multiple cities but all jobs from ONE city, add diversity
+          if (targetCities.length >= 2 && matchedCities.size < targetCities.length && distributedJobs.length > 10) {
+            console.log(`📍 Ensuring city diversity for ${targetCities.length} target cities...`);
+            
+            // Find which cities are missing
+            const missingCities = targetCities.filter(city => !matchedCities.has(city));
+            
+            for (const missingCity of missingCities) {
+              if (matches.length >= 5) break; // Don't exceed the limit
+              
+              // Find a job from the missing city
+              const jobFromMissingCity = distributedJobs.find(job => {
+                const loc = job.location.toLowerCase();
+                return loc.includes(missingCity.toLowerCase()) && 
+                       !matches.some(m => m.job_hash === job.job_hash);
+              });
+              
+              if (jobFromMissingCity) {
+                // Replace the LOWEST scoring match with a job from the missing city
+                const lowestScoreIndex = matches.length - 1;
+                matches[lowestScoreIndex] = {
+                  job_index: matches.length,
+                  job_hash: jobFromMissingCity.job_hash,
+                  match_score: matches[lowestScoreIndex].match_score - 3, // Slightly lower score
+                  match_reason: `City diversity: ${jobFromMissingCity.title} in ${missingCity}`,
+                  confidence_score: 0.8
+                };
+                
+                console.log(`✅ Added job from ${missingCity} for city diversity`);
+              }
+            }
+          }
+          
+          // SOURCE DIVERSITY: Ensure matches include multiple job boards (preferred: at least 2)
           if (uniqueSources.size === 1 && distributedJobs.length > 10) {
             console.log(`📊 All ${matches.length} matches from ${Array.from(uniqueSources)[0]}, adding diversity...`);
             
@@ -837,7 +882,14 @@ const matchUsersHandler = async (req: NextRequest) => {
           }).filter(Boolean);
           const finalUniqueSources = new Set(finalSources);
           
-          console.log(`📊 Final match sources for ${user.email}: ${Array.from(finalUniqueSources).join(', ')} (${finalUniqueSources.size} unique)`);
+          const finalCities = matches.map(m => {
+            const job = distributedJobs.find(j => j.job_hash === m.job_hash);
+            const loc = job?.location?.toLowerCase() || '';
+            return targetCities.find(city => city && loc.includes(city.toLowerCase()));
+          }).filter(Boolean);
+          const finalUniqueCities = new Set(finalCities);
+          
+          console.log(`📊 Final diversity for ${user.email}: ${finalUniqueSources.size} sources (${Array.from(finalUniqueSources).join(', ')}), ${finalUniqueCities.size} cities (${Array.from(finalUniqueCities).join(', ')})`);
         }
 
         // Save matches with enhanced data and provenance tracking
