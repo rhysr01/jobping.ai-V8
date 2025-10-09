@@ -396,8 +396,8 @@ export async function POST(req: NextRequest) {
             console.log(`📧 Sending welcome email with ${matchedJobs.length} job matches...`);
             
             await sendMatchedJobsEmail({
-              to: userData.email,
-              userName: userData.full_name || 'there',
+              to: userData.email as string,
+              userName: (typeof userData.full_name === 'string' ? userData.full_name : 'there'),
               jobs: matchedJobs,
               isFirstEmail: true
             });
@@ -405,7 +405,7 @@ export async function POST(req: NextRequest) {
             console.log('✅ Welcome email with jobs sent successfully');
           } else {
             console.log('⚠️ No matches found, sending welcome email without jobs');
-            await sendWelcomeEmail(userData.email, userData.full_name || 'there');
+            await sendWelcomeEmail(userData.email as string, (typeof userData.full_name === 'string' ? userData.full_name : 'there'));
           }
           
           return NextResponse.json({ 
@@ -417,7 +417,7 @@ export async function POST(req: NextRequest) {
         } else {
           console.error('❌ Instant matching failed:', await matchResponse.text());
           // Still return success for user creation, just log the matching failure
-          await sendWelcomeEmail(userData.email, userData.full_name || 'there');
+          await sendWelcomeEmail(userData.email as string, (typeof userData.full_name === 'string' ? userData.full_name : 'there'));
           
           return NextResponse.json({ 
             success: true,
@@ -428,7 +428,7 @@ export async function POST(req: NextRequest) {
       } catch (matchError) {
         console.error('❌ Error during instant matching:', matchError);
         // Still return success for user creation, send welcome email without jobs
-        await sendWelcomeEmail(userData.email, userData.full_name || 'there');
+        await sendWelcomeEmail(userData.email as string, (typeof userData.full_name === 'string' ? userData.full_name : 'there'));
         
         return NextResponse.json({ 
           success: true,
