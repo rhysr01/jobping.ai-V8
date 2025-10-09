@@ -315,18 +315,22 @@ function preFilterJobsByUserPreferences(jobs: JobWithFreshness[], user: UserPref
   let filteredJobs = jobs;
   
   // HARD FILTER: Location is first priority - only show jobs from target cities or remote
-  if (user.target_cities && user.target_cities.length > 0) {
-    filteredJobs = jobs.filter(job => {
-      const jobLocation = job.location.toLowerCase();
-      const isRemote = jobLocation.includes('remote') || jobLocation.includes('work from home');
-      
-      // Accept if remote OR matches any target city
-      if (isRemote) return true;
-      
-      return user.target_cities!.some(city => matchesLocation(job.location, city));
-    });
+  if (user.target_cities) {
+    const targetCities = Array.isArray(user.target_cities) ? user.target_cities : [user.target_cities];
     
-    console.log(`Location filter: ${jobs.length} → ${filteredJobs.length} jobs (cities: ${user.target_cities.join(', ')})`);
+    if (targetCities.length > 0) {
+      filteredJobs = jobs.filter(job => {
+        const jobLocation = job.location.toLowerCase();
+        const isRemote = jobLocation.includes('remote') || jobLocation.includes('work from home');
+        
+        // Accept if remote OR matches any target city
+        if (isRemote) return true;
+        
+        return targetCities.some(city => city && matchesLocation(job.location, city));
+      });
+      
+      console.log(`Location filter: ${jobs.length} → ${filteredJobs.length} jobs (cities: ${targetCities.join(', ')})`);
+    }
   }
   
   // Now score the location-filtered jobs
@@ -337,8 +341,9 @@ function preFilterJobsByUserPreferences(jobs: JobWithFreshness[], user: UserPref
     const jobDesc = (job.description || '').toLowerCase();
     
     // Location preference scoring (bonus points for exact city vs remote)
-    if (user.target_cities && user.target_cities.length > 0) {
-      const hasExactCityMatch = user.target_cities.some(city => matchesLocation(job.location, city));
+    if (user.target_cities) {
+      const targetCities = Array.isArray(user.target_cities) ? user.target_cities : [user.target_cities];
+      const hasExactCityMatch = targetCities.some(city => city && matchesLocation(job.location, city));
       const isRemote = jobLocation.includes('remote');
       
       if (hasExactCityMatch) score += 50; // Exact city match gets bonus
@@ -360,18 +365,20 @@ function preFilterJobsByUserPreferences(jobs: JobWithFreshness[], user: UserPref
       else score -= 15;                // Wrong level penalty
     }
     
-    // Role/Career path scoring (medium priority)
-    if (user.roles_selected && user.roles_selected.length > 0) {
-      const hasRoleMatch = user.roles_selected.some(role => 
-        jobTitle.includes(role.toLowerCase()) || jobDesc.includes(role.toLowerCase())
+    // Role/Career path scoring (medium priority) - handle string or array
+    if (user.roles_selected) {
+      const roles = Array.isArray(user.roles_selected) ? user.roles_selected : [user.roles_selected];
+      const hasRoleMatch = roles.some(role => 
+        role && (jobTitle.includes(role.toLowerCase()) || jobDesc.includes(role.toLowerCase()))
       );
       if (hasRoleMatch) score += 30;
     }
     
-    // Language scoring (if specified)
-    if (user.languages_spoken && user.languages_spoken.length > 0) {
-      const hasLanguageMatch = user.languages_spoken.some(lang => 
-        jobDesc.includes(lang.toLowerCase())
+    // Language scoring (if specified) - handle string or array
+    if (user.languages_spoken) {
+      const languages = Array.isArray(user.languages_spoken) ? user.languages_spoken : [user.languages_spoken];
+      const hasLanguageMatch = languages.some(lang => 
+        lang && jobDesc.includes(lang.toLowerCase())
       );
       if (hasLanguageMatch) score += 10;
     }
