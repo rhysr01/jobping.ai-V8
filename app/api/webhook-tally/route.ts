@@ -283,7 +283,7 @@ export async function POST(req: NextRequest) {
       roles_selected: userData.roles_selected || [],
       target_cities: userData.target_cities || [],
       subscription_active: false, // Use subscription_active instead of subscription_tier
-      email_verified: false,
+      email_verified: true, // Auto-verify for instant matching (no email verification needed)
       created_at: new Date().toISOString()
     };
     
