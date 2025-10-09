@@ -818,8 +818,9 @@ const matchUsersHandler = async (req: NextRequest) => {
           console.log(`📊 City diversity: ${matchedCities.size}/${targetCities.length} cities covered (${Array.from(matchedCities).join(', ')})`);
           
           // CITY DIVERSITY: If user selected multiple cities but all jobs from ONE city, add diversity
-          if (targetCities.length >= 2 && matchedCities.size < targetCities.length && distributedJobs.length > 10) {
-            console.log(`📍 Ensuring city diversity for ${targetCities.length} target cities...`);
+          if (targetCities.length >= 2 && matchedCities.size < targetCities.length) {
+            console.log(`📍 Ensuring city diversity for ${targetCities.length} target cities (currently have ${matchedCities.size})`);
+            console.log(`📍 Available jobs pool: ${distributedJobs.length} jobs`);
             
             // Find which cities are missing
             const missingCities = targetCities.filter((city: string) => !matchedCities.has(city));
@@ -831,11 +832,17 @@ const matchUsersHandler = async (req: NextRequest) => {
                 break;
               }
               
-              // Find a job from the missing city
+              // Find a job from the missing city in the distributed jobs pool
               const jobFromMissingCity = distributedJobs.find(job => {
                 const loc = job.location.toLowerCase();
-                return loc.includes(missingCity.toLowerCase()) && 
-                       !matches.some(m => m.job_hash === job.job_hash);
+                const cityMatch = loc.includes(missingCity.toLowerCase());
+                const notAlreadyMatched = !matches.some(m => m.job_hash === job.job_hash);
+                
+                if (cityMatch && notAlreadyMatched) {
+                  console.log(`🔍 Found candidate from ${missingCity}: ${job.title} in ${job.location}`);
+                }
+                
+                return cityMatch && notAlreadyMatched;
               });
               
               if (jobFromMissingCity) {
@@ -843,6 +850,8 @@ const matchUsersHandler = async (req: NextRequest) => {
                 
                 // Replace the LOWEST scoring match with a job from the missing city
                 const lowestScoreIndex = matches.length - 1;
+                const oldJob = matches[lowestScoreIndex];
+                
                 matches[lowestScoreIndex] = {
                   job_index: matches.length,
                   job_hash: jobFromMissingCity.job_hash,
@@ -851,11 +860,13 @@ const matchUsersHandler = async (req: NextRequest) => {
                   confidence_score: 0.8
                 };
                 
-                console.log(`✅ Replaced match ${lowestScoreIndex + 1} with job from ${missingCity}`);
+                console.log(`✅ Replaced match ${lowestScoreIndex + 1} (${oldJob.match_reason}) with job from ${missingCity}`);
               } else {
-                console.log(`⚠️ No jobs found from ${missingCity} in pre-filtered pool`);
+                console.log(`⚠️ No jobs found from ${missingCity} in pool of ${distributedJobs.length} jobs`);
               }
             }
+          } else {
+            console.log(`📍 City diversity check: ${targetCities.length} cities, ${matchedCities.size} covered, pool: ${distributedJobs.length} jobs`);
           }
           
           // SOURCE DIVERSITY: Ensure matches include multiple job boards (preferred: at least 2)
