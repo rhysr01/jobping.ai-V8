@@ -28,6 +28,8 @@ export class ConsolidatedMatchingEngine {
     gpt4: { calls: 0, tokens: 0, cost: 0 },
     gpt35: { calls: 0, tokens: 0, cost: 0 }
   };
+  private matchCache = new Map<string, { matches: JobMatch[], timestamp: number }>();
+  private readonly CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours cache
 
   constructor(openaiApiKey?: string) {
     if (openaiApiKey) {
@@ -35,9 +37,18 @@ export class ConsolidatedMatchingEngine {
       this.openai35 = new OpenAI({ apiKey: openaiApiKey });
     }
   }
+  
+  /**
+   * Generate cache key from user preferences and job pool
+   */
+  private generateCacheKey(jobs: Job[], userPrefs: UserPreferences): string {
+    const jobHashes = jobs.slice(0, 12).map(j => j.job_hash).join(',');
+    const userKey = `${userPrefs.email}_${userPrefs.entry_level_preference}_${userPrefs.target_cities?.join(',')}`;
+    return `${userKey}_${jobHashes}`;
+  }
 
   /**
-   * Main matching function - tries AI first, falls back gracefully
+   * Main matching function - tries cache first, then AI, then rules
    */
   async performMatching(
     jobs: Job[],
@@ -45,6 +56,19 @@ export class ConsolidatedMatchingEngine {
     forceRulesBased: boolean = false
   ): Promise<ConsolidatedMatchResult> {
     const startTime = Date.now();
+
+    // Check cache first (saves $$$ on repeat matches)
+    const cacheKey = this.generateCacheKey(jobs, userPrefs);
+    const cached = this.matchCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      console.log(`💰 Cache hit for ${userPrefs.email} - saved AI call!`);
+      return {
+        matches: cached.matches,
+        method: 'ai_success',
+        processingTime: Date.now() - startTime,
+        confidence: 0.9
+      };
+    }
 
     // Skip AI if explicitly disabled or no client available
     if (forceRulesBased || !this.openai) {
@@ -61,6 +85,10 @@ export class ConsolidatedMatchingEngine {
     try {
       const aiMatches = await this.performAIMatchingWithTimeout(jobs, userPrefs);
       if (aiMatches && aiMatches.length > 0) {
+        // Cache successful AI matches
+        this.matchCache.set(cacheKey, { matches: aiMatches, timestamp: Date.now() });
+        console.log(`💾 Cached matches for ${userPrefs.email}`);
+        
         return {
           matches: aiMatches,
           method: 'ai_success',
@@ -179,7 +207,7 @@ export class ConsolidatedMatchingEngine {
         }
       ],
       temperature: 0.2, // Slightly higher for more nuanced matching
-      max_tokens: 1500,  // Increased for detailed analysis of 30 jobs
+      max_tokens: 800,   // Optimized for 12 jobs + 5 detailed match reasons
       functions: [{
         name: 'return_job_matches',
         description: 'Return the top 5 most relevant job matches for the user',
@@ -254,16 +282,20 @@ export class ConsolidatedMatchingEngine {
     
     const workEnv = userPrefs.work_environment || '';
 
-    // Send more jobs to AI for better selection (up to 30 jobs with descriptions)
-    const jobsToAnalyze = jobs.slice(0, 30);
+    // Cost-optimized: Send top 12 jobs to AI (balanced between quality and cost)
+    // Pre-filtering already scored and ranked these, so top 12 are highly relevant
+    const jobsToAnalyze = jobs.slice(0, 12);
     const jobList = jobsToAnalyze.map((job, i) => {
+      // Only include description snippet for context (100 chars max to save tokens)
       const desc = job.description 
-        ? job.description.substring(0, 200).replace(/\n/g, ' ')
+        ? job.description.substring(0, 100).replace(/\n/g, ' ').trim()
         : '';
-      return `${i+1}. ${job.title} at ${job.company} in ${job.location}
-   Hash: ${job.job_hash}
-   Description: ${desc}`;
-    }).join('\n\n');
+      return `${i+1}. ${job.title} | ${job.company} | ${job.location}
+   ${desc ? `Context: ${desc}` : ''}
+   Hash: ${job.job_hash}`;
+    }).join('\n');
+    
+    console.log(`Sending ${jobsToAnalyze.length} pre-filtered jobs to AI for final ranking`);
 
     return `You are a career matching expert. Analyze these jobs and match them to the user's profile.
 
