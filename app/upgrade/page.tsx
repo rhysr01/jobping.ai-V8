@@ -19,15 +19,14 @@ export default function UpgradePage() {
     setIsLoading(true);
 
     try {
-      // Check for "rhys" promo code - bypass Stripe and grant premium directly
+      // Check for "rhys" promo code - redirect to Tally to complete profile
       if (promoCode.toLowerCase() === 'rhys') {
         const response = await fetch('/api/apply-promo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email,
-            promoCode: 'rhys',
-            plan: selectedPlan
+            promoCode: 'rhys'
           }),
         });
 
@@ -36,8 +35,22 @@ export default function UpgradePage() {
           throw new Error(errorData.error || 'Failed to apply promo code');
         }
 
-        // Redirect to success page
-        router.push('/upgrade/success?promo=rhys');
+        const data = await response.json();
+        
+        // If user already exists, show success
+        if (data.existingUser) {
+          router.push('/upgrade/success?promo=rhys');
+          return;
+        }
+
+        // New user: Redirect to Tally form with promo params
+        if (data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+          return;
+        }
+
+        // Fallback: Direct to Tally with promo params
+        window.location.href = `https://tally.so/r/mJEqx4?email=${encodeURIComponent(email)}&promo=rhys&tier=premium`;
         return;
       }
 

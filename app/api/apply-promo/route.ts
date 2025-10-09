@@ -78,13 +78,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Return redirect URL to Tally form
-    const tallyFormUrl = process.env.TALLY_FORM_URL || 'https://tally.so/r/your-form-id';
+    const tallyFormUrl = 'https://tally.so/r/mJEqx4';
     
     return NextResponse.json({ 
       success: true,
       existingUser: false,
       message: '✅ Promo code valid! Please complete your profile to activate premium.',
-      redirectUrl: `${tallyFormUrl}?email=${encodeURIComponent(email)}&promo=rhys`
+      redirectUrl: `${tallyFormUrl}?email=${encodeURIComponent(email)}&promo=rhys&tier=premium`
     });
 
   } catch (error) {

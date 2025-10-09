@@ -1,44 +1,25 @@
--- Create promo_pending table to track promo codes for new users
--- before they complete Tally onboarding
+-- Create promo_pending table for temporary promo code storage
+-- Run this in Supabase SQL Editor BEFORE testing promo code flow
 
-CREATE TABLE IF NOT EXISTS public.promo_pending (
-  email TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS promo_pending (
+  id BIGSERIAL PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
   promo_code TEXT NOT NULL,
-  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Add index for cleanup queries
-CREATE INDEX IF NOT EXISTS idx_promo_pending_expires_at 
-  ON public.promo_pending(expires_at);
+-- Add index for faster lookups
+CREATE INDEX IF NOT EXISTS idx_promo_pending_email ON promo_pending(email);
+CREATE INDEX IF NOT EXISTS idx_promo_pending_expires ON promo_pending(expires_at);
 
--- Enable RLS
-ALTER TABLE public.promo_pending ENABLE ROW LEVEL SECURITY;
+-- RLS: Allow service role to insert/select/delete
+ALTER TABLE promo_pending ENABLE ROW LEVEL SECURITY;
 
--- Policy: Allow service role to manage promo pending entries
-CREATE POLICY "Service role can manage promo pending"
-  ON public.promo_pending
+CREATE POLICY "Service role can manage promo_pending" ON promo_pending
   FOR ALL
-  TO service_role
   USING (true)
   WITH CHECK (true);
 
--- Policy: Allow authenticated users to read their own promo pending
-CREATE POLICY "Users can read own promo pending"
-  ON public.promo_pending
-  FOR SELECT
-  TO authenticated
-  USING (true);
-
--- Cleanup function: Delete expired promo codes (run daily)
-CREATE OR REPLACE FUNCTION cleanup_expired_promos()
-RETURNS void AS $$
-BEGIN
-  DELETE FROM public.promo_pending
-  WHERE expires_at < NOW();
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-COMMENT ON TABLE public.promo_pending IS 'Temporary storage for promo codes applied before Tally form completion';
-COMMENT ON FUNCTION cleanup_expired_promos IS 'Removes expired promo codes (older than 24 hours)';
-
+-- Verify table created
+SELECT 'promo_pending table created successfully' as status;
