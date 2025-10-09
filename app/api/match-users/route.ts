@@ -632,6 +632,11 @@ const matchUsersHandler = async (req: NextRequest) => {
 
     // Note: Filter building commented out - not currently used in query
 
+    console.log(`🔍 Fetching jobs with criteria:
+      - status: 'active'
+      - created_at >= ${thirtyDaysAgo.toISOString()}
+      - limit: ${jobCap}`);
+    
     const { data: jobs, error: jobsError } = await supabase
       .from('jobs')
       .select('*')
@@ -641,6 +646,8 @@ const matchUsersHandler = async (req: NextRequest) => {
       .limit(jobCap);
 
     const jobFetchTime = Date.now() - jobFetchStart;
+    
+    console.log(`🔍 Jobs query result: ${jobs?.length || 0} jobs, error: ${jobsError?.message || 'none'}`);
 
     if (jobsError) {
       console.error('Failed to fetch jobs:', jobsError);
@@ -650,7 +657,8 @@ const matchUsersHandler = async (req: NextRequest) => {
     }
 
     if (!jobs || jobs.length === 0) {
-      console.log('No active jobs to process');
+      console.log('❌ No active jobs to process - this is unexpected!');
+      console.log(`   Database should have ~10,000 active jobs from last 30 days`);
       return NextResponse.json({ message: 'No active jobs to process' });
     }
 
