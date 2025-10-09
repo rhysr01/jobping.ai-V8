@@ -19,6 +19,10 @@ function processJobData(jobs: any[], recipientEmail: string): EmailJobCard[] {
       title: job.title || job.job_title || 'Job Title',
       company: job.company || job.company_name || 'Company',
       location: job.location || job.job_location || 'Location',
+      job_url: job.job_url || job.url || '', // CRITICAL: Include job URL for Apply buttons
+      description: job.description || job.job_description || '',
+      salary: job.salary || job.salary_range || '',
+      job_type: job.job_type || job.type || '',
       job_hash: job.job_hash || job.id || `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       user_email: recipientEmail
     },
