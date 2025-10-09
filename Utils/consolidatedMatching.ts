@@ -39,12 +39,14 @@ export class ConsolidatedMatchingEngine {
   }
   
   /**
-   * Generate cache key from user preferences and job pool
+   * Generate cache key from user preferences and top job hashes
    */
   private generateCacheKey(jobs: Job[], userPrefs: UserPreferences): string {
-    const jobHashes = jobs.slice(0, 12).map(j => j.job_hash).join(',');
+    // Use hash of top 50 job hashes for cache key (more stable than full list)
+    const jobHashesStr = jobs.slice(0, 50).map(j => j.job_hash).join(',');
+    const jobPoolHash = jobHashesStr.substring(0, 32); // First 32 chars as fingerprint
     const userKey = `${userPrefs.email}_${userPrefs.entry_level_preference}_${userPrefs.target_cities?.join(',')}`;
-    return `${userKey}_${jobHashes}`;
+    return `${userKey}_${jobPoolHash}`;
   }
 
   /**
@@ -207,7 +209,7 @@ export class ConsolidatedMatchingEngine {
         }
       ],
       temperature: 0.2, // Slightly higher for more nuanced matching
-      max_tokens: 800,   // Optimized for 12 jobs + 5 detailed match reasons
+      max_tokens: 1000,  // Room for analyzing 50 jobs + returning 5 detailed matches
       functions: [{
         name: 'return_job_matches',
         description: 'Return the top 5 most relevant job matches for the user',
@@ -282,20 +284,23 @@ export class ConsolidatedMatchingEngine {
     
     const workEnv = userPrefs.work_environment || '';
 
-    // Cost-optimized: Send top 12 jobs to AI (balanced between quality and cost)
-    // Pre-filtering already scored and ranked these, so top 12 are highly relevant
-    const jobsToAnalyze = jobs.slice(0, 12);
+    // SMART APPROACH: Send top 50 jobs to AI for accurate matching
+    // Pre-filtering already ranked these by relevance score
+    // AI will analyze all 50 and pick the absolute best 5
+    const jobsToAnalyze = jobs.slice(0, 50);
+    
+    // Use compact format to fit more jobs in token budget
     const jobList = jobsToAnalyze.map((job, i) => {
-      // Only include description snippet for context (100 chars max to save tokens)
-      const desc = job.description 
-        ? job.description.substring(0, 100).replace(/\n/g, ' ').trim()
-        : '';
-      return `${i+1}. ${job.title} | ${job.company} | ${job.location}
-   ${desc ? `Context: ${desc}` : ''}
-   Hash: ${job.job_hash}`;
+      // Extract key details from description (first 80 chars for context)
+      const descSnippet = job.description 
+        ? job.description.substring(0, 80).replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()
+        : 'No description';
+      
+      // Compact single-line format to save tokens
+      return `${i+1}. [${job.job_hash}] ${job.title} @ ${job.company} | ${job.location} | ${descSnippet}`;
     }).join('\n');
     
-    console.log(`Sending ${jobsToAnalyze.length} pre-filtered jobs to AI for final ranking`);
+    console.log(`Sending ${jobsToAnalyze.length} pre-filtered jobs to AI for deep analysis`);
 
     return `You are a career matching expert. Analyze these jobs and match them to the user's profile.
 
