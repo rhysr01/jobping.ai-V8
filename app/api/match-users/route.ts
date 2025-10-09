@@ -833,10 +833,50 @@ const matchUsersHandler = async (req: NextRequest) => {
             
             console.log(`📍 Target distribution: ${cityAllocations.map(c => `${c.city}:${c.target}`).join(', ')}`);
             
-            // Rebuild matches with even city distribution
+            // Rebuild matches with even city distribution + relevance scoring
             const newMatches: JobMatch[] = [];
             
+            // Helper: Score job relevance based on user preferences
+            const scoreJobRelevance = (job: JobWithFreshness): number => {
+              let score = 50; // Base score
+              const jobTitle = job.title.toLowerCase();
+              const jobDesc = (job.description || '').toLowerCase();
+              
+              // Role/Career path match (HIGH priority - prevents finance guy getting sales jobs)
+              if (user.roles_selected) {
+                const roles = Array.isArray(user.roles_selected) ? user.roles_selected : [user.roles_selected];
+                const hasRoleMatch = roles.some((role: string) => 
+                  role && (jobTitle.includes(role.toLowerCase()) || jobDesc.includes(role.toLowerCase()))
+                );
+                if (hasRoleMatch) score += 30;
+                else score -= 20; // Penalty for role mismatch
+              }
+              
+              if (user.career_path) {
+                const careerPaths = Array.isArray(user.career_path) ? user.career_path : [user.career_path];
+                const hasCareerMatch = careerPaths.some((path: string) => 
+                  path && (jobTitle.includes(path.toLowerCase()) || jobDesc.includes(path.toLowerCase()))
+                );
+                if (hasCareerMatch) score += 20;
+              }
+              
+              // Experience level match
+              if (user.entry_level_preference) {
+                const entryKeywords = ['intern', 'internship', 'graduate', 'grad', 'entry', 'junior', 'trainee', 'associate'];
+                const seniorKeywords = ['senior', 'lead', 'principal', 'manager', 'director', 'head'];
+                
+                const isEntryLevel = entryKeywords.some(kw => jobTitle.includes(kw));
+                const isSenior = seniorKeywords.some(kw => jobTitle.includes(kw));
+                
+                if (user.entry_level_preference.toLowerCase().includes('entry') && isEntryLevel) score += 15;
+                if (user.entry_level_preference.toLowerCase().includes('entry') && isSenior) score -= 30; // Strong penalty
+              }
+              
+              return score;
+            };
+            
             for (const allocation of cityAllocations) {
+              // Get all jobs from this city
               const cityJobs = distributedJobs.filter(job => {
                 const loc = job.location.toLowerCase();
                 return loc.includes(allocation.city.toLowerCase()) &&
@@ -845,17 +885,24 @@ const matchUsersHandler = async (req: NextRequest) => {
               
               console.log(`📍 ${allocation.city}: Found ${cityJobs.length} available jobs, need ${allocation.target}`);
               
-              // Take the top N jobs for this city
-              const jobsToAdd = cityJobs.slice(0, allocation.target);
+              // Score and sort by relevance (MOST relevant first)
+              const scoredCityJobs = cityJobs
+                .map(job => ({ job, relevanceScore: scoreJobRelevance(job) }))
+                .sort((a, b) => b.relevanceScore - a.relevanceScore);
               
-              jobsToAdd.forEach((job, idx) => {
+              // Take the top N MOST RELEVANT jobs for this city
+              const jobsToAdd = scoredCityJobs.slice(0, allocation.target);
+              
+              jobsToAdd.forEach(({ job, relevanceScore }, idx) => {
                 newMatches.push({
                   job_index: newMatches.length + 1,
                   job_hash: job.job_hash,
-                  match_score: 85 - (newMatches.length * 2), // Decreasing scores
-                  match_reason: `Top ${idx + 1} match in ${allocation.city}`,
+                  match_score: relevanceScore,
+                  match_reason: `Top ${idx + 1} match in ${allocation.city} (relevance: ${relevanceScore})`,
                   confidence_score: 0.85
                 });
+                
+                console.log(`  ✅ Added: ${job.title} (score: ${relevanceScore})`);
               });
             }
             
