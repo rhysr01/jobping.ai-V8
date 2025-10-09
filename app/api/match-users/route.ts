@@ -823,9 +823,13 @@ const matchUsersHandler = async (req: NextRequest) => {
             
             // Find which cities are missing
             const missingCities = targetCities.filter((city: string) => !matchedCities.has(city));
+            console.log(`📍 Missing cities: ${missingCities.join(', ')}`);
             
             for (const missingCity of missingCities) {
-              if (matches.length >= 5) break; // Don't exceed the limit
+              if (matches.length < 2) {
+                console.log(`⚠️ Not enough matches (${matches.length}) to ensure city diversity`);
+                break;
+              }
               
               // Find a job from the missing city
               const jobFromMissingCity = distributedJobs.find(job => {
@@ -835,6 +839,8 @@ const matchUsersHandler = async (req: NextRequest) => {
               });
               
               if (jobFromMissingCity) {
+                console.log(`✅ Found job from ${missingCity}: ${jobFromMissingCity.title}`);
+                
                 // Replace the LOWEST scoring match with a job from the missing city
                 const lowestScoreIndex = matches.length - 1;
                 matches[lowestScoreIndex] = {
@@ -845,7 +851,9 @@ const matchUsersHandler = async (req: NextRequest) => {
                   confidence_score: 0.8
                 };
                 
-                console.log(`✅ Added job from ${missingCity} for city diversity`);
+                console.log(`✅ Replaced match ${lowestScoreIndex + 1} with job from ${missingCity}`);
+              } else {
+                console.log(`⚠️ No jobs found from ${missingCity} in pre-filtered pool`);
               }
             }
           }
