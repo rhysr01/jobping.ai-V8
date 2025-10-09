@@ -420,6 +420,7 @@ export async function POST(req: NextRequest) {
               to: userData.email as string,
               userName: (typeof userData.full_name === 'string' ? userData.full_name : 'there'),
               jobs: matchedJobs,
+              subscriptionTier: existingUser.subscription_active ? 'premium' : 'free',
               isSignupEmail: true
             });
             
@@ -588,7 +589,7 @@ export async function POST(req: NextRequest) {
             to: userData.email as string,
             userName: (typeof userData.full_name === 'string' ? userData.full_name : 'there'),
             jobs: jobMatches,
-            subscriptionTier: 'free', // All new signups are free tier
+            subscriptionTier: hasPendingPromo ? 'premium' : 'free', // Premium if promo was applied
             isSignupEmail: true,
           });
           console.log(`✅ First job matches email sent with ${jobMatches.length} jobs`, emailResult);
