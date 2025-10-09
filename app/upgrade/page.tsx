@@ -7,6 +7,7 @@ import LogoWordmark from '@/components/LogoWordmark';
 
 export default function UpgradePage() {
   const [email, setEmail] = useState('');
+  const [promoCode, setPromoCode] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'quarterly'>('monthly');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -18,9 +19,29 @@ export default function UpgradePage() {
     setIsLoading(true);
 
     try {
-      // Get price ID based on selected plan
-      // Note: These should be set in Vercel env vars as:
-      // NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID and NEXT_PUBLIC_STRIPE_QUARTERLY_PRICE_ID
+      // Check for "rhys" promo code - bypass Stripe and grant premium directly
+      if (promoCode.toLowerCase() === 'rhys') {
+        const response = await fetch('/api/apply-promo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            promoCode: 'rhys',
+            plan: selectedPlan
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to apply promo code');
+        }
+
+        // Redirect to success page
+        router.push('/upgrade/success?promo=rhys');
+        return;
+      }
+
+      // Normal Stripe flow
       const priceId = selectedPlan === 'monthly' 
         ? process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID
         : process.env.NEXT_PUBLIC_STRIPE_QUARTERLY_PRICE_ID;
@@ -36,7 +57,7 @@ export default function UpgradePage() {
         body: JSON.stringify({
           email,
           priceId,
-          userId: `temp_${Date.now()}`, // Temporary - will be replaced after user creation
+          userId: `temp_${Date.now()}`,
         }),
       });
 
@@ -167,6 +188,24 @@ export default function UpgradePage() {
                   </div>
                 </button>
               </div>
+            </div>
+
+            {/* Promo Code */}
+            <div>
+              <label htmlFor="promoCode" className="block text-sm font-medium text-zinc-300 mb-2">
+                Promo Code (Optional)
+              </label>
+              <input
+                id="promoCode"
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+                placeholder="Enter promo code"
+                className="w-full px-4 py-3 bg-zinc-900/50 border border-white/10 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
+              />
+              {promoCode.toLowerCase() === 'rhys' && (
+                <p className="mt-2 text-sm text-green-400">🎉 Premium for free!</p>
+              )}
             </div>
 
             {/* Error Message */}
