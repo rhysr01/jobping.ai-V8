@@ -171,30 +171,32 @@ export class ConsolidatedMatchingEngine {
       messages: [
         {
           role: 'system',
-          content: 'You analyze jobs and return match scores using the provided function.'
+          content: 'You are an expert career matching AI. Analyze jobs deeply and return highly relevant matches with specific reasoning.'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 0.1, // Low temperature for consistency
-      max_tokens: 500,   // Smaller limit to reduce costs
+      temperature: 0.2, // Slightly higher for more nuanced matching
+      max_tokens: 1500,  // Increased for detailed analysis of 30 jobs
       functions: [{
         name: 'return_job_matches',
-        description: 'Return job matches in structured format',
+        description: 'Return the top 5 most relevant job matches for the user',
         parameters: {
           type: 'object',
           properties: {
             matches: {
               type: 'array',
+              minItems: 1,
+              maxItems: 5,
               items: {
                 type: 'object',
                 properties: {
-                  job_index: { type: 'number', minimum: 1 },
-                  job_hash: { type: 'string' },
-                  match_score: { type: 'number', minimum: 50, maximum: 100 },
-                  match_reason: { type: 'string', maxLength: 200 }
+                  job_index: { type: 'number', minimum: 1, description: 'Index of the job from the list provided' },
+                  job_hash: { type: 'string', description: 'Exact job_hash from the job list' },
+                  match_score: { type: 'number', minimum: 50, maximum: 100, description: 'How well this job matches the user (50-100)' },
+                  match_reason: { type: 'string', maxLength: 300, description: 'Specific reason why this job is a good match for this user' }
                 },
                 required: ['job_index', 'job_hash', 'match_score', 'match_reason']
               }
@@ -227,34 +229,75 @@ export class ConsolidatedMatchingEngine {
   }
 
   /**
-   * Stable prompt that works consistently - no more emergency fixes
+   * Enhanced prompt that uses full user profile for world-class matching
    */
   private buildStablePrompt(jobs: Job[], userPrefs: UserPreferences): string {
+    // Extract all user preferences
     const userCities = Array.isArray(userPrefs.target_cities) 
       ? userPrefs.target_cities.join(', ') 
       : (userPrefs.target_cities || 'Europe');
     
     const userCareer = userPrefs.professional_expertise || 'Graduate';
     const userLevel = userPrefs.entry_level_preference || 'entry-level';
+    
+    const languages = Array.isArray(userPrefs.languages_spoken) && userPrefs.languages_spoken.length > 0
+      ? userPrefs.languages_spoken.join(', ')
+      : '';
+    
+    const roles = Array.isArray(userPrefs.roles_selected) && userPrefs.roles_selected.length > 0
+      ? userPrefs.roles_selected.join(', ')
+      : '';
+    
+    const careerPaths = Array.isArray(userPrefs.career_path) && userPrefs.career_path.length > 0
+      ? userPrefs.career_path.join(', ')
+      : '';
+    
+    const workEnv = userPrefs.work_environment || '';
 
-    const jobList = jobs.slice(0, 6).map((job, i) => 
-      `${i+1}: ${job.title} at ${job.company} [${job.job_hash}]`
-    ).join('\n');
+    // Send more jobs to AI for better selection (up to 30 jobs with descriptions)
+    const jobsToAnalyze = jobs.slice(0, 30);
+    const jobList = jobsToAnalyze.map((job, i) => {
+      const desc = job.description 
+        ? job.description.substring(0, 200).replace(/\n/g, ' ')
+        : '';
+      return `${i+1}. ${job.title} at ${job.company} in ${job.location}
+   Hash: ${job.job_hash}
+   Description: ${desc}`;
+    }).join('\n\n');
 
-    return `User seeks ${userLevel} ${userCareer} roles in ${userCities}.
+    return `You are a career matching expert. Analyze these jobs and match them to the user's profile.
 
-Jobs:
+USER PROFILE:
+- Experience Level: ${userLevel}
+- Professional Expertise: ${userCareer}
+- Target Locations: ${userCities}
+${languages ? `- Languages: ${languages}` : ''}
+${roles ? `- Target Roles: ${roles}` : ''}
+${careerPaths ? `- Career Paths: ${careerPaths}` : ''}
+${workEnv ? `- Work Environment Preference: ${workEnv}` : ''}
+
+AVAILABLE JOBS:
 ${jobList}
 
-Return JSON array with top 3 matches:
-[{"job_index":1,"job_hash":"actual-hash","match_score":75,"match_reason":"Brief reason"}]
+INSTRUCTIONS:
+Analyze each job carefully and return the top 5 best matches for this user.
+Consider:
+1. Location match (exact city or remote options)
+2. Experience level fit (entry-level, graduate, junior keywords)
+3. Role alignment with career path and expertise
+4. Language requirements (if specified)
+5. Company type and culture fit
+
+Return JSON array with exactly 5 matches, ranked by relevance:
+[{"job_index":1,"job_hash":"actual-hash","match_score":85,"match_reason":"Specific reason why this matches user profile"}]
 
 Requirements:
-- job_index: 1-${jobs.length}
-- match_score: 50-100
-- Use actual job_hash from above
-- Max 3 matches
-- Valid JSON only`;
+- job_index: Must be 1-${jobsToAnalyze.length}
+- job_hash: Must match the hash from the job list above
+- match_score: 50-100 (be selective, only recommend truly relevant jobs)
+- match_reason: Brief, specific explanation of why this job fits the user
+- Return exactly 5 matches (or fewer if less than 5 good matches exist)
+- Valid JSON array only, no markdown or extra text`;
   }
 
   /**

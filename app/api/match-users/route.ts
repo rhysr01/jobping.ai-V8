@@ -270,37 +270,77 @@ function trackPerformance(): { startTime: number; getMetrics: () => PerformanceM
   };
 }
 
-// Pre-filter jobs by user preferences to reduce AI load
+// Enhanced pre-filter jobs by user preferences with scoring
 function preFilterJobsByUserPreferences(jobs: JobWithFreshness[], user: UserPreferences): JobWithFreshness[] {
-  // Basic filtering to reduce AI processing load
-  let filteredJobs = jobs;
-  
-  // Filter by target cities if specified
-  if (user.target_cities && user.target_cities.length > 0) {
-    filteredJobs = filteredJobs.filter(job => 
-      user.target_cities!.some(city => 
-        job.location.toLowerCase().includes(city.toLowerCase()) ||
-        job.location.toLowerCase().includes('remote')
-      )
-    );
-  }
-  
-  // Filter by experience level keywords in title
-  if (user.entry_level_preference) {
-    const experienceKeywords: Record<string, string[]> = {
-      'entry': ['intern', 'internship', 'graduate', 'grad', 'entry', 'junior', 'trainee', 'associate'],
-      'mid': ['analyst', 'specialist', 'coordinator', 'associate'],
-      'senior': ['senior', 'lead', 'principal', 'manager', 'director']
-    };
+  // Score each job and return top matches
+  const scoredJobs = jobs.map(job => {
+    let score = 0;
+    const jobTitle = job.title.toLowerCase();
+    const jobLocation = job.location.toLowerCase();
+    const jobDesc = (job.description || '').toLowerCase();
     
-    const keywords = experienceKeywords[user.entry_level_preference as keyof typeof experienceKeywords] || experienceKeywords['entry'];
-    filteredJobs = filteredJobs.filter(job =>
-      keywords.some(keyword => job.title.toLowerCase().includes(keyword))
-    );
-  }
+    // Location scoring (high priority)
+    if (user.target_cities && user.target_cities.length > 0) {
+      const hasLocationMatch = user.target_cities.some(city => 
+        jobLocation.includes(city.toLowerCase())
+      );
+      const isRemote = jobLocation.includes('remote');
+      
+      if (hasLocationMatch) score += 50; // Exact city match
+      else if (isRemote) score += 30;    // Remote is good fallback
+      else score -= 20;                   // Wrong location penalty
+    }
+    
+    // Experience level scoring (high priority)
+    if (user.entry_level_preference) {
+      const experienceKeywords: Record<string, string[]> = {
+        'entry': ['intern', 'internship', 'graduate', 'grad', 'entry', 'junior', 'trainee', 'associate'],
+        'mid': ['analyst', 'specialist', 'coordinator', 'associate'],
+        'senior': ['senior', 'lead', 'principal', 'manager', 'director']
+      };
+      
+      const keywords = experienceKeywords[user.entry_level_preference as keyof typeof experienceKeywords] || experienceKeywords['entry'];
+      const hasLevelMatch = keywords.some(keyword => jobTitle.includes(keyword));
+      
+      if (hasLevelMatch) score += 40; // Level match
+      else score -= 15;                // Wrong level penalty
+    }
+    
+    // Role/Career path scoring (medium priority)
+    if (user.roles_selected && user.roles_selected.length > 0) {
+      const hasRoleMatch = user.roles_selected.some(role => 
+        jobTitle.includes(role.toLowerCase()) || jobDesc.includes(role.toLowerCase())
+      );
+      if (hasRoleMatch) score += 30;
+    }
+    
+    // Language scoring (if specified)
+    if (user.languages_spoken && user.languages_spoken.length > 0) {
+      const hasLanguageMatch = user.languages_spoken.some(lang => 
+        jobDesc.includes(lang.toLowerCase())
+      );
+      if (hasLanguageMatch) score += 10;
+    }
+    
+    // Career path scoring
+    if (user.career_path && user.career_path.length > 0) {
+      const hasCareerMatch = user.career_path.some(path => 
+        jobTitle.includes(path.toLowerCase()) || jobDesc.includes(path.toLowerCase())
+      );
+      if (hasCareerMatch) score += 20;
+    }
+    
+    return { job, score };
+  });
   
-  console.log(`Pre-filtered from ${jobs.length} to ${filteredJobs.length} jobs for user ${user.email}`);
-  return filteredJobs;
+  // Sort by score and return top jobs
+  const topJobs = scoredJobs
+    .filter(item => item.score > 0) // Only jobs with some match
+    .sort((a, b) => b.score - a.score)
+    .map(item => item.job);
+  
+  console.log(`Pre-filtered from ${jobs.length} to ${topJobs.length} jobs for user ${user.email} (scored and ranked)`);
+  return topJobs;
 }
 
 // Initialize clients
@@ -617,7 +657,8 @@ const matchUsersHandler = async (req: NextRequest) => {
         // Pre-filter jobs to reduce AI processing load
         const preFilteredJobs = preFilterJobsByUserPreferences(unseenJobs as JobWithFreshness[], user);
         
-        const considered = preFilteredJobs.slice(0, user.subscription_tier === 'premium' ? 80 : 40);
+        // Increased limits to give AI more jobs to choose from
+        const considered = preFilteredJobs.slice(0, user.subscription_tier === 'premium' ? 200 : 100);
         
         // Apply freshness distribution with fallback logic
         const tierDistributionStart = Date.now();
@@ -630,8 +671,8 @@ const matchUsersHandler = async (req: NextRequest) => {
         const tierDistributionTime = Date.now() - tierDistributionStart;
         totalTierDistributionTime += tierDistributionTime;
 
-        // Enforce caps BEFORE AI to prevent processing too many jobs
-        const cap = user.subscription_tier === 'premium' ? 100 : 50;
+        // Give AI more jobs to select from (AI will pick best 5 from these)
+        const cap = user.subscription_tier === 'premium' ? 200 : 100;
         const capped = distributedJobs.slice(0, cap);
 
         // AI matching with performance tracking and circuit breaker
