@@ -4,20 +4,6 @@
       "maxDuration": 30
     }
   },
-  "crons": [
-    {
-      "path": "/api/cron/process-email-queue",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/process-ai-matching", 
-      "schedule": "0 7 * * *"
-    },
-    {
-      "path": "/api/cron/process-scraping-queue",
-      "schedule": "0 8 * * *"
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
