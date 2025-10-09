@@ -172,13 +172,17 @@ async function main() {
     'London': [], // English only set is CORE_EN
     'Madrid': [ 'programa de graduados','becario','prácticas','junior','recién graduado','nivel inicial' ],
     'Berlin': [ 'absolvent','trainee','praktikant','junior','berufseinsteiger','nachwuchskraft' ],
+    'Hamburg': [ 'absolvent','trainee','praktikant','junior','berufseinsteiger','nachwuchskraft' ],
+    'Munich': [ 'absolvent','trainee','praktikant','junior','berufseinsteiger','nachwuchskraft' ],
     'Amsterdam': [ 'afgestudeerde','traineeship','starter','junior','beginnend','werkstudent' ],
+    'Brussels': [ 'stagiaire','junior','débutant','afgestudeerde','starter' ], // Belgium: French + Dutch
     'Paris': [ 'jeune diplômé','stagiaire','alternance','junior','débutant','programme graduate' ],
     'Zurich': [ 'absolvent','trainee','praktikant','junior','jeune diplômé','stagiaire' ],
     'Milan': [ 'neolaureato','stage','tirocinio','junior','primo lavoro','laureato' ],
+    'Rome': [ 'neolaureato','stage','tirocinio','junior','primo lavoro','laureato' ],
     'Dublin': [] // English only set is CORE_EN
   };
-  const cities = [ 'London','Madrid','Berlin','Amsterdam','Paris','Zurich','Milan','Dublin' ];
+  const cities = [ 'London','Madrid','Berlin','Hamburg','Munich','Amsterdam','Brussels','Paris','Zurich','Milan','Rome','Dublin' ];
   const MAX_Q_PER_CITY = parseInt(process.env.JOBSPY_MAX_Q_PER_CITY || '6', 10);
   const RESULTS_WANTED = parseInt(process.env.JOBSPY_RESULTS_WANTED || '15', 10);
   const JOBSPY_TIMEOUT_MS = parseInt(process.env.JOBSPY_TIMEOUT_MS || '20000', 10);
@@ -198,10 +202,15 @@ async function main() {
                   : city === 'Paris' ? 'france'
                   : city === 'Madrid' ? 'spain'
                   : city === 'Berlin' ? 'germany'
+                  : city === 'Hamburg' ? 'germany'
+                  : city === 'Munich' ? 'germany'
                   : city === 'Amsterdam' ? 'netherlands'
+                  : city === 'Brussels' ? 'belgium'
                   : city === 'Zurich' ? 'switzerland'
                   : city === 'Dublin' ? 'ireland'
-                  : 'italy';
+                  : city === 'Milan' ? 'italy'
+                  : city === 'Rome' ? 'italy'
+                  : 'europe';
     for (const term of toRun) {
       console.log(`\n🔎 Fetching: ${term} in ${city}, ${country}`);
       let py;

@@ -1,19 +1,20 @@
 require('dotenv').config({ path: '.env.local' });
 const axios = require('axios');
 
-// EU Cities (VERIFIED working endpoints only)
+// EU Cities - EXPANDED to 12 cities for better coverage
 const EU_CITIES_CATEGORIES = [
   { name: 'London', country: 'gb' },    // ✅ High performer
   { name: 'Madrid', country: 'es' },    // ✅ High performer (prácticas goldmine)
   { name: 'Berlin', country: 'de' },    // ✅ Moderate performer
+  { name: 'Hamburg', country: 'de' },   // 🆕 Germany's 2nd largest city
+  { name: 'Munich', country: 'de' },    // 🆕 Germany's 3rd largest city (finance/tech hub)
   { name: 'Amsterdam', country: 'nl' }, // ✅ Moderate performer
+  { name: 'Brussels', country: 'be' },  // 🆕 EU capital (many institutions)
   { name: 'Paris', country: 'fr' },     // ✅ High performer (522 jobs)
   { name: 'Zurich', country: 'ch' },    // ✅ Moderate performer
   { name: 'Milan', country: 'it' },     // ✅ High performer (470 jobs)
-  { name: 'Dublin', country: 'ie' }      // ✅ Added - English only (tech/finance hub)
-  // REMOVED: Dublin ('ie' not supported by Adzuna - returns HTML error)
-  // REMOVED: Brussels ('be' not supported by Adzuna - returns HTML error)
-  // REMOVED: Rome (0 jobs across all searches)
+  { name: 'Rome', country: 'it' },      // 🆕 Italy's capital
+  { name: 'Dublin', country: 'ie' }     // ✅ English only (tech/finance hub)
 ];
 
 // Query rotation system for Adzuna - 3 different sets
