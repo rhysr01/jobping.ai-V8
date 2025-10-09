@@ -264,11 +264,151 @@ export async function POST(req: NextRequest) {
 
     if (existingUser) {
       console.log('👤 User already exists:', existingUser.email);
-      return NextResponse.json({ 
-        success: true, 
-        message: 'User already registered',
-        userId: existingUser.id 
-      });
+      
+      // Update existing user with profile data from Tally form
+      // This handles the case where user applied promo code first, then filled out form
+      const updateData = {
+        full_name: userData.full_name || '',
+        professional_expertise: userData.professional_expertise || '',
+        start_date: userData.start_date || null,
+        work_environment: userData.work_environment || '',
+        visa_status: userData.work_authorization || '',
+        entry_level_preference: userData.entry_level_preference || '',
+        career_path: userData.career_path || '',
+        professional_experience: userData.professional_experience || '',
+        languages_spoken: userData.languages_spoken || [],
+        company_types: userData.company_types || [],
+        roles_selected: userData.roles_selected || [],
+        target_cities: userData.target_cities || [],
+        email_verified: true, // Ensure email is verified for matching
+        updated_at: new Date().toISOString()
+      };
+      
+      const { error: updateError } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('email', userData.email);
+      
+      if (updateError) {
+        console.error('❌ Failed to update existing user profile:', updateError);
+        return NextResponse.json({ 
+          error: 'Failed to update user profile' 
+        }, { status: 500 });
+      }
+      
+      console.log('✅ Updated existing user profile:', existingUser.email);
+      
+      // Continue to instant matching (don't return early)
+      // Use existingUser.id for matching
+      const userId = existingUser.id;
+      
+      // INSTANT JOB MATCHING: Send first 5 jobs for updated profile
+      try {
+        console.log('🚀 Running instant job matching for updated user...');
+        
+        // Call match-users API to get first 5 jobs
+        const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+        const matchUrl = `${baseUrl}/api/match-users`;
+        
+        console.log(`📍 Calling match API: ${matchUrl}`);
+        
+        const matchResponse = await fetch(matchUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-system-api-key': process.env.SYSTEM_API_KEY || 'internal-system-key',
+          },
+          body: JSON.stringify({
+            limit: 1,
+            forceReprocess: false,
+          }),
+        });
+
+        console.log(`📊 Match API response: ${matchResponse.status} ${matchResponse.statusText}`);
+
+        if (matchResponse.ok) {
+          const matchData = await matchResponse.json();
+          console.log(`✅ Match API completed:`, matchData);
+          
+          // Fetch the matched jobs from the database
+          const { data: matches, error: matchesError } = await supabase
+            .from('matches')
+            .select(`
+              job_hash,
+              match_score,
+              match_reason,
+              jobs (
+                id,
+                title,
+                company,
+                location,
+                job_url,
+                description
+              )
+            `)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(5);
+          
+          if (matchesError) {
+            console.error('❌ Failed to fetch matches:', matchesError);
+            throw new Error('Failed to fetch job matches');
+          }
+          
+          console.log(`📧 Fetched ${matches?.length || 0} matches for email`);
+          
+          // Transform matches to include job details
+          const matchedJobs = (matches || []).map((match: any) => ({
+            ...match.jobs,
+            match_score: Math.round((match.match_score || 0) * 100), // Convert 0-1 to 0-100 for display
+            match_reason: match.match_reason,
+            job_hash: match.job_hash
+          }));
+          
+          if (matchedJobs.length > 0) {
+            console.log(`📧 Sending welcome email with ${matchedJobs.length} job matches...`);
+            
+            await sendMatchedJobsEmail({
+              to: userData.email,
+              userName: userData.full_name || 'there',
+              jobs: matchedJobs,
+              isFirstEmail: true
+            });
+            
+            console.log('✅ Welcome email with jobs sent successfully');
+          } else {
+            console.log('⚠️ No matches found, sending welcome email without jobs');
+            await sendWelcomeEmail(userData.email, userData.full_name || 'there');
+          }
+          
+          return NextResponse.json({ 
+            success: true,
+            message: 'Profile updated and instant matching completed',
+            userId: userId,
+            matchCount: matchedJobs.length
+          });
+        } else {
+          console.error('❌ Instant matching failed:', await matchResponse.text());
+          // Still return success for user creation, just log the matching failure
+          await sendWelcomeEmail(userData.email, userData.full_name || 'there');
+          
+          return NextResponse.json({ 
+            success: true,
+            message: 'Profile updated, instant matching will be retried on next scheduled send',
+            userId: userId
+          });
+        }
+      } catch (matchError) {
+        console.error('❌ Error during instant matching:', matchError);
+        // Still return success for user creation, send welcome email without jobs
+        await sendWelcomeEmail(userData.email, userData.full_name || 'there');
+        
+        return NextResponse.json({ 
+          success: true,
+          message: 'Profile updated, user will receive jobs on next scheduled send',
+          userId: userId
+        });
+      }
     }
 
     // Create new user
