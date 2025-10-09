@@ -269,7 +269,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
           if (aiDisabled) {
             console.log(`🧠 AI disabled, using rule-based fallback for ${user.email}`);
             matchType = 'fallback';
-            const fallbackResults = generateRobustFallbackMatches(unseenJobs, userPreferences);
+            const fallbackResults = generateRobustFallbackMatches(unseenJobs as any[], userPreferences);
             matches = fallbackResults.map((result) => ({
               ...result.job,
               match_score: result.match_score,
@@ -285,7 +285,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
               if (!costCheck.allowed) {
                 console.log(`💰 AI call blocked for ${user.email}: ${costCheck.reason}`);
                 matchType = 'fallback';
-                const fallbackResults = generateRobustFallbackMatches(unseenJobs, userPreferences);
+                const fallbackResults = generateRobustFallbackMatches(unseenJobs as any[], userPreferences);
                 matches = fallbackResults.map((result) => ({
                   ...result.job,
                   match_score: result.match_score,
@@ -303,7 +303,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
                 
                 if (!matches || matches.length === 0) {
                   matchType = 'fallback';
-                  const fallbackResults = generateRobustFallbackMatches(unseenJobs, userPreferences);
+                  const fallbackResults = generateRobustFallbackMatches(unseenJobs as any[], userPreferences);
                   matches = fallbackResults.map((result) => ({
                     ...result.job,
                     match_score: result.match_score,
@@ -315,7 +315,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
             } catch (aiError) {
               console.error(`❌ AI matching failed for ${user.email}:`, aiError);
               matchType = 'ai_failed';
-              const fallbackResults = generateRobustFallbackMatches(unseenJobs, userPreferences);
+              const fallbackResults = generateRobustFallbackMatches(unseenJobs as any[], userPreferences);
               matches = fallbackResults.map((result) => ({
                 ...result.job,
                 match_score: result.match_score,
