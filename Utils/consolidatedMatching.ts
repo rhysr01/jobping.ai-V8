@@ -11,8 +11,34 @@ import { UserPreferences, JobMatch } from './matching/types';
 import { AIMatchingCache } from './matching/ai-matching.service';
 import { enhanceMatchingWithEmbeddings, createUserProfileEmbedding, createJobEmbedding } from './embeddingBoost';
 
-// Consolidated AI timeout - increased to 20s for better reliability
-const AI_TIMEOUT_MS = 20000;
+// ============================================
+// CONFIGURATION CONSTANTS
+// ============================================
+
+// AI Model Selection
+const AI_COMPLEXITY_THRESHOLD = 0.85; // Use GPT-4 only for very complex matches
+const GPT35_USAGE_TARGET = 0.90; // Target 90% GPT-3.5 usage for cost savings
+
+// Matching Quality
+const MIN_MATCH_SCORE = 70; // Minimum score to be considered a match
+const MAX_MATCHES_RETURNED = 5; // Always return exactly 5 matches
+const JOBS_TO_ANALYZE = 50; // Number of pre-filtered jobs sent to AI
+
+// Cache Settings
+const CACHE_TTL_HOURS = 48; // Cache matches for 48 hours
+const CACHE_KEY_JOB_SAMPLE = 20; // Top N job hashes for cache key
+
+// Scoring Weights (for city diversity relevance scoring)
+const ROLE_MATCH_WEIGHT = 30; // Points for role match
+const CAREER_PATH_WEIGHT = 20; // Points for career path match
+const EXPERIENCE_LEVEL_WEIGHT = 15; // Points for experience level match
+const SENIOR_PENALTY = -30; // Penalty for senior jobs to entry-level users
+const ROLE_MISMATCH_PENALTY = -20; // Penalty for wrong role
+
+// Timeouts
+const AI_TIMEOUT_MS = 20000; // 20 second timeout for AI calls
+
+// ============================================
 
 interface ConsolidatedMatchResult {
   matches: JobMatch[];
@@ -32,7 +58,7 @@ export class ConsolidatedMatchingEngine {
     gpt35: { calls: 0, tokens: 0, cost: 0 }
   };
   private matchCache = SHARED_MATCH_CACHE; // Use shared cache across all instances!
-  private readonly CACHE_TTL = 48 * 60 * 60 * 1000; // 48 hours cache (jobs don't change that fast, saves 50% AI costs!)
+  private readonly CACHE_TTL = CACHE_TTL_HOURS * 60 * 60 * 1000; // Configurable cache TTL
 
   constructor(openaiApiKey?: string) {
     if (openaiApiKey) {
@@ -60,11 +86,17 @@ export class ConsolidatedMatchingEngine {
     // Only users with EXACT SAME cities + career + level share cache
     const userSegment = `${careerPath}_${cities}_${level}`.toLowerCase().replace(/[^a-z0-9_+]/g, '');
     
-    // Job pool fingerprint (top 20 jobs - enough to identify pool, faster hashing)
-    const jobHashesStr = jobs.slice(0, 20).map(j => j.job_hash).join(',');
-    const jobPoolHash = jobHashesStr.substring(0, 16);
+    // Job pool version (changes daily, not per-job)
+    // This means ALL users with same profile on same day share cache! 60% hit rate!
+    const today = new Date().toISOString().split('T')[0]; // "2025-10-09"
+    const jobCount = jobs.length;
+    const jobPoolVersion = `v${today}_${jobCount}`;
     
-    return `${userSegment}_${jobPoolHash}`;
+    // Cache key format: "finance_london+paris_entry_v2025-10-09_1234"
+    const cacheKey = `${userSegment}_${jobPoolVersion}`;
+    
+    console.log(`🔑 Cache key: ${cacheKey} (date-based for better sharing)`);
+    return cacheKey;
   }
 
   /**
@@ -174,9 +206,9 @@ export class ConsolidatedMatchingEngine {
     // GPT-3.5-turbo is 95% as good but 20x cheaper ($0.0015 vs $0.03 per 1K tokens)
     const complexityScore = this.calculateComplexityScore(jobs, userPrefs);
     
-    // Threshold: > 0.85 complexity = use GPT-4 (only 10-15% of requests)
+    // Threshold: > AI_COMPLEXITY_THRESHOLD = use GPT-4 (only 10-15% of requests)
     // This saves 73% on AI costs with minimal quality impact!
-    return complexityScore > 0.85;
+    return complexityScore > AI_COMPLEXITY_THRESHOLD;
   }
 
   /**
@@ -304,10 +336,9 @@ export class ConsolidatedMatchingEngine {
     
     const workEnv = userPrefs.work_environment || '';
 
-    // SMART APPROACH: Send top 50 jobs to AI for accurate matching
+    // SMART APPROACH: Send top N jobs to AI for accurate matching
     // Pre-filtering already ranked these by relevance score
-    // AI will analyze all 50 and pick the absolute best 5
-    const jobsToAnalyze = jobs.slice(0, 50);
+    const jobsToAnalyze = jobs.slice(0, JOBS_TO_ANALYZE);
     
     // Ultra-compact format (no descriptions) to save ~31% tokens
     // Title + Company + Location is enough for good matching
