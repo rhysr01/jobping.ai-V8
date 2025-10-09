@@ -30,8 +30,8 @@ ON matches(job_hash);
 CREATE INDEX IF NOT EXISTS idx_users_email_verified
 ON users(email_verified, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_users_subscription_tier
-ON users(subscription_tier, subscription_active);
+CREATE INDEX IF NOT EXISTS idx_users_subscription_active
+ON users(subscription_active, created_at DESC);
 
 -- Check indexes were created
 SELECT schemaname, tablename, indexname, indexdef
