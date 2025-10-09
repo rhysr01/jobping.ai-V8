@@ -55,10 +55,14 @@ export function addClickTracking(html: string, email: string): string {
       if (url.includes('/api/track-engagement') || 
           url.startsWith('mailto:') ||
           url.includes('reed.co.uk') ||
-          url.includes('adzuna.co.uk') ||
+          url.includes('adzuna.') ||
           url.includes('indeed.com') ||
+          url.includes('linkedin.com') ||
+          url.includes('glassdoor.') ||
           url.includes('greenhouse.io') ||
-          url.includes('lever.co')) {
+          url.includes('lever.co') ||
+          url.includes('talent.com') ||
+          url.includes('boards.')) {
         return match; // Don't wrap job board URLs - link directly
       }
       
