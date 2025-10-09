@@ -465,8 +465,6 @@ export function createJobMatchesEmail(
       
       <div class="job-meta">
         <span class="match-score">${card.matchResult?.match_score || 85}% Match</span>
-        <span style="color: #888888; font-size: 14px;">💰 ${card.job.salary || 'Competitive'}</span>
-        <span style="color: #888888; font-size: 14px;">⏰ ${card.job.job_type || 'Full-time'}</span>
       </div>
       
       <p style="color: #888888; font-size: 14px; margin-top: 12px; line-height: 1.5;">
