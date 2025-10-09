@@ -25,14 +25,17 @@ export function getSupabaseClient(): SupabaseClient {
 
   // Validate environment variables (try multiple var names for compatibility)
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 
+                      process.env.SUPABASE_KEY || 
+                      process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     console.error('❌ Supabase env vars missing:', {
       SUPABASE_URL: !!process.env.SUPABASE_URL,
       NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-      SUPABASE_KEY: !!process.env.SUPABASE_KEY
+      SUPABASE_KEY: !!process.env.SUPABASE_KEY,
+      SUPABASE_ANON_KEY: !!process.env.SUPABASE_ANON_KEY
     });
     throw new Error('Missing required Supabase environment variables');
   }
@@ -57,7 +60,9 @@ export function createSupabaseClient(): SupabaseClient {
   }
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 
+                      process.env.SUPABASE_KEY || 
+                      process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     console.error('❌ Supabase env vars missing in createSupabaseClient');
