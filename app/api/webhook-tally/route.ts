@@ -155,17 +155,12 @@ function extractUserData(fields: NonNullable<TallyWebhookData['data']>['fields']
     else if (labelLower.includes('full name')) {
       userData.full_name = Array.isArray(value) ? value[0] : value;
     }
-    // WORK LOCATION
-    // Tally sends UUIDs for multiple choice - we'll use a fallback
-    else if (labelLower.includes('preferred work location') || labelLower.includes('work location')) {
-      // For now, set default major European cities
-      // TODO: Map Tally UUIDs to actual city names or reconfigure Tally form
-      if (Array.isArray(value) && value.length > 0) {
-        // Fallback to major EU cities - user can update later
-        locations.push('London', 'Paris');
-      } else if (value === true) {
-        const loc = extractFromParentheses(label);
-        if (loc) locations.push(loc);
+    // WORK LOCATION (checkbox format with city name in parentheses)
+    else if ((labelLower.includes('preferred work location') || labelLower.includes('work location')) && value === true) {
+      const loc = extractFromParentheses(label);
+      if (loc) {
+        locations.push(loc);
+        console.log(`✅ Extracted location: ${loc}`);
       }
     }
     // WORK ENVIRONMENT (checkbox format: Office, Hybrid, Remote)
@@ -176,7 +171,10 @@ function extractUserData(fields: NonNullable<TallyWebhookData['data']>['fields']
     // ROLES (checkbox format with job titles in parentheses)
     else if ((labelLower.includes('strategy &') || labelLower.includes('role(s)')) && value === true) {
       const role = extractFromParentheses(label);
-      if (role) roles.push(role);
+      if (role && role.length > 1) {  // Filter out single character extractions
+        roles.push(role);
+        console.log(`✅ Extracted role: ${role}`);
+      }
     }
     // TARGET EMPLOYMENT START DATE
     else if (labelLower.includes('target employment start date') || labelLower.includes('employment start')) {
