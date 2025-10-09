@@ -51,9 +51,15 @@ export function addClickTracking(html: string, email: string): string {
   return html.replace(
     /href="([^"]+)"/g,
     (match, url) => {
-      // Skip tracking URLs and mailto links
-      if (url.includes('/api/track-engagement') || url.startsWith('mailto:')) {
-        return match;
+      // Skip tracking URLs, mailto links, and direct job URLs (let them work!)
+      if (url.includes('/api/track-engagement') || 
+          url.startsWith('mailto:') ||
+          url.includes('reed.co.uk') ||
+          url.includes('adzuna.co.uk') ||
+          url.includes('indeed.com') ||
+          url.includes('greenhouse.io') ||
+          url.includes('lever.co')) {
+        return match; // Don't wrap job board URLs - link directly
       }
       
       const trackingUrl = generateClickTrackingUrl(url, email);
