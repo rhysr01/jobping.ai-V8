@@ -8,7 +8,19 @@ export default function Hero() {
     <section className="relative isolate text-center py-24 md:py-32 lg:py-40">
       <div className="container-page">
         {/* Large JobPing branding with graduation cap */}
-        <div className="inline-flex items-center justify-center gap-4 md:gap-6 mb-8">
+        <motion.div 
+          className="inline-flex items-center justify-center gap-4 md:gap-6 mb-8"
+          animate={{ 
+            scale: [1, 1.05, 1],
+            y: [0, -4, 0]
+          }}
+          transition={{ 
+            duration: 0.6,
+            repeat: Infinity,
+            repeatDelay: 3,
+            ease: "easeInOut"
+          }}
+        >
           {/* Graduation Cap Icon */}
           <svg
             className="w-16 h-16 md:w-24 md:h-24 lg:w-28 lg:h-28 text-white/90"
@@ -31,7 +43,7 @@ export default function Hero() {
               JobPing
             </span>
           </div>
-        </div>
+        </motion.div>
         
         <h1 className="mt-6 text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] max-w-[20ch] mx-auto">
           Graduate jobs in your inbox. Just apply.
