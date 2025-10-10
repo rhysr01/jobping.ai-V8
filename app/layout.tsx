@@ -5,13 +5,62 @@ import { GeistSans } from "geist/font/sans";
 export const metadata: Metadata = {
   title: "JobPing · Five roles. Zero scrolling.",
   description:
-    "Europe's best intern and graduate roles filtered for you. {'{matches_per_email}'} accurate matches based on city, work rights and interests. No job board dumps.",
-  robots: { index: true, follow: true },
+    "Weekly job matches for early-career roles across Europe — delivered to your inbox. 5 hand-picked roles per email. No dashboards. No scrolling marathons.",
+  keywords: [
+    "graduate jobs",
+    "internships Europe",
+    "entry level jobs",
+    "junior roles",
+    "graduate scheme",
+    "trainee program",
+    "job matching",
+    "career search",
+    "London jobs",
+    "Berlin jobs",
+    "Paris jobs",
+    "Madrid jobs"
+  ],
+  authors: [{ name: "JobPing" }],
+  creator: "JobPing",
+  publisher: "JobPing",
+  robots: { 
+    index: true, 
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    }
+  },
   openGraph: {
     title: "JobPing · Five roles. Zero scrolling.",
     description:
-      "Weekly early career matches across Europe straight to your inbox.",
+      "Weekly job matches for early-career roles across Europe — delivered to your inbox. Hand-picked quality, zero noise.",
+    url: "https://getjobping.com",
+    siteName: "JobPing",
+    locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "https://getjobping.com/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "JobPing - Five roles. Zero scrolling.",
+      }
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JobPing · Five roles. Zero scrolling.",
+    description: "Weekly job matches for early-career roles across Europe.",
+    images: ["https://getjobping.com/og-image.png"],
+    creator: "@jobping",
+  },
+  metadataBase: new URL("https://getjobping.com"),
+  alternates: {
+    canonical: "https://getjobping.com",
   },
 };
 

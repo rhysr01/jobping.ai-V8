@@ -445,23 +445,23 @@ const FB = (h: string, e: string) => `
   <div class="feedback-subtitle">Help our AI learn your preferences</div>
   <div class="feedback-grid">
     <div class="feedback-row">
-      <a href="https://getjobping.com/api/feedback/email?action=positive&score=5&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-great" target="_blank">
+      <a href="https://getjobping.com/api/feedback/email?action=positive&score=5&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-great" target="_blank" rel="noopener noreferrer">
         <span class="emoji">⭐</span>
         <span class="label">Perfect</span>
       </a>
-      <a href="https://getjobping.com/api/feedback/email?action=positive&score=4&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-good" target="_blank">
+      <a href="https://getjobping.com/api/feedback/email?action=positive&score=4&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-good" target="_blank" rel="noopener noreferrer">
         <span class="emoji">👍</span>
         <span class="label">Good</span>
       </a>
-      <a href="https://getjobping.com/api/feedback/email?action=neutral&score=3&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-ok" target="_blank">
+      <a href="https://getjobping.com/api/feedback/email?action=neutral&score=3&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-ok" target="_blank" rel="noopener noreferrer">
         <span class="emoji">🤔</span>
         <span class="label">OK</span>
       </a>
-      <a href="https://getjobping.com/api/feedback/email?action=negative&score=2&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-poor" target="_blank">
+      <a href="https://getjobping.com/api/feedback/email?action=negative&score=2&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-poor" target="_blank" rel="noopener noreferrer">
         <span class="emoji">👎</span>
         <span class="label">Poor</span>
       </a>
-      <a href="https://getjobping.com/api/feedback/email?action=negative&score=1&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-bad" target="_blank">
+      <a href="https://getjobping.com/api/feedback/email?action=negative&score=1&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-bad" target="_blank" rel="noopener noreferrer">
         <span class="emoji">❌</span>
         <span class="label">Bad</span>
       </a>
@@ -576,7 +576,7 @@ export function createJobMatchesEmail(
     const applySection = card.job.job_url
       ? `<div class="apply-section">
           <p class="apply-label">📎 Application Link</p>
-          <a href="${card.job.job_url}" class="apply-button">Apply Now →</a>
+          <a href="${card.job.job_url}" class="apply-button" target="_blank" rel="noopener noreferrer">Apply Now →</a>
           <p class="apply-link">${card.job.job_url}</p>
           <p class="apply-note">Or copy and paste this link into your browser</p>
         </div>`

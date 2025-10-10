@@ -1,6 +1,6 @@
 export default function Pricing() {
   return (
-    <section id="pricing" className="py-28 md:py-36">
+    <section id="pricing" className="py-28 md:py-36 scroll-mt-24">
       <div className="container-page">
         <h2 className="text-center font-bold text-4xl md:text-5xl tracking-tight">Five hand picked roles in every email. No dashboards. No scrolling marathons.</h2>
         <p className="mt-3 text-center p-muted">Pick how often you want great roles.</p>
@@ -32,7 +32,7 @@ export default function Pricing() {
                 <span>Email support</span>
               </li>
             </ul>
-            <a href="https://tally.so/r/mJEqx4?tier=free&source=pricing" className="btn-primary mt-6 w-full text-center">Start free</a>
+            <a href="https://tally.so/r/mJEqx4?tier=free&source=pricing" target="_blank" rel="noopener noreferrer" className="btn-primary mt-6 w-full text-center">Start free</a>
           </div>
 
           {/* Premium */}
