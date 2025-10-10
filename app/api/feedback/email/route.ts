@@ -206,7 +206,7 @@ async function recordFeedbackToDatabase(feedbackData: SimpleFeedbackData) {
     
     // Insert feedback into database
     const { error } = await supabase
-      .from('feedback')
+      .from('user_feedback')
       .insert({
         user_email: feedbackData.userEmail,
         job_hash: feedbackData.jobHash,
