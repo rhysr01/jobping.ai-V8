@@ -11,7 +11,7 @@ export const isTestOrPerfMode = () =>
 export const MATCHING_CONFIG = {
   // AI Configuration
   ai: {
-    model: 'gpt-4-turbo-preview' as const,
+    model: 'gpt-4o-mini' as const,
     maxTokens: 2000,
     temperature: 0.3,
     timeout: 30000, // 30 seconds

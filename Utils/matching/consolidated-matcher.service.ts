@@ -105,7 +105,7 @@ export class ConsolidatedMatchingEngine {
 
         const provenance: AiProvenance = {
           match_algorithm: 'ai',
-          ai_model: 'gpt-4-turbo',
+          ai_model: 'gpt-4o-mini',
           ai_latency_ms: Date.now() - startTime,
           cache_hit: false
         };

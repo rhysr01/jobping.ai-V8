@@ -147,7 +147,7 @@ export class AIMatchingService {
       // Call OpenAI with timeout
       const response = await Promise.race([
         this.openai.chat.completions.create({
-          model: 'gpt-4-turbo',
+          model: 'gpt-4o-mini',
           messages: [
             {
               role: 'system',
@@ -212,13 +212,24 @@ ${userContext}
 
 ${jobsContext}
 
-Analyze each job and return a JSON array of matches. For each match, provide:
-- job_index: Index in the jobs array (0-based)
-- match_score: Score from 1-100
-- match_reason: Brief explanation
-- confidence_score: Confidence from 0.0-1.0
+You're a friendly career advisor (not a corporate recruiter). 
+Write match reasons that create a "WOW" moment:
 
-Return only valid JSON, no other text.
+✅ BE SPECIFIC: "You need React + TypeScript. This role uses both PLUS Next.js"
+✅ BE PERSONAL: "Remember that remote role you rated 5⭐? This is similar but pays €10K more"
+✅ BE CONFIDENT: "You're overqualified for this (which means easy interview)"
+✅ BE EMOTIONAL: "This is the kind of startup you'll tell your friends about"
+
+❌ DON'T: "Good match for your skills" (boring!)
+❌ DON'T: "Aligns with your preferences" (corporate!)
+
+For each match, return JSON with:
+- job_index: Index in jobs array (0-based)
+- match_score: 1-100
+- match_reason: Exciting, specific, personal reason (2-3 sentences max)
+- confidence_score: 0.0-1.0
+
+Return ONLY valid JSON array, no other text.
 `;
   }
 
@@ -392,7 +403,7 @@ JOB ${index}:
   async testConnection(): Promise<boolean> {
     try {
       await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: 'test' }],
         max_tokens: 1
       });
@@ -404,7 +415,7 @@ JOB ${index}:
 
   getStats(): any {
     return {
-      model: 'gpt-4-turbo',
+      model: 'gpt-4o-mini',
       maxTokens: 4000,
       temperature: 0.7,
       timeout: 20000

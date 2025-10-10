@@ -15,9 +15,9 @@ import { enhanceMatchingWithEmbeddings, createUserProfileEmbedding, createJobEmb
 // CONFIGURATION CONSTANTS
 // ============================================
 
-// AI Model Selection
-const AI_COMPLEXITY_THRESHOLD = 0.85; // Use GPT-4 only for very complex matches
-const GPT35_USAGE_TARGET = 0.90; // Target 90% GPT-3.5 usage for cost savings
+// AI Model Selection - SIMPLIFIED: Use GPT-4o-mini for everything!
+// GPT-4o-mini is better than 3.5-turbo AND 70% cheaper
+// No need for complexity-based routing anymore
 
 // Matching Quality
 const MIN_MATCH_SCORE = 70; // Minimum score to be considered a match
@@ -53,7 +53,8 @@ const SHARED_MATCH_CACHE = new Map<string, { matches: JobMatch[], timestamp: num
 export class ConsolidatedMatchingEngine {
   private openai: OpenAI | null = null;
   private openai35: OpenAI | null = null;
-  private costTracker = {
+  private costTracker: Record<string, { calls: number; tokens: number; cost?: number }> = {
+    gpt4omini: { calls: 0, tokens: 0, cost: 0 },
     gpt4: { calls: 0, tokens: 0, cost: 0 },
     gpt35: { calls: 0, tokens: 0, cost: 0 }
   };
@@ -179,11 +180,8 @@ export class ConsolidatedMatchingEngine {
       setTimeout(() => reject(new Error('AI_TIMEOUT')), AI_TIMEOUT_MS);
     });
 
-    // Determine which model to use based on complexity
-    const shouldUseGPT4 = this.shouldUseGPT4(jobs, userPrefs);
-    const aiPromise = shouldUseGPT4 
-      ? this.callOpenAIAPI(jobs, userPrefs, 'gpt-4')
-      : this.callOpenAIAPI(jobs, userPrefs, 'gpt-3.5-turbo');
+    // Use GPT-4o-mini for all requests (better quality, 70% cheaper than 3.5-turbo!)
+    const aiPromise = this.callOpenAIAPI(jobs, userPrefs, 'gpt-4o-mini');
 
     try {
       return process.env.NODE_ENV === 'test'
@@ -199,16 +197,12 @@ export class ConsolidatedMatchingEngine {
   }
 
   /**
-   * Smart routing: Use GPT-3.5 for simple cases, GPT-4 for complex ones
+   * DEPRECATED: Model selection logic no longer needed
+   * Now using GPT-4o-mini for all requests (better quality, lower cost)
    */
   private shouldUseGPT4(jobs: Job[], userPrefs: UserPreferences): boolean {
-    // Use GPT-3.5 for 90% of requests - GPT-4 only for extremely complex cases
-    // GPT-3.5-turbo is 95% as good but 20x cheaper ($0.0015 vs $0.03 per 1K tokens)
-    const complexityScore = this.calculateComplexityScore(jobs, userPrefs);
-    
-    // Threshold: > AI_COMPLEXITY_THRESHOLD = use GPT-4 (only 10-15% of requests)
-    // This saves 73% on AI costs with minimal quality impact!
-    return complexityScore > AI_COMPLEXITY_THRESHOLD;
+    // Always return false - we use GPT-4o-mini now
+    return false;
   }
 
   /**
@@ -240,9 +234,10 @@ export class ConsolidatedMatchingEngine {
 
   /**
    * Stable OpenAI API call with function calling - no more parsing errors
+   * Now using GPT-4o-mini exclusively (better + cheaper than 3.5-turbo!)
    */
-  private async callOpenAIAPI(jobs: Job[], userPrefs: UserPreferences, model: 'gpt-4' | 'gpt-3.5-turbo' = 'gpt-4'): Promise<JobMatch[]> {
-    const client = model === 'gpt-4' ? this.openai : this.openai35;
+  private async callOpenAIAPI(jobs: Job[], userPrefs: UserPreferences, model: 'gpt-4o-mini' | 'gpt-4' | 'gpt-3.5-turbo' = 'gpt-4o-mini'): Promise<JobMatch[]> {
+    const client = this.openai;
     if (!client) throw new Error('OpenAI client not initialized');
 
     // Build optimized prompt based on model
@@ -292,7 +287,8 @@ export class ConsolidatedMatchingEngine {
 
     // Track costs (simplified for now)
     if (completion.usage) {
-      const trackerKey = model === 'gpt-4' ? 'gpt4' : 'gpt35';
+      const trackerKey = model === 'gpt-4o-mini' ? 'gpt4omini' : (model === 'gpt-4' ? 'gpt4' : 'gpt35');
+      this.costTracker[trackerKey] = this.costTracker[trackerKey] || { calls: 0, tokens: 0 };
       this.costTracker[trackerKey].calls++;
       this.costTracker[trackerKey].tokens += completion.usage.total_tokens || 0;
     }
@@ -980,7 +976,7 @@ Requirements:
     
     try {
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: 'test' }],
         max_tokens: 1,
         temperature: 0
