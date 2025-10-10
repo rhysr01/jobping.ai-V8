@@ -141,8 +141,8 @@ export class AIMatchingService {
       // Enrich jobs with additional data
       const enrichedJobs = jobs.map(job => enrichJobData(job));
       
-      // Build prompt
-      const prompt = this.buildMatchingPrompt(enrichedJobs, userPrefs);
+      // Build prompt (with feedback learning)
+      const prompt = await this.buildMatchingPrompt(enrichedJobs, userPrefs);
       
       // Call OpenAI with timeout
       const response = await Promise.race([
@@ -190,8 +190,8 @@ export class AIMatchingService {
     return `ai-match:${userKey}:${jobHashes}`;
   }
 
-  private buildMatchingPrompt(jobs: EnrichedJob[], userProfile: NormalizedUserProfile): string {
-    const userContext = this.buildUserContext(userProfile);
+  private async buildMatchingPrompt(jobs: EnrichedJob[], userProfile: NormalizedUserProfile): Promise<string> {
+    const userContext = await this.buildUserContextWithFeedback(userProfile);
     const jobsContext = this.buildJobsContext(jobs);
     
     return `
@@ -222,6 +222,95 @@ USER PROFILE:
 - Company Types: ${profile.company_types?.join(', ') || 'Not specified'}
 - Roles: ${profile.roles_selected?.join(', ') || 'Not specified'}
 `;
+  }
+
+  // NEW: Build user context WITH feedback learning
+  private async buildUserContextWithFeedback(profile: NormalizedUserProfile): Promise<string> {
+    // Get basic context
+    const basicContext = this.buildUserContext(profile);
+    
+    // Try to get feedback summary
+    try {
+      const feedbackSummary = await this.getFeedbackSummary(profile.email);
+      
+      if (!feedbackSummary || feedbackSummary.total < 3) {
+        // Not enough feedback, return basic context
+        return basicContext;
+      }
+      
+      // Add feedback insights
+      return `${basicContext}
+
+LEARNED PREFERENCES (from ${feedbackSummary.total} ratings):
+✅ USER LOVES:
+  ${feedbackSummary.loved.map((item: string) => `- ${item}`).join('\n  ')}
+
+❌ USER AVOIDS:
+  ${feedbackSummary.disliked.map((item: string) => `- ${item}`).join('\n  ')}
+
+MATCHING STRATEGY:
+- Prioritize jobs similar to their top-rated matches
+- Avoid patterns that led to low ratings
+- User has rated ${feedbackSummary.positive}/${feedbackSummary.total} jobs positively (${Math.round(feedbackSummary.positive/feedbackSummary.total*100)}%)
+`;
+    } catch (error) {
+      console.warn('Failed to get feedback summary, using basic context:', error);
+      return basicContext;
+    }
+  }
+
+  // NEW: Fetch and analyze user feedback
+  private async getFeedbackSummary(userEmail: string): Promise<any> {
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      
+      // Get last 20 feedback entries
+      const { data: feedback, error } = await supabase
+        .from('user_feedback')
+        .select('verdict, relevance_score, job_context')
+        .eq('user_email', userEmail)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      if (error || !feedback || feedback.length === 0) {
+        return null;
+      }
+      
+      // Analyze patterns
+      const positive = feedback.filter(f => f.relevance_score >= 4);
+      const negative = feedback.filter(f => f.relevance_score <= 2);
+      
+      // Extract what they loved (top 3 things from 5-star jobs)
+      const loved: string[] = [];
+      positive.slice(0, 5).forEach(f => {
+        const ctx = f.job_context;
+        if (ctx?.location) loved.push(`${ctx.location} location`);
+        if (ctx?.company) loved.push(`${ctx.company}-type companies`);
+      });
+      
+      // Extract what they disliked (top 3 things from 1-2 star jobs)
+      const disliked: string[] = [];
+      negative.slice(0, 5).forEach(f => {
+        const ctx = f.job_context;
+        if (ctx?.location) disliked.push(`${ctx.location} location`);
+        if (ctx?.title?.toLowerCase().includes('senior')) disliked.push('Senior roles');
+      });
+      
+      return {
+        total: feedback.length,
+        positive: positive.length,
+        negative: negative.length,
+        loved: [...new Set(loved)].slice(0, 3),  // Dedupe, top 3
+        disliked: [...new Set(disliked)].slice(0, 3)
+      };
+    } catch (error) {
+      console.error('Error fetching feedback:', error);
+      return null;
+    }
   }
 
   private buildJobsContext(jobs: EnrichedJob[]): string {
