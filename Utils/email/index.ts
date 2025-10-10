@@ -11,12 +11,12 @@ export {
   EMAIL_PERFORMANCE_METRICS 
 } from './optimizedSender';
 
-// Templates - BRAND CONSISTENT VERSION (Black & White Design)
+// Templates - PREMIUM PURPLE BRANDING (Matches Website Design)
 export { 
   createWelcomeEmail, 
   createJobMatchesEmail,
-  EMAIL_BRAND_METRICS 
-} from './brandConsistentTemplates';
+  EMAIL_OPTIMIZATION_METRICS 
+} from './optimizedTemplates';
 
 // Clients (if needed externally)
 export { getResendClient, getSupabaseClient, EMAIL_CONFIG } from './clients';

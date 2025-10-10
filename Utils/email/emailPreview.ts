@@ -1,6 +1,6 @@
 // 📧 EMAIL PREVIEW SYSTEM - TEST NEW DESIGNS WITH FEEDBACK INTEGRATION
 
-import { createWelcomeEmail, createJobMatchesEmail } from './templates';
+import { createWelcomeEmail, createJobMatchesEmail } from './optimizedTemplates';
 import { EmailJobCard } from './types';
 
 /**
