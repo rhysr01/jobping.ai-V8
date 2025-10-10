@@ -9,7 +9,7 @@ export default function Hero() {
       <div className="container-page">
         <LogoWordmark />
         <h1 className="mt-8 text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-white leading-[1.1] max-w-[20ch] mx-auto">
-          Graduate jobs that actually match you
+          Graduate jobs in your inbox. Just apply.
         </h1>
         <p className="mt-6 text-xl md:text-2xl text-zinc-300 max-w-[62ch] mx-auto leading-relaxed">
           Five per week, straight to your inbox.
