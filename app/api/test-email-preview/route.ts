@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createWelcomeEmail, createJobMatchesEmail } from '@/Utils/email/templates';
+import { createWelcomeEmail, createJobMatchesEmail } from '@/Utils/email/optimizedTemplates';
 
 export async function POST(request: NextRequest) {
   // Only allow in non-production environments
