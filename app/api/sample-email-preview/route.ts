@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/Utils/supabase';
 import { createConsolidatedMatcher } from '@/Utils/consolidatedMatching';
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const supabase = getSupabaseClient();
     

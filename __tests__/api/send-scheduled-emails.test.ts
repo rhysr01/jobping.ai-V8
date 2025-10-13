@@ -2,45 +2,117 @@ import { POST, GET } from '@/app/api/send-scheduled-emails/route';
 import { NextRequest } from 'next/server';
 
 // Mock dependencies
-jest.mock('@/Utils/emailUtils', () => ({
+// Note: emailUtils and jobMatching have been removed/refactored
+
+jest.mock('@/Utils/consolidatedMatching', () => ({
+  createConsolidatedMatcher: jest.fn(() => ({
+    performMatching: jest.fn(() => Promise.resolve({
+      matches: [
+        {
+          job_hash: 'hash1',
+          match_score: 85,
+          match_reason: 'Great match for your skills'
+        }
+      ],
+      method: 'ai',
+      processingTime: 100,
+      cacheHit: false
+    })),
+    testConnection: jest.fn(() => Promise.resolve(true))
+  })),
+  generateRobustFallbackMatches: jest.fn(() => [
+    {
+      job_hash: 'hash2',
+      match_score: 75,
+      match_reason: 'Fallback match based on location and role',
+      confidence_score: 0.7
+    }
+  ])
+}));
+
+jest.mock('@/Utils/email', () => ({
   sendMatchedJobsEmail: jest.fn(() => Promise.resolve())
 }));
 
-jest.mock('@/Utils/jobMatching', () => ({
-  performEnhancedAIMatching: jest.fn(() => Promise.resolve([
-    {
-      job_index: 1,
-      job_hash: 'hash1',
-      match_score: 8,
-      match_reason: 'Great match for your skills',
-      match_quality: 'good',
-      match_tags: 'tech,entry-level'
-    }
-  ])),
-  generateRobustFallbackMatches: jest.fn(() => [
-    {
-      job: {
-        id: 2,
-        job_hash: 'hash2',
-        title: 'Data Analyst',
-        company: 'Tech Corp',
-        location: 'Barcelona, Spain',
-        job_url: 'https://example.com/job2',
-        description: 'Data analysis role for recent graduates...',
-        created_at: new Date().toISOString(),
-        is_sent: false,
-        status: 'active',
-        freshness_tier: 'ultra_fresh',
-        original_posted_date: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-        last_seen_at: new Date().toISOString()
-      },
-      match_score: 6,
-      match_reason: 'Fallback match',
-      match_quality: 'fair',
-      match_tags: 'general'
-    }
-  ]),
+jest.mock('@/Utils/email/subjectBuilder', () => ({
+  buildPersonalizedSubject: jest.fn(() => 'Your Weekly Job Matches')
+}));
+
+jest.mock('@/Utils/matching', () => ({
+  generateRobustFallbackMatches: jest.fn(() => [])
+}));
+
+jest.mock('@/Utils/matching/logging.service', () => ({
   logMatchSession: jest.fn(() => Promise.resolve())
+}));
+
+jest.mock('@/Utils/ai-cost-manager', () => ({
+  aiCostManager: {
+    trackCost: jest.fn(),
+    getCosts: jest.fn(() => ({ total: 0 }))
+  }
+}));
+
+jest.mock('@/Utils/job-queue.service', () => ({
+  jobQueue: {
+    add: jest.fn(),
+    process: jest.fn()
+  }
+}));
+
+jest.mock('@/Utils/engagementTracker', () => ({
+  shouldSendEmailToUser: jest.fn(() => true),
+  updateUserEngagement: jest.fn(() => Promise.resolve())
+}));
+
+jest.mock('@/Utils/supabase', () => ({
+  getSupabaseClient: jest.fn(() => ({
+    from: jest.fn((table: string) => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          gte: jest.fn(() => ({
+            limit: jest.fn(() => Promise.resolve({
+              data: table === 'users' ? [
+                {
+                  id: 1,
+                  email: 'test@example.com',
+                  full_name: 'Test User',
+                  subscription_active: true,
+                  email_verified: true,
+                  target_cities: ['London'],
+                  roles_selected: ['Software Engineer'],
+                  entry_level_preference: 'entry'
+                }
+              ] : table === 'jobs' ? [
+                {
+                  id: 1,
+                  job_hash: 'hash1',
+                  title: 'Software Engineer',
+                  company: 'Tech Corp',
+                  location: 'London, UK',
+                  job_url: 'https://example.com/job1',
+                  description: 'Great job...',
+                  created_at: new Date().toISOString(),
+                  status: 'active',
+                  source: 'test'
+                }
+              ] : [],
+              error: null
+            }))
+          })),
+          in: jest.fn(() => Promise.resolve({
+            data: [],
+            error: null
+          }))
+        })),
+        in: jest.fn(() => Promise.resolve({
+          data: [],
+          error: null
+        }))
+      })),
+      insert: jest.fn(() => Promise.resolve({ error: null }))
+    }))
+  }))
 }));
 
 describe('/api/send-scheduled-emails', () => {

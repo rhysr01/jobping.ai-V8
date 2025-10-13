@@ -253,7 +253,7 @@ export class EmailVerificationOracle {
     }
   }
 
-  static async verifyEmail(token: string, supabase: any): Promise<{success: boolean, user?: any, error?: string}> {
+  static async verifyEmail(token: string, _supabase: any): Promise<{success: boolean, user?: any, error?: string}> {
     try {
       // Check for test mode
       const isTestMode = process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1';
@@ -312,7 +312,6 @@ export class EmailVerificationOracle {
     const firstName = (user.full_name || user.email || '').split(' ')[0];
     const rolePref = user.professional_expertise || user.career_path || '';
     const locationPref = Array.isArray(user.target_cities) ? (user.target_cities[0] || '') : (user.target_cities || '');
-    const salaryPref = user.salary_preference || '';
 
     // Fetch 3 sample jobs immediately based on preferences
     let sampleJobs: Array<{ title: string; company: string; location: string; description?: string; created_at?: string; salary?: string; job_type?: string }>= [];

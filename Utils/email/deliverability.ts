@@ -105,7 +105,7 @@ export async function validateEmailDeliverability(): Promise<{
 /**
  * Validate SPF record
  */
-async function validateSPFRecord(domain: string): Promise<boolean> {
+async function validateSPFRecord(_domain: string): Promise<boolean> {
   try {
     // This would typically use a DNS lookup library
     // For now, we'll assume it's configured if the environment variable is set
@@ -119,7 +119,7 @@ async function validateSPFRecord(domain: string): Promise<boolean> {
 /**
  * Validate DKIM record
  */
-async function validateDKIMRecord(domain: string): Promise<boolean> {
+async function validateDKIMRecord(_domain: string): Promise<boolean> {
   try {
     // This would typically use a DNS lookup library
     // For now, we'll assume it's configured if the environment variable is set
@@ -133,7 +133,7 @@ async function validateDKIMRecord(domain: string): Promise<boolean> {
 /**
  * Validate DMARC record
  */
-async function validateDMARCRecord(domain: string): Promise<boolean> {
+async function validateDMARCRecord(_domain: string): Promise<boolean> {
   try {
     // This would typically use a DNS lookup library
     // For now, we'll assume it's configured if the environment variable is set

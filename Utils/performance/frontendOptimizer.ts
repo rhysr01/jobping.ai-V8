@@ -31,8 +31,7 @@ export class FrontendOptimizer {
       width = 800,
       height,
       quality = 75,
-      format = 'webp',
-      lazy = true
+      format = 'webp'
     } = options;
 
     // For external images, use Next.js Image Optimization API
@@ -183,8 +182,8 @@ export class FrontendOptimizer {
    */
   generateFontOptimization(fonts: Array<{ family: string; weights: number[]; display?: string }>): string {
     const fontLinks = fonts.map(font => {
-      const weights = font.weights.join(';');
-      const display = font.display || 'swap';
+      const _weights = font.weights.join(';');
+      const _display = font.display || 'swap';
       
       return `<link rel="preload" href="/fonts/${font.family.toLowerCase().replace(/\s+/g, '-')}.woff2" as="font" type="font/woff2" crossorigin />`;
     });
@@ -310,7 +309,7 @@ export class FrontendOptimizer {
   createApiBatcher<T, R>(
     batchSize: number = 10,
     delay: number = 100
-  ): (item: T) => Promise<R> {
+  ): (_item: T) => Promise<R> {
     let batch: T[] = [];
     let timeout: NodeJS.Timeout | null = null;
 
@@ -334,8 +333,8 @@ export class FrontendOptimizer {
 
   private processBatch<T, R>(
     batch: T[],
-    resolve: (value: R) => void,
-    reject: (reason?: any) => void
+    resolve: (_value: R) => void,
+    _reject: (_reason?: any) => void
   ): void {
     // In a real implementation, you'd batch the API calls
     // For now, process individually

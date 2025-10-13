@@ -19,7 +19,7 @@ export function withValidation<T>(
 ) {
   return async function validationMiddleware(
     req: NextRequest,
-    handler: (req: NextRequest, validatedData: T) => Promise<NextResponse>
+    handler: (_req: NextRequest, _validatedData: T) => Promise<NextResponse>
   ): Promise<NextResponse> {
     try {
       let dataToValidate: unknown;
@@ -266,7 +266,7 @@ export async function withRateLimitAndValidation<T>(
   req: NextRequest,
   endpoint: string,
   schema: z.ZodSchema<T>,
-  handler: (req: NextRequest, validatedData: T) => Promise<NextResponse>
+  handler: (_req: NextRequest, _validatedData: T) => Promise<NextResponse>
 ): Promise<NextResponse> {
   // First check rate limit
   const { withRateLimit } = await import('@/Utils/productionRateLimiter');

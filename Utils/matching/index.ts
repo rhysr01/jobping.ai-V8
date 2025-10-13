@@ -7,7 +7,8 @@
 // MAIN SERVICES
 // ================================
 
-export { ConsolidatedMatchingEngine, createConsolidatedMatcher } from './consolidated-matcher.service';
+// Re-export production matching engine
+export { ConsolidatedMatchingEngine, createConsolidatedMatcher } from '../consolidatedMatching';
 export { AIMatchingService, AIMatchingCache } from './ai-matching.service';
 export { 
   performRobustMatching,
@@ -88,8 +89,20 @@ export {
 // LEGACY COMPATIBILITY
 // ================================
 
-// Re-export the main function for backward compatibility
-export { performEnhancedAIMatching } from './consolidated-matcher.service';
+// Compatibility wrapper for performEnhancedAIMatching
+import { Job } from '../../scrapers/types';
+import { UserPreferences, MatchResult } from './types';
+import { createConsolidatedMatcher } from '../consolidatedMatching';
+
+export async function performEnhancedAIMatching(
+  jobs: Job[], 
+  userPrefs: UserPreferences
+): Promise<MatchResult[]> {
+  const matcher = createConsolidatedMatcher();
+  const result = await matcher.performMatching(jobs, userPrefs);
+  // Convert ConsolidatedMatchResult to MatchResult[]
+  return result.matches as unknown as MatchResult[];
+}
 
 // Provide ScoringService for tests expecting it
 export { ScoringService } from './scoring.service';

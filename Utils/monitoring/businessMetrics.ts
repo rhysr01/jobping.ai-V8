@@ -153,7 +153,6 @@ export class BusinessMetricsCollector {
     const totalUsers = rows.length;
     const activeUsers = rows.filter((u) => u.active).length;
     const newUsers = rows.filter((u) => new Date(u.created_at) > cutoffDate).length;
-    const verifiedUsers = rows.filter((u) => u.email_verified).length;
 
     // Calculate retention rate (simplified)
     const userRetentionRate = totalUsers > 0 ? (activeUsers / totalUsers) * 100 : 0;
@@ -257,7 +256,7 @@ export class BusinessMetricsCollector {
   /**
    * Get performance metrics
    */
-  private async getPerformanceMetrics(timeframe: string) {
+  private async getPerformanceMetrics(_timeframe: string) {
     // This would typically come from your monitoring system
     // For now, we'll use placeholder values
     return {
@@ -318,7 +317,7 @@ export class BusinessMetricsCollector {
   /**
    * Get cost metrics
    */
-  private async getCostMetrics(timeframe: string) {
+  private async getCostMetrics(_timeframe: string) {
     // This would typically come from your cost tracking system
     // For now, we'll use placeholder values
     return {
@@ -423,7 +422,7 @@ export class BusinessMetricsCollector {
   /**
    * Get performance metrics for specific endpoint
    */
-  async getEndpointMetrics(endpoint: string, timeframe: string = '1d'): Promise<PerformanceMetrics> {
+  async getEndpointMetrics(endpoint: string, _timeframe: string = '1d'): Promise<PerformanceMetrics> {
     // This would typically query your APM system
     // For now, return placeholder data
     return {

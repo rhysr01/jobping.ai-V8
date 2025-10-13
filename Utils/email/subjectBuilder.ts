@@ -1,7 +1,5 @@
 // PERSONALIZED SUBJECT LINE BUILDER
 
-import type { Tables } from '../../lib/db-types';
-
 // Use generated database types where possible
 type BasicJob = {
   title?: string;

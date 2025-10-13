@@ -21,7 +21,7 @@ export function requireSystemKey(req: NextRequest): void {
 }
 
 export function withAuth(
-  handler: (req: NextRequest) => Promise<NextResponse>,
+  handler: (_req: NextRequest) => Promise<NextResponse>,
   config: AuthConfig = {}
 ) {
   return async (req: NextRequest): Promise<NextResponse> => {

@@ -3,7 +3,7 @@
  */
 
 import { AIMatchingService } from '../ai-matching.service';
-import { performEnhancedAIMatching } from '../consolidated-matcher.service';
+import { performEnhancedAIMatching } from '../index';
 import { Job, UserPreferences, JobMatch } from '../types';
 import { MATCHING_CONFIG } from '../../config/matching';
 

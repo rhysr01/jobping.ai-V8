@@ -260,7 +260,7 @@ export class MemoryOptimizer {
    */
   processArrayInBatches<T, R>(
     array: T[],
-    processor: (batch: T[]) => R[],
+    processor: (_batch: T[]) => R[],
     batchSize: number = 100
   ): R[] {
     const results: R[] = [];
@@ -285,7 +285,7 @@ export class MemoryOptimizer {
    */
   async processStream<T, R>(
     items: T[],
-    processor: (item: T) => Promise<R>,
+    processor: (_item: T) => Promise<R>,
     concurrency: number = 5
   ): Promise<R[]> {
     const results: R[] = [];
@@ -311,7 +311,7 @@ export class MemoryOptimizer {
    */
   processObjectsEfficiently<T extends Record<string, any>>(
     objects: T[],
-    transformer: (obj: T) => Partial<T>
+    transformer: (_obj: T) => Partial<T>
   ): Partial<T>[] {
     const results: Partial<T>[] = [];
     
@@ -373,7 +373,7 @@ export function registerCleanupCallback(callback: () => void): void {
 // ================================
 
 export function withMemoryMonitoring<T extends any[], R>(
-  fn: (...args: T) => R,
+  fn: (..._args: T) => R,
   options: {
     logMemory?: boolean;
     cleanupThreshold?: number;

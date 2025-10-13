@@ -10,7 +10,7 @@ export interface ReEngagementEmailData {
 }
 
 export function generateReEngagementEmail(data: ReEngagementEmailData): string {
-  const { to, userName, unsubscribeUrl } = data;
+  const { userName, unsubscribeUrl } = data;
   
   return `
 <!DOCTYPE html>

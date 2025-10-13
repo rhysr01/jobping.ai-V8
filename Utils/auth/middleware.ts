@@ -44,7 +44,7 @@ export function withAuth(
 ) {
   return async function authMiddleware(
     req: NextRequest,
-    handler: (req: NextRequest, session: UserSession | null) => Promise<NextResponse>
+    handler: (_req: NextRequest, _session: UserSession | null) => Promise<NextResponse>
   ): Promise<NextResponse> {
     try {
       // Skip auth in test mode if allowed
@@ -368,7 +368,7 @@ export async function withAuthAndRateLimit(
   req: NextRequest,
   endpoint: string,
   requiredLevel: AuthLevel = AuthLevel.USER,
-  handler: (req: NextRequest, session: UserSession | null) => Promise<NextResponse>
+  handler: (_req: NextRequest, _session: UserSession | null) => Promise<NextResponse>
 ): Promise<NextResponse> {
   // First check rate limit
   const { withRateLimit } = await import('@/Utils/productionRateLimiter');

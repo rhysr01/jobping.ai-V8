@@ -8,7 +8,7 @@ import { z } from 'zod';
 // Common validation patterns
 const emailSchema = z.string().email('Invalid email format').max(255, 'Email too long');
 const urlSchema = z.string().url('Invalid URL format').max(2048, 'URL too long');
-const uuidSchema = z.string().uuid('Invalid UUID format');
+const _uuidSchema = z.string().uuid('Invalid UUID format');
 const timestampSchema = z.string().datetime('Invalid timestamp format');
 
 // Career path validation

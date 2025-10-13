@@ -4,7 +4,6 @@ import { EmailJobCard } from './types';
 import { getResendClient, getSupabaseClient, EMAIL_CONFIG } from './clients';
 import { createWelcomeEmail, createJobMatchesEmail } from './optimizedTemplates';
 import { createWelcomeEmailText, createJobMatchesEmailText } from './textGenerator';
-import { buildPersonalizedSubject } from './subjectBuilder';
 import { addEngagementTracking } from './engagementTracking';
 import crypto from 'crypto';
 
@@ -49,21 +48,6 @@ function generateUnsubscribeToken(email: string): string {
   return crypto.createHmac('sha256', secret)
     .update(email)
     .digest('hex').slice(0, 16);
-}
-
-// Generate List-Unsubscribe and One-Click headers for deliverability
-function generateDeliverabilityHeaders(email: string): Record<string, string> {
-  const unsubscribeToken = generateUnsubscribeToken(email);
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.getjobping.com';
-  
-  return {
-    'List-Unsubscribe': `<${baseUrl}/legal/unsubscribe?token=${unsubscribeToken}>, <mailto:unsubscribe@getjobping.com?subject=Unsubscribe%20${email}>`,
-    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-    'X-Mailer': 'JobPing Email System v1.0',
-    'X-Priority': '3',
-    'X-MSMail-Priority': 'Normal',
-    'Importance': 'Normal'
-  };
 }
 
 // Create enhanced deliverability headers with plain-text support
@@ -221,7 +205,6 @@ export async function sendMatchedJobsEmail({
     // Add engagement tracking to HTML
     const html = addEngagementTracking(baseHtml, to);
     const text = createJobMatchesEmailText(jobs, userName, subscriptionTier, isSignupEmail, personalization);
-    const unsubscribeHeaders = createDeliverabilityHeaders(to);
     
     const subject = subjectOverride ?? (isSignupEmail 
       ? `🎯 Welcome to JobPing - ${jobs.length} Job Matches Found!`

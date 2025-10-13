@@ -302,7 +302,7 @@ export class ResponseOptimizer {
     }
 
     // Clear cache entries that match the tag
-    for (const [key, value] of this.cache.entries()) {
+    for (const [key, _value] of this.cache.entries()) {
       if (key.includes(tag)) {
         this.cache.delete(key);
       }

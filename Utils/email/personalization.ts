@@ -69,10 +69,9 @@ export function generatePersonalizedGreeting(context: PersonalizationContext): s
  * Generate "Top 5 for your skills" block
  */
 export function generateTopMatchesBlock(
-  jobCards: EmailJobCard[], 
+  _jobCards: EmailJobCard[], 
   context: PersonalizationContext
 ): PersonalizationBlock {
-  const topMatches = jobCards.slice(0, 5);
   const { preferredJobTypes, engagementScore } = context;
   
   let content = '';
@@ -107,7 +106,7 @@ export function generateTopMatchesBlock(
  */
 export async function generateSavedCompaniesBlock(
   userEmail: string, 
-  context: PersonalizationContext
+  _context: PersonalizationContext
 ): Promise<PersonalizationBlock | null> {
   try {
     const supabase = getSupabaseClient();
@@ -244,7 +243,7 @@ export async function generateFreshInternshipsBlock(
  * Generate career insight block
  */
 export function generateCareerInsightBlock(context: PersonalizationContext): PersonalizationBlock | null {
-  const { preferredJobTypes, engagementScore, subscriptionTier } = context;
+  const { engagementScore, subscriptionTier } = context;
 
   // Only show insights to engaged users or premium users
   if (engagementScore < 40 && subscriptionTier !== 'premium') {

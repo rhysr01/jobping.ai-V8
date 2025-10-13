@@ -3,8 +3,18 @@
   "rules": {
     "no-unused-vars": ["warn", {
       "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_"
+      "varsIgnorePattern": "^_",
+      "ignoreRestSiblings": true,
+      "args": "after-used"
     }],
     "react/no-unescaped-entities": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/__mocks__/**/*", "**/__tests__/**/*", "*.test.ts", "*.test.tsx", "*.spec.ts"],
+      "rules": {
+        "no-unused-vars": "off"
+      }
+    }
+  ]
 } 

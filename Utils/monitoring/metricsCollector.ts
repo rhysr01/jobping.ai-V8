@@ -266,7 +266,7 @@ export class MetricsCollector {
     }
   }
 
-  async getMetricsHistory(hours: number = 24): Promise<SystemMetrics[]> {
+  async getMetricsHistory(_hours: number = 24): Promise<SystemMetrics[]> {
     try {
       // In a real implementation, you'd store metrics in a time-series database
       // For now, we'll return current metrics

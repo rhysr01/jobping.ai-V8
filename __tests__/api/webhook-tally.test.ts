@@ -2,21 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { POST, GET } from '@/app/api/webhook-tally/route';
 
 // Mock dependencies
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          single: jest.fn(() => Promise.resolve({ data: null, error: null })),
-        })),
-      })),
-      insert: jest.fn(() => Promise.resolve({ error: null })),
-      upsert: jest.fn(() => Promise.resolve({ error: null })),
-    })),
-  })),
+// Note: webhook-tally route has built-in test mode mocks, so we throw to trigger them
+jest.mock('@/Utils/databasePool', () => ({
+  getDatabaseClient: jest.fn(() => {
+    throw new Error('Using test mode mock');
+  })
 }));
 
-// jobMatching and emailUtils have been removed - functionality moved to other services
+// Mock email sending
+jest.mock('@/Utils/email', () => ({
+  sendMatchedJobsEmail: jest.fn(() => Promise.resolve()),
+  sendWelcomeEmail: jest.fn(() => Promise.resolve())
+}));
 
 jest.mock('@/Utils/emailVerification', () => ({
   EmailVerificationOracle: {
@@ -24,9 +21,40 @@ jest.mock('@/Utils/emailVerification', () => ({
   },
 }));
 
+// Mock security and performance utilities
+jest.mock('@/Utils/productionRateLimiter', () => ({
+  getProductionRateLimiter: jest.fn(() => ({
+    checkRateLimit: jest.fn(() => Promise.resolve({ 
+      allowed: true, 
+      remaining: 100 
+    }))
+  }))
+}));
+
+jest.mock('@/Utils/security/webhookSecurity', () => ({
+  validateTallyWebhook: jest.fn(() => Promise.resolve({ 
+    isValid: true 
+  })),
+  getSecurityHeaders: jest.fn(() => ({}))
+}));
+
+jest.mock('@/Utils/performance/memoryManager', () => ({
+  performMemoryCleanup: jest.fn(() => Promise.resolve())
+}));
+
+// Mock fetch for internal API calls
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    status: 200,
+    json: async () => ({ success: true })
+  })
+) as jest.Mock;
+
 describe('/api/webhook-tally', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.NODE_ENV = 'test';
   });
 
   describe('POST', () => {
@@ -38,6 +66,8 @@ describe('/api/webhook-tally', () => {
 
       const response = await POST(request);
       const data = await response.json();
+
+      console.log('Test 1 - Status:', response.status, 'Data:', data);
 
       expect(response.status).toBe(400);
       expect(data.error).toBeDefined();

@@ -3,8 +3,6 @@
  * Provides optimized database queries with proper indexing and caching
  */
 
-import { createClient } from '@supabase/supabase-js';
-
 // ================================
 // QUERY OPTIMIZATION CONFIGURATION
 // ================================

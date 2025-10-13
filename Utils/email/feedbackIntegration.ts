@@ -29,7 +29,7 @@ export class EmailFeedbackIntegration {
   static generateFeedbackButtons(
     jobHash: string,
     userEmail: string,
-    matchContext: any = {},
+    _matchContext: any = {},
     options: {
       style?: 'minimal' | 'detailed' | 'emoji';
       includeExplanation?: boolean;

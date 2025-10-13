@@ -19,6 +19,10 @@ import {
 import { Job } from '@/scrapers/types';
 import { normalizeStringToArray } from '@/lib/string-helpers';
 import { getDateDaysAgo } from '@/lib/date-helpers';
+import { userMatchingService } from '@/services/user-matching.service';
+import { Database } from '@/lib/database.types';
+
+type User = Database['public']['Tables']['users']['Row'];
 
 // Environment flags and limits
 const IS_TEST = process.env.NODE_ENV === 'test';
@@ -620,41 +624,15 @@ const matchUsersHandler = async (req: NextRequest) => {
       }, { status: 500 });
     }
 
-    // 1. Fetch active users
-    const userFetchStart = Date.now();
+    // 1. Fetch and transform active users using service
+    const _userFetchStart = Date.now();
     lap('fetch_users');
-    let usersQuery = supabase.from('users').select('*');
     
-    // Check if email_verified column exists, if not use a fallback
-    let users: any[] = [];
-    let usersError: any = null;
-    
-    console.log('🔍 About to query users table...');
-    
+    let users: User[];
     try {
-      const result = await usersQuery.eq('email_verified', true).limit(userCap);
-      console.log('🔍 Users query result:', { data: result.data?.length, error: result.error });
-      users = result.data || [];
-      usersError = result.error;
+      users = await userMatchingService.getActiveUsers(userCap);
     } catch (error: any) {
-      // Fallback: fetch all users if email_verified column doesn't exist
-      console.log('email_verified column not found, fetching all users');
-      const result = await supabase.from('users').select('*').limit(userCap);
-      users = result.data || [];
-      usersError = result.error;
-    }
-    // In test mode, if filter returned zero, refetch without email_verified constraint to satisfy perf tests
-    if (IS_TEST && (!users || users.length === 0)) {
-      const refetch = await supabase.from('users').select('*').limit(userCap);
-      users = refetch.data || [];
-      usersError = refetch.error;
-      console.log('🔍 Test refetch without email_verified filter:', { data: users.length, error: usersError });
-    }
-
-    if (usersError) {
-      console.error('Failed to fetch users:', usersError);
-      
-      
+      console.error('Failed to fetch users:', error);
       return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
     }
 
@@ -665,15 +643,8 @@ const matchUsersHandler = async (req: NextRequest) => {
 
     console.log(`Found ${users.length} active users to process`);
 
-    // Transform user data to match expected format (handle TEXT[] arrays from your schema)
-    const transformedUsers = users.map((user: any) => ({
-      ...user,
-      target_cities: normalizeStringToArray(user.target_cities),
-      languages_spoken: normalizeStringToArray(user.languages_spoken),
-      company_types: normalizeStringToArray(user.company_types),
-      roles_selected: normalizeStringToArray(user.roles_selected),
-      professional_expertise: user.professional_experience || '',
-    }));
+    // Transform user data to match expected format
+    const transformedUsers = userMatchingService.transformUsers(users);
 
     // 2. Fetch jobs with UTC-safe date calculation and EU/Early Career filtering
     const jobFetchStart = Date.now();
@@ -764,29 +735,9 @@ const matchUsersHandler = async (req: NextRequest) => {
     // Before: 50 users = 100 queries (2 per user) = 8 seconds wasted
     // After: 50 users = 1 query = instant!
     // ============================================
-    console.log('📊 Batch fetching all previous matches...');
-    const batchStart = Date.now();
-    
+    // Batch fetch previous matches using service (prevents N+1 queries)
     const allUserEmails = transformedUsers.map(u => u.email);
-    const { data: allPreviousMatches, error: matchError } = await supabase
-      .from('matches')
-      .select('user_email, job_hash')
-      .in('user_email', allUserEmails);
-    
-    if (matchError) {
-      console.error('Failed to fetch previous matches:', matchError);
-    }
-    
-    // Build lookup map: email → Set<job_hash>
-    const matchesByUser = new Map<string, Set<string>>();
-    (allPreviousMatches || []).forEach(match => {
-      if (!matchesByUser.has(match.user_email)) {
-        matchesByUser.set(match.user_email, new Set());
-      }
-      matchesByUser.get(match.user_email)!.add(match.job_hash);
-    });
-    
-    console.log(`✅ Loaded ${allPreviousMatches?.length || 0} matches for ${transformedUsers.length} users in ${Date.now() - batchStart}ms`);
+    const matchesByUser = await userMatchingService.getPreviousMatchesForUsers(allUserEmails);
     // ============================================
     
     const userPromises = transformedUsers.map(async (user) => {
@@ -802,7 +753,7 @@ const matchUsersHandler = async (req: NextRequest) => {
         console.log(`${unseenJobs.length} new jobs available for ${user.email} (${jobs.length - unseenJobs.length} already sent)`);
         
         // Pre-filter jobs to reduce AI processing load (with feedback learning)
-        const preFilteredJobs = await preFilterJobsByUserPreferencesEnhanced(unseenJobs as any[], user);
+        const preFilteredJobs = await preFilterJobsByUserPreferencesEnhanced(unseenJobs as any[], user as unknown as UserPreferences);
         
         // OPTIMIZED: Send top 50 pre-filtered jobs to AI (was 100/200)
         // This reduces token cost by 50% while maintaining match quality
@@ -853,7 +804,7 @@ const matchUsersHandler = async (req: NextRequest) => {
         });
         const result = await matcher.performMatching(
           jobsForMatching,
-          user,
+          user as unknown as UserPreferences,
           process.env.MATCH_USERS_DISABLE_AI === 'true' // Force rules in tests
         );
 
@@ -1032,40 +983,23 @@ const matchUsersHandler = async (req: NextRequest) => {
           console.log(`📊 Final diversity for ${user.email}: ${finalUniqueSources.size} sources (${Array.from(finalUniqueSources).join(', ')}), ${finalUniqueCities.size} cities (${Array.from(finalUniqueCities).join(', ')})`);
         }
 
-        // Save matches with enhanced data and provenance tracking
+        // Save matches using service with provenance tracking
         if (matches && matches.length > 0) {
-          // Update provenance data with actual timing and match type
-          userProvenance = {
-            ...userProvenance,
+          // Prepare provenance data with actual timing and match type
+          const finalProvenance = {
             match_algorithm: matchType === 'ai_success' ? 'ai' : 'rules',
             ai_latency_ms: aiMatchingTime,
+            cache_hit: userProvenance.cache_hit || false,
             fallback_reason: matchType !== 'ai_success' ? 'ai_failed_or_fallback' : undefined
           };
           
-          const matchEntries = matches.map(match => {
-            const originalJob = distributedJobs.find(job => job.job_hash === match.job_hash);
-            
-            return {
-              user_email: user.email,
-              job_hash: match.job_hash,
-              match_score: (match.match_score || 85) / 100, // Convert 0-100 scale to 0-1 scale for database
-              match_reason: match.match_reason,
-              matched_at: new Date().toISOString(),
-              created_at: new Date().toISOString(),
-              // Only include fields that exist in the database schema
-              match_algorithm: userProvenance.match_algorithm,
-              ai_latency_ms: userProvenance.ai_latency_ms,
-              cache_hit: userProvenance.cache_hit,
-              fallback_reason: userProvenance.fallback_reason
-            };
-          });
-
-          const { error: insertError } = await supabase
-            .from('matches')
-            .insert(matchEntries);
-
-          if (insertError) {
-            console.error(`Failed to save matches for ${user.email}:`, insertError);
+          // Add user email to matches for service
+          const matchesWithEmail = matches.map(m => ({ ...m, user_email: user.email }));
+          
+          try {
+            await userMatchingService.saveMatches(matchesWithEmail, finalProvenance);
+          } catch (error) {
+            console.error(`Failed to save matches for ${user.email}:`, error);
           }
         }
 

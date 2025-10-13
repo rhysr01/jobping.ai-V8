@@ -124,7 +124,7 @@ export enum LogLevel {
   INFO = 'info',
   WARN = 'warn',
   ERROR = 'error',
-  CRITICAL = 'critical',
+  CRITICAL = 'critical'
 }
 
 export interface LogContext {

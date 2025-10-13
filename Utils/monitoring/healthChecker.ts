@@ -100,7 +100,7 @@ export class HealthChecker {
     
     try {
       // Test basic connectivity
-      const { data, error } = await this.supabase
+      const { error } = await this.supabase
         .from('users')
         .select('count')
         .limit(1);

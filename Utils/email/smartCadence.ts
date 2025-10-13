@@ -157,13 +157,11 @@ export async function getUserEmailProfile(userEmail: string): Promise<UserEmailP
 export function generateCadenceRecommendation(profile: UserEmailProfile): CadenceRecommendation {
   const {
     engagementScore,
-    openRate,
     clickRate,
     negativeFeedbackRate,
     daysSinceSignup,
     subscriptionTier,
-    lastEmailSent,
-    totalEmailsSent
+    lastEmailSent
   } = profile;
 
   // Default recommendation
@@ -276,7 +274,7 @@ export function shouldSendEmail(profile: UserEmailProfile): boolean {
  * Get optimal send time for user
  */
 export function getOptimalSendTime(profile: UserEmailProfile): Date {
-  const { preferredTimeOfDay, timezone } = profile;
+  const { preferredTimeOfDay } = profile;
   
   const now = new Date();
   const sendTime = new Date(now);

@@ -141,7 +141,7 @@ export async function getEngagementStats(): Promise<EngagementStats> {
   }
 
   // Get engaged users (score >= 30, not paused)
-  const { data: engagedUsers, error: engagedError } = await supabase
+  const { data: engagedUsers } = await supabase
     .from('users')
     .select('email', { count: 'exact' })
     .eq('active', true)
@@ -150,7 +150,7 @@ export async function getEngagementStats(): Promise<EngagementStats> {
     .eq('delivery_paused', false);
 
   // Get paused users
-  const { data: pausedUsers, error: pausedError } = await supabase
+  const { data: pausedUsers } = await supabase
     .from('users')
     .select('email', { count: 'exact' })
     .eq('active', true)

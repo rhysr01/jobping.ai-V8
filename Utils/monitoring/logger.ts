@@ -213,7 +213,6 @@ export function createRequestLogger(component: string, requestId: string): Logge
   const requestLogger = new Logger(component);
   
   // Override the log method to include requestId
-  const originalLog = requestLogger['log'].bind(requestLogger);
   requestLogger['log'] = function(level: LogEntry['level'], message: string, metadata?: any, error?: Error) {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),

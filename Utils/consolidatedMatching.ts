@@ -5,10 +5,8 @@
  */
 
 import OpenAI from 'openai';
-import { createClient } from '@supabase/supabase-js';
 import type { Job } from '../scrapers/types';
 import { UserPreferences, JobMatch } from './matching/types';
-import { AIMatchingCache } from './matching/ai-matching.service';
 // Embedding boost removed - feature not implemented
 
 // ============================================
@@ -20,20 +18,10 @@ import { AIMatchingCache } from './matching/ai-matching.service';
 // No need for complexity-based routing anymore
 
 // Matching Quality
-const MIN_MATCH_SCORE = 70; // Minimum score to be considered a match
-const MAX_MATCHES_RETURNED = 5; // Always return exactly 5 matches
 const JOBS_TO_ANALYZE = 50; // Number of pre-filtered jobs sent to AI
 
 // Cache Settings
 const CACHE_TTL_HOURS = 48; // Cache matches for 48 hours
-const CACHE_KEY_JOB_SAMPLE = 20; // Top N job hashes for cache key
-
-// Scoring Weights (for city diversity relevance scoring)
-const ROLE_MATCH_WEIGHT = 30; // Points for role match
-const CAREER_PATH_WEIGHT = 20; // Points for career path match
-const EXPERIENCE_LEVEL_WEIGHT = 15; // Points for experience level match
-const SENIOR_PENALTY = -30; // Penalty for senior jobs to entry-level users
-const ROLE_MISMATCH_PENALTY = -20; // Penalty for wrong role
 
 // Timeouts
 const AI_TIMEOUT_MS = 20000; // 20 second timeout for AI calls
@@ -200,7 +188,7 @@ export class ConsolidatedMatchingEngine {
    * DEPRECATED: Model selection logic no longer needed
    * Now using GPT-4o-mini for all requests (better quality, lower cost)
    */
-  private shouldUseGPT4(jobs: Job[], userPrefs: UserPreferences): boolean {
+  private shouldUseGPT4(_jobs: Job[], _userPrefs: UserPreferences): boolean {
     // Always return false - we use GPT-4o-mini now
     return false;
   }

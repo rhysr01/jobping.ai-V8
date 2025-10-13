@@ -82,7 +82,7 @@ class DatabasePool {
 
   private static async performHealthCheck(): Promise<boolean> {
     try {
-      const { data, error } = await this.instance!.from('jobs').select('count').limit(1);
+      const { error } = await this.instance!.from('jobs').select('count').limit(1);
       
       if (error) {
         console.warn('⚠️ Database health check failed:', error.message);
