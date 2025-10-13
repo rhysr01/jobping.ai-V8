@@ -85,12 +85,12 @@ describe('MatcherOrchestrator', () => {
 
     mockUser = {
       email: 'test@example.com',
-      career_path: 'tech',
+      career_path: ['tech'],
       target_cities: ['London', 'Berlin'],
       professional_expertise: 'software development',
-      work_environment: 'hybrid',
+      work_environment: 'hybrid' as const,
       visa_status: 'eu-citizen',
-      entry_level_preference: 'entry-level',
+      entry_level_preference: 'entry' as const,
       full_name: 'Test User'
     };
 

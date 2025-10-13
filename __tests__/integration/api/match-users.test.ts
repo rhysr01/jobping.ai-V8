@@ -262,7 +262,9 @@ describe('/api/match-users Integration Tests', () => {
       // Simulate database error
       global.__SB_MOCK__ = {
         users: [],
-        jobs: []
+        jobs: [],
+        matches: [],
+        match_logs: []
       };
 
       const request = new NextRequest('http://localhost:3000/api/match-users', {
@@ -282,7 +284,9 @@ describe('/api/match-users Integration Tests', () => {
       // Set up users but no jobs
       global.__SB_MOCK__ = {
         users: global.__SB_MOCK__?.users || [],
-        jobs: []
+        jobs: [],
+        matches: [],
+        match_logs: []
       };
 
       const request = new NextRequest('http://localhost:3000/api/match-users', {

@@ -332,6 +332,23 @@ class Logger {
 // Export singleton logger instance
 export const logger = new Logger();
 
+/**
+ * USER ACTION TRACKING - Simple helper for debugging user flows
+ * Usage: logUserAction('signup', { email: user.email, tier: 'free' })
+ */
+export function logUserAction(
+  action: string,
+  metadata?: Record<string, any>
+): void {
+  logger.info(`USER_ACTION: ${action}`, {
+    context: {
+      action,
+      timestamp: new Date().toISOString(),
+      ...metadata
+    }
+  });
+}
+
 // Performance monitoring utilities
 export class PerformanceMonitor {
   private static instance: PerformanceMonitor;

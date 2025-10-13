@@ -1,4 +1,6 @@
-module.exports = {
+import type { Config } from '@lhci/cli';
+
+const config: Config = {
   ci: {
     collect: {
       url: ['http://localhost:4173/'],
@@ -18,3 +20,6 @@ module.exports = {
     },
   },
 };
+
+export default config;
+

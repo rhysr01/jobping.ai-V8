@@ -4,7 +4,6 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { redisState } from './redis-state.service';
 
 export interface JobQueueItem {
   id: string;
@@ -69,12 +68,6 @@ export class JobQueueService {
         scheduled_for: job.scheduledFor.toISOString(),
         status: job.status
       });
-
-    // Also store in Redis for fast access
-    await redisState.setCompanyCache(`queue:${jobId}`, {
-      lastCheck: Date.now(),
-      jobCount: 1
-    });
 
     console.log(`📋 Added job ${jobId} of type ${type} with priority ${priority}`);
     return jobId;

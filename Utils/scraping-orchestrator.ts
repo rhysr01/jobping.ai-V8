@@ -3,8 +3,6 @@
  * Manages rate limits and distributes scraping across time
  */
 
-import { redisState } from './redis-state.service';
-
 interface ScrapingSchedule {
   company: string;
   lastScraped: Date;
@@ -99,12 +97,6 @@ export class ScrapingOrchestrator {
     }
 
     this.schedule.set(company, existing);
-
-    // Save to Redis
-    await redisState.setCompanyCache(company, {
-      lastCheck: now.getTime(),
-      jobCount: jobsFound
-    });
 
     // Log scraping attempt
     await this.logScrapingAttempt(company, success, jobsFound, error);

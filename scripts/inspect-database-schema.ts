@@ -5,15 +5,17 @@
  * Inspects actual database columns to help fix tests
  */
 
-require('dotenv').config({ path: '.env.local' });
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-async function inspectSchema() {
+async function inspectSchema(): Promise<void> {
   console.log('🔍 INSPECTING DATABASE SCHEMA');
   console.log('==============================');
 
@@ -98,8 +100,9 @@ async function inspectSchema() {
     }
 
   } catch (error) {
-    console.error('❌ Schema inspection failed:', error.message);
+    console.error('❌ Schema inspection failed:', (error as Error).message);
   }
 }
 
 inspectSchema().catch(console.error);
+

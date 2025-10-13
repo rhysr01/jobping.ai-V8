@@ -96,12 +96,12 @@ describe('ConsolidatedMatchingEngine', () => {
 
     mockUser = {
       email: 'test@example.com',
-      career_path: 'tech',
+      career_path: ['tech'],
       target_cities: ['London', 'Berlin'],
       professional_expertise: 'software development',
-      work_environment: 'hybrid',
+      work_environment: 'hybrid' as any,
       visa_status: 'eu-citizen',
-      entry_level_preference: 'entry-level',
+      entry_level_preference: 'entry' as any,
       full_name: 'Test User',
       start_date: '2024-01-01',
       languages_spoken: ['English'],
@@ -271,10 +271,10 @@ describe('ConsolidatedMatchingEngine', () => {
         career_path: ['tech', 'data', 'product'],
         professional_expertise: 'full-stack development',
         company_types: ['startup', 'enterprise', 'consulting'],
-        work_environment: 'hybrid',
-        experience_level: 'entry-level',
+        work_environment: 'hybrid' as const,
+        experience_level: 'entry' as const,
         salary_expectations: 'competitive',
-        remote_work_preference: 'hybrid'
+        remote_work_preference: 'hybrid' as const
       };
 
       const mockResponse = {

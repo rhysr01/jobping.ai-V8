@@ -7,8 +7,10 @@
  * the essential fields: company, location, and job_url
  */
 
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.local' });
+import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -20,13 +22,22 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function cleanupJobs() {
+interface Job {
+  id: number;
+  company?: string;
+  location?: string;
+  location_name?: string;
+  job_url?: string;
+  created_at?: string;
+}
+
+async function cleanupJobs(): Promise<void> {
   try {
     console.log('🧹 Starting job database cleanup...\n');
 
     // Step 1: Check current state with pagination
     console.log('📊 Checking current job data quality...');
-    let allJobs = [];
+    let allJobs: Job[] = [];
     let page = 0;
     const pageSize = 1000;
     let hasMore = true;
@@ -103,7 +114,7 @@ async function cleanupJobs() {
     // Step 4: Remove duplicates based on job_url with pagination
     console.log('\n🔄 Removing duplicate jobs...');
     
-    let remainingJobs = [];
+    let remainingJobs: (Job & { created_at: string })[] = [];
     let remainingPage = 0;
     let remainingHasMore = true;
 
@@ -120,7 +131,7 @@ async function cleanupJobs() {
       }
 
       if (remainingBatch && remainingBatch.length > 0) {
-        remainingJobs = remainingJobs.concat(remainingBatch);
+        remainingJobs = remainingJobs.concat(remainingBatch as any);
         remainingPage++;
         console.log(`   Fetched ${remainingBatch.length} remaining jobs (total: ${remainingJobs.length})`);
       } else {
@@ -135,10 +146,12 @@ async function cleanupJobs() {
     }
 
     // Group by job_url and keep only the first occurrence
-    const urlGroups = {};
-    const duplicatesToDelete = [];
+    const urlGroups: Record<string, number> = {};
+    const duplicatesToDelete: number[] = [];
 
     remainingJobs.forEach(job => {
+      if (!job.job_url) return;
+      
       if (!urlGroups[job.job_url]) {
         urlGroups[job.job_url] = job.id;
       } else {
@@ -167,7 +180,7 @@ async function cleanupJobs() {
 
     // Step 5: Final quality check with pagination
     console.log('\n✅ Final quality check...');
-    let finalStats = [];
+    let finalStats: Job[] = [];
     let finalPage = 0;
     let finalHasMore = true;
 
@@ -221,3 +234,4 @@ async function cleanupJobs() {
 
 // Run the cleanup
 cleanupJobs();
+

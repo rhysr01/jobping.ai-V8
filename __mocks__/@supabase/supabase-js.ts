@@ -34,10 +34,10 @@ interface MockSupabaseClient {
 // Global mock data store
 declare global {
   var __SB_MOCK__: {
-    users?: any[];
-    jobs?: any[];
-    matches?: any[];
-    match_logs?: any[];
+    users: any[];
+    jobs: any[];
+    matches: any[];
+    match_logs: any[];
     [key: string]: any[];
   };
 }
