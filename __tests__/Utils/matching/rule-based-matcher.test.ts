@@ -292,5 +292,187 @@ describe('Rule-Based Matcher - calculateMatchScore', () => {
     expect(score.overall).toBeGreaterThanOrEqual(0);
     expect(score.overall).toBeLessThanOrEqual(100);
   });
+
+  it('should boost recent jobs in timing score', () => {
+    const recentJob = buildMockJob({
+      categories: ['early-career'],
+      posted_at: new Date().toISOString()
+    });
+    const oldJob = buildMockJob({
+      categories: ['early-career'],
+      posted_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString() // 60 days old
+    });
+    const user = buildMockUser();
+
+    const recentScore = calculateMatchScore(recentJob, user);
+    const oldScore = calculateMatchScore(oldJob, user);
+
+    expect(recentScore.timing).toBeGreaterThanOrEqual(oldScore.timing);
+  });
+
+  it('should handle jobs with no posted_at date', () => {
+    const job = buildMockJob({
+      categories: ['early-career'],
+      posted_at: ''
+    });
+    const user = buildMockUser();
+
+    const score = calculateMatchScore(job, user);
+
+    expect(score).toBeDefined();
+    expect(score.timing).toBeGreaterThanOrEqual(0);
+  });
+
+  it('should score company match when company_types match', () => {
+    const job = buildMockJob({
+      categories: ['early-career', 'startup']
+    });
+    const user = buildMockUser({
+      company_types: ['startup', 'tech']
+    });
+
+    const score = calculateMatchScore(job, user);
+
+    expect(score.company).toBeGreaterThan(0);
+  });
+
+  it('should have zero company score when no match', () => {
+    const job = buildMockJob({
+      categories: ['early-career']
+    });
+    const user = buildMockUser({
+      company_types: ['enterprise']
+    });
+
+    const score = calculateMatchScore(job, user);
+
+    expect(score.company).toBe(0);
+  });
+
+  it('should handle empty user preferences gracefully', () => {
+    const job = buildMockJob({
+      categories: ['early-career', 'tech']
+    });
+    const user = buildMockUser({
+      career_path: [],
+      target_cities: [],
+      work_environment: undefined
+    });
+
+    const score = calculateMatchScore(job, user);
+
+    expect(score).toBeDefined();
+    expect(score.overall).toBeGreaterThanOrEqual(0);
+  });
+
+  it('should handle jobs with minimum information', () => {
+    const job = buildMockJob({
+      title: 'Job',
+      company: 'Company',
+      location: '',
+      categories: []
+    });
+    const user = buildMockUser();
+
+    const score = calculateMatchScore(job, user);
+
+    expect(score).toBeDefined();
+    expect(typeof score.overall).toBe('number');
+  });
+
+  it('should provide breakdown of all score components', () => {
+    const job = buildMockJob();
+    const user = buildMockUser();
+
+    const score = calculateMatchScore(job, user);
+
+    expect(score).toHaveProperty('overall');
+    expect(score).toHaveProperty('eligibility');
+    expect(score).toHaveProperty('location');
+    expect(score).toHaveProperty('experience');
+    expect(score).toHaveProperty('skills');
+    expect(score).toHaveProperty('company');
+    expect(score).toHaveProperty('timing');
+  });
+
+  it('should weight components to reach overall score', () => {
+    const job = buildMockJob({
+      categories: ['early-career', 'tech'],
+      location: 'London, UK'
+    });
+    const user = buildMockUser({
+      career_path: ['tech'],
+      target_cities: ['London']
+    });
+
+    const score = calculateMatchScore(job, user);
+
+    // Overall should be influenced by components
+    expect(score.overall).toBeGreaterThan(0);
+    expect(score.overall).toBeLessThanOrEqual(100);
+  });
+});
+
+describe('Rule-Based Matcher - Edge Cases', () => {
+  it('should handle null job', () => {
+    const user = buildMockUser();
+
+    const result = applyHardGates(null as any, user);
+
+    expect(result.passed).toBe(false);
+  });
+
+  it('should handle null user', () => {
+    const job = buildMockJob();
+
+    const result = applyHardGates(job, null as any);
+
+    expect(result.passed).toBe(false);
+  });
+
+  it('should handle jobs with undefined categories', () => {
+    const job = buildMockJob({
+      categories: undefined as any
+    });
+    const user = buildMockUser();
+
+    const score = calculateMatchScore(job, user);
+
+    expect(score).toBeDefined();
+  });
+
+  it('should handle remote jobs matching any location', () => {
+    const remoteJob = buildMockJob({
+      categories: ['early-career'],
+      work_environment: 'remote'
+    });
+    const user = buildMockUser({
+      target_cities: ['Berlin'],
+      work_environment: 'remote'
+    });
+
+    const result = applyHardGates(remoteJob, user);
+
+    expect(result.passed).toBe(true);
+  });
+
+  it('should score hybrid flexibility higher', () => {
+    const hybridJob = buildMockJob({
+      categories: ['early-career'],
+      work_environment: 'hybrid'
+    });
+    const officeJob = buildMockJob({
+      categories: ['early-career'],
+      work_environment: 'on-site'
+    });
+    const user = buildMockUser({
+      work_environment: 'hybrid'
+    });
+
+    const hybridScore = calculateMatchScore(hybridJob, user);
+    const officeScore = calculateMatchScore(officeJob, user);
+
+    expect(hybridScore.overall).toBeGreaterThanOrEqual(officeScore.overall);
+  });
 });
 

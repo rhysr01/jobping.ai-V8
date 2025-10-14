@@ -301,5 +301,96 @@ describe('Normalizers - normalizeJobForMatching', () => {
     expect(normalized).toHaveProperty('job_hash');
     expect(normalized).toHaveProperty('title');
   });
+
+  it('should preserve all job fields', () => {
+    const job: any = {
+      job_hash: 'hash123',
+      title: 'Software Engineer',
+      company: 'Google',
+      location: 'London',
+      description: 'Great role',
+      job_url: 'https://example.com/job',
+      categories: ['tech', 'early-career'],
+      work_environment: 'remote',
+      salary: '£50k',
+      posted_at: '2025-01-01'
+    };
+
+    const normalized = normalizeJobForMatching(job);
+
+    expect(normalized.company).toBe('Google');
+    expect(normalized.location).toBe('London');
+    expect(normalized.work_environment).toBe('remote');
+  });
+});
+
+describe('Normalizers - Helper Functions', () => {
+  it('cats() should normalize categories', () => {
+    const { cats } = require('@/Utils/matching/normalizers');
+    expect(cats('tech|data')).toEqual(['tech', 'data']);
+    expect(cats(['tech', 'data'])).toEqual(['tech', 'data']);
+    expect(cats(null)).toEqual([]);
+  });
+
+  it('mapCats() should map over categories', () => {
+    const { mapCats } = require('@/Utils/matching/normalizers');
+    const result = mapCats('tech|data', (c: string) => c.toUpperCase());
+    expect(result).toEqual(['TECH', 'DATA']);
+  });
+
+  it('mapCities() should map over cities', () => {
+    const { mapCities } = require('@/Utils/matching/normalizers');
+    const result = mapCities(['London', 'Paris'], (city: string) => city.toLowerCase());
+    expect(result).toEqual(['london', 'paris']);
+  });
+
+  it('idx() should return object as Record', () => {
+    const { idx } = require('@/Utils/matching/normalizers');
+    const obj = { name: 'test' };
+    const indexed = idx(obj);
+    expect(indexed.name).toBe('test');
+  });
+
+  it('anyIndex() should return object as Record<string, any>', () => {
+    const { anyIndex } = require('@/Utils/matching/normalizers');
+    const obj = { name: 'test', value: 123 };
+    const indexed = anyIndex(obj);
+    expect(indexed.name).toBe('test');
+    expect(indexed.value).toBe(123);
+  });
+});
+
+describe('Normalizers - timeout Function', () => {
+  it('should reject after specified time', async () => {
+    const { timeout } = require('@/Utils/matching/normalizers');
+    
+    await expect(timeout(100, 'Test timeout')).rejects.toThrow('Test timeout');
+  }, 200);
+
+  it('should use default label', async () => {
+    const { timeout } = require('@/Utils/matching/normalizers');
+    
+    await expect(timeout(50)).rejects.toThrow('timeout');
+  }, 150);
+});
+
+describe('Normalizers - isTestOrPerfMode', () => {
+  it('should detect test mode', () => {
+    const { isTestOrPerfMode } = require('@/Utils/matching/normalizers');
+    
+    // We're in test mode, so this should be true
+    expect(isTestOrPerfMode()).toBe(true);
+  });
+
+  it('should check environment variables', () => {
+    const { isTestOrPerfMode } = require('@/Utils/matching/normalizers');
+    const originalEnv = process.env.NODE_ENV;
+    
+    // Already in test mode
+    expect(isTestOrPerfMode()).toBe(true);
+    
+    // Restore
+    process.env.NODE_ENV = originalEnv;
+  });
 });
 
