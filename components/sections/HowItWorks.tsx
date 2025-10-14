@@ -21,7 +21,7 @@ export default function HowItWorks() {
         </motion.h2>
 
         <div className="mt-12 grid gap-12 md:grid-cols-3 text-center">
-          {items.map((x, index) => (
+          {items.filter(x => x && x.title).map((x, index) => (
             <motion.div 
               key={x.num} 
               className="relative"

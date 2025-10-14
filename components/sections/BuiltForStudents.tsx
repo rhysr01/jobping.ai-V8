@@ -26,7 +26,7 @@ export default function BuiltForStudents() {
         <h2 className="h2-section text-center">We search Europe. You get what matters.</h2>
 
         <div className="mt-10 grid md:grid-cols-3 gap-8 md:gap-12">
-          {features.map((feature) => (
+          {features.filter(feature => feature && feature.title).map((feature) => (
             <div key={feature.num} className="glass-card rounded-2xl p-8 md:p-10 interactive-hover relative overflow-hidden">
               <div className="number-chip">{feature.num}</div>
               <h3 className="mt-4 text-xl font-semibold">{feature.title}</h3>
