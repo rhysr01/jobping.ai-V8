@@ -11,10 +11,16 @@ export {
   EMAIL_PERFORMANCE_METRICS 
 } from './optimizedSender';
 
-// Templates - PREMIUM PURPLE BRANDING (Matches Website Design)
+// Templates - GMAIL-COMPATIBLE (Table-based layout with inline styles)
 export { 
-  createWelcomeEmail, 
-  createJobMatchesEmail,
+  createWelcomeEmailGmail as createWelcomeEmail, 
+  createJobMatchesEmailGmail as createJobMatchesEmail
+} from './gmailCompatibleTemplates';
+
+// Keep original templates available
+export { 
+  createWelcomeEmail as createWelcomeEmailOriginal,
+  createJobMatchesEmail as createJobMatchesEmailOriginal,
   EMAIL_OPTIMIZATION_METRICS 
 } from './optimizedTemplates';
 
