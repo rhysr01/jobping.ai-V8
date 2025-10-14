@@ -5,7 +5,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { updateUserEngagement } from '@/Utils/engagementTracker';
-import { extractOriginalUrl } from '@/Utils/email/engagementTracking';
 import { asyncHandler, ValidationError } from '@/lib/errors';
 
 export const POST = asyncHandler(async (req: NextRequest) => {

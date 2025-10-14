@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { z } from 'zod';
-import { asyncHandler, ValidationError, RateLimitError, UnauthorizedError, AppError } from '@/lib/errors';
+import { asyncHandler, RateLimitError, UnauthorizedError } from '@/lib/errors';
 import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import { validateTallyWebhook, getSecurityHeaders } from '@/Utils/security/webhookSecurity';
 import { performMemoryCleanup } from '@/Utils/performance/memoryManager';

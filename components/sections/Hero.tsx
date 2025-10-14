@@ -1,7 +1,5 @@
 "use client";
-import LogoWordmark from "@/components/LogoWordmark";
 import { motion } from "framer-motion";
-import Link from "next/link";
 
 export default function Hero() {
   return (

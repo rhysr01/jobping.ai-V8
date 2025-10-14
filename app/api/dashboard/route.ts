@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import { getSupabaseClient } from '@/Utils/supabase';
-import { asyncHandler, AppError } from '@/lib/errors';
+import { asyncHandler } from '@/lib/errors';
 
 // Helper function to get database metrics
 async function getDatabaseMetrics(): Promise<Record<string, any>> {

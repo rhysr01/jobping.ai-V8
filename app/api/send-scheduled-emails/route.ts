@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { asyncHandler, AppError } from '@/lib/errors';
 import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
-import { HTTP_STATUS, ERROR_CODES } from '@/Utils/constants';
-import { errorResponse } from '@/Utils/errorResponse';
 import { getSupabaseClient } from '@/Utils/supabase';
 import { sendMatchedJobsEmail } from '@/Utils/email';
 import { buildPersonalizedSubject } from '@/Utils/email/subjectBuilder';
@@ -15,18 +13,8 @@ import {
 import type { UserPreferences } from '@/Utils/matching/types';
 import { createConsolidatedMatcher } from '@/Utils/consolidatedMatching';
 import { aiCostManager } from '@/Utils/ai-cost-manager';
-import { jobQueue } from '@/Utils/job-queue.service';
 import { withAuth } from '@/Utils/auth/withAuth';
-import OpenAI from 'openai';
 import { shouldSendEmailToUser, updateUserEngagement } from '@/Utils/engagementTracker';
-import { normalizeStringToArray } from '@/lib/string-helpers';
-
-
-function getOpenAIClient() {
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-}
 
 async function handleSendScheduledEmails(req: NextRequest) {
   // PRODUCTION: Rate limiting for scheduled emails (should only be called by automation)
