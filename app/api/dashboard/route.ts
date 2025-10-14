@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import { getSupabaseClient } from '@/Utils/supabase';
+import { asyncHandler, AppError } from '@/lib/errors';
 
 // Helper function to get database metrics
 async function getDatabaseMetrics(): Promise<Record<string, any>> {
@@ -111,7 +112,7 @@ function getEnvironmentStatus() {
   };
 }
 
-export async function GET(req: NextRequest) {
+export const GET = asyncHandler(async (req: NextRequest) => {
   // PRODUCTION: Rate limiting for dashboard endpoint
   const rateLimitResult = await getProductionRateLimiter().middleware(req, 'dashboard', {
     windowMs: 60 * 1000, // 1 minute
@@ -121,48 +122,37 @@ export async function GET(req: NextRequest) {
     return rateLimitResult;
   }
 
-  try {
-    const startTime = Date.now();
+  const startTime = Date.now();
+  
+  // Gather all metrics in parallel
+  const [databaseMetrics, scraperMetrics, performanceMetrics, systemMetrics, envStatus] = await Promise.allSettled([
+    getDatabaseMetrics(),
+    Promise.resolve(getScraperMetrics()), // Synchronous function
+    Promise.resolve(getDetailedPerformanceMetrics()), // Synchronous function
+    Promise.resolve(getSystemMetrics()), // Synchronous function
+    Promise.resolve(getEnvironmentStatus()) // Synchronous function
+  ]);
+  
+  const dashboardTime = Date.now() - startTime;
+  
+  // Build comprehensive dashboard response
+  const dashboard = {
+    timestamp: new Date().toISOString(),
+    responseTime: dashboardTime,
+    database: databaseMetrics.status === 'fulfilled' ? databaseMetrics.value : { error: 'Failed to fetch' },
+    scraper: scraperMetrics.status === 'fulfilled' ? scraperMetrics.value : { error: 'Failed to fetch' },
+    performance: performanceMetrics.status === 'fulfilled' ? performanceMetrics.value : { error: 'Failed to fetch' },
+    system: systemMetrics.status === 'fulfilled' ? systemMetrics.value : { error: 'Failed to fetch' },
+    environment: envStatus.status === 'fulfilled' ? envStatus.value : { error: 'Failed to fetch' },
     
-    // Gather all metrics in parallel
-    const [databaseMetrics, scraperMetrics, performanceMetrics, systemMetrics, envStatus] = await Promise.allSettled([
-      getDatabaseMetrics(),
-      Promise.resolve(getScraperMetrics()), // Synchronous function
-      Promise.resolve(getDetailedPerformanceMetrics()), // Synchronous function
-      Promise.resolve(getSystemMetrics()), // Synchronous function
-      Promise.resolve(getEnvironmentStatus()) // Synchronous function
-    ]);
-    
-    const dashboardTime = Date.now() - startTime;
-    
-    // Build comprehensive dashboard response
-    const dashboard = {
-      timestamp: new Date().toISOString(),
-      responseTime: dashboardTime,
-      database: databaseMetrics.status === 'fulfilled' ? databaseMetrics.value : { error: 'Failed to fetch' },
-      scraper: scraperMetrics.status === 'fulfilled' ? scraperMetrics.value : { error: 'Failed to fetch' },
-      performance: performanceMetrics.status === 'fulfilled' ? performanceMetrics.value : { error: 'Failed to fetch' },
-      system: systemMetrics.status === 'fulfilled' ? systemMetrics.value : { error: 'Failed to fetch' },
-      environment: envStatus.status === 'fulfilled' ? envStatus.value : { error: 'Failed to fetch' },
-      
-      // Summary status
-      status: {
-        overall: 'operational',
-        database: databaseMetrics.status === 'fulfilled' ? 'operational' : 'degraded',
-        scraper: scraperMetrics.status === 'fulfilled' ? 'operational' : 'degraded',
-        performance: performanceMetrics.status === 'fulfilled' ? 'operational' : 'degraded'
-      }
-    };
+    // Summary status
+    status: {
+      overall: 'operational',
+      database: databaseMetrics.status === 'fulfilled' ? 'operational' : 'degraded',
+      scraper: scraperMetrics.status === 'fulfilled' ? 'operational' : 'degraded',
+      performance: performanceMetrics.status === 'fulfilled' ? 'operational' : 'degraded'
+    }
+  };
 
-    return NextResponse.json(dashboard, { status: 200 });
-  } catch (error) {
-    console.error('Dashboard generation failed:', error);
-    return NextResponse.json(
-      { 
-        error: 'Dashboard generation failed',
-        timestamp: new Date().toISOString()
-      }, 
-      { status: 500 }
-    );
-  }
-}
+  return NextResponse.json(dashboard, { status: 200 });
+});
