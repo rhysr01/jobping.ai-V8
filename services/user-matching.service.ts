@@ -143,7 +143,10 @@ export class UserMatchingService {
 
     const { error: insertError } = await this.supabase
       .from('matches')
-      .insert(matchEntries);
+      .upsert(matchEntries, {
+        onConflict: 'user_email,job_hash',
+        ignoreDuplicates: false // Update if exists
+      });
 
     if (insertError) {
       console.error('Failed to save matches:', insertError);
