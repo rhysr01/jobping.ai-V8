@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { asyncHandler, ValidationError, AppError } from '@/lib/errors';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { getDatabaseClient } from '@/Utils/databasePool';
 
 export const POST = asyncHandler(async (req: NextRequest) => {
+  // Get database client with service_role key
+  const supabase = getDatabaseClient();
   const { email, promoCode } = await req.json();
 
   if (!email || !promoCode) {

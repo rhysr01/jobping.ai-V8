@@ -158,7 +158,7 @@ function extractUserData(fields: NonNullable<TallyWebhookData['data']>['fields']
         console.log(`✅ Extracted location: ${loc}`);
       }
     }
-    // LANGUAGES (checkbox format)
+    // LANGUAGES (checkbox format with individual fields like locations)
     else if (labelLower.includes('language(s)') && labelLower.includes('professional level') && value === true) {
       const lang = extractFromParentheses(label);
       if (lang && lang.length > 1) {
@@ -166,6 +166,12 @@ function extractUserData(fields: NonNullable<TallyWebhookData['data']>['fields']
         (userData.languages_spoken as string[]).push(lang);
         console.log(`✅ Extracted language: ${lang}`);
       }
+    }
+    // LANGUAGES (fallback: if Tally sends UUID array instead of individual fields)
+    else if (labelLower.includes('language(s)') && labelLower.includes('professional level') && Array.isArray(value)) {
+      // Tally sends UUIDs - we need to look for corresponding individual fields in next iteration
+      // Store the parent field temporarily
+      console.log(`⚠️ Language field sent as UUID array (not individual checkboxes):`, value);
     }
     // WORK ENVIRONMENT (checkbox format: Office, Hybrid, Remote)
     else if (labelLower.includes('how do you want to work?') && value === true) {
@@ -348,7 +354,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         professional_expertise: userData.professional_expertise || '',
         start_date: userData.start_date || null,
         work_environment: userData.work_environment || '',
-        visa_status: userData.work_authorization || '',
+        visa_status: userData.visa_status || '',  // Fixed: was work_authorization
         entry_level_preference: userData.entry_level_preference || '',
         career_path: userData.career_path || '',
         professional_experience: userData.professional_experience || '',
@@ -507,7 +513,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       professional_expertise: userData.professional_expertise || '',
       start_date: userData.start_date || null,
       work_environment: userData.work_environment || '',
-      visa_status: userData.work_authorization || '',
+      visa_status: userData.visa_status || '',  // Fixed: was work_authorization
       entry_level_preference: userData.entry_level_preference || '',
       career_path: userData.career_path || '',
       professional_experience: userData.professional_experience || '',
