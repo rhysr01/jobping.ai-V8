@@ -291,7 +291,7 @@ function authenticateRequest(req: NextRequest): void {
   throw new AuthorizationError('Invalid authentication credentials');
 }
 
-export async function POST(req: NextRequest) {
+export const POST = async (req: NextRequest) => {
   const requestId = crypto.randomUUID();
   
   try {
@@ -339,10 +339,10 @@ export async function POST(req: NextRequest) {
       method: 'POST',
     });
   }
-}
+};
 
 // Health check endpoint
-export async function GET(req: NextRequest) {
+export const GET = async (req: NextRequest) => {
   try {
     authenticateRequest(req);
     
@@ -359,4 +359,4 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     return errorHandler.handleError(error instanceof Error ? error : new Error('Health check failed'));
   }
-}
+};

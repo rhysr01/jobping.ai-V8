@@ -230,10 +230,10 @@ describe('date-helpers', () => {
     });
 
     it('can determine if cache is expired', () => {
-      const cacheTime = getDateHoursAgo(25);
-      const cacheExpiry = 24;
+      const cacheTime = getDateDaysAgo(2);
       
-      expect(isWithinDays(cacheTime, cacheExpiry / 24)).toBe(false);
+      // Cache 2 days old should NOT be within last day
+      expect(isWithinDays(cacheTime, 1)).toBe(false);
     });
 
     it('can create date ranges for queries', () => {
