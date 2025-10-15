@@ -497,6 +497,7 @@ Requirements:
 
   /**
    * Calculate weighted linear score with enhanced factors
+   * NOW INCLUDES: Role type distinction (internship vs graduate vs junior)
    */
   private calculateWeightedScore(
     job: any, 
@@ -521,8 +522,10 @@ Requirements:
       reasons.push(coldStartScore.reason);
     }
 
-    // 1. Early Career Detection (Weight: 30%)
-    const earlyCareerScore = this.calculateEarlyCareerScore(jobText, title);
+    // 1. Early Career Detection (Weight: 30%) - NOW with role type distinction!
+    // Users who want internships get internships (not grad programs)
+    // Users who want grad programs get grad programs (not internships)
+    const earlyCareerScore = this.calculateEarlyCareerScore(jobText, title, job, userPrefs);
     score += earlyCareerScore.points;
     if (earlyCareerScore.points > 0) {
       reasons.push(earlyCareerScore.reason);
@@ -613,32 +616,80 @@ Requirements:
   }
 
   /**
-   * Calculate early career relevance score
+   * Calculate early career relevance score with role type distinction
    */
-  private calculateEarlyCareerScore(jobText: string, title: string): { points: number; reason: string } {
-    // High-value early career indicators
-    const highValueTerms = ['intern', 'internship', 'graduate', 'new grad', 'entry level', 'junior', 'trainee'];
-    const mediumValueTerms = ['associate', 'assistant', 'coordinator', 'specialist', 'analyst'];
+  private calculateEarlyCareerScore(jobText: string, title: string, job?: any, userPrefs?: UserPreferences): { points: number; reason: string } {
+    // CRITICAL: Distinguish between internship, graduate, and junior roles!
+    const internshipTerms = ['intern', 'internship', 'stage', 'praktikum', 'prácticas', 'tirocinio', 'stagiar'];
+    const graduateTerms = ['graduate', 'new grad', 'grad scheme', 'grad program', 'graduate programme', 'trainee program', 'grad trainee'];
+    const juniorTerms = ['junior', 'entry level', 'associate', 'assistant', 'junior analyst', 'junior consultant'];
     const programmeTerms = ['programme', 'program', 'scheme', 'rotation', 'campus'];
 
-    // Check for high-value terms (strong signal)
-    for (const term of highValueTerms) {
-      if (jobText.includes(term)) {
-        return { points: 25, reason: 'early-career role' };
+    // Get user's preference (if available)
+    const userPreference = userPrefs?.entry_level_preference?.toLowerCase() || '';
+    
+    // Check job flags first (most accurate)
+    // BALANCED: Role type match is important but not overwhelming
+    if (job) {
+      if (job.is_internship) {
+        if (userPreference.includes('intern')) {
+          return { points: 25, reason: 'internship (perfect match)' };
+        }
+        return { points: 20, reason: 'internship role' };
+      }
+      if (job.is_graduate) {
+        if (userPreference.includes('grad')) {
+          return { points: 25, reason: 'graduate programme (perfect match)' };
+        }
+        return { points: 20, reason: 'graduate programme' };
       }
     }
 
-    // Check for medium-value terms
-    for (const term of mediumValueTerms) {
-      if (jobText.includes(term)) {
-        return { points: 15, reason: 'entry-level position' };
+    // Fallback to text matching with user preference boost
+    // BALANCED: +5 bonus for preference match, but not dominant
+    
+    // Internships
+    for (const term of internshipTerms) {
+      if (jobText.includes(term) || title.includes(term)) {
+        if (userPreference.includes('intern')) {
+          return { points: 25, reason: 'internship (preference match)' };
+        }
+        return { points: 20, reason: 'internship role' };
       }
     }
 
-    // Check for programme terms (graduate schemes, etc.)
+    // Graduate programs
+    for (const term of graduateTerms) {
+      if (jobText.includes(term) || title.includes(term)) {
+        if (userPreference.includes('grad')) {
+          return { points: 25, reason: 'graduate programme (preference match)' };
+        }
+        return { points: 20, reason: 'graduate programme' };
+      }
+    }
+
+    // Junior/Associate roles
+    for (const term of juniorTerms) {
+      if (jobText.includes(term) || title.includes(term)) {
+        if (userPreference.includes('junior') || userPreference.includes('analyst')) {
+          return { points: 22, reason: 'junior role (preference match)' };
+        }
+        return { points: 18, reason: 'junior role' };
+      }
+    }
+
+    // Structured programmes (catch-all)
     for (const term of programmeTerms) {
       if (jobText.includes(term)) {
         return { points: 20, reason: 'structured programme' };
+      }
+    }
+
+    // Medium-value early career terms (when no preference specified)
+    const mediumValueTerms = ['coordinator', 'specialist', 'analyst'];
+    for (const term of mediumValueTerms) {
+      if (jobText.includes(term)) {
+        return { points: 15, reason: 'entry-level position' };
       }
     }
 
