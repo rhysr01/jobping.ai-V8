@@ -4,7 +4,7 @@ export default function BuiltForStudents() {
       num: 1, 
       title: "Your profile drives everything", 
       body: "Matches based on your location, visa status, and interests. Zero generic spam.",
-      stats: "200+ user preferences tracked"
+      stats: "Smart matching = Zero wasted time"
     },
     { 
       num: 2, 
@@ -23,16 +23,16 @@ export default function BuiltForStudents() {
   return (
     <section className="section-pad">
       <div className="container-page">
-        <h2 className="h2-section text-center">We search Europe. You get what matters.</h2>
+        <h2 className="h2-section text-center px-4">Your time = Applications, not searching</h2>
 
-        <div className="mt-10 grid md:grid-cols-3 gap-8 md:gap-12">
+        <div className="mt-8 sm:mt-10 grid gap-6 sm:gap-8 md:grid-cols-3 md:gap-12">
           {features.filter(feature => feature && feature.title).map((feature) => (
-            <div key={feature.num} className="glass-card rounded-2xl p-8 md:p-10 interactive-hover relative overflow-hidden">
+            <div key={feature.num} className="glass-card rounded-2xl p-6 sm:p-8 md:p-10 interactive-hover relative overflow-hidden">
               <div className="number-chip">{feature.num}</div>
-              <h3 className="mt-4 text-xl font-semibold">{feature.title}</h3>
-              <p className="mt-2 p-muted">{feature.body}</p>
+              <h3 className="mt-4 text-lg sm:text-xl font-semibold">{feature.title}</h3>
+              <p className="mt-2 p-muted text-sm sm:text-base">{feature.body}</p>
               <div className="mt-4 pt-4 border-t border-zinc-800">
-                <p className="text-sm font-semibold text-brand-400">{feature.stats}</p>
+                <p className="text-xs sm:text-sm font-semibold text-brand-400">{feature.stats}</p>
               </div>
             </div>
           ))}

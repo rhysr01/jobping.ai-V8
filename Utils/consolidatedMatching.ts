@@ -497,7 +497,13 @@ Requirements:
 
   /**
    * Calculate weighted linear score with enhanced factors
-   * NOW INCLUDES: Role type distinction (internship vs graduate vs junior)
+   * BALANCED WEIGHTS (Total: 100 points max)
+   * - Role Type Match: 33% (internship vs graduate vs junior)
+   * - Location Match: 28% (target city > EU location)
+   * - Career Path/Skills: 24% (finance, consulting, tech, etc.)
+   * - Famous Company: 12% (only household names)
+   * - Cold Start Boost: 15% (new users)
+   * NO FRESHNESS: All jobs filtered to 60 days, so all are fresh!
    */
   private calculateWeightedScore(
     job: any, 
@@ -506,7 +512,7 @@ Requirements:
     userCareer: string,
     userCareerPaths: string[]
   ): { score: number; reasons: string[] } {
-    let score = 45; // Base score (slightly reduced from 50)
+    let score = 45; // Base score
     const reasons: string[] = [];
     
     const title = job.title?.toLowerCase() || '';
@@ -515,49 +521,42 @@ Requirements:
     const location = (job.location || '').toLowerCase();
     const jobText = `${title} ${description}`.toLowerCase();
 
-    // 0. Cold-start rules for new users (Weight: 15%)
+    // 0. Cold-start boost for new users (15 pts max)
     const coldStartScore = this.calculateColdStartScore(jobText, title, userPrefs);
     score += coldStartScore.points;
     if (coldStartScore.points > 0) {
       reasons.push(coldStartScore.reason);
     }
 
-    // 1. Early Career Detection (Weight: 30%) - NOW with role type distinction!
-    // Users who want internships get internships (not grad programs)
-    // Users who want grad programs get grad programs (not internships)
+    // 1. Role Type Match (25 pts max) - Internship vs Graduate vs Junior
     const earlyCareerScore = this.calculateEarlyCareerScore(jobText, title, job, userPrefs);
     score += earlyCareerScore.points;
     if (earlyCareerScore.points > 0) {
       reasons.push(earlyCareerScore.reason);
     }
 
-    // 2. EU Location Match (Weight: 25%)
+    // 2. Location Match (20 pts max) - Target city > EU location
     const euLocationScore = this.calculateEULocationScore(location, userCities);
     score += euLocationScore.points;
     if (euLocationScore.points > 0) {
       reasons.push(euLocationScore.reason);
     }
 
-    // 3. Skill/Career Overlap (Weight: 20%)
+    // 3. Career Path/Skills (18 pts max) - Finance, Consulting, Tech, etc.
     const skillScore = this.calculateSkillOverlapScore(jobText, userCareer, userCareerPaths);
     score += skillScore.points;
     if (skillScore.points > 0) {
       reasons.push(skillScore.reason);
     }
 
-    // 4. Company Tier/Quality (Weight: 15%)
+    // 4. Famous Company (12 pts max) - Only household names
     const companyScore = this.calculateCompanyTierScore(company, jobText);
     score += companyScore.points;
     if (companyScore.points > 0) {
       reasons.push(companyScore.reason);
     }
 
-    // 5. Recency/Freshness (Weight: 10%)
-    const recencyScore = this.calculateRecencyScore(job);
-    score += recencyScore.points;
-    if (recencyScore.points > 0) {
-      reasons.push(recencyScore.reason);
-    }
+    // Freshness removed: All jobs filtered to 60 days, so they're all fresh!
 
     return { score: Math.min(100, Math.max(0, score)), reasons };
   }
@@ -941,66 +940,39 @@ Requirements:
    * Calculate company tier/quality score
    */
   private calculateCompanyTierScore(company: string, jobText: string): { points: number; reason: string } {
-    // Tier 1 companies (known tech/consulting/finance)
-    const tier1Companies = [
-      'google', 'microsoft', 'apple', 'amazon', 'meta', 'netflix', 'spotify', 'uber', 'airbnb',
-      'mckinsey', 'bain', 'bcg', 'deloitte', 'pwc', 'ey', 'kpmg',
-      'goldman sachs', 'jpmorgan', 'morgan stanley', 'blackrock'
+    // ONLY boost FAMOUS companies (household names)
+    const famousCompanies = [
+      // Tech Giants
+      'google', 'microsoft', 'apple', 'amazon', 'meta', 'facebook', 'netflix', 'uber', 'airbnb', 'tesla',
+      // Top Consulting
+      'mckinsey', 'bain', 'bcg', 'boston consulting',
+      // Big 4
+      'deloitte', 'pwc', 'ey', 'kpmg', 'accenture',
+      // Investment Banks
+      'goldman sachs', 'jpmorgan', 'jp morgan', 'morgan stanley', 'citigroup', 'citi', 'barclays', 'hsbc',
+      // Asset Management
+      'blackrock', 'vanguard', 'state street',
+      // European Giants
+      'unilever', 'nestlé', 'nestle', 'lvmh', 'loreal', "l'oreal", 'volkswagen', 'bmw', 'mercedes', 'siemens',
+      // More Tech
+      'salesforce', 'oracle', 'sap', 'adobe', 'spotify', 'booking.com'
     ];
 
-    // Tier 2 companies (strong EU players)
-    const tier2Companies = [
-      'klarna', 'spotify', 'zalando', 'delivery hero', 'hellofresh', 'n26', 'revolut',
-      'sap', 'siemens', 'bosch', 'adidas', 'bmw', 'mercedes', 'volkswagen'
-    ];
-
-    // Check tier 1
-    for (const tier1 of tier1Companies) {
-      if (company.includes(tier1)) {
-        return { points: 12, reason: 'tier-1 company' };
+    // Check for famous companies ONLY
+    for (const famous of famousCompanies) {
+      if (company.includes(famous)) {
+        return { points: 12, reason: 'famous company' };
       }
     }
 
-    // Check tier 2
-    for (const tier2 of tier2Companies) {
-      if (company.includes(tier2)) {
-        return { points: 8, reason: 'tier-2 company' };
-      }
-    }
-
-    // Startup/scaleup indicators
-    const startupIndicators = ['startup', 'scaleup', 'series a', 'series b', 'unicorn', 'venture'];
-    for (const indicator of startupIndicators) {
-      if (jobText.includes(indicator)) {
-        return { points: 6, reason: 'startup/scaleup' };
-      }
-    }
-
-    // Company size indicators
-    if (company.length > 3 && !company.includes('ltd') && !company.includes('inc')) {
-      return { points: 3, reason: 'established company' };
-    }
-
+    // No boost for unknown companies
     return { points: 0, reason: '' };
   }
 
   /**
    * Calculate recency/freshness score
    */
-  private calculateRecencyScore(job: any): { points: number; reason: string } {
-    const postedDate = job.original_posted_date || job.created_at;
-    if (!postedDate) return { points: 0, reason: '' };
-
-    const daysOld = (Date.now() - new Date(postedDate).getTime()) / (1000 * 60 * 60 * 24);
-    
-    if (daysOld < 1) return { points: 10, reason: 'posted today' };
-    if (daysOld < 3) return { points: 8, reason: 'posted this week' };
-    if (daysOld < 7) return { points: 6, reason: 'posted recently' };
-    if (daysOld < 14) return { points: 4, reason: 'posted within 2 weeks' };
-    if (daysOld < 28) return { points: 2, reason: 'posted this month' };
-    
-    return { points: 0, reason: '' };
-  }
+  // Recency scoring removed: All jobs filtered to 60 days, so freshness doesn't matter!
 
   /**
    * Get quality label based on score

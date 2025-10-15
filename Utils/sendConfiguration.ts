@@ -1,12 +1,13 @@
 /**
  * SEND CONFIGURATION SYSTEM
- * Weekly ledger-based job distribution with per-send caps
+ * Weekly job distribution with per-send caps
  */
 
 export interface SendPlan {
   days: string[];           // Days of week to send
   perSend: number;          // Max jobs per send
   pullsPerWeek: number;     // How many sends per week
+  signupBonus: number;      // Jobs sent on signup
   earlyAccessHours?: number; // Hours early access to fresh jobs
 }
 
@@ -16,17 +17,19 @@ export interface MatchRules {
   maxPerCompanyPerSend: number; // Max jobs per company per send
 }
 
-// Core send configuration - MVP Final
+// Core send configuration - Weekly for free, 3x weekly for premium
 export const SEND_PLAN = {
   free: {
-    days: ["Thu"], // Weekly on Thursday
-    perSend: 5,    // Exactly 5 jobs per email
+    days: ["Thu"],      // Weekly on Thursday
+    perSend: 5,         // Exactly 5 jobs per email
     pullsPerWeek: 1,
+    signupBonus: 5,     // 5 jobs on signup
   },
   premium: {
-    days: ["Mon", "Wed", "Fri"], // Mon/Wed/Fri at 07:30 local
-    perSend: 5,    // Exactly 5 jobs per email
+    days: ["Mon", "Wed", "Fri"], // 3x per week
+    perSend: 5,         // Exactly 5 jobs per email
     pullsPerWeek: 3,
+    signupBonus: 10,    // 10 jobs on signup
     earlyAccessHours: 24
   }
 };
@@ -106,6 +109,20 @@ export function isSendDay(tier: 'free' | 'premium'): boolean {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'short' }) as string;
   const plan = SEND_PLAN[tier];
   return plan.days.includes(today);
+}
+
+/**
+ * Get jobs per send for tier
+ */
+export function getJobsPerSend(tier: 'free' | 'premium'): number {
+  return SEND_PLAN[tier].perSend;
+}
+
+/**
+ * Get signup bonus jobs for tier
+ */
+export function getSignupBonusJobs(tier: 'free' | 'premium'): number {
+  return SEND_PLAN[tier].signupBonus;
 }
 
 /**

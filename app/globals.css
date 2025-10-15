@@ -3,11 +3,19 @@
 @tailwind utilities;
 
 /* ---------- Global look ---------- */
-:root { color-scheme: dark; }
+:root { 
+  color-scheme: dark;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
 
 html, body {
-  height: 100%;
+  min-height: 100%;
   background-color: #000;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* STRONG purple/indigo vignette across the page */
@@ -32,6 +40,8 @@ body {
     radial-gradient(100% 70% at 100% 50%, rgba(124,58,237,0.22), transparent 65%),
     linear-gradient(#000 0%, #050505 25%, #0a0a0a 75%, #000 100%);
   background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 .premium-bg:before {
   content:"";
@@ -90,47 +100,27 @@ body {
     inset 0 1px 0 rgba(255,255,255,.2);
 }
 
-/* Indigo frame around viewport - fixed to screen */
-body::before{
-  content:"";
-  position: fixed;
-  top: 8px;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
-  height: calc(100vh - 16px);
-  border-radius: var(--frame-radius, 28px);
-  border: 2px solid rgba(99,102,241,0.55);
-  box-shadow:
-    0 0 0 2px rgba(99,102,241,0.18),
-    inset 0 0 70px rgba(99,102,241,0.12);
-  pointer-events: none;
-  z-index: 50;
-}
-@media (max-width: 768px){
-  body::before{ 
-    top: 6px;
-    left: 6px;
-    right: 6px;
-    bottom: 6px;
-    border-radius: 22px; 
-  }
-}
+/* Removed problematic fixed border frame that was causing scroll issues */
 
 /* ---------- Reusable styles ---------- */
 @layer components {
-  .container-page { @apply mx-auto max-w-[80rem] px-6 md:px-8; }
-  .section-pad   { @apply py-20 md:py-24; }
+  .container-page { 
+    @apply mx-auto max-w-[80rem] px-4 sm:px-6 md:px-8;
+    width: 100%;
+  }
+  .section-pad   { @apply py-16 sm:py-20 md:py-24; }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-2xl px-6 py-4 text-lg font-bold tracking-tight
+    @apply inline-flex items-center justify-center rounded-2xl px-6 py-4 text-base sm:text-lg font-bold tracking-tight
            text-white focus:outline-none focus:ring-4 focus:ring-brand-500 focus:ring-offset-4 focus:ring-offset-black;
     background-image: linear-gradient(to right, #6366F1, #7C3AED, #8B5CF6);
     box-shadow: 0 20px 60px -18px rgba(99,102,241,.6);
-    min-height: 56px;
+    min-height: 48px;
     transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
     position: relative;
     overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   @media (min-width: 768px) {
     .btn-primary {
@@ -157,9 +147,11 @@ body::before{
     filter: brightness(1.1);
   }
   .btn-outline {
-    @apply inline-flex items-center justify-center rounded-2xl px-6 py-4 font-semibold text-white border border-white/15;
+    @apply inline-flex items-center justify-center rounded-2xl px-6 py-4 text-base sm:text-lg font-semibold text-white border border-white/15;
     transition: transform .25s ease, box-shadow .25s ease;
-    min-height: 56px;
+    min-height: 48px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   @media (min-width: 768px) {
     .btn-outline {

@@ -112,13 +112,13 @@ async function handleSendScheduledEmails(req: NextRequest) {
       // Phase 3: Regular distribution (tier-based) - only after onboarding is complete
       if (onboardingComplete && emailPhase === 'regular') {
         if (userTier === 'premium') {
-          // Premium: every 48 hours
+          // Premium: every 48 hours (Mon/Wed/Fri pattern)
           if (timeSinceLastEmail >= 48 * 60 * 60 * 1000) {
             eligibleUsers.push(user);
           }
         } else {
-          // Free: every 72 hours
-          if (timeSinceLastEmail >= 72 * 60 * 60 * 1000) {
+          // Free: once per week (every 7 days)
+          if (timeSinceLastEmail >= 7 * 24 * 60 * 60 * 1000) {
             eligibleUsers.push(user);
           }
         }
@@ -308,12 +308,14 @@ async function handleSendScheduledEmails(req: NextRequest) {
 
           let maxMatches: number;
           let isOnboardingPhase = false;
-          if (timeSinceSignup >= 48 * 60 * 60 * 1000 && timeSinceSignup < 72 * 60 * 60 * 1000) {
-            maxMatches = 5;
+          
+          // Signup bonus: 5 for free, 10 for premium (first email after signup)
+          if (timeSinceSignup < 48 * 60 * 60 * 1000 && !user.last_email_sent) {
+            maxMatches = userTier === 'premium' ? 10 : 5;
             isOnboardingPhase = true;
-          } else if (timeSinceSignup >= 72 * 60 * 60 * 1000) {
-            maxMatches = userTier === 'premium' ? 15 : 6;
-          } else {
+          } 
+          // Regular weekly sends: Always 5 jobs per email (free gets 1x/week, premium gets 3x/week)
+          else {
             maxMatches = 5;
           }
 

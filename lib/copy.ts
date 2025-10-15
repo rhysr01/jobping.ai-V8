@@ -61,7 +61,7 @@ export const PREMIUM_PLAN_PRICE = "€7";
 export const PREMIUM_PLAN_PRICE_UNIT = "/mo";
 export const PREMIUM_PLAN_ANNUAL = "€20 for 3 months (save €1)";
 export const PREMIUM_PLAN_FEATURES = [
-  "5 matches on signup",
+  "10 matches on signup",
   "3 emails per week (Mon/Wed/Fri)",
   "5 roles per email",
   "Optional alerts for standout roles (max 2/wk)",

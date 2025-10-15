@@ -3,11 +3,11 @@ import { motion } from "framer-motion";
 
 export default function Hero() {
   return (
-    <section className="relative isolate text-center py-24 md:py-32 lg:py-40">
+    <section className="relative isolate text-center py-16 sm:py-24 md:py-32 lg:py-40 overflow-hidden">
       <div className="container-page">
         {/* Large JobPing branding with graduation cap */}
         <motion.div 
-          className="inline-flex items-center justify-center gap-4 md:gap-6 mb-8"
+          className="inline-flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8"
           animate={{ 
             scale: [1, 1.12, 1],
             y: [0, -12, 0]
@@ -21,7 +21,7 @@ export default function Hero() {
         >
           {/* BIG Graduation Cap Icon */}
           <svg
-            className="w-20 h-20 md:w-32 md:h-32 lg:w-40 lg:h-40 text-white"
+            className="w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32 lg:w-40 lg:h-40 text-white flex-shrink-0"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -36,21 +36,21 @@ export default function Hero() {
           </svg>
           
           {/* Large JobPing Text */}
-          <div className="text-8xl md:text-9xl lg:text-[10rem] font-bold tracking-tight leading-none">
+          <div className="text-6xl sm:text-8xl md:text-9xl lg:text-[10rem] font-bold tracking-tight leading-none">
             <span className="bg-gradient-to-b from-white via-white to-zinc-300 bg-clip-text text-transparent">
               JobPing
             </span>
           </div>
         </motion.div>
         
-        <h1 className="mt-6 text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] max-w-[20ch] mx-auto">
+        <h1 className="mt-4 sm:mt-6 text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] max-w-[20ch] mx-auto px-2">
           Graduate jobs in your inbox. Just apply.
         </h1>
-        <p className="mt-6 text-xl md:text-2xl text-zinc-300 max-w-[62ch] mx-auto leading-relaxed">
-          Five per week, straight to your inbox.
+        <p className="mt-4 sm:mt-6 text-lg sm:text-xl md:text-2xl text-zinc-300 max-w-[62ch] mx-auto leading-relaxed px-4">
+          Internships, grad programmes, and early career opportunities sent to you.
         </p>
-        <p className="mt-4 text-base md:text-lg text-zinc-400 max-w-[58ch] mx-auto">
-          Set up takes 2 minutes. No CV upload. No endless scrolling.
+        <p className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-zinc-400 max-w-[58ch] mx-auto px-4">
+          5 minutes to setup. Hours saved every week.
         </p>
         
         {/* CTA Button */}
@@ -58,18 +58,18 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
-          className="mt-10"
+          className="mt-8 sm:mt-10 px-4"
         >
           <a
             href="https://tally.so/r/mJEqx4"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-brand-500 to-purple-600 rounded-xl hover:scale-105 transition-transform duration-200 shadow-lg hover:shadow-2xl hover:shadow-brand-500/30"
+            className="inline-block px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold text-white bg-gradient-to-r from-brand-500 to-purple-600 rounded-xl hover:scale-105 active:scale-95 transition-transform duration-200 shadow-lg hover:shadow-2xl hover:shadow-brand-500/30 touch-manipulation"
           >
             Get Started — It's Free
           </a>
-          <p className="mt-4 text-sm text-zinc-500">
-            Join 200+ graduates finding better opportunities
+          <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-zinc-500">
+            Get 5 personalised jobs within 48 hours • No logins • No spam
           </p>
         </motion.div>
       </div>
@@ -93,7 +93,7 @@ export default function Hero() {
         className="pointer-events-none absolute inset-0 -z-10 enhanced-grid"
       />
       
-      {/* Floating orbs for extra drama */}
+      {/* Floating orbs for extra drama - hidden on small screens */}
       <motion.div
         aria-hidden
         animate={{ 
@@ -105,7 +105,7 @@ export default function Hero() {
           repeat: Infinity,
           ease: "easeInOut"
         }}
-        className="pointer-events-none absolute top-20 right-20 w-32 h-32 bg-brand-500/20 rounded-full blur-xl"
+        className="pointer-events-none absolute top-10 sm:top-20 right-4 sm:right-20 w-20 sm:w-32 h-20 sm:h-32 bg-brand-500/20 rounded-full blur-xl"
       />
       <motion.div
         aria-hidden
@@ -119,7 +119,7 @@ export default function Hero() {
           ease: "easeInOut",
           delay: 1
         }}
-        className="pointer-events-none absolute bottom-20 left-20 w-24 h-24 bg-purple-500/20 rounded-full blur-lg"
+        className="pointer-events-none absolute bottom-10 sm:bottom-20 left-4 sm:left-20 w-16 sm:w-24 h-16 sm:h-24 bg-purple-500/20 rounded-full blur-lg"
       />
     </section>
   );

@@ -47,3 +47,4 @@ next-env.d.ts
 .env.local.backup
 .env.local.clean
 .env*.backup
+.env*.local
