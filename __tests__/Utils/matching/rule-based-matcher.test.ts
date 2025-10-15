@@ -463,3 +463,362 @@ describe('Rule-Based Matcher - Edge Cases', () => {
   });
 });
 
+describe('Rule-Based Matcher - calculateConfidenceScore', () => {
+  const { calculateConfidenceScore } = require('@/Utils/matching/rule-based-matcher.service');
+
+  it('should return base confidence of 0.5', () => {
+    const job = buildMockJob({ categories: [] });
+    const user = buildMockUser({});
+    
+    const confidence = calculateConfidenceScore(job, user);
+    
+    expect(confidence).toBeGreaterThanOrEqual(0.5);
+    expect(confidence).toBeLessThanOrEqual(1.0);
+  });
+
+  it('should increase confidence for eligible jobs', () => {
+    const job = buildMockJob({ categories: ['early-career'] });
+    const user = buildMockUser({});
+    
+    const confidence = calculateConfidenceScore(job, user);
+    
+    expect(confidence).toBeGreaterThan(0.5);
+  });
+
+  it('should increase confidence for location match', () => {
+    const job = buildMockJob({ 
+      categories: ['early-career'],
+      location: 'London, UK'
+    });
+    const user = buildMockUser({ target_cities: ['London'] });
+    
+    const confidence = calculateConfidenceScore(job, user);
+    
+    expect(confidence).toBeGreaterThan(0.7);
+  });
+
+  it('should increase confidence for career path match', () => {
+    const job = buildMockJob({ 
+      categories: ['early-career', 'software-engineer']
+    });
+    const user = buildMockUser({ career_path: ['software-engineer'] });
+    
+    const confidence = calculateConfidenceScore(job, user);
+    
+    expect(confidence).toBeGreaterThan(0.5);
+  });
+
+  it('should cap confidence at 1.0', () => {
+    const job = buildMockJob({ 
+      categories: ['early-career', 'tech'],
+      location: 'London, UK'
+    });
+    const user = buildMockUser({ 
+      target_cities: ['London'],
+      career_path: ['tech']
+    });
+    
+    const confidence = calculateConfidenceScore(job, user);
+    
+    expect(confidence).toBeLessThanOrEqual(1.0);
+  });
+
+  it('should handle missing location', () => {
+    const job = buildMockJob({ 
+      categories: ['early-career']
+    });
+    const user = buildMockUser({ target_cities: ['London'] });
+    
+    const confidence = calculateConfidenceScore(job, user);
+    
+    expect(confidence).toBeGreaterThanOrEqual(0);
+    expect(confidence).toBeLessThanOrEqual(1.0);
+  });
+
+  it('should handle missing career path', () => {
+    const job = buildMockJob({ 
+      categories: ['early-career']
+    });
+    const user = buildMockUser({});
+    
+    const confidence = calculateConfidenceScore(job, user);
+    
+    expect(confidence).toBeGreaterThanOrEqual(0);
+    expect(confidence).toBeLessThanOrEqual(1.0);
+  });
+});
+
+describe('Rule-Based Matcher - generateMatchExplanation', () => {
+  const { generateMatchExplanation } = require('@/Utils/matching/rule-based-matcher.service');
+
+  it('should generate explanation for high eligibility score', () => {
+    const job = buildMockJob({ categories: ['early-career'] });
+    const scoreBreakdown = {
+      overall: 85,
+      eligibility: 100,
+      location: 50,
+      experience: 50,
+      skills: 50,
+      company: 50,
+      timing: 50
+    };
+    const user = buildMockUser({});
+    
+    const result = generateMatchExplanation(job, scoreBreakdown, user);
+    
+    expect(result.reason).toContain('early career');
+    expect(result.tags).toContain('early-career');
+  });
+
+  it('should generate explanation for high location score', () => {
+    const job = buildMockJob({ location: 'London' });
+    const scoreBreakdown = {
+      overall: 85,
+      eligibility: 50,
+      location: 90,
+      experience: 50,
+      skills: 50,
+      company: 50,
+      timing: 50
+    };
+    const user = buildMockUser({});
+    
+    const result = generateMatchExplanation(job, scoreBreakdown, user);
+    
+    expect(result.reason).toContain('location');
+    expect(result.tags).toContain('location-match');
+  });
+
+  it('should generate explanation for high experience score', () => {
+    const job = buildMockJob({});
+    const scoreBreakdown = {
+      overall: 85,
+      eligibility: 50,
+      location: 50,
+      experience: 90,
+      skills: 50,
+      company: 50,
+      timing: 50
+    };
+    const user = buildMockUser({});
+    
+    const result = generateMatchExplanation(job, scoreBreakdown, user);
+    
+    expect(result.reason).toContain('experience');
+    expect(result.tags).toContain('experience-match');
+  });
+
+  it('should generate explanation for high skills score', () => {
+    const job = buildMockJob({});
+    const scoreBreakdown = {
+      overall: 85,
+      eligibility: 50,
+      location: 50,
+      experience: 50,
+      skills: 90,
+      company: 50,
+      timing: 50
+    };
+    const user = buildMockUser({});
+    
+    const result = generateMatchExplanation(job, scoreBreakdown, user);
+    
+    expect(result.reason).toContain('skill');
+    expect(result.tags).toContain('skill-match');
+  });
+
+  it('should generate explanation for high company score', () => {
+    const job = buildMockJob({});
+    const scoreBreakdown = {
+      overall: 85,
+      eligibility: 50,
+      location: 50,
+      experience: 50,
+      skills: 50,
+      company: 90,
+      timing: 50
+    };
+    const user = buildMockUser({});
+    
+    const result = generateMatchExplanation(job, scoreBreakdown, user);
+    
+    expect(result.reason).toContain('company');
+    expect(result.tags).toContain('company-match');
+  });
+
+  it('should generate explanation for multiple high scores', () => {
+    const job = buildMockJob({});
+    const scoreBreakdown = {
+      overall: 90,
+      eligibility: 100,
+      location: 90,
+      experience: 90,
+      skills: 90,
+      company: 90,
+      timing: 50
+    };
+    const user = buildMockUser({});
+    
+    const result = generateMatchExplanation(job, scoreBreakdown, user);
+    
+    expect(result.reason).toBeDefined();
+    expect(result.tags).toBeDefined();
+    expect(result.reason.length).toBeGreaterThan(0);
+    expect(result.tags.length).toBeGreaterThan(0);
+  });
+
+  it('should handle low scores gracefully', () => {
+    const job = buildMockJob({});
+    const scoreBreakdown = {
+      overall: 30,
+      eligibility: 30,
+      location: 30,
+      experience: 30,
+      skills: 30,
+      company: 30,
+      timing: 30
+    };
+    const user = buildMockUser({});
+    
+    const result = generateMatchExplanation(job, scoreBreakdown, user);
+    
+    expect(result.reason).toBeDefined();
+    expect(result.tags).toBeDefined();
+  });
+});
+
+describe('Rule-Based Matcher - categorizeMatches', () => {
+  const { categorizeMatches } = require('@/Utils/matching/rule-based-matcher.service');
+
+  it('should categorize matches as confident when score >= 80 and confidence >= 0.7', () => {
+    const matches = [
+      { match_score: 85, confidence_score: 0.8, job: {}, match_reason: 'Good match' }
+    ];
+
+    const result = categorizeMatches(matches as any);
+
+    expect(result.confident).toHaveLength(1);
+    expect(result.promising).toHaveLength(0);
+  });
+
+  it('should categorize matches as promising when score >= 60 but confidence < 0.7', () => {
+    const matches = [
+      { match_score: 70, confidence_score: 0.5, job: {}, match_reason: 'Decent match' }
+    ];
+
+    const result = categorizeMatches(matches as any);
+
+    expect(result.confident).toHaveLength(0);
+    expect(result.promising).toHaveLength(1);
+  });
+
+  it('should exclude matches below 60 score', () => {
+    const matches = [
+      { match_score: 55, confidence_score: 0.8, job: {}, match_reason: 'Low match' }
+    ];
+
+    const result = categorizeMatches(matches as any);
+
+    expect(result.confident).toHaveLength(0);
+    expect(result.promising).toHaveLength(0);
+  });
+
+  it('should handle empty array', () => {
+    const result = categorizeMatches([]);
+
+    expect(result.confident).toHaveLength(0);
+    expect(result.promising).toHaveLength(0);
+  });
+
+  it('should handle mixed matches', () => {
+    const matches = [
+      { match_score: 90, confidence_score: 0.9, job: {}, match_reason: 'Excellent' },
+      { match_score: 65, confidence_score: 0.5, job: {}, match_reason: 'Ok' },
+      { match_score: 45, confidence_score: 0.3, job: {}, match_reason: 'Poor' }
+    ];
+
+    const result = categorizeMatches(matches as any);
+
+    expect(result.confident).toHaveLength(1);
+    expect(result.promising).toHaveLength(1);
+  });
+});
+
+describe('Rule-Based Matcher - performRobustMatching', () => {
+  const { performRobustMatching } = require('@/Utils/matching/rule-based-matcher.service');
+
+  it('should perform matching and return sorted results', () => {
+    const jobs = [
+      buildMockJob({ id: '1', categories: ['early-career', 'tech'], location: 'London' }),
+      buildMockJob({ id: '2', categories: ['early-career', 'tech'], location: 'Berlin' })
+    ];
+    const user = buildMockUser({ target_cities: ['London', 'Berlin'] });
+
+    const results = performRobustMatching(jobs, user);
+
+    expect(results).toBeDefined();
+    expect(Array.isArray(results)).toBe(true);
+  });
+
+  it('should filter out non-eligible jobs', () => {
+    const jobs = [
+      buildMockJob({ id: '1', categories: ['senior', 'experienced'], location: 'London' }),
+      buildMockJob({ id: '2', categories: ['early-career', 'tech'], location: 'London' })
+    ];
+    const user = buildMockUser({ target_cities: ['London'] });
+
+    const results = performRobustMatching(jobs, user);
+
+    expect(results.length).toBeLessThan(2);
+  });
+
+  it('should filter out low-scoring matches', () => {
+    const jobs = [
+      buildMockJob({ id: '1', categories: ['early-career'], location: 'New York' })
+    ];
+    const user = buildMockUser({ target_cities: ['London'] });
+
+    const results = performRobustMatching(jobs, user);
+
+    expect(results.length).toBeLessThan(jobs.length);
+  });
+
+  it('should sort results by score descending', () => {
+    const jobs = [
+      buildMockJob({ id: '1', categories: ['early-career'], location: 'London' }),
+      buildMockJob({ id: '2', categories: ['early-career', 'tech'], location: 'London' })
+    ];
+    const user = buildMockUser({ target_cities: ['London'], career_path: ['tech'] });
+
+    const results = performRobustMatching(jobs, user);
+
+    if (results.length >= 2) {
+      expect(results[0].match_score).toBeGreaterThanOrEqual(results[1].match_score);
+    }
+  });
+
+  it('should include match metadata', () => {
+    const jobs = [
+      buildMockJob({ id: '1', categories: ['early-career', 'tech'], location: 'London' })
+    ];
+    const user = buildMockUser({ target_cities: ['London'] });
+
+    const results = performRobustMatching(jobs, user);
+
+    if (results.length > 0) {
+      expect(results[0]).toHaveProperty('match_score');
+      expect(results[0]).toHaveProperty('match_reason');
+      expect(results[0]).toHaveProperty('confidence_score');
+      expect(results[0]).toHaveProperty('match_quality');
+      expect(results[0]).toHaveProperty('provenance');
+    }
+  });
+
+  it('should handle empty job array', () => {
+    const results = performRobustMatching([], buildMockUser());
+
+    expect(results).toHaveLength(0);
+  });
+});
+
+

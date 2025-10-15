@@ -515,3 +515,78 @@ describe('Response Parsing', () => {
   });
 });
 
+describe('ConsolidatedMatcher - Cache Key Generation', () => {
+  const matcher = createConsolidatedMatcher();
+  
+  it('should generate consistent cache keys for same user', () => {
+    const user1 = buildMockUser({ career_path: ['tech'], target_cities: ['London'] });
+    const user2 = buildMockUser({ career_path: ['tech'], target_cities: ['London'] });
+    
+    const key1 = matcher.generateCacheKey(user1, 5);
+    const key2 = matcher.generateCacheKey(user2, 5);
+    
+    expect(key1).toBe(key2);
+    expect(key1).toBeTruthy();
+  });
+  
+  it('should generate non-empty cache keys', () => {
+    const user = buildMockUser({ career_path: ['data-science'], target_cities: ['London'] });
+    
+    const key = matcher.generateCacheKey(user, 5);
+    
+    expect(key).toBeTruthy();
+    expect(key.length).toBeGreaterThan(0);
+  });
+  
+  it('should generate string cache keys', () => {
+    const user = buildMockUser({ career_path: ['tech'], target_cities: ['Berlin', 'Paris'] });
+    
+    const key = matcher.generateCacheKey(user, 5);
+    
+    expect(typeof key).toBe('string');
+    expect(key.length).toBeGreaterThan(0);
+  });
+  
+  it('should generate valid cache keys for minimal user', () => {
+    const user = buildMockUser({ experience_level: 'entry' });
+    
+    const key = matcher.generateCacheKey(user, 5);
+    
+    expect(key).toBeTruthy();
+    expect(typeof key).toBe('string');
+  });
+  
+  it('should generate cache keys for different job counts', () => {
+    const user = buildMockUser({});
+    
+    const key1 = matcher.generateCacheKey(user, 5);
+    const key2 = matcher.generateCacheKey(user, 10);
+    
+    expect(key1).toBeTruthy();
+    expect(key2).toBeTruthy();
+    // Keys may or may not be different based on implementation
+  });
+
+  it('should generate cache keys for different career paths', () => {
+    const user1 = buildMockUser({ career_path: ['tech'] });
+    const user2 = buildMockUser({ career_path: ['data-science'] });
+    
+    const key1 = matcher.generateCacheKey(user1, 5);
+    const key2 = matcher.generateCacheKey(user2, 5);
+    
+    expect(key1).toBeTruthy();
+    expect(key2).toBeTruthy();
+  });
+
+  it('should generate cache keys for different cities', () => {
+    const user1 = buildMockUser({ target_cities: ['London'] });
+    const user2 = buildMockUser({ target_cities: ['Berlin'] });
+    
+    const key1 = matcher.generateCacheKey(user1, 5);
+    const key2 = matcher.generateCacheKey(user2, 5);
+    
+    expect(key1).toBeTruthy();
+    expect(key2).toBeTruthy();
+  });
+});
+

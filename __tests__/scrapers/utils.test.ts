@@ -388,3 +388,273 @@ describe('Scraper Utils - inferRole', () => {
   });
 });
 
+describe('Scraper Utils - parseLocation edge cases', () => {
+  it('should handle city-only input (known EU city)', () => {
+    const result = parseLocation('London');
+    expect(result.city).toBe('london');
+    expect(result.isEU).toBe(true);
+  });
+
+  it('should normalize whitespace', () => {
+    const result = parseLocation('  Berlin  ,  Germany  ');
+    expect(result.isEU).toBe(true);
+  });
+
+  it('should handle partial country names', () => {
+    expect(parseLocation('Madrid, Spain').isEU).toBe(true);
+    expect(parseLocation('Warsaw, Poland').isEU).toBe(true);
+  });
+
+  it('should NOT mark remote-only as EU', () => {
+    const result = parseLocation('Remote - Worldwide');
+    expect(result.isRemote).toBe(true);
+    expect(result.isEU).toBe(false);
+  });
+
+  it('should handle Nordic countries correctly', () => {
+    expect(parseLocation('Copenhagen, Denmark').isEU).toBe(true);
+    expect(parseLocation('Stockholm, Sweden').isEU).toBe(true);
+    expect(parseLocation('Helsinki, Finland').isEU).toBe(true);
+  });
+
+  it('should detect common EU city abbreviations', () => {
+    const result = parseLocation('LDN, GB');
+    // GB is detected as UK
+    expect(result.isEU).toBe(true);
+  });
+});
+
+describe('Scraper Utils - classifyEarlyCareer edge cases', () => {
+  it('should accept assistant roles', () => {
+    expect(classifyEarlyCareer({ 
+      title: 'Assistant Analyst', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe(true);
+  });
+
+  it('should detect fellowship programs', () => {
+    expect(classifyEarlyCareer({ 
+      title: 'Research Fellowship', 
+      description: 'For early career researchers', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe(true);
+  });
+
+  it('should detect apprenticeships', () => {
+    expect(classifyEarlyCareer({ 
+      title: 'Data Apprenticeship', 
+      description: 'Learn while you work', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe(true);
+  });
+
+  it('should reject VP/Chief/Executive roles', () => {
+    expect(classifyEarlyCareer({ 
+      title: 'VP of Engineering', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe(false);
+    
+    expect(classifyEarlyCareer({ 
+      title: 'Chief Technology Officer', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe(false);
+  });
+
+  it('should reject architect roles', () => {
+    expect(classifyEarlyCareer({ 
+      title: 'Solutions Architect', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe(false);
+  });
+
+  it('should handle mixed signals - graduate program requiring experience', () => {
+    expect(classifyEarlyCareer({ 
+      title: 'Graduate Program', 
+      description: 'Minimum 5 years experience', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe(false);
+  });
+
+  it('should accept trainee with reasonable experience', () => {
+    expect(classifyEarlyCareer({ 
+      title: 'Trainee Developer', 
+      description: '0-2 years experience', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe(true);
+  });
+});
+
+describe('Scraper Utils - inferRole comprehensive', () => {
+  it('should identify sales roles', () => {
+    expect(inferRole({ 
+      title: 'Sales Representative', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe('sales');
+  });
+
+  it('should identify finance roles', () => {
+    expect(inferRole({ 
+      title: 'Finance Analyst', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe('finance');
+  });
+
+  it('should identify HR roles', () => {
+    expect(inferRole({ 
+      title: 'Human Resources Coordinator', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe('hr');
+  });
+
+  it('should identify operations roles', () => {
+    expect(inferRole({ 
+      title: 'Operations Manager', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe('operations');
+  });
+
+  it('should identify design roles', () => {
+    expect(inferRole({ 
+      title: 'UX Designer', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe('design');
+  });
+
+  it('should identify DevOps roles', () => {
+    expect(inferRole({ 
+      title: 'DevOps Engineer', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe('devops');
+  });
+
+  it('should identify mobile development', () => {
+    expect(inferRole({ 
+      title: 'Mobile Developer iOS', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe('mobile-development');
+  });
+
+  it('should identify QA roles', () => {
+    expect(inferRole({ 
+      title: 'Quality Assurance Engineer', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe('quality-assurance');
+    
+    expect(inferRole({ 
+      title: 'Test Automation Engineer', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe('quality-assurance');
+  });
+
+  it('should identify business analytics', () => {
+    expect(inferRole({ 
+      title: 'Business Intelligence Analyst', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe('business-analytics');
+  });
+
+  it('should prioritize specific roles over general', () => {
+    // Should match 'software engineering' before 'data science'
+    expect(inferRole({ 
+      title: 'Software Engineer in Data Team', 
+      description: '', 
+      url: '', company: '', location: '', source: '' 
+    })).toBe('software-engineering');
+  });
+});
+
+describe('Scraper Utils - makeJobHash edge cases', () => {
+  it('should normalize multiple spaces', () => {
+    const job1 = { title: 'Software   Engineer', company: 'Corp', location: 'London', description: '', url: '', source: '' };
+    const job2 = { title: 'Software Engineer', company: 'Corp', location: 'London', description: '', url: '', source: '' };
+    
+    expect(makeJobHash(job1)).toBe(makeJobHash(job2));
+  });
+
+  it('should trim leading/trailing spaces', () => {
+    const job1 = { title: '  Engineer  ', company: '  Corp  ', location: '  London  ', description: '', url: '', source: '' };
+    const job2 = { title: 'Engineer', company: 'Corp', location: 'London', description: '', url: '', source: '' };
+    
+    expect(makeJobHash(job1)).toBe(makeJobHash(job2));
+  });
+
+  it('should generate alphanumeric hash', () => {
+    const job = { title: 'Engineer', company: 'Corp', location: 'London', description: '', url: '', source: '' };
+    const hash = makeJobHash(job);
+    
+    expect(hash).toMatch(/^[a-z0-9]+$/);
+  });
+
+  it('should generate non-empty hash', () => {
+    const job = { title: 'A', company: 'B', location: 'C', description: '', url: '', source: '' };
+    const hash = makeJobHash(job);
+    
+    expect(hash.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Scraper Utils - validateJob edge cases', () => {
+  it('should reject whitespace-only fields', () => {
+    const job = {
+      title: '   ',
+      company: '   ',
+      location: '   ',
+      description: '   ',
+      url: '   ',
+      source: '   '
+    };
+    
+    const result = validateJob(job);
+    
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+  });
+
+  it('should validate partial job (missing some fields)', () => {
+    const job = {
+      title: 'Engineer',
+      company: 'Corp',
+      location: '',
+      description: '',
+      url: '',
+      source: ''
+    };
+    
+    const result = validateJob(job);
+    
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Location is required');
+  });
+
+  it('should report multiple missing fields', () => {
+    const job = {
+      title: 'Engineer',
+      company: '',
+      location: '',
+      description: 'desc',
+      url: '',
+      source: 'test'
+    };
+    
+    const result = validateJob(job);
+    
+    expect(result.errors).toContain('Company is required');
+    expect(result.errors).toContain('Location is required');
+    expect(result.errors).toContain('URL is required');
+  });
+});
+
