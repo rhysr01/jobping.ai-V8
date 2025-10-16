@@ -61,7 +61,7 @@ const createFooter = () => `
 
 // Job Card (light, high contrast, readable)
 const createJobCard = (card: EmailJobCard, userEmail: string) => {
-  const matchScore = Math.round((card.matchResult?.match_score || 85) * 100);
+  const matchScore = Math.round(card.matchResult?.match_score || 85);
   const isHotMatch = matchScore >= 90;
   
   const borderColor = isHotMatch ? COLORS.primary : COLORS.gray300;
