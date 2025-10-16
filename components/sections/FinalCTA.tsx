@@ -61,9 +61,9 @@ export default function FinalCTA() {
   return (
     <section className="section-pad">
       <div className="container-page">
-        <div className="text-center mb-8 sm:mb-12 px-4">
+        <div className="text-center mb-10 sm:mb-14 px-4">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">Personalised for you in your inbox weekly</h2>
-          <p className="mt-3 sm:mt-4 text-base sm:text-lg text-zinc-300">Here's exactly what you'll receive:</p>
+          <p className="mt-4 sm:mt-5 text-base sm:text-lg text-zinc-300">Here's exactly what you'll receive:</p>
         </div>
 
         {/* Real email preview with actual jobs */}

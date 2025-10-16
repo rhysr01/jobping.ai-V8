@@ -2,7 +2,7 @@
 // Cached for 24 hours to reduce DB load
 
 import { NextResponse } from 'next/server';
-import { getDatabaseClient } from '@/Utils/supabase';
+import { getSupabaseClient } from '@/Utils/supabase';
 
 // Cache featured jobs for 24 hours
 let cachedJobs: any[] = [];
@@ -25,7 +25,7 @@ export async function GET() {
     }
 
     // Fetch fresh jobs from database
-    const supabase = getDatabaseClient();
+    const supabase = getSupabaseClient();
     
     // Get 2 high-quality early-career finance jobs in London/Zurich
     const { data: jobs, error } = await supabase

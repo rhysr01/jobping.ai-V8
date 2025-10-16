@@ -20,11 +20,11 @@ export default function HowItWorks() {
           Stop searching. Start applying.
         </motion.h2>
 
-        <div className="mt-8 sm:mt-12 grid gap-8 sm:gap-10 md:gap-12 md:grid-cols-3 text-center">
+        <div className="mt-10 sm:mt-14 grid gap-10 sm:gap-12 md:gap-14 md:grid-cols-3 text-center">
           {items.filter(x => x && x.title).map((x, index) => (
             <motion.div 
               key={x.num} 
-              className="relative px-4"
+              className="relative px-4 py-2"
               initial={{ opacity: 0, y: 30, scale: 0.9 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ 

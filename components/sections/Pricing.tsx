@@ -11,9 +11,9 @@ export default function Pricing() {
           </div>
         </div>
 
-        <div className="mt-8 sm:mt-10 grid gap-6 sm:gap-8 md:grid-cols-2 px-4 items-center">
+        <div className="mt-10 sm:mt-12 grid gap-8 sm:gap-10 md:grid-cols-2 px-4 items-center">
           {/* Free */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 sm:p-8 opacity-90 hover:opacity-100 transition-opacity">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-7 sm:p-9 opacity-90 hover:opacity-100 transition-opacity">
             <h3 className="text-xl sm:text-2xl font-bold">Free</h3>
             <p className="mt-2 text-zinc-400 text-xs sm:text-sm">Perfect for starting your job search</p>
             <div className="mt-3 sm:mt-4 mb-4 sm:mb-6">
@@ -23,7 +23,7 @@ export default function Pricing() {
             <ul className="mt-3 sm:mt-4 space-y-2 sm:space-y-3 p-muted text-sm sm:text-base">
               <li className="flex items-start gap-2 sm:gap-3">
                 <span className="text-green-500 mt-0.5">✓</span>
-                <span><strong className="text-white">5 roles on signup</strong> + 5 every week</span>
+                <span><strong className="text-white">10 roles on signup</strong> + 5 every week</span>
               </li>
               <li className="flex items-start gap-2 sm:gap-3">
                 <span className="text-green-500 mt-0.5">✓</span>
@@ -75,7 +75,7 @@ export default function Pricing() {
             <ul className="space-y-3 sm:space-y-4 p-muted text-sm sm:text-base">
               <li className="flex items-start gap-3 sm:gap-4">
                 <span className="text-brand-400 mt-0.5 text-xl">✓</span>
-                <span><strong className="text-white text-base sm:text-lg">10 roles on signup</strong> + 15 per week</span>
+                <span><strong className="text-white text-base sm:text-lg">10 roles on signup</strong> + 15 per week (50% more!)</span>
               </li>
               <li className="flex items-start gap-3 sm:gap-4">
                 <span className="text-brand-400 mt-0.5 text-xl">✓</span>

@@ -1,7 +1,21 @@
 "use client";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 export default function Hero() {
+  const [activeJobs, setActiveJobs] = useState("12,748");
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(res => res.json())
+      .then(data => {
+        if (data.activeJobsFormatted) {
+          setActiveJobs(data.activeJobsFormatted);
+        }
+      })
+      .catch(err => console.error('Failed to fetch stats:', err));
+  }, []);
+
   return (
     <section className="relative isolate text-center py-16 sm:py-24 md:py-32 lg:py-40 overflow-hidden">
       <div className="container-page">
@@ -43,13 +57,13 @@ export default function Hero() {
           </div>
         </motion.div>
         
-        <h1 className="mt-4 sm:mt-6 text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] max-w-[20ch] mx-auto px-2">
+        <h1 className="mt-6 sm:mt-8 text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] max-w-[20ch] mx-auto px-2">
           Graduate jobs in your inbox. Just apply.
         </h1>
-        <p className="mt-4 sm:mt-6 text-lg sm:text-xl md:text-2xl text-zinc-300 max-w-[62ch] mx-auto leading-relaxed px-4">
+        <p className="mt-6 sm:mt-8 text-lg sm:text-xl md:text-2xl text-zinc-300 max-w-[62ch] mx-auto leading-relaxed px-4">
           Internships, grad programmes, and early career opportunities sent to you.
         </p>
-        <p className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-zinc-400 max-w-[58ch] mx-auto px-4">
+        <p className="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg text-zinc-400 max-w-[58ch] mx-auto px-4">
           Stop searching. Start applying.
         </p>
         
@@ -62,7 +76,7 @@ export default function Hero() {
         >
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-500 text-white text-xs sm:text-sm font-bold px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-lg">
             <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-            Sign up today → Get your first 5 roles within 48 hours
+            {activeJobs} active early-career roles • Updated daily
           </div>
         </motion.div>
         
@@ -77,9 +91,9 @@ export default function Hero() {
             href="https://tally.so/r/mJEqx4"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold text-white bg-gradient-to-r from-brand-500 to-purple-600 rounded-xl hover:scale-105 active:scale-95 transition-transform duration-200 shadow-lg hover:shadow-2xl hover:shadow-brand-500/30 touch-manipulation"
+            className="inline-block px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl font-bold text-white bg-gradient-to-r from-brand-500 to-purple-600 rounded-xl hover:scale-105 active:scale-95 transition-transform duration-200 shadow-lg hover:shadow-2xl hover:shadow-brand-500/30 touch-manipulation"
           >
-            Get Started — It's Free
+            Get My 10 Roles in 48 Hours
           </a>
           <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-zinc-500">
             No logins • No spam • Unsubscribe anytime
