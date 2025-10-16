@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/Utils/supabase';
 import { createConsolidatedMatcher } from '@/Utils/consolidatedMatching';
+import { sendWelcomeEmail, sendMatchedJobsEmail } from '@/Utils/email/sender';
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,7 +49,8 @@ export async function POST(req: NextRequest) {
 
     console.log(`✅ User created: ${data.email}`);
 
-    // Trigger instant matching
+    // Trigger instant matching and email
+    let matchesCount = 0;
     try {
       const matcher = createConsolidatedMatcher(process.env.OPENAI_API_KEY);
       
@@ -102,18 +104,61 @@ export async function POST(req: NextRequest) {
             onConflict: 'user_email,job_hash',
           });
 
-          console.log(`✅ Saved ${matchEntries.length} matches for ${data.email}`);
+          matchesCount = matchEntries.length;
+          console.log(`✅ Saved ${matchesCount} matches for ${data.email}`);
+
+          // Send welcome email with matched jobs
+          try {
+            const matchedJobs = matchesToSave.map(m => {
+              const job = jobs.find(j => j.job_hash === m.job_hash);
+              return {
+                ...job,
+                match_score: m.match_score,
+                match_reason: m.match_reason,
+              };
+            }).filter(j => j);
+
+            await sendMatchedJobsEmail({
+              to: userData.email,
+              jobs: matchedJobs,
+              userName: userData.full_name,
+              subscriptionTier: 'free',
+              isSignupEmail: true,
+              subjectOverride: `🎉 Welcome to JobPing - Your First ${matchesCount} Matches!`,
+            });
+
+            console.log(`✅ Welcome email sent to ${data.email}`);
+          } catch (emailError) {
+            console.error('Email send failed (non-fatal):', emailError);
+          }
+        } else {
+          // No matches found, send welcome email anyway
+          await sendWelcomeEmail({
+            to: userData.email,
+            userName: userData.full_name,
+            matchCount: 0,
+          });
+          console.log(`✅ Welcome email (no matches) sent to ${data.email}`);
         }
       }
     } catch (matchError) {
       console.error('Matching failed (non-fatal):', matchError);
-      // Don't fail signup if matching fails
+      // Send welcome email even if matching fails
+      try {
+        await sendWelcomeEmail({
+          to: userData.email,
+          userName: userData.full_name,
+          matchCount: 0,
+        });
+      } catch (emailError) {
+        console.error('Welcome email failed:', emailError);
+      }
     }
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Signup successful! Check your email in 48 hours.',
-      matchesCount: 10
+      message: 'Signup successful! Check your email for your first matches.',
+      matchesCount
     });
 
   } catch (error) {
