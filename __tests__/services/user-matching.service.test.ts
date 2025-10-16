@@ -131,28 +131,28 @@ describe('UserMatchingService', () => {
       const matches = [
         { user_email: 'user@test.com', job_hash: 'job1', match_score: 90, match_reason: 'Great' }
       ];
-      mockSupabase.insert.mockResolvedValue({ error: null });
+      mockSupabase.upsert.mockResolvedValue({ error: null });
 
       await service.saveMatches(matches, { match_algorithm: 'ai' });
 
-      expect(mockSupabase.insert).toHaveBeenCalled();
+      expect(mockSupabase.upsert).toHaveBeenCalled();
     });
 
     it('should handle empty matches', async () => {
       await service.saveMatches([], { match_algorithm: 'ai' });
 
-      expect(mockSupabase.insert).not.toHaveBeenCalled();
+      expect(mockSupabase.upsert).not.toHaveBeenCalled();
     });
 
     it('should convert score to 0-1 scale', async () => {
       const matches = [
         { user_email: 'user@test.com', job_hash: 'job1', match_score: 80, match_reason: 'Good' }
       ];
-      mockSupabase.insert.mockResolvedValue({ error: null });
+      mockSupabase.upsert.mockResolvedValue({ error: null });
 
       await service.saveMatches(matches, { match_algorithm: 'ai' });
 
-      const callArg = mockSupabase.insert.mock.calls[0][0][0];
+      const callArg = mockSupabase.upsert.mock.calls[0][0][0];
       expect(callArg.match_score).toBe(0.8);
     });
   });
