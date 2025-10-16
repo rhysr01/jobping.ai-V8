@@ -7,7 +7,7 @@ export default function Pricing() {
         <div className="mt-4 sm:mt-6 text-center">
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-500 text-white text-xs sm:text-sm font-bold px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-lg">
             <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-            Sign up today → Get your first 5 roles within 48 hours
+            Sign up today → 10 roles in 48 hours for free
           </div>
         </div>
 
