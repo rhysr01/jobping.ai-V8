@@ -183,7 +183,7 @@ const createJobCard = (card: EmailJobCard, userEmail: string) => {
 };
 
 // Welcome Email
-export function createWelcomeEmailOptimized(userName?: string, matchCount: number = 5): string {
+export function createWelcomeEmailOptimized(userName?: string, matchCount: number = 10): string {
   const greeting = userName ? `, ${userName}` : '';
   
   return `
@@ -217,24 +217,41 @@ export function createWelcomeEmailOptimized(userName?: string, matchCount: numbe
                       Welcome${greeting}!
                     </div>
                     <div style="font-size: 18px; color: ${COLORS.gray700}; margin-bottom: 24px; font-weight: 500; line-height: 1.6;">
-                      Your AI career assistant is now active
+                      Your AI career assistant is finding your perfect matches
                     </div>
                     
                     <div style="background: linear-gradient(135deg, ${COLORS.green} 0%, #059669 100%); color: ${COLORS.white}; padding: 20px 36px; border-radius: 50px; font-weight: 700; margin: 32px auto; font-size: 20px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
-                      ${matchCount} Perfect Matches Found
+                      Your First ${matchCount} Roles Arriving in 48 Hours
                     </div>
                     
                     <div style="font-size: 18px; color: ${COLORS.gray700}; margin: 24px 0; font-weight: 500; line-height: 1.7;">
-                      We found roles that match your profile—no spam, just quality opportunities.
+                      You'll automatically receive your first ${matchCount} hand-picked roles within 48 hours—no spam, just quality opportunities matched to your profile.
+                    </div>
+                    
+                    <!-- Spam Warning -->
+                    <div style="margin: 24px 0; padding: 20px; background-color: #FEF3C7; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                      <div style="color: #92400E; font-size: 16px; font-weight: 700; margin-bottom: 8px;">
+                        ⚠️ Check Your Spam Folder
+                      </div>
+                      <div style="color: #78350F; font-size: 15px; line-height: 1.7;">
+                        Our emails sometimes land in spam/junk. Check there if you don't see them in your inbox!
+                      </div>
                     </div>
                     
                     <div style="margin-top: 32px; padding: 24px; background-color: ${COLORS.gray50}; border-radius: 8px; border-left: 4px solid ${COLORS.primary};">
-                      <div style="color: ${COLORS.gray800}; font-size: 16px; font-weight: 600; margin-bottom: 8px;">
+                      <div style="color: ${COLORS.gray800}; font-size: 16px; font-weight: 600; margin-bottom: 16px;">
                         What happens next?
                       </div>
-                      <div style="color: ${COLORS.gray700}; font-size: 15px; line-height: 1.7;">
-                        Fresh matches delivered weekly, personalized to your preferences
+                      <div style="color: ${COLORS.gray700}; font-size: 15px; line-height: 1.7; margin-bottom: 12px;">
+                        <strong>Free Plan:</strong> Your first 10 roles + 5 new roles every week
                       </div>
+                      <div style="color: ${COLORS.gray700}; font-size: 15px; line-height: 1.7;">
+                        <strong>Premium:</strong> Your first 10 roles + 15 roles per week (Mon/Wed/Fri)
+                      </div>
+                    </div>
+                    
+                    <div style="margin-top: 24px; font-size: 15px; color: ${COLORS.gray700}; line-height: 1.7;">
+                      Sit back and relax. We'll send your matches automatically—no action needed!
                     </div>
                   </td>
                 </tr>
