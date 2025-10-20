@@ -64,7 +64,6 @@ export interface User {
   entry_level_preference: string;       // text Non-nullable
   career_path: string;                  // text Non-nullable
   cv_url: string;                       // text Non-nullable
-  linkedin_url: string;                 // text Non-nullable
   languages_spoken: string[];           // text[] Non-nullable - Array of languages
   company_types: string[];              // text[] Non-nullable - Array of company types
   roles_selected: string[];             // text[] Non-nullable - Array of selected roles

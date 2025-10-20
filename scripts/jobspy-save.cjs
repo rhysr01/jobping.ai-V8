@@ -219,11 +219,10 @@ async function main() {
 from jobspy import scrape_jobs
 import pandas as pd
 df = scrape_jobs(
-  site_name=['linkedin', 'indeed', 'glassdoor'],
+  site_name=['indeed', 'glassdoor'],
   search_term='''${term.replace(/'/g, "''")}''',
   location='''${city}''',
   country_indeed='''${country}''',
-  linkedin_fetch_description=True,
   results_wanted=${RESULTS_WANTED},
   hours_old=720,
   distance=20

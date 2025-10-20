@@ -266,7 +266,7 @@ class RealJobRunner {
 
 
   // Removed deprecated scrapers: JSearch, Jooble, Ashby, Muse
-  // Current active scrapers: JobSpy (LinkedIn/Indeed/Glassdoor), Adzuna, Reed
+  // Current active scrapers: JobSpy (Indeed/Glassdoor), Adzuna, Reed
 
   // Run SERP API scraper
   async runSerpAPIScraper() {

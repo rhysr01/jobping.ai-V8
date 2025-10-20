@@ -67,7 +67,7 @@ async function main() {
     const py = spawnSync(pythonCmd, ['-c', `
 from jobspy import scrape_jobs
 df = scrape_jobs(
-  site_name=['linkedin', 'indeed'],
+  site_name=['indeed', 'glassdoor'],
   search_term='${search.term}',
   location='${search.city}',
   country_indeed='${search.country}',
