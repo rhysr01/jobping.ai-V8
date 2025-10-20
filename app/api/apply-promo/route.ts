@@ -46,9 +46,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     });
   }
 
-  // NEW USER: Store promo in session/temp table, redirect to Tally
-  // Store the promo code validation in a temporary table or session
-  // so Tally webhook can apply it after profile creation
+  // NEW USER: Store promo in temp table, redirect to signup form
   const { error: tempError } = await supabase
     .from('promo_pending')
     .upsert({
@@ -65,14 +63,14 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     // Don't fail - just log and continue
   }
 
-  // Return redirect URL to Tally form
-  const tallyFormUrl = 'https://tally.so/r/mJEqx4';
+  // Return redirect URL to signup form
+  const signupUrl = '/signup';
   
   return NextResponse.json({ 
     success: true,
     existingUser: false,
     message: '✅ Promo code valid! Please complete your profile to activate premium.',
-    redirectUrl: `${tallyFormUrl}?email=${encodeURIComponent(email)}&promo=rhys&tier=premium`
+    redirectUrl: `${signupUrl}?email=${encodeURIComponent(email)}&promo=rhys`
   });
 });
 

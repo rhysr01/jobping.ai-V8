@@ -94,7 +94,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
         continue;
       }
 
-      // Phase 1: Welcome email (immediate) - handled by webhook-tally
+      // Phase 1: Welcome email (immediate) - handled by signup form
       // Skip if user hasn't received their welcome email yet
       if (emailPhase === 'welcome' && !lastEmailTime) {
         continue;

@@ -103,31 +103,6 @@ export interface MatchLog {
   timestamp: string;                    // timestamp Non-nullable
 }
 
-// Tally form field mapping (based on your form)
-export interface TallyFormData {
-  // Basic Info
-  full_name: string;                    // "What's your full name?"
-  email: string;                        // "What's your email address?"
-  
-  // Background
-  professional_expertise: string;       // "What's your professional background/expertise?"
-  
-  // Preferences  
-  roles_selected: string;              // Multi-select role checkboxes (comma-separated)
-  work_environment: string;            // "What's your preferred work environment?"
-  career_path: string;                 // "What's your preferred career path?"
-  
-  // Location & Timing
-  start_date: string;                  // "How soon can you start?"
-  
-  // Skills & Requirements
-  languages_spoken: string;            // "What languages do you speak?" (comma-separated)
-  visa_status: string;                 // "What's your visa/work authorization status?"
-  entry_level_preference: string;      // "What level of experience are you looking for?"
-  company_types: string;               // "What types of companies interest you?" (comma-separated)
-  target_cities?: string;              // "What cities are you targeting?" (comma-separated)
-}
-
 // Standardized scraper result interface
 export interface ScraperResult {
   jobs: Job[];
@@ -166,111 +141,6 @@ export interface FocusedCompany {
   };
 }
 
-// Tally webhook payload structure
-export interface TallyWebhookPayload {
-  eventId: string;
-  eventType: string;
-  createdAt: string;
-  data: {
-    responseId: string;
-    submissionId: string;
-    respondentId: string;
-    formId: string;
-    formName: string;
-    createdAt: string;
-    fields: Array<{
-      key: string;
-      label: string;
-      type: string;
-      value: string | string[];
-    }>;
-  };
-}
-
-// Function to map Tally form data to User record
-export function mapTallyDataToUser(tallyData: TallyFormData): User {
-  return {
-    email: tallyData.email,
-    full_name: tallyData.full_name,
-    professional_expertise: tallyData.professional_expertise,
-    start_date: tallyData.start_date,
-    work_environment: tallyData.work_environment,
-    visa_status: tallyData.visa_status,
-    entry_level_preference: tallyData.entry_level_preference,
-    career_path: tallyData.career_path,
-    cv_url: '', // Default empty - will be updated later
-    linkedin_url: '', // Default empty - will be updated later
-    languages_spoken: tallyData.languages_spoken.split(',').map(lang => lang.trim()),
-    company_types: tallyData.company_types.split(',').map(type => type.trim()),
-    roles_selected: tallyData.roles_selected.split(',').map(role => role.trim()),
-    target_cities: tallyData.target_cities?.split(',').map(city => city.trim()) || [],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-}
-
-// Function to extract Tally form data from webhook payload
-export function extractTallyFormData(payload: TallyWebhookPayload): TallyFormData {
-  const userData: Partial<TallyFormData> = {};
-  
-  payload.data.fields.forEach(field => {
-    const value = Array.isArray(field.value) ? field.value.join(', ') : field.value;
-    
-    // Map Tally field keys to our data structure
-    switch (field.key.toLowerCase()) {
-      case 'full_name':
-      case 'name':
-        userData.full_name = value;
-        break;
-      case 'email':
-      case 'email_address':
-        userData.email = value;
-        break;
-      case 'professional_expertise':
-      case 'background':
-      case 'expertise':
-        userData.professional_expertise = value;
-        break;
-      case 'roles_selected':
-      case 'target_roles':
-      case 'preferred_roles':
-        userData.roles_selected = value;
-        break;
-      case 'work_environment':
-      case 'work_preference':
-        userData.work_environment = value;
-        break;
-      case 'career_path':
-        userData.career_path = value;
-        break;
-      case 'start_date':
-      case 'availability':
-        userData.start_date = value;
-        break;
-      case 'languages_spoken':
-      case 'languages':
-        userData.languages_spoken = value;
-        break;
-      case 'visa_status':
-        userData.visa_status = value;
-        break;
-      case 'entry_level_preference':
-      case 'experience_level':
-        userData.entry_level_preference = value;
-        break;
-      case 'company_types':
-      case 'company_preference':
-        userData.company_types = value;
-        break;
-      case 'target_cities':
-        userData.target_cities = value;
-        break;
-    }
-  });
-
-  return userData as TallyFormData;
-}
-
 // Type guards for validation
 export function isValidJob(obj: any): obj is Job {
   return (
@@ -295,7 +165,7 @@ export function isValidUser(obj: any): obj is User {
 // Career Path Taxonomy Version 1.0
 export const CAREER_TAXONOMY_VERSION = 1;
 
-// Canonical career paths - Single source of truth (match Tally exactly)
+// Canonical career paths - Single source of truth
 export const CANONICAL_CAREER_PATHS = [
   'strategy',           // Strategy & Business Design
   'data-analytics',     // Data Analytics

@@ -1,4 +1,4 @@
-// Native signup form handler - replaces Tally webhook
+// Native signup form handler
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/Utils/supabase';
