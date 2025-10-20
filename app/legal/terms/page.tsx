@@ -55,7 +55,7 @@ export default function TermsOfService() {
               <h2 className="text-xl md:text-2xl font-semibold text-white mt-8 mb-4 tracking-tight">5. Privacy</h2>
               <p className="text-zinc-300 mb-6">
                 Your privacy is important to us. Please review our{' '}
-                <a href="/legal/privacy-policy" className="text-white hover:text-zinc-300 underline decoration-white/20 underline-offset-4 hover:decoration-white/40 transition-colors">
+                <a href="/legal/privacy" className="text-white hover:text-zinc-300 underline decoration-white/20 underline-offset-4 hover:decoration-white/40 transition-colors">
                   Privacy Policy
                 </a>{' '}
                 to understand our practices.
