@@ -4,7 +4,7 @@
 import { sendMatchedJobsEmail as optimizedSendMatched, sendWelcomeEmail as optimizedSendWelcome } from './optimizedSender';
 
 // Optimized welcome email sender
-export async function sendWelcomeEmail(args: { to: string; userName?: string; matchCount: number; }) {
+export async function sendWelcomeEmail(args: { to: string; userName?: string; matchCount: number; tier?: 'free' | 'premium'; }) {
   return optimizedSendWelcome(args);
 }
 

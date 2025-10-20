@@ -29,16 +29,28 @@ export function htmlToText(html: string): string {
   return text;
 }
 
-export function createWelcomeEmailText(userName?: string, matchCount: number = 5): string {
-  return `JobPing - AI-Powered Job Matching for EU Tech
+export function createWelcomeEmailText(userName?: string, matchCount: number = 10, tier: 'free' | 'premium' = 'free'): string {
+  const weeklyInfo = tier === 'premium'
+    ? 'Premium Plan: Your first 10 roles + 15 roles per week (Mon/Wed/Fri) + 24-hour early access'
+    : 'Free Plan: Your first 10 roles + 5 new roles every week';
+    
+  return `JobPing - AI-Powered Job Matching for Europe
 
-Welcome${userName ? `, ${userName}` : ''}! 🎉
+Welcome${userName ? `, ${userName}` : ''}!
 
-Your AI career assistant is now active and ready to find opportunities.
+Your AI career assistant is finding your perfect matches.
 
-🚀 ${matchCount} AI-curated job matches found!
+✅ Your First ${matchCount} Roles Arriving in 48 Hours
 
-We'll send personalized recommendations every 48 hours.
+You'll automatically receive your first ${matchCount} hand-picked roles within 48 hours—no spam, just quality opportunities matched to your profile.
+
+⚠️ CHECK YOUR SPAM FOLDER
+Our emails sometimes land in spam/junk. Check there if you don't see them in your inbox!
+
+What happens next?
+${weeklyInfo}
+
+Sit back and relax. We'll send your matches automatically—no action needed!
 
 View Your Matches: https://www.getjobping.com/dashboard
 

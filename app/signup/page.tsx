@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tierParam = searchParams?.get('tier') as 'free' | 'premium' | null;
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeJobs, setActiveJobs] = useState('9,769');
+  const [tier] = useState<'free' | 'premium'>(tierParam === 'premium' ? 'premium' : 'free');
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -154,7 +157,7 @@ export default function SignupPage() {
       const response = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, tier }),
       });
 
       const result = await response.json();
@@ -241,6 +244,15 @@ export default function SignupPage() {
           <p className="text-zinc-300 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-4">
             Fill out once. Get 10 hand-picked roles in 48 hours. Zero spam.
           </p>
+          {tier === 'premium' && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="inline-block bg-gradient-to-r from-brand-500 to-purple-600 text-white px-6 py-2 rounded-full font-bold text-sm mb-2 shadow-[0_0_20px_rgba(99,102,241,0.6)]"
+            >
+              ✨ Premium Plan Selected - 15 roles per week
+            </motion.div>
+          )}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

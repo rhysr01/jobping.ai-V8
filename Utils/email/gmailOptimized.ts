@@ -183,8 +183,28 @@ const createJobCard = (card: EmailJobCard, userEmail: string) => {
 };
 
 // Welcome Email
-export function createWelcomeEmailOptimized(userName?: string, matchCount: number = 10): string {
+export function createWelcomeEmailOptimized(userName?: string, matchCount: number = 10, tier: 'free' | 'premium' = 'free'): string {
   const greeting = userName ? `, ${userName}` : '';
+  const isPremium = tier === 'premium';
+  
+  const weeklyInfo = isPremium
+    ? `<div style="color: ${COLORS.gray700}; font-size: 15px; line-height: 1.7;">
+        <strong style="color: ${COLORS.primary};">Premium Plan:</strong> Your first 10 roles + 15 roles per week (Mon/Wed/Fri) + 24-hour early access
+      </div>`
+    : `<div style="color: ${COLORS.gray700}; font-size: 15px; line-height: 1.7;">
+        <strong>Free Plan:</strong> Your first 10 roles + 5 new roles every week
+      </div>
+      <div style="margin-top: 16px; padding: 16px; background-color: #EEF2FF; border-radius: 8px; border: 2px solid ${COLORS.primary};">
+        <div style="color: ${COLORS.primary}; font-size: 14px; font-weight: 700; margin-bottom: 8px;">
+          Want 3× more opportunities?
+        </div>
+        <div style="color: ${COLORS.gray700}; font-size: 14px; margin-bottom: 12px;">
+          Upgrade to Premium for 70+ jobs per month vs 30 on free tier
+        </div>
+        <a href="https://getjobping.com/upgrade" style="display: inline-block; background: ${COLORS.primary}; color: ${COLORS.white}; padding: 12px 24px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 14px;">
+          Upgrade to Premium - €7/month
+        </a>
+      </div>`;
   
   return `
 <!DOCTYPE html>
@@ -242,12 +262,7 @@ export function createWelcomeEmailOptimized(userName?: string, matchCount: numbe
                       <div style="color: ${COLORS.gray800}; font-size: 16px; font-weight: 600; margin-bottom: 16px;">
                         What happens next?
                       </div>
-                      <div style="color: ${COLORS.gray700}; font-size: 15px; line-height: 1.7; margin-bottom: 12px;">
-                        <strong>Free Plan:</strong> Your first 10 roles + 5 new roles every week
-                      </div>
-                      <div style="color: ${COLORS.gray700}; font-size: 15px; line-height: 1.7;">
-                        <strong>Premium:</strong> Your first 10 roles + 15 roles per week (Mon/Wed/Fri)
-                      </div>
+                      ${weeklyInfo}
                     </div>
                     
                     <div style="margin-top: 24px; font-size: 15px; color: ${COLORS.gray700}; line-height: 1.7;">

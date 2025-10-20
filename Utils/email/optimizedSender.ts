@@ -99,10 +99,12 @@ export async function sendWelcomeEmail({
   to,
   userName,
   matchCount,
+  tier = 'free',
 }: {
   to: string;
   userName?: string;
   matchCount: number;
+  tier?: 'free' | 'premium';
 }) {
   try {
     // Check suppression list
@@ -113,13 +115,13 @@ export async function sendWelcomeEmail({
 
     const resend = getResendClient();
     
-    // Generate email with caching
-    const cacheKey = `welcome_${userName}_${matchCount}`;
-    const baseHtml = getCachedEmail(cacheKey, () => createWelcomeEmail(userName, matchCount));
+    // Generate email with caching (include tier in cache key)
+    const cacheKey = `welcome_${userName}_${matchCount}_${tier}`;
+    const baseHtml = getCachedEmail(cacheKey, () => createWelcomeEmail(userName, matchCount, tier));
     
     // Add engagement tracking to HTML
     const html = addEngagementTracking(baseHtml, to);
-    const text = createWelcomeEmailText(userName, matchCount);
+    const text = createWelcomeEmailText(userName, matchCount, tier);
     const unsubscribeHeaders = createDeliverabilityHeaders(to);
     
     console.log(`📧 Sending welcome email from: ${EMAIL_CONFIG.from} to: ${to}`);

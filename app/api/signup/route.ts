@@ -16,6 +16,9 @@ export async function POST(req: NextRequest) {
 
     const supabase = getSupabaseClient();
     
+    // Determine subscription tier from request (defaults to 'free')
+    const subscriptionTier = (data.tier === 'premium' ? 'premium' : 'free') as 'free' | 'premium';
+    
     // Create user in database
     const userData = {
       email: data.email.toLowerCase().trim(),
@@ -24,19 +27,20 @@ export async function POST(req: NextRequest) {
       languages_spoken: data.languages,
       start_date: data.startDate || null,
       professional_experience: data.experience || null,
-       professional_expertise: data.careerPath || 'entry', // For matching system
-       work_environment: data.workEnvironment.join(', ') || null,
-       visa_status: data.visaStatus || null,
-       entry_level_preference: data.entryLevelPreferences?.join(', ') || null, // Changed to array
+      professional_expertise: data.careerPath || 'entry', // For matching system
+      work_environment: data.workEnvironment.join(', ') || null,
+      visa_status: data.visaStatus || null,
+      entry_level_preference: data.entryLevelPreferences?.join(', ') || null, // Changed to array
       company_types: data.targetCompanies,
-         career_path: data.careerPath || null,
-         roles_selected: data.roles,
-         // NEW MATCHING PREFERENCES
-         remote_preference: data.workEnvironment?.includes('Remote') ? 'remote' : data.workEnvironment?.includes('Hybrid') ? 'hybrid' : 'flexible',
-         industries: data.industries || [],
-         company_size_preference: data.companySizePreference || 'any',
-         skills: data.skills || [],
-         career_keywords: data.careerKeywords || null,
+        career_path: data.careerPath || null,
+        roles_selected: data.roles,
+        // NEW MATCHING PREFERENCES
+        remote_preference: data.workEnvironment?.includes('Remote') ? 'remote' : data.workEnvironment?.includes('Hybrid') ? 'hybrid' : 'flexible',
+        industries: data.industries || [],
+        company_size_preference: data.companySizePreference || 'any',
+        skills: data.skills || [],
+        career_keywords: data.careerKeywords || null,
+      subscription_tier: subscriptionTier,
       email_verified: true, // Auto-verify for now (can add email verification later)
       subscription_active: true,
       email_phase: 'welcome', // Start in welcome phase
@@ -157,6 +161,7 @@ export async function POST(req: NextRequest) {
               to: userData.email,
               userName: userData.full_name,
               matchCount: 0,
+              tier: userData.subscription_tier as 'free' | 'premium',
             });
 
             // Update tracking even with no matches
@@ -182,6 +187,7 @@ export async function POST(req: NextRequest) {
           to: userData.email,
           userName: userData.full_name,
           matchCount: 0,
+          tier: userData.subscription_tier as 'free' | 'premium',
         });
 
         // Update tracking even if matching failed
