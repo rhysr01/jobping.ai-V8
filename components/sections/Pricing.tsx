@@ -79,7 +79,7 @@ export default function Pricing() {
               </li>
               <li className="flex items-start gap-3 sm:gap-4">
                 <span className="text-brand-400 mt-0.5 text-xl">✓</span>
-                <span><strong className="text-white text-base sm:text-lg">60+ jobs per month</strong> vs 20 on free tier</span>
+                <span><strong className="text-white text-base sm:text-lg">70+ jobs per month</strong> vs 30 on free tier</span>
               </li>
               <li className="flex items-start gap-3 sm:gap-4">
                 <span className="text-brand-400 mt-0.5 text-xl">✓</span>

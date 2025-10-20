@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 
 export default function HowItWorks() {
   const items = [
-    { num: 1, title: "Tell us what you want", body: "Your target city, work authorization, language skills, and role preferences. Two minutes, done." },
-    { num: 2, title: "We find jobs for you", body: "We monitor 1,000+ companies daily so you don't have to. Filtering, deduplicating, and matching everything to your exact criteria." },
-    { num: 3, title: "Get roles that really match you", body: "Every week, one focused email with exactly five roles that fit your profile. Read in 60 seconds." },
+    { num: 1, title: "Tell us what you want", body: "Your target cities, work authorization, language skills, and role preferences. Takes 2 minutes." },
+    { num: 2, title: "We match jobs to you daily", body: "Our AI monitors 1,000+ companies every day, filtering and matching roles to your exact criteria." },
+    { num: 3, title: "Get 10 perfect matches within 48 hours", body: "Then receive 5 hand-picked roles every week (or 15/week with Premium). Each email takes 60 seconds to read." },
   ];
 
   return (
