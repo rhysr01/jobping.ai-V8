@@ -88,6 +88,12 @@ export async function POST(req: NextRequest) {
           professional_expertise: userData.career_path || '',
           work_environment: userData.work_environment,
           visa_status: userData.visa_status,
+          // NEW MATCHING PREFERENCES
+          remote_preference: userData.remote_preference,
+          industries: userData.industries,
+          company_size_preference: userData.company_size_preference,
+          skills: userData.skills,
+          career_keywords: userData.career_keywords,
         };
 
         const matchResult = await matcher.performMatching(jobs, userPrefs as any);
