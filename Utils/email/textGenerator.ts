@@ -104,12 +104,13 @@ JOB MATCHES:
 `;
   }).join('\n');
 
+  const preferencesNote = personalization?.role || personalization?.location || personalization?.salaryRange 
+    ? `These matches are based on your preferences: ${[personalization.location, personalization.role, personalization.salaryRange, personalization.entryLevelLabel].filter(Boolean).join(', ')}\n\n` 
+    : '';
+  
   const footer = `
 
-${personalization?.role || personalization?.location || personalization?.salaryRange ? 
-  `These matches are based on your preferences: ${[personalization.location, personalization.role, personalization.salaryRange, personalization.entryLevelLabel].filter(Boolean).join(', ')}\n\n` : 
-  ''
-}---
+${preferencesNote}---
 
 You're receiving this because you signed up for JobPing.
 Fresh matches delivered automatically to your inbox weekly.
