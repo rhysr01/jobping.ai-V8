@@ -95,7 +95,7 @@ export default function PrivacyPolicy() {
               <p className="text-zinc-300 mb-2">
                 <strong className="text-white">Data Deletion:</strong>{' '}
                 <a 
-                  href="/api/user/delete-data" 
+                  href="/legal/delete-data" 
                   className="text-white hover:text-zinc-300 underline decoration-white/20 underline-offset-4 hover:decoration-white/40 transition-colors"
                 >
                   Request Data Deletion
