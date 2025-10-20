@@ -303,6 +303,7 @@ OTHER PREFERENCES:
 - Industries: ${profile.industries?.join(', ') || 'Open to all'}
 - Company Size: ${profile.company_size_preference || 'Any size'}
 - Skills: ${profile.skills?.join(', ') || 'Open to learning'}
+- Career Keywords: ${profile.career_keywords || 'Open to all opportunities'}
 
 CRITICAL MATCHING RULES:
 1. **Career Path + Role Type Match**: BOTH must align with job title/description
@@ -314,7 +315,8 @@ CRITICAL MATCHING RULES:
 5. **Industry Preference**: Prioritize jobs in user's preferred industries
 6. **Company Size**: Consider user's company size preference
 7. **Skills Match**: Prioritize jobs requiring skills user has or wants to learn
-8. **Early-Career Focus**: All jobs are entry-level appropriate (91.9% verified)
+8. **Career Keywords**: Match jobs that align with user's free-form career preferences
+9. **Early-Career Focus**: All jobs are entry-level appropriate (91.9% verified)
 `;
   }
 

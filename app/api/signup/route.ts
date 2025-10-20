@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
          industries: data.industries || [],
          company_size_preference: data.companySizePreference || 'any',
          skills: data.skills || [],
+         career_keywords: data.careerKeywords || null,
       email_verified: true, // Auto-verify for now (can add email verification later)
       subscription_active: true,
       email_phase: 'welcome', // Start in welcome phase

@@ -28,6 +28,7 @@ export default function SignupPage() {
     industries: [] as string[],
     companySizePreference: '',
     skills: [] as string[],
+    careerKeywords: '', // NEW: Free-form career keywords
   });
 
   useEffect(() => {
@@ -826,6 +827,22 @@ export default function SignupPage() {
                       </motion.button>
                     ))}
                   </div>
+                </div>
+
+                {/* Career Keywords */}
+                <div className="space-y-4">
+                  <h3 className="text-xl font-bold text-white">🎯 Career Keywords</h3>
+                  <p className="text-sm text-zinc-400">Describe what you're looking for in your own words (optional)</p>
+                  <p className="text-xs text-zinc-500">Examples: "customer-facing", "data-driven", "creative problem-solving", "client interaction", "analytical work"</p>
+                  <textarea
+                    value={formData.careerKeywords}
+                    onChange={(e) => setFormData({...formData, careerKeywords: e.target.value})}
+                    placeholder="e.g., customer-facing roles, data-driven positions, creative problem-solving, client interaction..."
+                    className="w-full px-4 py-3 rounded-xl border-2 border-zinc-700 bg-zinc-900/60 text-white placeholder-zinc-500 focus:border-brand-500 focus:outline-none transition-colors resize-none"
+                    rows={3}
+                    maxLength={200}
+                  />
+                  <p className="text-xs text-zinc-500">{formData.careerKeywords.length}/200 characters</p>
                 </div>
 
                 {/* Skills */}

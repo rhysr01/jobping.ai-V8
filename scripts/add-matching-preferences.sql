@@ -13,11 +13,15 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS company_size_preference VARCHAR(20) D
 -- Skills and technologies (array of skills)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS skills TEXT[] DEFAULT '{}';
 
+-- Career keywords (free-form text for flexible matching)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS career_keywords TEXT;
+
 -- Add indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_users_remote_preference ON users(remote_preference);
 CREATE INDEX IF NOT EXISTS idx_users_company_size ON users(company_size_preference);
 CREATE INDEX IF NOT EXISTS idx_users_industries ON users USING GIN(industries);
 CREATE INDEX IF NOT EXISTS idx_users_skills ON users USING GIN(skills);
+CREATE INDEX IF NOT EXISTS idx_users_career_keywords ON users(career_keywords);
 
 -- Update existing users with default values
 UPDATE users 
@@ -40,5 +44,5 @@ SELECT
   column_default
 FROM information_schema.columns 
 WHERE table_name = 'users' 
-  AND column_name IN ('remote_preference', 'industries', 'company_size_preference', 'skills')
+  AND column_name IN ('remote_preference', 'industries', 'company_size_preference', 'skills', 'career_keywords')
 ORDER BY column_name;
