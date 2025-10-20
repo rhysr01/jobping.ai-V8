@@ -201,7 +201,7 @@ export async function sendMatchedJobsEmail({
     // Generate email with caching
     const cacheKey = `matches_${jobs.length}_${subscriptionTier}_${isSignupEmail}`;
     const baseHtml = getCachedEmail(cacheKey, () => 
-      createJobMatchesEmailOptimized(jobCards, userName, subscriptionTier, isSignupEmail, personalization)
+      createJobMatchesEmailOptimized(jobCards, userName, subscriptionTier, isSignupEmail)
     );
     
     // Add engagement tracking to HTML
