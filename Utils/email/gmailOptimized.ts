@@ -49,7 +49,7 @@ const createFooter = () => `
         AI-powered job matching for Europe
       </div>
       <div style="margin: 16px 0;">
-        <a href="https://getjobping.com/legal/unsubscribe" style="color: ${COLORS.primary}; text-decoration: underline; font-weight: 600; font-size: 14px;">Unsubscribe</a>
+        <a href="https://www.getjobping.com/legal/unsubscribe" style="color: ${COLORS.primary}; text-decoration: underline; font-weight: 600; font-size: 14px;">Unsubscribe</a>
       </div>
       <div style="color: ${COLORS.gray700}; font-size: 12px; margin-top: 16px;">
         © 2025 JobPing. All rights reserved.
@@ -140,27 +140,27 @@ const createJobCard = (card: EmailJobCard, userEmail: string) => {
                   <table width="100%" cellpadding="8" cellspacing="0" border="0">
                     <tr>
                       <td width="20%" align="center">
-                        <a href="https://getjobping.com/api/feedback/email?action=positive&score=5&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 16px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 2px solid ${COLORS.green}; font-size: 14px; font-weight: 700; color: ${COLORS.green}; background-color: ${COLORS.white};" target="_blank">
+                        <a href="https://www.getjobping.com/api/feedback/email?action=positive&score=5&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 16px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 2px solid ${COLORS.green}; font-size: 14px; font-weight: 700; color: ${COLORS.green}; background-color: ${COLORS.white};" target="_blank">
                           PERFECT
                         </a>
                       </td>
                       <td width="20%" align="center">
-                        <a href="https://getjobping.com/api/feedback/email?action=positive&score=4&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 16px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 2px solid ${COLORS.primary}; font-size: 14px; font-weight: 700; color: ${COLORS.primary}; background-color: ${COLORS.white};" target="_blank">
+                        <a href="https://www.getjobping.com/api/feedback/email?action=positive&score=4&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 16px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 2px solid ${COLORS.primary}; font-size: 14px; font-weight: 700; color: ${COLORS.primary}; background-color: ${COLORS.white};" target="_blank">
                           GOOD
                         </a>
                       </td>
                       <td width="20%" align="center">
-                        <a href="https://getjobping.com/api/feedback/email?action=neutral&score=3&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 16px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 2px solid ${COLORS.gray300}; font-size: 14px; font-weight: 700; color: ${COLORS.gray700}; background-color: ${COLORS.white};" target="_blank">
+                        <a href="https://www.getjobping.com/api/feedback/email?action=neutral&score=3&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 16px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 2px solid ${COLORS.gray300}; font-size: 14px; font-weight: 700; color: ${COLORS.gray700}; background-color: ${COLORS.white};" target="_blank">
                           OK
                         </a>
                       </td>
                       <td width="20%" align="center">
-                        <a href="https://getjobping.com/api/feedback/email?action=negative&score=2&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 16px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 2px solid ${COLORS.gray300}; font-size: 14px; font-weight: 700; color: ${COLORS.gray700}; background-color: ${COLORS.white};" target="_blank">
+                        <a href="https://www.getjobping.com/api/feedback/email?action=negative&score=2&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 16px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 2px solid ${COLORS.gray300}; font-size: 14px; font-weight: 700; color: ${COLORS.gray700}; background-color: ${COLORS.white};" target="_blank">
                           POOR
                         </a>
                       </td>
                       <td width="20%" align="center">
-                        <a href="https://getjobping.com/api/feedback/email?action=negative&score=1&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 16px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 2px solid ${COLORS.red}; font-size: 14px; font-weight: 700; color: ${COLORS.red}; background-color: ${COLORS.white};" target="_blank">
+                        <a href="https://www.getjobping.com/api/feedback/email?action=negative&score=1&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 16px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 2px solid ${COLORS.red}; font-size: 14px; font-weight: 700; color: ${COLORS.red}; background-color: ${COLORS.white};" target="_blank">
                           BAD
                         </a>
                       </td>
@@ -201,7 +201,7 @@ export function createWelcomeEmailOptimized(userName?: string, matchCount: numbe
         <div style="color: ${COLORS.gray700}; font-size: 14px; margin-bottom: 12px;">
           Upgrade to Premium for 70+ jobs per month vs 30 on free tier
         </div>
-        <a href="https://getjobping.com/upgrade" style="display: inline-block; background: ${COLORS.primary}; color: ${COLORS.white}; padding: 12px 24px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 14px;">
+        <a href="https://www.getjobping.com/upgrade" style="display: inline-block; background: ${COLORS.primary}; color: ${COLORS.white}; padding: 12px 24px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 14px;">
           Upgrade to Premium - €7/month
         </a>
       </div>`;

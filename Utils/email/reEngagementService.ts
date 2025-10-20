@@ -84,7 +84,7 @@ async function sendReEngagementEmail(user: {
   const subject = generateReEngagementSubject(user.full_name || undefined);
 
   const { error } = await resend.emails.send({
-    from: 'JobPing <hello@getjobping.com>',
+    from: 'JobPing <hello@www.getjobping.com>',
     to: [user.email],
     subject,
     html

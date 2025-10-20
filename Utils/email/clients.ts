@@ -34,13 +34,13 @@ export function getSupabaseClient() {
 function getBaseDomain(): string {
   return process.env.NEXT_PUBLIC_DOMAIN || process.env.VERCEL_URL 
     ? `https://${process.env.VERCEL_URL}` 
-    : 'https://getjobping.com';
+    : 'https://www.getjobping.com';
 }
 
 function getEmailDomain(): string {
   // Use Resend's test domain in development if domain not verified
   const isDev = process.env.NODE_ENV === 'development';
-  const defaultDomain = isDev ? 'onboarding.resend.dev' : 'getjobping.com';
+  const defaultDomain = isDev ? 'onboarding.resend.dev' : 'www.getjobping.com';
   return process.env.EMAIL_DOMAIN || defaultDomain;
 }
 
