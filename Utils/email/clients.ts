@@ -38,7 +38,10 @@ function getBaseDomain(): string {
 }
 
 function getEmailDomain(): string {
-  return process.env.EMAIL_DOMAIN || 'getjobping.com';
+  // Use Resend's test domain in development if domain not verified
+  const isDev = process.env.NODE_ENV === 'development';
+  const defaultDomain = isDev ? 'onboarding.resend.dev' : 'getjobping.com';
+  return process.env.EMAIL_DOMAIN || defaultDomain;
 }
 
 // Email configuration - uses environment variables
