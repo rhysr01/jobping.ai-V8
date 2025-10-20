@@ -28,6 +28,7 @@ export default function SignupPage() {
     companySizePreference: '',
     skills: [] as string[],
     careerKeywords: '', // NEW: Free-form career keywords
+    gdprConsent: false, // GDPR: Must explicitly agree
   });
 
   useEffect(() => {
@@ -845,6 +846,34 @@ export default function SignupPage() {
                   )}
                 </div>
 
+                {/* GDPR Consent */}
+                <div className="bg-zinc-900/60 border-2 border-zinc-700 rounded-xl p-6">
+                  <label className="flex items-start gap-4 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={formData.gdprConsent}
+                      onChange={(e) => setFormData({...formData, gdprConsent: e.target.checked})}
+                      className="mt-1 w-5 h-5 rounded border-2 border-zinc-600 bg-zinc-800 checked:bg-brand-500 checked:border-brand-500 cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <p className="text-white font-medium mb-1">
+                        I agree to receive job recommendations via email *
+                      </p>
+                      <p className="text-sm text-zinc-400">
+                        By checking this box, you consent to receive personalized job matches and agree to our{' '}
+                        <a href="/legal/privacy" target="_blank" className="text-brand-400 hover:text-brand-300 underline">
+                          Privacy Policy
+                        </a>
+                        {' '}and{' '}
+                        <a href="/legal/terms" target="_blank" className="text-brand-400 hover:text-brand-300 underline">
+                          Terms of Service
+                        </a>
+                        . You can unsubscribe at any time.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
                 <div className="flex gap-4 pt-6">
                   <motion.button
                     onClick={() => setStep(3)}
@@ -856,7 +885,7 @@ export default function SignupPage() {
                   </motion.button>
                   <motion.button
                     onClick={handleSubmit}
-                    disabled={loading}
+                    disabled={loading || !formData.gdprConsent}
                     whileHover={{ scale: loading ? 1 : 1.03 }}
                     whileTap={{ scale: loading ? 1 : 0.97 }}
                     className="relative flex-1 py-6 sm:py-7 text-xl sm:text-2xl font-black disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 uppercase tracking-wide rounded-2xl overflow-hidden"
