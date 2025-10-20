@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
       company_types: data.targetCompanies,
       career_path: data.careerPath || null,
       roles_selected: data.roles,
+      subscription_tier: 'free', // FIXED: Add this field back for email compatibility
       email_verified: true, // Auto-verify for now (can add email verification later)
       subscription_active: true,
       email_phase: 'welcome', // Start in welcome phase
