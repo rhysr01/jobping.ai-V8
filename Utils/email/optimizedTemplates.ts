@@ -445,23 +445,23 @@ const FB = (h: string, e: string) => `
   <div class="feedback-subtitle">Help our AI learn your preferences</div>
   <div class="feedback-grid">
     <div class="feedback-row">
-      <a href="https://getjobping.com/api/feedback/email?action=positive&score=5&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-great" target="_blank" rel="noopener noreferrer">
+      <a href="https://www.getjobping.com/api/feedback/email?action=positive&score=5&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-great" target="_blank" rel="noopener noreferrer">
         <span class="emoji">⭐</span>
         <span class="label">Perfect</span>
       </a>
-      <a href="https://getjobping.com/api/feedback/email?action=positive&score=4&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-good" target="_blank" rel="noopener noreferrer">
+      <a href="https://www.getjobping.com/api/feedback/email?action=positive&score=4&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-good" target="_blank" rel="noopener noreferrer">
         <span class="emoji">👍</span>
         <span class="label">Good</span>
       </a>
-      <a href="https://getjobping.com/api/feedback/email?action=neutral&score=3&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-ok" target="_blank" rel="noopener noreferrer">
+      <a href="https://www.getjobping.com/api/feedback/email?action=neutral&score=3&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-ok" target="_blank" rel="noopener noreferrer">
         <span class="emoji">🤔</span>
         <span class="label">OK</span>
       </a>
-      <a href="https://getjobping.com/api/feedback/email?action=negative&score=2&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-poor" target="_blank" rel="noopener noreferrer">
+      <a href="https://www.getjobping.com/api/feedback/email?action=negative&score=2&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-poor" target="_blank" rel="noopener noreferrer">
         <span class="emoji">👎</span>
         <span class="label">Poor</span>
       </a>
-      <a href="https://getjobping.com/api/feedback/email?action=negative&score=1&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-bad" target="_blank" rel="noopener noreferrer">
+      <a href="https://www.getjobping.com/api/feedback/email?action=negative&score=1&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-bad" target="_blank" rel="noopener noreferrer">
         <span class="emoji">❌</span>
         <span class="label">Bad</span>
       </a>
@@ -485,7 +485,7 @@ const F = `
   <div class="footer-logo">🎯 JobPing</div>
   <p class="footer-tagline">AI-powered job matching for Europe</p>
   <p class="footer-text">
-    <a href="https://getjobping.com/legal/unsubscribe" class="footer-link">Unsubscribe</a>
+    <a href="https://www.getjobping.com/legal/unsubscribe" class="footer-link">Unsubscribe</a>
   </p>
 </div>
 `;

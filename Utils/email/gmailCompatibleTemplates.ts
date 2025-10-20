@@ -55,7 +55,7 @@ const createFooter = () => `
         AI-powered job matching for Europe
       </div>
       <div style="color: ${COLORS.gray500}; font-size: 12px; margin: 8px 0;">
-        <a href="https://getjobping.com/legal/unsubscribe" style="color: ${COLORS.purple}; text-decoration: none; font-weight: 600;">Unsubscribe</a>
+        <a href="https://www.getjobping.com/legal/unsubscribe" style="color: ${COLORS.purple}; text-decoration: none; font-weight: 600;">Unsubscribe</a>
       </div>
     </td>
   </tr>
@@ -143,31 +143,31 @@ const createJobCard = (card: EmailJobCard, userEmail: string) => {
                   <table width="100%" cellpadding="0" cellspacing="8" border="0">
                     <tr>
                       <td width="20%" align="center">
-                        <a href="https://getjobping.com/api/feedback/email?action=positive&score=5&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(139,92,246,0.1);" target="_blank">
+                        <a href="https://www.getjobping.com/api/feedback/email?action=positive&score=5&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(139,92,246,0.1);" target="_blank">
                           <span style="display: block; font-size: 20px; margin-bottom: 4px;">⭐</span>
                           <span>Perfect</span>
                         </a>
                       </td>
                       <td width="20%" align="center">
-                        <a href="https://getjobping.com/api/feedback/email?action=positive&score=4&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(99,102,241,0.1);" target="_blank">
+                        <a href="https://www.getjobping.com/api/feedback/email?action=positive&score=4&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(99,102,241,0.1);" target="_blank">
                           <span style="display: block; font-size: 20px; margin-bottom: 4px;">👍</span>
                           <span>Good</span>
                         </a>
                       </td>
                       <td width="20%" align="center">
-                        <a href="https://getjobping.com/api/feedback/email?action=neutral&score=3&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(245,158,11,0.1);" target="_blank">
+                        <a href="https://www.getjobping.com/api/feedback/email?action=neutral&score=3&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(245,158,11,0.1);" target="_blank">
                           <span style="display: block; font-size: 20px; margin-bottom: 4px;">🤔</span>
                           <span>OK</span>
                         </a>
                       </td>
                       <td width="20%" align="center">
-                        <a href="https://getjobping.com/api/feedback/email?action=negative&score=2&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(239,68,68,0.1);" target="_blank">
+                        <a href="https://www.getjobping.com/api/feedback/email?action=negative&score=2&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(239,68,68,0.1);" target="_blank">
                           <span style="display: block; font-size: 20px; margin-bottom: 4px;">👎</span>
                           <span>Poor</span>
                         </a>
                       </td>
                       <td width="20%" align="center">
-                        <a href="https://getjobping.com/api/feedback/email?action=negative&score=1&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(220,38,38,0.1);" target="_blank">
+                        <a href="https://www.getjobping.com/api/feedback/email?action=negative&score=1&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(220,38,38,0.1);" target="_blank">
                           <span style="display: block; font-size: 20px; margin-bottom: 4px;">❌</span>
                           <span>Bad</span>
                         </a>

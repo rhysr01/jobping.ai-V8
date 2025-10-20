@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     title: "JobPing · Five roles. Zero scrolling.",
     description:
       "Weekly job matches for early-career roles across Europe — delivered to your inbox. Hand-picked quality, zero noise.",
-    url: "https://getjobping.com",
+    url: "https://www.getjobping.com",
     siteName: "JobPing",
     locale: "en_US",
     type: "website",
@@ -55,9 +55,9 @@ export const metadata: Metadata = {
     description: "Weekly job matches for early-career roles across Europe.",
     creator: "@jobping",
   },
-  metadataBase: new URL("https://getjobping.com"),
+  metadataBase: new URL("https://www.getjobping.com"),
   alternates: {
-    canonical: "https://getjobping.com",
+    canonical: "https://www.getjobping.com",
   },
 };
 
