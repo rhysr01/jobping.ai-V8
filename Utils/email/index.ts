@@ -9,13 +9,13 @@ export {
   sendMatchedJobsEmail, 
   sendBatchEmails,
   EMAIL_PERFORMANCE_METRICS 
-} from './optimizedSender';
+} from './sender';
 
 // Templates - GMAIL-OPTIMIZED (Light background, high contrast, large text, no emojis)
-export { 
-  createWelcomeEmailOptimized as createWelcomeEmail, 
-  createJobMatchesEmailOptimized as createJobMatchesEmail
-} from './gmailOptimized';
+// export { 
+//   createWelcomeEmailOptimized as createWelcomeEmail, 
+//   createJobMatchesEmailOptimized as createJobMatchesEmail
+// } from './textGenerator';
 
 // Keep original templates available
 export { 
@@ -34,4 +34,4 @@ export { EmailFeedbackIntegration, emailFeedbackHelpers } from './feedbackIntegr
 export { EmailPreviewSystem, emailPreview } from './emailPreview';
 
 // Performance monitoring
-export { EMAIL_PERFORMANCE_METRICS as performanceMetrics } from './optimizedSender';
+export { EMAIL_PERFORMANCE_METRICS as performanceMetrics } from './sender';

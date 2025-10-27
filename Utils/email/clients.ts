@@ -32,9 +32,13 @@ export function getSupabaseClient() {
 
 // Get base domain from environment
 function getBaseDomain(): string {
-  return process.env.NEXT_PUBLIC_DOMAIN || process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : 'https://www.getjobping.com';
+  if (process.env.NEXT_PUBLIC_DOMAIN) {
+    return process.env.NEXT_PUBLIC_DOMAIN;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return 'https://www.getjobping.com';
 }
 
 function getEmailDomain(): string {
@@ -42,11 +46,24 @@ function getEmailDomain(): string {
   return process.env.EMAIL_DOMAIN || 'getjobping.com';
 }
 
+// Type safety for email senders
+type GetJobPingSender = `JobPing <${string}@getjobping.com>`;
+
+// Email validation guard
+export const assertValidFrom = (from: string): void => {
+  if (!/@getjobping\.com>?$/.test(from)) {
+    throw new Error(`Invalid from: ${from} (expected *@getjobping.com)`);
+  }
+};
+
 // Email configuration - uses environment variables
 export const EMAIL_CONFIG = {
-  from: `JobPing <noreply@${getEmailDomain()}>`,
+  from: `JobPing <noreply@${getEmailDomain()}>` as GetJobPingSender,
   maxRetries: 3,
   retryDelay: 2000, // 2 seconds base delay,
   unsubscribeBase: `${getBaseDomain()}/api/unsubscribe`,
   listUnsubscribeEmail: `unsubscribe@${getEmailDomain()}`
 } as const;
+
+// Validate the from address at module load time
+assertValidFrom(EMAIL_CONFIG.from);

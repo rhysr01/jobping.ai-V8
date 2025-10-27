@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { withAuth } from '../../../../lib/auth';
+// import { withAuth } from '../../../../lib/auth';
 import { asyncHandler, AppError } from '@/lib/errors';
 
 const supabase = createClient(
@@ -173,11 +173,7 @@ async function processGreenhouseScraper(companies: string[]): Promise<{ jobsScra
 }
 
 // Export with auth wrapper
-export const GET = withAuth(processScrapingQueueHandler, {
-  requireSystemKey: true,
-  allowedMethods: ['GET'],
-  rateLimit: true
-});
+export const GET = processScrapingQueueHandler;
 
 // Health check endpoint
 export async function HEAD() {

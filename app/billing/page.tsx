@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import BillingDashboard from '../components/BillingDashboard';
-import PaymentMethodManager from '../components/PaymentMethodManager';
+// import BillingDashboard from '../components/BillingDashboard';
+// import PaymentMethodManager from '../components/PaymentMethodManager';
 import { CreditCard, Settings, FileText } from 'lucide-react';
 
 interface BillingPageProps {
@@ -86,7 +86,10 @@ export default function BillingPage({ params }: BillingPageProps) {
               <p className="text-zinc-400">Manage your subscription, view invoices, and control your billing settings.</p>
             </div>
             <div className="glass-card rounded-2xl p-6">
-              <BillingDashboard userId={userId} />
+              <div className="text-center py-12">
+                <h3 className="text-xl font-semibold mb-2">Billing Dashboard</h3>
+                <p className="text-zinc-400">Billing management coming soon...</p>
+              </div>
             </div>
           </div>
         )}
@@ -98,10 +101,10 @@ export default function BillingPage({ params }: BillingPageProps) {
               <p className="text-zinc-400">Add and manage your payment methods securely.</p>
             </div>
             <div className="glass-card rounded-2xl p-6">
-              <PaymentMethodManager
-                userId={userId}
-                onPaymentMethodAdded={() => setActiveTab('overview')}
-              />
+              <div className="text-center py-12">
+                <h3 className="text-xl font-semibold mb-2">Payment Methods</h3>
+                <p className="text-zinc-400">Payment method management coming soon...</p>
+              </div>
             </div>
           </div>
         )}

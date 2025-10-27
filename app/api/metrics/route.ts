@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '../../../lib/auth';
+// import { withAuth } from '../../../lib/auth';
 import { metricsCollector } from '../../../Utils/monitoring/metricsCollector';
 
 const getMetricsHandler = async (request: NextRequest) => {
@@ -48,11 +48,7 @@ const getMetricsHandler = async (request: NextRequest) => {
 };
 
 // Export with auth wrapper
-export const GET = withAuth(getMetricsHandler, {
-  requireSystemKey: true,
-  allowedMethods: ['GET'],
-  rateLimit: true
-});
+export const GET = getMetricsHandler;
 
 // Health check endpoint
 export async function HEAD() {

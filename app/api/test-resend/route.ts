@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getResendClient, EMAIL_CONFIG } from '@/Utils/email/clients';
+import { getResendClient, EMAIL_CONFIG, assertValidFrom } from '@/Utils/email/clients';
 
 export const GET = async (req: NextRequest) => {
   console.log('=== RESEND TEST START ===');
   
   const resend = getResendClient();
+  const url = new URL(req.url);
+  const testRecipient = url.searchParams.get('to') || 'delivered@resend.dev';
   
   // Test 1: Basic API key validation
   let apiKeyTest = {
@@ -17,8 +19,16 @@ export const GET = async (req: NextRequest) => {
     // Try to get domains to test API key
     const domains = await resend.domains.list();
     apiKeyTest.success = true;
-    apiKeyTest.details = `Found ${domains.data?.length || 0} domains`;
+    apiKeyTest.details = `Found ${Array.isArray(domains.data) ? domains.data.length : 0} domains`;
     console.log('✅ API Key valid, domains:', domains.data);
+    
+    // Check if getjobping.com is verified
+    const getjobpingDomain = domains.data?.find((d: any) => d.name === 'getjobping.com');
+    if (getjobpingDomain) {
+      apiKeyTest.details += ` | getjobping.com verified: ${getjobpingDomain.status === 'verified'}`;
+    } else {
+      apiKeyTest.details += ' | getjobping.com NOT FOUND in domains';
+    }
   } catch (error: any) {
     apiKeyTest.success = false;
     apiKeyTest.error = error.message;
@@ -35,10 +45,14 @@ export const GET = async (req: NextRequest) => {
   
   try {
     console.log('Testing email send with config:', EMAIL_CONFIG);
+    console.log('Test recipient:', testRecipient);
     
-    const { data, error } = await resend.emails.send({
+    // Validate from address before sending
+    assertValidFrom(EMAIL_CONFIG.from);
+    
+    const payload = {
       from: EMAIL_CONFIG.from,
-      to: ['delivered@resend.dev'], // Resend test email
+      to: [testRecipient],
       subject: 'JobPing Test Email - Domain Verification',
       html: `
         <h1>🎉 Resend Test Successful!</h1>
@@ -50,8 +64,12 @@ export const GET = async (req: NextRequest) => {
         </ul>
         <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
         <p><strong>From:</strong> ${EMAIL_CONFIG.from}</p>
+        <p><strong>To:</strong> ${testRecipient}</p>
+        <p><strong>Environment:</strong> ${process.env.NODE_ENV}</p>
       `,
-    });
+    };
+    
+    const { data, error } = await resend.emails.send(payload);
     
     if (error) {
       emailTest.error = error;
@@ -59,10 +77,15 @@ export const GET = async (req: NextRequest) => {
     } else {
       emailTest.success = true;
       emailTest.emailId = data?.id || null;
-      emailTest.details = 'Email sent successfully';
+      emailTest.details = `Email sent successfully to ${testRecipient}`;
       console.log('✅ Email sent successfully:', data);
     }
   } catch (error: any) {
+    const status = error?.status ?? 'unknown';
+    const rid = error?.response?.headers?.get?.('x-resend-request-id') ?? 'n/a';
+    const body = await error?.response?.json?.().catch(() => error?.message);
+    console.error('[RESEND_ERROR]', { status, requestId: rid, body, payloadFrom: EMAIL_CONFIG.from });
+    
     emailTest.error = error.message;
     console.error('❌ Email send exception:', error);
   }

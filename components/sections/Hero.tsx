@@ -6,14 +6,23 @@ export default function Hero() {
   const [activeJobs, setActiveJobs] = useState("12,748");
 
   useEffect(() => {
-    fetch('/api/stats')
-      .then(res => res.json())
-      .then(data => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/stats');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
         if (data.activeJobsFormatted) {
           setActiveJobs(data.activeJobsFormatted);
         }
-      })
-      .catch(err => console.error('Failed to fetch stats:', err));
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+        // Keep the default value "12,748" if fetch fails
+      }
+    };
+
+    fetchStats();
   }, []);
 
   return (

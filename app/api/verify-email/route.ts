@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { EmailVerificationOracle } from '@/Utils/emailVerification';
+// import { EmailVerificationOracle } from '@/Utils/emailVerification';
 import { errorResponse } from '@/Utils/errorResponse';
 import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import { getSupabaseClient } from '@/Utils/supabase';
@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getSupabaseClient();
-    const result = await EmailVerificationOracle.verifyEmail(token, supabase);
+    // const result = await EmailVerificationOracle.verifyEmail(token, supabase);
+    
+    // Temporary placeholder - email verification coming soon
+    const result = { success: false, message: 'Email verification temporarily disabled' };
     
     return NextResponse.json(result, { 
       status: result.success ? 200 : 400 
