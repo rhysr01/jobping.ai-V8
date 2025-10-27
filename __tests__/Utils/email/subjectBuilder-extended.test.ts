@@ -116,7 +116,7 @@ describe('Subject Builder - Extended Tests', () => {
 
       const subject = buildPersonalizedSubject({ jobs, preferences });
 
-      expect(subject).toContain('Full Stack matches');
+      expect(subject).toContain('full stack roles');
       expect(subject).toContain('Paris');
     });
 

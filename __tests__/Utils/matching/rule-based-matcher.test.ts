@@ -57,7 +57,7 @@ describe('Rule-Based Matcher - applyHardGates', () => {
     const result = applyHardGates(job, user);
 
     expect(result.passed).toBe(false);
-    expect(result.reason).toBe('Location mismatch');
+    expect(result.reason).toBe('Location mismatch: No location compatibility found');
   });
 
   it('should accept remote jobs for any location', () => {

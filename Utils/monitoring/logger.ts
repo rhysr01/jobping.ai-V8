@@ -21,10 +21,20 @@ export interface LogEntry {
 export class Logger {
   private component: string;
   private minLevel: 'debug' | 'info' | 'warn' | 'error';
+  private userId?: string;
+  private requestId?: string;
 
   constructor(component: string) {
     this.component = component;
     this.minLevel = (process.env.LOG_LEVEL as any) || 'info';
+  }
+
+  setUserId(userId: string): void {
+    this.userId = userId;
+  }
+
+  setRequestId(requestId: string): void {
+    this.requestId = requestId;
   }
 
   private shouldLog(level: LogEntry['level']): boolean {
@@ -43,7 +53,11 @@ export class Logger {
     if (requestId) logLine += ` req=${requestId}`;
     
     if (metadata) {
-      logLine += ` metadata=${JSON.stringify(metadata)}`;
+      try {
+        logLine += ` metadata=${JSON.stringify(metadata)}`;
+      } catch (error) {
+        logLine += ` metadata=[Circular Reference]`;
+      }
     }
     
     if (error) {
@@ -64,6 +78,8 @@ export class Logger {
       level,
       message,
       component: this.component,
+      userId: this.userId,
+      requestId: this.requestId,
       metadata,
       error: error ? {
         name: error.name,

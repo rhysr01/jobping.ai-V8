@@ -144,6 +144,17 @@ function SignupForm() {
     return arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value];
   };
 
+  const selectAllRoles = (careerPath: string) => {
+    const career = CAREER_PATHS.find(c => c.value === careerPath);
+    if (career) {
+      setFormData({...formData, roles: career.roles});
+    }
+  };
+
+  const clearAllRoles = () => {
+    setFormData({...formData, roles: []});
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     setError('');
@@ -419,6 +430,25 @@ function SignupForm() {
                 <div>
                   <h2 className="text-3xl font-black text-white mb-2">Your preferences</h2>
                   <p className="text-zinc-400">Help us match you perfectly</p>
+
+                  {/* Progress Helper */}
+                  <div className="mt-4 p-4 bg-zinc-800/50 rounded-xl border border-zinc-700">
+                    <h3 className="text-sm font-bold text-zinc-300 mb-2">Required for next step:</h3>
+                    <div className="space-y-1 text-sm">
+                      <div className={`flex items-center gap-2 ${formData.experience ? 'text-green-400' : 'text-zinc-500'}`}>
+                        <span className={`w-2 h-2 rounded-full ${formData.experience ? 'bg-green-400' : 'bg-zinc-500'}`}></span>
+                        Professional Experience
+                      </div>
+                      <div className={`flex items-center gap-2 ${formData.visaStatus ? 'text-green-400' : 'text-zinc-500'}`}>
+                        <span className={`w-2 h-2 rounded-full ${formData.visaStatus ? 'bg-green-400' : 'bg-zinc-500'}`}></span>
+                        Visa Status
+                      </div>
+                      <div className={`flex items-center gap-2 ${formData.entryLevelPreferences.length > 0 ? 'text-green-400' : 'text-zinc-500'}`}>
+                        <span className={`w-2 h-2 rounded-full ${formData.entryLevelPreferences.length > 0 ? 'bg-green-400' : 'bg-zinc-500'}`}></span>
+                        Entry Level Preferences ({formData.entryLevelPreferences.length}/1+ selected)
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -566,10 +596,16 @@ function SignupForm() {
                     onClick={() => setStep(3)}
                     disabled={!formData.experience || !formData.visaStatus || formData.entryLevelPreferences.length === 0}
                     whileHover={{ scale: 1.02 }}
+                    className={`relative flex-1 py-6 sm:py-7 text-xl sm:text-2xl font-black uppercase tracking-wide rounded-2xl overflow-hidden transition-all ${
+                      !formData.experience || !formData.visaStatus || formData.entryLevelPreferences.length === 0
+                        ? 'opacity-40 cursor-not-allowed bg-zinc-700 text-zinc-500'
+                        : 'bg-gradient-to-r from-brand-500 to-purple-600 text-white shadow-[0_0_30px_rgba(99,102,241,0.6)] hover:shadow-[0_0_40px_rgba(99,102,241,0.8)] hover:scale-105'
+                    }`}
                     whileTap={{ scale: 0.98 }}
-                    className="btn-primary flex-1 py-5 text-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
-                    Continue →
+                    {(!formData.experience || !formData.visaStatus || formData.entryLevelPreferences.length === 0)
+                      ? 'Complete Required Fields'
+                      : 'Continue to Career Path →'}
                   </motion.button>
                 </div>
               </motion.div>
@@ -588,6 +624,21 @@ function SignupForm() {
                 <div>
                   <h2 className="text-3xl font-black text-white mb-2">Your career path</h2>
                   <p className="text-zinc-400">What type of roles interest you?</p>
+
+                  {/* Progress Helper */}
+                  <div className="mt-4 p-4 bg-zinc-800/50 rounded-xl border border-zinc-700">
+                    <h3 className="text-sm font-bold text-zinc-300 mb-2">Required for next step:</h3>
+                    <div className="space-y-1 text-sm">
+                      <div className={`flex items-center gap-2 ${formData.careerPath ? 'text-green-400' : 'text-zinc-500'}`}>
+                        <span className={`w-2 h-2 rounded-full ${formData.careerPath ? 'bg-green-400' : 'bg-zinc-500'}`}></span>
+                        Career Path Selection
+                      </div>
+                      <div className={`flex items-center gap-2 ${formData.roles.length > 0 ? 'text-green-400' : 'text-zinc-500'}`}>
+                        <span className={`w-2 h-2 rounded-full ${formData.roles.length > 0 ? 'bg-green-400' : 'bg-zinc-500'}`}></span>
+                        Role Selection ({formData.roles.length}/1+ selected)
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -597,7 +648,14 @@ function SignupForm() {
                       <motion.button
                         key={path.value}
                         type="button"
-                        onClick={() => setFormData({...formData, careerPath: path.value, roles: []})}
+                        onClick={() => {
+                          const newCareer = CAREER_PATHS.find(c => c.value === path.value);
+                          if (newCareer) {
+                            // Only keep roles that belong to the newly selected career path
+                            const validRoles = formData.roles.filter(role => newCareer.roles.includes(role));
+                            setFormData({...formData, careerPath: path.value, roles: validRoles});
+                          }
+                        }}
                         whileHover={{ scale: 1.02, y: -2 }}
                         whileTap={{ scale: 0.98 }}
                         className={`px-5 py-5 rounded-xl border-2 transition-all text-left relative overflow-hidden ${
@@ -632,10 +690,35 @@ function SignupForm() {
                   >
                     <label className="block text-lg font-black text-white mb-4">
                       <span className="text-2xl mr-2">{selectedCareer.emoji}</span>
-                      {selectedCareer.label} Roles 
-                      <span className="text-zinc-500 font-normal text-base ml-2">(Select what interests you)</span>
+                      {selectedCareer.label} Roles
+                      <span className="text-zinc-500 font-normal text-base ml-2">(Select at least one - required)</span>
                     </label>
-                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar pr-2 -mr-2">
+
+                    {/* Select All / Clear All Controls */}
+                    <div className="flex gap-2 mb-4">
+                      <motion.button
+                        type="button"
+                        onClick={() => selectAllRoles(formData.careerPath)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-[0_0_8px_rgba(99,102,241,0.3)] hover:shadow-[0_0_12px_rgba(99,102,241,0.5)]"
+                        title={`Select all ${selectedCareer.roles.length} roles in ${selectedCareer.label}`}
+                      >
+                        ✅ Select All {selectedCareer.roles.length} Roles
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={clearAllRoles}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-sm font-semibold rounded-lg transition-colors"
+                        title="Clear all selected roles"
+                      >
+                        🗑️ Clear All
+                      </motion.button>
+                    </div>
+
+                    <div className="max-h-[350px] overflow-y-auto custom-scrollbar pr-2 -mr-2">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {selectedCareer.roles.map((role, idx) => (
                           <motion.button
@@ -698,7 +781,7 @@ function SignupForm() {
                   </motion.button>
                   <motion.button
                     onClick={() => setStep(4)}
-                    disabled={!formData.careerPath}
+                    disabled={!formData.careerPath || formData.roles.length === 0}
                     whileHover={{ scale: loading ? 1 : 1.03 }}
                     whileTap={{ scale: loading ? 1 : 0.97 }}
                     className="relative flex-1 py-6 sm:py-7 text-xl sm:text-2xl font-black disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 uppercase tracking-wide rounded-2xl overflow-hidden"
@@ -735,7 +818,7 @@ function SignupForm() {
                       ) : (
                         <>
                           <span>🎯</span>
-                          <span>Continue to Preferences</span>
+                          <span>{formData.careerPath && formData.roles.length === 0 ? 'Select Roles to Finish' : 'Complete Signup'}</span>
                           <motion.span
                             animate={{ x: [0, 4, 0] }}
                             transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}

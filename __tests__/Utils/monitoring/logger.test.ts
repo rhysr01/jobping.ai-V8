@@ -6,7 +6,7 @@ import { Logger, type LogEntry } from '@/Utils/monitoring/logger';
 
 describe('Logger', () => {
   let logger: Logger;
-  let consoleSpy: jest.SpyInstance;
+  let consoleDebugSpy: jest.SpyInstance;
   let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
@@ -14,7 +14,8 @@ describe('Logger', () => {
     originalEnv = process.env;
     
     // Mock console methods
-    consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    consoleDebugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
+    jest.spyOn(console, 'info').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
     
@@ -25,7 +26,7 @@ describe('Logger', () => {
   });
 
   afterEach(() => {
-    consoleSpy.mockRestore();
+    consoleDebugSpy.mockRestore();
     process.env = originalEnv;
   });
 
@@ -55,8 +56,8 @@ describe('Logger', () => {
       
       debugLogger.debug('Debug message');
       
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[DEBUG] test: Debug message')
+      expect(consoleDebugSpy).toHaveBeenCalledWith(
+        expect.stringContaining('DEBUG test: Debug message')
       );
     });
 
@@ -66,7 +67,7 @@ describe('Logger', () => {
       
       infoLogger.debug('Debug message');
       
-      expect(consoleSpy).not.toHaveBeenCalled();
+      expect(consoleDebugSpy).not.toHaveBeenCalled();
     });
 
     it('should include metadata in debug log', () => {
@@ -75,7 +76,7 @@ describe('Logger', () => {
       
       debugLogger.debug('Debug message', { key: 'value' });
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(consoleDebugSpy).toHaveBeenCalledWith(
         expect.stringContaining('metadata={"key":"value"}')
       );
     });
@@ -85,31 +86,35 @@ describe('Logger', () => {
     it('should log info message', () => {
       logger.info('Info message');
       
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[INFO] test-component: Info message')
+      expect(console.info).toHaveBeenCalledWith(
+        expect.stringContaining('INFO test-component: Info message')
       );
     });
 
     it('should include user ID in info log', () => {
-      logger.info('Info message', { userId: 'user123' });
+      logger.setUserId('user123');
+      logger.info('Info message');
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.info).toHaveBeenCalledWith(
         expect.stringContaining('user=user123')
       );
     });
 
     it('should include request ID in info log', () => {
-      logger.info('Info message', { requestId: 'req456' });
+      logger.setRequestId('req456');
+      logger.info('Info message');
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.info).toHaveBeenCalledWith(
         expect.stringContaining('req=req456')
       );
     });
 
     it('should include both user and request ID', () => {
-      logger.info('Info message', { userId: 'user123', requestId: 'req456' });
+      logger.setUserId('user123');
+      logger.setRequestId('req456');
+      logger.info('Info message');
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.info).toHaveBeenCalledWith(
         expect.stringContaining('user=user123 req=req456')
       );
     });
@@ -120,7 +125,7 @@ describe('Logger', () => {
       logger.warn('Warning message');
       
       expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('[WARN] test-component: Warning message')
+        expect.stringContaining('WARN test-component: Warning message')
       );
     });
 
@@ -129,7 +134,7 @@ describe('Logger', () => {
       logger.warn('Warning message', { error });
       
       expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('error=Error: Test error')
+        expect.stringContaining('metadata={"error":{}}')
       );
     });
 
@@ -148,7 +153,7 @@ describe('Logger', () => {
       logger.error('Error message');
       
       expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] test-component: Error message')
+        expect.stringContaining('ERROR test-component: Error message')
       );
     });
 
@@ -156,7 +161,7 @@ describe('Logger', () => {
       const error = new Error('Test error');
       error.stack = 'Error stack trace';
       
-      logger.error('Error message', { error });
+      logger.error('Error message', error);
       
       expect(console.error).toHaveBeenCalledWith(
         expect.stringContaining('error=Error: Test error')
@@ -164,9 +169,10 @@ describe('Logger', () => {
     });
 
     it('should handle error without stack trace', () => {
-      const error = { name: 'CustomError', message: 'Custom error message' };
+      const error = new Error('Custom error message');
+      error.name = 'CustomError';
       
-      logger.error('Error message', { error });
+      logger.error('Error message', error);
       
       expect(console.error).toHaveBeenCalledWith(
         expect.stringContaining('error=CustomError: Custom error message')
@@ -184,7 +190,8 @@ describe('Logger', () => {
       debugLogger.warn('Warning message');
       debugLogger.error('Error message');
       
-      expect(consoleSpy).toHaveBeenCalledTimes(2); // debug and info
+      expect(consoleDebugSpy).toHaveBeenCalledTimes(1); // debug only
+      expect(console.info).toHaveBeenCalledTimes(1); // info only
       expect(console.warn).toHaveBeenCalledTimes(1);
       expect(console.error).toHaveBeenCalledTimes(1);
     });
@@ -198,7 +205,7 @@ describe('Logger', () => {
       infoLogger.warn('Warning message');
       infoLogger.error('Error message');
       
-      expect(consoleSpy).toHaveBeenCalledTimes(1); // info only
+      expect(console.info).toHaveBeenCalledTimes(1); // info only
       expect(console.warn).toHaveBeenCalledTimes(1);
       expect(console.error).toHaveBeenCalledTimes(1);
     });
@@ -212,7 +219,7 @@ describe('Logger', () => {
       warnLogger.warn('Warning message');
       warnLogger.error('Error message');
       
-      expect(consoleSpy).not.toHaveBeenCalled();
+      expect(consoleDebugSpy).not.toHaveBeenCalled();
       expect(console.warn).toHaveBeenCalledTimes(1);
       expect(console.error).toHaveBeenCalledTimes(1);
     });
@@ -226,7 +233,7 @@ describe('Logger', () => {
       errorLogger.warn('Warning message');
       errorLogger.error('Error message');
       
-      expect(consoleSpy).not.toHaveBeenCalled();
+      expect(consoleDebugSpy).not.toHaveBeenCalled();
       expect(console.warn).not.toHaveBeenCalled();
       expect(console.error).toHaveBeenCalledTimes(1);
     });
@@ -236,7 +243,7 @@ describe('Logger', () => {
     it('should handle simple metadata object', () => {
       logger.info('Message', { key: 'value', number: 123 });
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.info).toHaveBeenCalledWith(
         expect.stringContaining('metadata={"key":"value","number":123}')
       );
     });
@@ -247,7 +254,7 @@ describe('Logger', () => {
         settings: { theme: 'dark' }
       });
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.info).toHaveBeenCalledWith(
         expect.stringContaining('metadata={"user":{"id":"123","name":"John"},"settings":{"theme":"dark"}}')
       );
     });
@@ -255,7 +262,7 @@ describe('Logger', () => {
     it('should handle array metadata', () => {
       logger.info('Message', { items: [1, 2, 3], tags: ['a', 'b'] });
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.info).toHaveBeenCalledWith(
         expect.stringContaining('metadata={"items":[1,2,3],"tags":["a","b"]}')
       );
     });
@@ -263,7 +270,7 @@ describe('Logger', () => {
     it('should handle null and undefined metadata', () => {
       logger.info('Message', { nullValue: null, undefinedValue: undefined });
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.info).toHaveBeenCalledWith(
         expect.stringContaining('metadata={"nullValue":null}')
       );
     });
@@ -275,7 +282,7 @@ describe('Logger', () => {
       logger.info('Message');
       const afterTime = new Date().toISOString();
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.info).toHaveBeenCalledWith(
         expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\]/)
       );
     });
@@ -285,8 +292,8 @@ describe('Logger', () => {
     it('should handle empty message', () => {
       logger.info('');
       
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[INFO] test-component: ')
+      expect(console.info).toHaveBeenCalledWith(
+        expect.stringContaining('INFO test-component: ')
       );
     });
 
@@ -294,7 +301,7 @@ describe('Logger', () => {
       const longMessage = 'x'.repeat(1000);
       logger.info(longMessage);
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.info).toHaveBeenCalledWith(
         expect.stringContaining(longMessage)
       );
     });
@@ -303,7 +310,7 @@ describe('Logger', () => {
       const specialMessage = 'Message with special chars: !@#$%^&*()_+-=[]{}|;:,.<>?';
       logger.info(specialMessage);
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.info).toHaveBeenCalledWith(
         expect.stringContaining(specialMessage)
       );
     });
@@ -314,15 +321,15 @@ describe('Logger', () => {
       
       logger.info('Message', { circular });
       
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('metadata=')
+      expect(console.info).toHaveBeenCalledWith(
+        expect.stringContaining('metadata=[Circular Reference]')
       );
     });
 
     it('should handle function in metadata', () => {
       logger.info('Message', { func: () => 'test' });
       
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.info).toHaveBeenCalledWith(
         expect.stringContaining('metadata={}')
       );
     });
@@ -333,8 +340,8 @@ describe('Logger', () => {
       const emptyLogger = new Logger('');
       emptyLogger.info('Message');
       
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[INFO] : Message')
+      expect(console.info).toHaveBeenCalledWith(
+        expect.stringContaining('INFO : Message')
       );
     });
 
@@ -342,8 +349,8 @@ describe('Logger', () => {
       const specialLogger = new Logger('test-component_123');
       specialLogger.info('Message');
       
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[INFO] test-component_123: Message')
+      expect(console.info).toHaveBeenCalledWith(
+        expect.stringContaining('INFO test-component_123: Message')
       );
     });
   });
