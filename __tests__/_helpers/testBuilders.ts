@@ -281,7 +281,6 @@ export const buildDbJob = (overrides: any = {}) => {
     is_active: true,
     is_sent: false,
     status: 'active',
-    freshness_tier: 'fresh',
     original_posted_date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
     scrape_timestamp: new Date().toISOString(),
     company_name: 'Tech Corp',

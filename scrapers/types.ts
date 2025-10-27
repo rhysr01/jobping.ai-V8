@@ -1,11 +1,5 @@
 // types.ts - Corrected to match your actual Supabase schema
 
-// Freshness tiers for job prioritization
-export enum FreshnessTier {
-  ULTRA_FRESH = 'ultra_fresh',    // < 24 hours
-  FRESH = 'fresh',                // 1-3 days
-  COMPREHENSIVE = 'comprehensive' // > 3 days
-}
 
 // Job structure matching your Supabase schema exactly
 export interface Job {
@@ -29,7 +23,6 @@ export interface Job {
   posted_at: string;                    // timestamp Non-nullable
   last_seen_at: string;                 // timestamp Non-nullable (added for lifecycle tracking)
   is_active: boolean;                   // boolean Non-nullable, default true (added for lifecycle)
-  freshness_tier?: string;              // varchar Nullable
   scraper_run_id?: string;              // uuid Nullable
   created_at: string;                   // timestamptz Non-nullable, default now()
   // updated_at?: string;               // timestamptz - DISABLED: Column doesn't exist in current DB schema

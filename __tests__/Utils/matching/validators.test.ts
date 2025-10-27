@@ -9,7 +9,7 @@ import {
   validateUserPreferences,
   validateMatchResult,
   validateUserEligibility,
-  validateJobFreshness,
+  validateJobAge,
   validateLocationCompatibility,
   validateCareerPathCompatibility,
   validateWorkEnvironmentCompatibility,
@@ -336,88 +336,63 @@ describe('Validators - validateUserEligibility', () => {
   });
 });
 
-describe('Validators - validateJobFreshness', () => {
-  it('should mark job as ultra_fresh within 1 day', () => {
+describe('Validators - validateJobAge', () => {
+  it('should mark job as recent within 30 days', () => {
     const oneDayAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
     const job = buildMockJob({ created_at: oneDayAgo });
 
-    const result = validateJobFreshness(job);
+    const result = validateJobAge(job);
 
-    expect(result.fresh).toBe(true);
-    expect(result.tier).toBe('ultra_fresh');
+    expect(result.recent).toBe(true);
     expect(result.daysOld).toBe(0);
   });
 
-  it('should mark job as fresh within 7 days', () => {
-    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
-    const job = buildMockJob({ created_at: threeDaysAgo });
-
-    const result = validateJobFreshness(job);
-
-    expect(result.fresh).toBe(true);
-    expect(result.tier).toBe('fresh');
-    expect(result.daysOld).toBe(3);
-  });
-
-  it('should mark job as stale between 7-30 days', () => {
-    const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
-    const job = buildMockJob({ created_at: fifteenDaysAgo });
-
-    const result = validateJobFreshness(job);
-
-    expect(result.fresh).toBe(false);
-    expect(result.tier).toBe('stale');
-    expect(result.daysOld).toBe(15);
-  });
-
-  it('should mark job as very_stale after 30 days', () => {
+  it('should mark job as not recent after 30 days', () => {
     const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
     const job = buildMockJob({ created_at: fortyDaysAgo });
 
-    const result = validateJobFreshness(job);
+    const result = validateJobAge(job);
 
-    expect(result.fresh).toBe(false);
-    expect(result.tier).toBe('very_stale');
+    expect(result.recent).toBe(false);
     expect(result.daysOld).toBe(40);
   });
 
   it('should handle job without created_at date', () => {
     const job = buildMockJob({ created_at: undefined });
 
-    const result = validateJobFreshness(job);
+    const result = validateJobAge(job);
 
-    expect(result.fresh).toBe(false);
-    expect(result.tier).toBe('very_stale');
+    expect(result.recent).toBe(false);
     expect(result.daysOld).toBe(999);
   });
 });
 
 describe('Validators - validateLocationCompatibility', () => {
   it('should find exact location match', () => {
-    const result = validateLocationCompatibility(['London, UK'], ['London']);
+    const result = validateLocationCompatibility(['London, UK'], ['London'], 'London', 'GB');
 
     expect(result.compatible).toBe(true);
     expect(result.matchScore).toBe(100);
-    expect(result.reasons[0]).toContain('Exact location match');
+    expect(result.reasons[0]).toContain('City match');
   });
 
   it('should handle remote jobs', () => {
     const result = validateLocationCompatibility(['Remote, Anywhere'], ['London']);
 
     expect(result.compatible).toBe(true);
-    expect(result.matchScore).toBeGreaterThanOrEqual(80);
-    expect(result.reasons).toContain('Remote work available');
+    expect(result.matchScore).toBeGreaterThanOrEqual(60);
+    expect(result.reasons[0]).toContain('Remote/hybrid work available');
   });
 
   it('should reject incompatible locations', () => {
-    const result = validateLocationCompatibility(['New York, USA'], ['London']);
+    const result = validateLocationCompatibility(['New York, USA'], ['London'], 'New York', 'USA');
 
     expect(result.compatible).toBe(false);
     expect(result.matchScore).toBe(0);
   });
 
   it('should handle empty user target cities', () => {
-    const result = validateLocationCompatibility(['London'], []);
+    const result = validateLocationCompatibility(['London'], [], 'London', 'GB');
 
     expect(result.compatible).toBe(false);
     expect(result.reasons).toContain('No target cities specified');
@@ -431,10 +406,11 @@ describe('Validators - validateLocationCompatibility', () => {
   });
 
   it('should match multiple user cities', () => {
-    const result = validateLocationCompatibility(['Berlin, Germany'], ['London', 'Berlin', 'Paris']);
+    const result = validateLocationCompatibility(['Berlin, Germany'], ['London', 'Berlin', 'Paris'], 'Berlin', 'DE');
 
     expect(result.compatible).toBe(true);
     expect(result.matchScore).toBe(100);
+    expect(result.reasons[0]).toContain('City match');
   });
 });
 

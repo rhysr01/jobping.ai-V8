@@ -507,7 +507,7 @@ JOB ${index}:
 🎯 Career Path(s): ${careerPaths}
 🗣️ Languages Required: ${languages}
 📊 Experience: ${job.experience_required || 'Entry-level'}
-🔥 Freshness: ${job.freshness_tier || 'Active'}
+📅 Posted: ${job.original_posted_date || job.created_at}
 
 📄 Description (first 400 chars):
 ${job.description?.substring(0, 400).trim()}...

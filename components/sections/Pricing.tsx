@@ -1,6 +1,6 @@
 export default function Pricing() {
   return (
-    <section id="pricing" className="py-20 sm:py-24 md:py-32 lg:py-40 scroll-mt-24">
+    <section id="pricing" data-testid="pricing" className="py-20 sm:py-24 md:py-32 lg:py-40 scroll-mt-24">
       <div className="container-page">
         <h2 className="h2-section text-center px-4">Five hand-picked roles in every email. No dashboards. No scrolling marathons.</h2>
         <p className="mt-4 sm:mt-5 text-center p-muted text-base sm:text-lg md:text-xl px-4">Choose how many opportunities you want each week.</p>

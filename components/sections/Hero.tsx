@@ -17,7 +17,7 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="relative isolate text-center py-16 sm:py-24 md:py-32 lg:py-40 overflow-hidden">
+    <section data-testid="hero-section" className="relative isolate text-center py-16 sm:py-24 md:py-32 lg:py-40 overflow-hidden">
       <div className="container-page">
         {/* Large JobPing branding with graduation cap - LOUD & BOUNCY */}
         <motion.div 
@@ -71,7 +71,7 @@ export default function Hero() {
         </motion.div>
         
         <h1 className="mt-6 sm:mt-8 text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] max-w-[20ch] mx-auto px-2">
-          Graduate jobs in your inbox. Just apply.
+          Five roles. Zero scrolling.
         </h1>
         <p className="mt-6 sm:mt-8 text-lg sm:text-xl md:text-2xl text-zinc-300 max-w-[62ch] mx-auto leading-relaxed px-4">
           Internships, grad programmes, and early-career opportunities. Sent to your inbox.

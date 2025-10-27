@@ -14,12 +14,6 @@ export type UserRow = Tables<'users'>;
 export type JobRow = Tables<'jobs'>;
 export type MatchRow = Tables<'matches'>;
 
-// Freshness tiers for job prioritization
-export enum FreshnessTier {
-  ULTRA_FRESH = 'ultra_fresh',    // < 24 hours
-  FRESH = 'fresh',                // 1-3 days
-  COMPREHENSIVE = 'comprehensive' // > 3 days
-}
 
 // ================================
 // CORE INTERFACES

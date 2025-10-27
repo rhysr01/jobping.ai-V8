@@ -1,354 +1,446 @@
 /**
- * Business Metrics Tests
- * Tests business KPI tracking and analytics
+ * Tests for Business Metrics and Monitoring System
  */
 
-describe('Business Metrics - User Metrics', () => {
-  it('✅ Tracks total user count', () => {
-    const totalUsers = 150;
-    
-    expect(totalUsers).toBeGreaterThan(0);
-  });
+import { BusinessMetricsCollector, type BusinessMetrics, type MetricTrend } from '@/Utils/monitoring/businessMetrics';
 
-  it('✅ Tracks active users', () => {
-    const activeUsers = 120;
-    const totalUsers = 150;
-    const activeRate = (activeUsers / totalUsers) * 100;
-    
-    expect(activeRate).toBeGreaterThan(50);
-  });
+// Mock Supabase
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn()
+}));
 
-  it('✅ Tracks new user registrations', () => {
-    const newUsersToday = 5;
-    
-    expect(newUsersToday).toBeGreaterThanOrEqual(0);
-  });
+// Mock Sentry
+jest.mock('@sentry/nextjs', () => ({
+  captureException: jest.fn(),
+  addBreadcrumb: jest.fn()
+}));
 
-  it('✅ Calculates user retention rate', () => {
-    const returningUsers = 80;
-    const totalUsers = 100;
-    const retentionRate = (returningUsers / totalUsers) * 100;
-    
-    expect(retentionRate).toBeGreaterThan(0);
-    expect(retentionRate).toBeLessThanOrEqual(100);
-  });
+describe('BusinessMetricsCollector', () => {
+  let collector: BusinessMetricsCollector;
+  let mockSupabaseClient: any;
 
-  it('✅ Tracks user churn rate', () => {
-    const churnedUsers = 10;
-    const totalUsers = 100;
-    const churnRate = (churnedUsers / totalUsers) * 100;
+  beforeEach(() => {
+    jest.clearAllMocks();
     
-    expect(churnRate).toBeLessThan(50);
-  });
-});
-
-describe('Business Metrics - Subscription Metrics', () => {
-  it('✅ Tracks premium subscribers', () => {
-    const premiumUsers = 30;
-    const totalUsers = 150;
-    const conversionRate = (premiumUsers / totalUsers) * 100;
-    
-    expect(conversionRate).toBeGreaterThan(0);
-  });
-
-  it('✅ Calculates monthly recurring revenue (MRR)', () => {
-    const subscribers = 30;
-    const pricePerMonth = 10;
-    const mrr = subscribers * pricePerMonth;
-    
-    expect(mrr).toBe(300);
-  });
-
-  it('✅ Tracks subscription upgrades', () => {
-    const upgrades = 5;
-    
-    expect(upgrades).toBeGreaterThanOrEqual(0);
-  });
-
-  it('✅ Tracks subscription cancellations', () => {
-    const cancellations = 2;
-    const subscribers = 30;
-    const cancellationRate = (cancellations / subscribers) * 100;
-    
-    expect(cancellationRate).toBeLessThan(10);
-  });
-
-  it('✅ Calculates customer lifetime value (LTV)', () => {
-    const avgMonthlyRevenue = 10;
-    const avgCustomerLifespanMonths = 12;
-    const ltv = avgMonthlyRevenue * avgCustomerLifespanMonths;
-    
-    expect(ltv).toBeGreaterThan(0);
-  });
-});
-
-describe('Business Metrics - Engagement Metrics', () => {
-  it('✅ Tracks email open rate', () => {
-    const emailsOpened = 80;
-    const emailsSent = 100;
-    const openRate = (emailsOpened / emailsSent) * 100;
-    
-    expect(openRate).toBeGreaterThan(0);
-    expect(openRate).toBeLessThanOrEqual(100);
-  });
-
-  it('✅ Tracks email click rate', () => {
-    const emailsClicked = 30;
-    const emailsSent = 100;
-    const clickRate = (emailsClicked / emailsSent) * 100;
-    
-    expect(clickRate).toBeLessThanOrEqual(100);
-  });
-
-  it('✅ Tracks job application rate', () => {
-    const applications = 40;
-    const jobsShown = 200;
-    const applicationRate = (applications / jobsShown) * 100;
-    
-    expect(applicationRate).toBeGreaterThan(0);
-  });
-
-  it('✅ Measures daily active users (DAU)', () => {
-    const dau = 50;
-    
-    expect(dau).toBeGreaterThan(0);
-  });
-
-  it('✅ Measures weekly active users (WAU)', () => {
-    const wau = 120;
-    const dau = 50;
-    
-    expect(wau).toBeGreaterThanOrEqual(dau);
-  });
-
-  it('✅ Calculates DAU/MAU ratio (stickiness)', () => {
-    const dau = 50;
-    const mau = 150;
-    const stickiness = (dau / mau) * 100;
-    
-    expect(stickiness).toBeGreaterThan(0);
-    expect(stickiness).toBeLessThanOrEqual(100);
-  });
-});
-
-describe('Business Metrics - Job Metrics', () => {
-  it('✅ Tracks total jobs scraped', () => {
-    const jobsScraped = 10000;
-    
-    expect(jobsScraped).toBeGreaterThan(0);
-  });
-
-  it('✅ Tracks jobs matched per user', () => {
-    const totalMatches = 500;
-    const activeUsers = 100;
-    const matchesPerUser = totalMatches / activeUsers;
-    
-    expect(matchesPerUser).toBeGreaterThan(0);
-  });
-
-  it('✅ Measures match quality score', () => {
-    const qualityScore = 85;
-    
-    expect(qualityScore).toBeGreaterThan(0);
-    expect(qualityScore).toBeLessThanOrEqual(100);
-  });
-
-  it('✅ Tracks job freshness', () => {
-    const freshJobs = 800;
-    const totalJobs = 1000;
-    const freshnessRate = (freshJobs / totalJobs) * 100;
-    
-    expect(freshnessRate).toBeGreaterThan(50);
-  });
-
-  it('✅ Monitors scraping success rate', () => {
-    const successfulScrapes = 95;
-    const totalAttempts = 100;
-    const successRate = (successfulScrapes / totalAttempts) * 100;
-    
-    expect(successRate).toBeGreaterThan(90);
-  });
-});
-
-describe('Business Metrics - Performance Metrics', () => {
-  it('✅ Tracks average matching time', () => {
-    const matchingTimeMs = 500;
-    const threshold = 2000;
-    
-    expect(matchingTimeMs).toBeLessThan(threshold);
-  });
-
-  it('✅ Tracks average email send time', () => {
-    const sendTimeMs = 100;
-    const threshold = 1000;
-    
-    expect(sendTimeMs).toBeLessThan(threshold);
-  });
-
-  it('✅ Measures API response time', () => {
-    const responseTimeMs = 200;
-    const sla = 500;
-    
-    expect(responseTimeMs).toBeLessThan(sla);
-  });
-
-  it('✅ Tracks error rate', () => {
-    const errors = 5;
-    const requests = 1000;
-    const errorRate = (errors / requests) * 100;
-    
-    expect(errorRate).toBeLessThan(1);
-  });
-
-  it('✅ Monitors cache hit rate', () => {
-    const cacheHits = 800;
-    const totalRequests = 1000;
-    const hitRate = (cacheHits / totalRequests) * 100;
-    
-    expect(hitRate).toBeGreaterThan(50);
-  });
-});
-
-describe('Business Metrics - Cost Metrics', () => {
-  it('✅ Tracks AI API costs', () => {
-    const costPerRequest = 0.002;
-    const totalRequests = 1000;
-    const totalCost = costPerRequest * totalRequests;
-    
-    expect(totalCost).toBeGreaterThan(0);
-  });
-
-  it('✅ Calculates cost per user', () => {
-    const totalCosts = 100;
-    const activeUsers = 150;
-    const costPerUser = totalCosts / activeUsers;
-    
-    expect(costPerUser).toBeGreaterThan(0);
-  });
-
-  it('✅ Tracks infrastructure costs', () => {
-    const monthlyCost = 50;
-    
-    expect(monthlyCost).toBeGreaterThan(0);
-  });
-
-  it('✅ Calculates profit margin', () => {
-    const revenue = 300;
-    const costs = 150;
-    const profit = revenue - costs;
-    const margin = (profit / revenue) * 100;
-    
-    expect(margin).toBeGreaterThan(0);
-  });
-});
-
-describe('Business Metrics - Growth Metrics', () => {
-  it('✅ Calculates month-over-month growth', () => {
-    const thisMonth = 150;
-    const lastMonth = 120;
-    const growth = ((thisMonth - lastMonth) / lastMonth) * 100;
-    
-    expect(growth).toBeGreaterThan(0);
-  });
-
-  it('✅ Tracks user acquisition rate', () => {
-    const newUsers = 30;
-    const days = 30;
-    const acquisitionRate = newUsers / days;
-    
-    expect(acquisitionRate).toBeGreaterThan(0);
-  });
-
-  it('✅ Measures viral coefficient', () => {
-    const referrals = 10;
-    const existingUsers = 100;
-    const viralCoefficient = referrals / existingUsers;
-    
-    expect(viralCoefficient).toBeGreaterThanOrEqual(0);
-  });
-
-  it('✅ Tracks conversion funnel', () => {
-    const visitors = 1000;
-    const signups = 100;
-    const premium = 20;
-    
-    const signupRate = (signups / visitors) * 100;
-    const conversionRate = (premium / signups) * 100;
-    
-    expect(signupRate).toBeGreaterThan(0);
-    expect(conversionRate).toBeGreaterThan(0);
-  });
-});
-
-describe('Business Metrics - Quality Metrics', () => {
-  it('✅ Tracks user satisfaction score', () => {
-    const satisfactionScore = 4.5; // out of 5
-    
-    expect(satisfactionScore).toBeGreaterThan(0);
-    expect(satisfactionScore).toBeLessThanOrEqual(5);
-  });
-
-  it('✅ Monitors Net Promoter Score (NPS)', () => {
-    const promoters = 60;
-    const detractors = 10;
-    const total = 100;
-    const nps = ((promoters - detractors) / total) * 100;
-    
-    expect(nps).toBeGreaterThan(0);
-  });
-
-  it('✅ Tracks support ticket volume', () => {
-    const tickets = 5;
-    const maxAcceptable = 20;
-    
-    expect(tickets).toBeLessThan(maxAcceptable);
-  });
-
-  it('✅ Measures average resolution time', () => {
-    const avgResolutionHours = 12;
-    const sla = 24;
-    
-    expect(avgResolutionHours).toBeLessThan(sla);
-  });
-});
-
-describe('Business Metrics - Reporting', () => {
-  it('✅ Generates daily metrics report', () => {
-    const report = {
-      date: new Date().toISOString(),
-      activeUsers: 120,
-      newSignups: 5,
-      revenue: 300
+    mockSupabaseClient = {
+      from: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      count: jest.fn().mockReturnThis(),
+      gte: jest.fn().mockReturnThis(),
+      lte: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn()
     };
-    
-    expect(report.date).toBeTruthy();
-    expect(report.activeUsers).toBeGreaterThan(0);
+
+    require('@supabase/supabase-js').createClient.mockReturnValue(mockSupabaseClient);
+    collector = new BusinessMetricsCollector();
   });
 
-  it('✅ Aggregates weekly metrics', () => {
-    const weeklyMetrics = {
-      totalSignups: 35,
-      totalRevenue: 2100,
-      avgDailyActive: 115
-    };
-    
-    expect(weeklyMetrics.totalSignups).toBeGreaterThan(0);
+  describe('collectUserMetrics', () => {
+    it('should collect user metrics', async () => {
+      const mockUserData = {
+        total_users: 1000,
+        active_users: 800,
+        new_users: 50,
+        retention_rate: 0.85,
+        satisfaction_score: 4.2
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockUserData, error: null });
+
+      const metrics = await collector.collectUserMetrics();
+
+      expect(metrics.totalUsers).toBe(1000);
+      expect(metrics.activeUsers).toBe(800);
+      expect(metrics.newUsers).toBe(50);
+      expect(metrics.userRetentionRate).toBe(0.85);
+      expect(metrics.userSatisfactionScore).toBe(4.2);
+    });
+
+    it('should handle missing user data', async () => {
+      mockSupabaseClient.single.mockResolvedValue({ data: null, error: null });
+
+      const metrics = await collector.collectUserMetrics();
+
+      expect(metrics.totalUsers).toBe(0);
+      expect(metrics.activeUsers).toBe(0);
+      expect(metrics.newUsers).toBe(0);
+      expect(metrics.userRetentionRate).toBe(0);
+      expect(metrics.userSatisfactionScore).toBe(0);
+    });
+
+    it('should handle database errors', async () => {
+      mockSupabaseClient.single.mockResolvedValue({ 
+        data: null, 
+        error: { message: 'Database error' } 
+      });
+
+      const metrics = await collector.collectUserMetrics();
+
+      expect(metrics.totalUsers).toBe(0);
+      expect(metrics.activeUsers).toBe(0);
+      expect(metrics.newUsers).toBe(0);
+      expect(metrics.userRetentionRate).toBe(0);
+      expect(metrics.userSatisfactionScore).toBe(0);
+    });
   });
 
-  it('✅ Calculates monthly trends', () => {
-    const monthlyTrend = {
-      growth: 25, // 25% growth
-      direction: 'up'
-    };
-    
-    expect(monthlyTrend.growth).toBeGreaterThan(0);
-    expect(monthlyTrend.direction).toBe('up');
+  describe('collectJobMetrics', () => {
+    it('should collect job metrics', async () => {
+      const mockJobData = {
+        total_jobs: 5000,
+        new_jobs: 200,
+        matched_jobs: 1500,
+        freshness_score: 0.75
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockJobData, error: null });
+
+      const metrics = await collector.collectJobMetrics();
+
+      expect(metrics.totalJobs).toBe(5000);
+      expect(metrics.newJobs).toBe(200);
+      expect(metrics.matchedJobs).toBe(1500);
+      expect(metrics.jobFreshnessScore).toBe(0.75);
+    });
+
+    it('should handle missing job data', async () => {
+      mockSupabaseClient.single.mockResolvedValue({ data: null, error: null });
+
+      const metrics = await collector.collectJobMetrics();
+
+      expect(metrics.totalJobs).toBe(0);
+      expect(metrics.newJobs).toBe(0);
+      expect(metrics.matchedJobs).toBe(0);
+      expect(metrics.jobFreshnessScore).toBe(0);
+    });
   });
 
-  it('✅ Exports metrics to analytics platform', () => {
-    const exported = true;
-    
-    expect(exported).toBe(true);
+  describe('collectMatchingMetrics', () => {
+    it('should collect matching metrics', async () => {
+      const mockMatchingData = {
+        total_matches: 3000,
+        ai_matches: 2000,
+        rule_based_matches: 1000,
+        average_match_score: 78.5,
+        match_success_rate: 0.85
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockMatchingData, error: null });
+
+      const metrics = await collector.collectMatchingMetrics();
+
+      expect(metrics.totalMatches).toBe(3000);
+      expect(metrics.aiMatches).toBe(2000);
+      expect(metrics.ruleBasedMatches).toBe(1000);
+      expect(metrics.averageMatchScore).toBe(78.5);
+      expect(metrics.matchSuccessRate).toBe(0.85);
+    });
+
+    it('should handle missing matching data', async () => {
+      mockSupabaseClient.single.mockResolvedValue({ data: null, error: null });
+
+      const metrics = await collector.collectMatchingMetrics();
+
+      expect(metrics.totalMatches).toBe(0);
+      expect(metrics.aiMatches).toBe(0);
+      expect(metrics.ruleBasedMatches).toBe(0);
+      expect(metrics.averageMatchScore).toBe(0);
+      expect(metrics.matchSuccessRate).toBe(0);
+    });
+  });
+
+  describe('collectPerformanceMetrics', () => {
+    it('should collect performance metrics', async () => {
+      const mockPerformanceData = {
+        average_latency: 250,
+        cache_hit_rate: 0.75,
+        error_rate: 0.02,
+        system_uptime: 0.99
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockPerformanceData, error: null });
+
+      const metrics = await collector.collectPerformanceMetrics();
+
+      expect(metrics.averageLatency).toBe(250);
+      expect(metrics.cacheHitRate).toBe(0.75);
+      expect(metrics.errorRate).toBe(0.02);
+      expect(metrics.systemUptime).toBe(0.99);
+    });
+
+    it('should handle missing performance data', async () => {
+      mockSupabaseClient.single.mockResolvedValue({ data: null, error: null });
+
+      const metrics = await collector.collectPerformanceMetrics();
+
+      expect(metrics.averageLatency).toBe(0);
+      expect(metrics.cacheHitRate).toBe(0);
+      expect(metrics.errorRate).toBe(0);
+      expect(metrics.systemUptime).toBe(0);
+    });
+  });
+
+  describe('collectRevenueMetrics', () => {
+    it('should collect revenue metrics', async () => {
+      const mockRevenueData = {
+        monthly_revenue: 50000,
+        total_subscribers: 500,
+        conversion_rate: 0.15,
+        churn_rate: 0.05
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockRevenueData, error: null });
+
+      const metrics = await collector.collectRevenueMetrics();
+
+      expect(metrics.monthlyRevenue).toBe(50000);
+      expect(metrics.totalSubscribers).toBe(500);
+      expect(metrics.conversionRate).toBe(0.15);
+      expect(metrics.churnRate).toBe(0.05);
+    });
+
+    it('should handle missing revenue data', async () => {
+      mockSupabaseClient.single.mockResolvedValue({ data: null, error: null });
+
+      const metrics = await collector.collectRevenueMetrics();
+
+      expect(metrics.monthlyRevenue).toBe(0);
+      expect(metrics.totalSubscribers).toBe(0);
+      expect(metrics.conversionRate).toBe(0);
+      expect(metrics.churnRate).toBe(0);
+    });
+  });
+
+  describe('collectCostMetrics', () => {
+    it('should collect cost metrics', async () => {
+      const mockCostData = {
+        ai_cost_per_match: 0.05,
+        total_ai_cost: 1500,
+        infrastructure_cost: 2000,
+        cost_per_user: 3.5
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockCostData, error: null });
+
+      const metrics = await collector.collectCostMetrics();
+
+      expect(metrics.aiCostPerMatch).toBe(0.05);
+      expect(metrics.totalAICost).toBe(1500);
+      expect(metrics.infrastructureCost).toBe(2000);
+      expect(metrics.costPerUser).toBe(3.5);
+    });
+
+    it('should handle missing cost data', async () => {
+      mockSupabaseClient.single.mockResolvedValue({ data: null, error: null });
+
+      const metrics = await collector.collectCostMetrics();
+
+      expect(metrics.aiCostPerMatch).toBe(0);
+      expect(metrics.totalAICost).toBe(0);
+      expect(metrics.infrastructureCost).toBe(0);
+      expect(metrics.costPerUser).toBe(0);
+    });
+  });
+
+  describe('collectAllMetrics', () => {
+    it('should collect all metrics', async () => {
+      const mockUserData = { total_users: 1000, active_users: 800, new_users: 50, retention_rate: 0.85, satisfaction_score: 4.2 };
+      const mockJobData = { total_jobs: 5000, new_jobs: 200, matched_jobs: 1500, freshness_score: 0.75 };
+      const mockMatchingData = { total_matches: 3000, ai_matches: 2000, rule_based_matches: 1000, average_match_score: 78.5, match_success_rate: 0.85 };
+      const mockPerformanceData = { average_latency: 250, cache_hit_rate: 0.75, error_rate: 0.02, system_uptime: 0.99 };
+      const mockRevenueData = { monthly_revenue: 50000, total_subscribers: 500, conversion_rate: 0.15, churn_rate: 0.05 };
+      const mockCostData = { ai_cost_per_match: 0.05, total_ai_cost: 1500, infrastructure_cost: 2000, cost_per_user: 3.5 };
+
+      mockSupabaseClient.single
+        .mockResolvedValueOnce({ data: mockUserData, error: null })
+        .mockResolvedValueOnce({ data: mockJobData, error: null })
+        .mockResolvedValueOnce({ data: mockMatchingData, error: null })
+        .mockResolvedValueOnce({ data: mockPerformanceData, error: null })
+        .mockResolvedValueOnce({ data: mockRevenueData, error: null })
+        .mockResolvedValueOnce({ data: mockCostData, error: null });
+
+      const metrics = await collector.collectAllMetrics();
+
+      expect(metrics.totalUsers).toBe(1000);
+      expect(metrics.totalJobs).toBe(5000);
+      expect(metrics.totalMatches).toBe(3000);
+      expect(metrics.averageLatency).toBe(250);
+      expect(metrics.monthlyRevenue).toBe(50000);
+      expect(metrics.aiCostPerMatch).toBe(0.05);
+    });
+
+    it('should handle partial failures', async () => {
+      const mockUserData = { total_users: 1000, active_users: 800, new_users: 50, retention_rate: 0.85, satisfaction_score: 4.2 };
+      const mockJobData = { total_jobs: 5000, new_jobs: 200, matched_jobs: 1500, freshness_score: 0.75 };
+
+      mockSupabaseClient.single
+        .mockResolvedValueOnce({ data: mockUserData, error: null })
+        .mockResolvedValueOnce({ data: mockJobData, error: null })
+        .mockResolvedValueOnce({ data: null, error: { message: 'Database error' } })
+        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({ data: null, error: null });
+
+      const metrics = await collector.collectAllMetrics();
+
+      expect(metrics.totalUsers).toBe(1000);
+      expect(metrics.totalJobs).toBe(5000);
+      expect(metrics.totalMatches).toBe(0);
+      expect(metrics.averageLatency).toBe(0);
+      expect(metrics.monthlyRevenue).toBe(0);
+      expect(metrics.aiCostPerMatch).toBe(0);
+    });
+  });
+
+  describe('getMetricTrends', () => {
+    it('should calculate metric trends', async () => {
+      const mockTrendData = [
+        { date: '2024-01-01', value: 100 },
+        { date: '2024-01-02', value: 110 },
+        { date: '2024-01-03', value: 120 }
+      ];
+
+      mockSupabaseClient.limit.mockResolvedValue({ data: mockTrendData, error: null });
+
+      const trends = await collector.getMetricTrends('total_users', 7);
+
+      expect(trends).toHaveLength(3);
+      expect(trends[0].value).toBe(100);
+      expect(trends[1].value).toBe(110);
+      expect(trends[2].value).toBe(120);
+    });
+
+    it('should handle missing trend data', async () => {
+      mockSupabaseClient.limit.mockResolvedValue({ data: null, error: null });
+
+      const trends = await collector.getMetricTrends('total_users', 7);
+
+      expect(trends).toEqual([]);
+    });
+  });
+
+  describe('generateReport', () => {
+    it('should generate business report', async () => {
+      const mockMetrics: BusinessMetrics = {
+        totalUsers: 1000,
+        activeUsers: 800,
+        newUsers: 50,
+        userRetentionRate: 0.85,
+        userSatisfactionScore: 4.2,
+        totalJobs: 5000,
+        newJobs: 200,
+        matchedJobs: 1500,
+        jobFreshnessScore: 0.75,
+        totalMatches: 3000,
+        aiMatches: 2000,
+        ruleBasedMatches: 1000,
+        averageMatchScore: 78.5,
+        matchSuccessRate: 0.85,
+        averageLatency: 250,
+        cacheHitRate: 0.75,
+        errorRate: 0.02,
+        systemUptime: 0.99,
+        monthlyRevenue: 50000,
+        totalSubscribers: 500,
+        conversionRate: 0.15,
+        churnRate: 0.05,
+        aiCostPerMatch: 0.05,
+        totalAICost: 1500,
+        infrastructureCost: 2000,
+        costPerUser: 3.5
+      };
+
+      const report = collector.generateReport(mockMetrics);
+
+      expect(report.summary).toBeDefined();
+      expect(report.recommendations).toBeDefined();
+      expect(report.alerts).toBeDefined();
+      expect(report.timestamp).toBeDefined();
+    });
+
+    it('should identify performance issues', async () => {
+      const mockMetrics: BusinessMetrics = {
+        totalUsers: 1000,
+        activeUsers: 800,
+        newUsers: 50,
+        userRetentionRate: 0.85,
+        userSatisfactionScore: 4.2,
+        totalJobs: 5000,
+        newJobs: 200,
+        matchedJobs: 1500,
+        jobFreshnessScore: 0.75,
+        totalMatches: 3000,
+        aiMatches: 2000,
+        ruleBasedMatches: 1000,
+        averageMatchScore: 78.5,
+        matchSuccessRate: 0.85,
+        averageLatency: 2000, // High latency
+        cacheHitRate: 0.25, // Low cache hit rate
+        errorRate: 0.15, // High error rate
+        systemUptime: 0.85, // Low uptime
+        monthlyRevenue: 50000,
+        totalSubscribers: 500,
+        conversionRate: 0.15,
+        churnRate: 0.05,
+        aiCostPerMatch: 0.05,
+        totalAICost: 1500,
+        infrastructureCost: 2000,
+        costPerUser: 3.5
+      };
+
+      const report = collector.generateReport(mockMetrics);
+
+      expect(report.alerts).toContain('High error rate detected');
+      expect(report.alerts).toContain('Low system uptime');
+      expect(report.recommendations).toContain('Investigate error sources');
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle missing environment variables', () => {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      expect(() => new BusinessMetricsCollector()).toThrow();
+    });
+
+    it('should handle concurrent metric collection', async () => {
+      const mockUserData = { total_users: 1000, active_users: 800, new_users: 50, retention_rate: 0.85, satisfaction_score: 4.2 };
+      mockSupabaseClient.single.mockResolvedValue({ data: mockUserData, error: null });
+
+      const promises = [
+        collector.collectUserMetrics(),
+        collector.collectUserMetrics(),
+        collector.collectUserMetrics()
+      ];
+
+      const results = await Promise.all(promises);
+
+      expect(results).toHaveLength(3);
+      results.forEach(result => {
+        expect(result.totalUsers).toBe(1000);
+      });
+    });
+
+    it('should handle very large metric values', async () => {
+      const mockUserData = {
+        total_users: 1000000,
+        active_users: 800000,
+        new_users: 50000,
+        retention_rate: 0.95,
+        satisfaction_score: 4.9
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockUserData, error: null });
+
+      const metrics = await collector.collectUserMetrics();
+
+      expect(metrics.totalUsers).toBe(1000000);
+      expect(metrics.activeUsers).toBe(800000);
+      expect(metrics.newUsers).toBe(50000);
+      expect(metrics.userRetentionRate).toBe(0.95);
+      expect(metrics.userSatisfactionScore).toBe(4.9);
+    });
   });
 });
-

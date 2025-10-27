@@ -9,7 +9,7 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section className="py-20 sm:py-24 md:py-32 lg:py-40">
+    <section data-testid="how-it-works" className="py-20 sm:py-24 md:py-32 lg:py-40">
       <div className="container-page">
         <motion.h2 
           initial={{ opacity: 0, y: 20 }}

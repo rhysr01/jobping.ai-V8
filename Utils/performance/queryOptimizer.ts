@@ -18,7 +18,6 @@ export interface OptimizedJobQuery {
   filters: {
     isActive?: boolean;
     isSent?: boolean;
-    freshnessTier?: string[];
     source?: string[];
     dateRange?: {
       field: string;
@@ -74,9 +73,6 @@ export class QueryOptimizer {
         queryBuilder = queryBuilder.eq('is_sent', query.filters.isSent);
       }
 
-      if (query.filters.freshnessTier && query.filters.freshnessTier.length > 0) {
-        queryBuilder = queryBuilder.in('freshness_tier', query.filters.freshnessTier);
-      }
 
       if (query.filters.source && query.filters.source.length > 0) {
         queryBuilder = queryBuilder.in('source', query.filters.source);
@@ -253,7 +249,7 @@ export class QueryOptimizer {
     try {
       const { data, error } = await this.supabase
         .from('jobs')
-        .select('id, title, company, location_name, job_url, posted_at, source, freshness_tier')
+        .select('id, title, company, location_name, job_url, posted_at, source')
         .eq('is_active', true)
         .gte('posted_at', cutoffDate.toISOString())
         .order('posted_at', { ascending: false })
@@ -293,7 +289,7 @@ export class QueryOptimizer {
       // Use a single query with aggregation
       const { data, error } = await this.supabase
         .from('jobs')
-        .select('source, freshness_tier, is_active, created_at')
+        .select('source, is_active, created_at')
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
       if (error) {
@@ -317,7 +313,7 @@ export class QueryOptimizer {
         stats.bySource[job.source]++;
 
         // Tier stats
-        const tier = job.freshness_tier || 'unknown';
+        const tier = 'active';
         if (!stats.byTier[tier]) {
           stats.byTier[tier] = 0;
         }

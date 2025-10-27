@@ -33,7 +33,7 @@ export class FallbackMatchingService {
     return combined.slice(0, MATCHING_CONFIG.fallback.maxMatches);
   }
 
-  generateMatchesByCriteria(jobs: any[], user: UserPreferences, opts: { careerPath?: boolean; location?: boolean; freshness?: boolean; maxResults?: number } = {}) {
+  generateMatchesByCriteria(jobs: any[], user: UserPreferences, opts: { careerPath?: boolean; location?: boolean; maxResults?: number } = {}) {
     // tests expect we call scoring with original arrays
     this.scoringService.scoreJobsForUser(jobs as any, user as any);
     let results = [...(jobs || [])];
@@ -44,13 +44,6 @@ export class FallbackMatchingService {
     if (opts.location && user.target_cities?.length) {
       const cities = user.target_cities.map(c => String(c).toLowerCase());
       results = results.filter(j => cities.some(c => String(j.location || '').toLowerCase().includes(c)));
-    }
-    if (opts.freshness) {
-      const now = Date.now();
-      results = results.filter(j => {
-        const ts = j.original_posted_date || j.posted_at || j.created_at || j.last_seen_at;
-        return ts ? (now - new Date(ts).getTime()) < 28 * 24 * 3600 * 1000 : true;
-      });
     }
     // also call scoring on filtered set to simulate deeper analysis
     this.scoringService.scoreJobsForUser(results as any, user as any);
@@ -79,7 +72,6 @@ export class FallbackMatchingService {
       maxMatches: MATCHING_CONFIG.fallback.maxMatches,
       lowConfidenceThreshold: MATCHING_CONFIG.fallback.lowConfidenceThreshold,
       diversityFactor: MATCHING_CONFIG.fallback.diversityFactor,
-      freshnessWeight: MATCHING_CONFIG.fallback.freshnessWeight,
       emergencyFallbackEnabled: MATCHING_CONFIG.fallback.emergencyFallbackEnabled,
       maxEmergencyMatches: MATCHING_CONFIG.fallback.maxEmergencyMatches,
     };

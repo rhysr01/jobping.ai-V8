@@ -49,7 +49,7 @@ export function middleware(request: NextRequest) {
   response.headers.set(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' https://*.supabase.co https://cdn.jsdelivr.net https://js.stripe.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://cdn.jsdelivr.net https://js.stripe.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "img-src 'self' data: https: blob:; " +

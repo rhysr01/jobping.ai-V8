@@ -120,23 +120,19 @@ export function validateUserEligibility(user: UserPreferences): {
 }
 
 /**
- * Validate job freshness for matching
+ * Validate job age for matching
  */
-export function validateJobFreshness(job: Job): {
-  fresh: boolean;
-  tier: 'ultra_fresh' | 'fresh' | 'stale' | 'very_stale';
+export function validateJobAge(job: Job): {
+  recent: boolean;
   daysOld: number;
 } {
   if (!job.created_at) {
-    return { fresh: false, tier: 'very_stale', daysOld: 999 };
+    return { recent: false, daysOld: 999 };
   }
 
   const daysOld = Math.floor((Date.now() - new Date(job.created_at).getTime()) / (1000 * 60 * 60 * 24));
   
-  if (daysOld <= 1) return { fresh: true, tier: 'ultra_fresh', daysOld };
-  if (daysOld <= 7) return { fresh: true, tier: 'fresh', daysOld };
-  if (daysOld <= 30) return { fresh: false, tier: 'stale', daysOld };
-  return { fresh: false, tier: 'very_stale', daysOld };
+  return { recent: daysOld <= 30, daysOld };
 }
 
 /**
@@ -144,7 +140,9 @@ export function validateJobFreshness(job: Job): {
  */
 export function validateLocationCompatibility(
   jobLocations: string[],
-  userTargetCities: string[]
+  userTargetCities: string[],
+  jobCity?: string | null,
+  jobCountry?: string | null
 ): {
   compatible: boolean;
   matchScore: number;
@@ -162,43 +160,61 @@ export function validateLocationCompatibility(
   let matchScore = 0;
   let hasMatch = false;
 
-  // Check for exact matches
-  for (const jobLocation of jobLocations) {
-    for (const userCity of userTargetCities) {
-      if (jobLocation.toLowerCase().includes(userCity.toLowerCase()) ||
-          userCity.toLowerCase().includes(jobLocation.toLowerCase())) {
-        hasMatch = true;
-        matchScore = Math.max(matchScore, 100);
-        reasons.push(`Exact location match: ${jobLocation} matches ${userCity}`);
-      }
-    }
+  // Enhanced matching using structured city/country data
+  if (jobCity && userTargetCities.some(userCity =>
+    jobCity.toLowerCase().includes(userCity.toLowerCase()) ||
+    userCity.toLowerCase().includes(jobCity.toLowerCase())
+  )) {
+    hasMatch = true;
+    matchScore = Math.max(matchScore, 100);
+    reasons.push(`City match: ${jobCity} matches user target city`);
   }
 
-  // Check for partial matches (city in country, etc.)
+  // Check for country matches (useful for students open to cities within countries)
+  if (jobCountry && userTargetCities.some(userCity => {
+    // Handle cases like "Berlin, Germany" where user might specify just "Berlin"
+    const cityCountryPattern = new RegExp(`${userCity.toLowerCase()}.*${jobCountry?.toLowerCase()}|${jobCountry?.toLowerCase()}.*${userCity.toLowerCase()}`);
+    return jobCountry.toLowerCase().includes(userCity.toLowerCase()) ||
+           userCity.toLowerCase().includes(jobCountry.toLowerCase()) ||
+           cityCountryPattern.test(userCity.toLowerCase());
+  })) {
+    hasMatch = true;
+    matchScore = Math.max(matchScore, 80);
+    reasons.push(`Country match: ${jobCountry} matches user target area`);
+  }
+
+  // Fallback to string matching in location field
   if (!hasMatch) {
     for (const jobLocation of jobLocations) {
       for (const userCity of userTargetCities) {
         if (jobLocation.toLowerCase().includes(userCity.toLowerCase()) ||
             userCity.toLowerCase().includes(jobLocation.toLowerCase())) {
           hasMatch = true;
-          matchScore = Math.max(matchScore, 70);
-          reasons.push(`Partial location match: ${jobLocation} partially matches ${userCity}`);
+          matchScore = Math.max(matchScore, 100);
+          reasons.push(`Location string match: ${jobLocation} matches ${userCity}`);
         }
       }
     }
   }
 
-  // Check for remote work compatibility
-  if (jobLocations.some(loc => loc.toLowerCase().includes('remote'))) {
-    hasMatch = true;
-    matchScore = Math.max(matchScore, 80);
-    reasons.push('Remote work available');
+  // Check for remote/hybrid work (always compatible if user has location preferences)
+  if (!hasMatch) {
+    for (const jobLocation of jobLocations) {
+      if (jobLocation.toLowerCase().includes('remote') ||
+          jobLocation.toLowerCase().includes('hybrid') ||
+          jobLocation.toLowerCase().includes('work from home') ||
+          jobLocation.toLowerCase().includes('flexible')) {
+        hasMatch = true;
+        matchScore = Math.max(matchScore, 60);
+        reasons.push(`Remote/hybrid work available: ${jobLocation}`);
+      }
+    }
   }
 
   return {
     compatible: hasMatch,
     matchScore,
-    reasons: reasons.length > 0 ? reasons : ['No location compatibility']
+    reasons: reasons.length > 0 ? reasons : ['No location compatibility found']
   };
 }
 
@@ -346,7 +362,7 @@ export function validateJobUserCompatibility(
 } {
   const hardGates = applyHardGates(job, user);
   const jobLocation = [job.location]; // Location is now single string, convert to array for compatibility
-  const location = validateLocationCompatibility(jobLocation, user.target_cities || []);
+  const location = validateLocationCompatibility(jobLocation, user.target_cities || [], job.city, job.country);
   const careerPath = validateCareerPathCompatibility(job.categories || [], user.career_path?.join(', ') || '');
   const workEnvironment = validateWorkEnvironmentCompatibility(
     job.work_environment || 'unclear',

@@ -1,264 +1,379 @@
 /**
- * Email Verification Tests
- * Tests email verification logic and token handling
+ * Tests for Email Verification System
  */
 
-describe('Email Verification - Token Generation', () => {
-  it('✅ Generates unique verification token', () => {
-    const token1 = Math.random().toString(36).substring(2);
-    const token2 = Math.random().toString(36).substring(2);
-    
-    expect(token1).not.toBe(token2);
-  });
+import { EmailVerificationOracle } from '@/Utils/emailVerification';
 
-  it('✅ Token has minimum length', () => {
-    const token = 'abcdef123456';
-    const minLength = 8;
-    
-    expect(token.length).toBeGreaterThanOrEqual(minLength);
-  });
+// Mock dependencies
+jest.mock('resend', () => ({
+  Resend: jest.fn()
+}));
 
-  it('✅ Token is URL-safe', () => {
-    const token = 'abcdef123456-safe_token';
-    const urlUnsafeChars = /[^a-zA-Z0-9\-_]/;
-    
-    expect(token).not.toMatch(urlUnsafeChars);
-  });
+jest.mock('bcrypt', () => ({
+  hash: jest.fn(),
+  compare: jest.fn()
+}));
 
-  it('✅ Token expires after time period', () => {
-    const createdAt = Date.now() - (25 * 60 * 60 * 1000); // 25 hours ago
-    const expiryHours = 24;
-    const now = Date.now();
-    
-    const isExpired = (now - createdAt) > (expiryHours * 60 * 60 * 1000);
-    
-    expect(isExpired).toBe(true);
-  });
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn()
+}));
 
-  it('✅ Token is valid within expiry period', () => {
-    const createdAt = Date.now() - (1 * 60 * 60 * 1000); // 1 hour ago
-    const expiryHours = 24;
-    const now = Date.now();
-    
-    const isValid = (now - createdAt) < (expiryHours * 60 * 60 * 1000);
-    
-    expect(isValid).toBe(true);
-  });
-});
+jest.mock('crypto', () => ({
+  randomBytes: jest.fn()
+}));
 
-describe('Email Verification - Verification Process', () => {
-  it('✅ Verifies email successfully with valid token', () => {
-    const storedToken = 'valid-token-123';
-    const providedToken = 'valid-token-123';
-    
-    const isValid = storedToken === providedToken;
-    
-    expect(isValid).toBe(true);
-  });
+describe('EmailVerificationOracle', () => {
+  let mockResendClient: any;
+  let mockSupabaseClient: any;
 
-  it('✅ Rejects invalid token', () => {
-    const storedToken = 'valid-token-123';
-    const providedToken = 'wrong-token-456';
+  beforeEach(() => {
+    jest.clearAllMocks();
     
-    const isValid = storedToken === providedToken;
-    
-    expect(isValid).toBe(false);
-  });
-
-  it('✅ Marks email as verified', () => {
-    let emailVerified = false;
-    
-    // Simulate verification
-    emailVerified = true;
-    
-    expect(emailVerified).toBe(true);
-  });
-
-  it('✅ Records verification timestamp', () => {
-    const verifiedAt = new Date().toISOString();
-    
-    expect(verifiedAt).toBeTruthy();
-    expect(typeof verifiedAt).toBe('string');
-  });
-
-  it('✅ Prevents duplicate verification', () => {
-    const emailVerified = true;
-    const attemptVerification = emailVerified;
-    
-    expect(attemptVerification).toBe(true);
-  });
-});
-
-describe('Email Verification - Resend Logic', () => {
-  it('✅ Allows resend after cooldown period', () => {
-    const lastSentAt = Date.now() - (6 * 60 * 1000); // 6 minutes ago
-    const cooldownMinutes = 5;
-    const now = Date.now();
-    
-    const canResend = (now - lastSentAt) > (cooldownMinutes * 60 * 1000);
-    
-    expect(canResend).toBe(true);
-  });
-
-  it('✅ Prevents resend during cooldown', () => {
-    const lastSentAt = Date.now() - (2 * 60 * 1000); // 2 minutes ago
-    const cooldownMinutes = 5;
-    const now = Date.now();
-    
-    const canResend = (now - lastSentAt) > (cooldownMinutes * 60 * 1000);
-    
-    expect(canResend).toBe(false);
-  });
-
-  it('✅ Limits resend attempts', () => {
-    const resendCount = 3;
-    const maxResends = 5;
-    
-    const canResend = resendCount < maxResends;
-    
-    expect(canResend).toBe(true);
-  });
-
-  it('✅ Blocks excessive resend attempts', () => {
-    const resendCount = 5;
-    const maxResends = 5;
-    
-    const canResend = resendCount < maxResends;
-    
-    expect(canResend).toBe(false);
-  });
-});
-
-describe('Email Verification - Email Content', () => {
-  it('✅ Includes verification link', () => {
-    const verificationUrl = 'https://getjobping.com/verify?token=abc123';
-    
-    expect(verificationUrl).toContain('/verify');
-    expect(verificationUrl).toContain('token=');
-  });
-
-  it('✅ Uses HTTPS for verification link', () => {
-    const verificationUrl = 'https://getjobping.com/verify';
-    
-    expect(verificationUrl).toMatch(/^https:\/\//);
-  });
-
-  it('✅ Includes user email in verification', () => {
-    const userEmail = 'user@example.com';
-    
-    expect(userEmail).toMatch(/@/);
-  });
-
-  it('✅ Has clear call to action', () => {
-    const callToAction = 'Verify your email';
-    
-    expect(callToAction.toLowerCase()).toContain('verify');
-  });
-});
-
-describe('Email Verification - Security', () => {
-  it('✅ Token is single-use', () => {
-    let tokenUsed = false;
-    
-    // First use
-    tokenUsed = true;
-    
-    // Second attempt
-    const canUseAgain = !tokenUsed;
-    
-    expect(canUseAgain).toBe(false);
-  });
-
-  it('✅ Invalidates token after verification', () => {
-    let tokenValid = true;
-    
-    // After verification
-    tokenValid = false;
-    
-    expect(tokenValid).toBe(false);
-  });
-
-  it('✅ Uses cryptographically secure tokens', () => {
-    const token = 'secure-random-token-123456';
-    const minEntropy = 10;
-    
-    expect(token.length).toBeGreaterThan(minEntropy);
-  });
-
-  it('✅ Prevents token reuse attack', () => {
-    const usedTokens = new Set(['token1', 'token2']);
-    const attemptedToken = 'token1';
-    
-    const isReused = usedTokens.has(attemptedToken);
-    
-    expect(isReused).toBe(true);
-  });
-});
-
-describe('Email Verification - Edge Cases', () => {
-  it('✅ Handles missing token gracefully', () => {
-    const token = undefined;
-    const isValid = !!token;
-    
-    expect(isValid).toBe(false);
-  });
-
-  it('✅ Handles malformed token', () => {
-    const token = 'invalid token with spaces!@#';
-    const validPattern = /^[a-zA-Z0-9\-_]+$/;
-    
-    const isValid = validPattern.test(token);
-    
-    expect(isValid).toBe(false);
-  });
-
-  it('✅ Handles already verified email', () => {
-    const emailVerified = true;
-    const shouldSendVerification = !emailVerified;
-    
-    expect(shouldSendVerification).toBe(false);
-  });
-
-  it('✅ Handles non-existent user', () => {
-    const userExists = false;
-    const canVerify = userExists;
-    
-    expect(canVerify).toBe(false);
-  });
-});
-
-describe('Email Verification - Database Updates', () => {
-  it('✅ Updates email_verified status', () => {
-    let emailVerified = false;
-    
-    emailVerified = true;
-    
-    expect(emailVerified).toBe(true);
-  });
-
-  it('✅ Records verification date', () => {
-    const verifiedAt = new Date();
-    
-    expect(verifiedAt).toBeInstanceOf(Date);
-  });
-
-  it('✅ Clears verification token after use', () => {
-    let verificationToken: string | null = 'token123';
-    
-    verificationToken = null;
-    
-    expect(verificationToken).toBeNull();
-  });
-
-  it('✅ Updates user status atomically', () => {
-    const updates = {
-      emailVerified: true,
-      verifiedAt: new Date(),
-      verificationToken: null
+    mockResendClient = {
+      emails: {
+        send: jest.fn()
+      }
     };
-    
-    expect(updates.emailVerified).toBe(true);
-    expect(updates.verificationToken).toBeNull();
+
+    mockSupabaseClient = {
+      from: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn()
+    };
+
+    require('resend').Resend.mockImplementation(() => mockResendClient);
+    require('@supabase/supabase-js').createClient.mockReturnValue(mockSupabaseClient);
+    require('crypto').randomBytes.mockReturnValue(Buffer.from('test-token-12345678901234567890123456789012', 'hex'));
+    require('bcrypt').hash.mockResolvedValue('hashed-token');
+    require('bcrypt').compare.mockResolvedValue(true);
+  });
+
+  describe('generateVerificationToken', () => {
+    it('should generate and store verification token', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ data: null, error: null });
+
+      const token = await EmailVerificationOracle.generateVerificationToken('test@example.com');
+
+      expect(token).toBe('test-token-12345678901234567890123456789012');
+      expect(require('crypto').randomBytes).toHaveBeenCalledWith(32);
+      expect(require('bcrypt').hash).toHaveBeenCalledWith(token, 12);
+      expect(mockSupabaseClient.update).toHaveBeenCalledWith({
+        verification_token: 'hashed-token',
+        verification_token_expires: expect.any(Date)
+      });
+    });
+
+    it('should handle database errors', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ 
+        data: null, 
+        error: { message: 'Database error' } 
+      });
+
+      await expect(EmailVerificationOracle.generateVerificationToken('test@example.com'))
+        .rejects.toThrow('Database error');
+    });
+
+    it('should set token expiration to 24 hours', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ data: null, error: null });
+
+      await EmailVerificationOracle.generateVerificationToken('test@example.com');
+
+      const updateCall = mockSupabaseClient.update.mock.calls[0][0];
+      const expiration = new Date(updateCall.verification_token_expires);
+      const now = new Date();
+      const hoursDiff = (expiration.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+      expect(hoursDiff).toBeCloseTo(24, 1);
+    });
+  });
+
+  describe('generateVerificationTokenLegacy', () => {
+    it('should generate legacy token', () => {
+      const token = EmailVerificationOracle.generateVerificationTokenLegacy();
+
+      expect(token).toBeDefined();
+      expect(typeof token).toBe('string');
+      expect(token.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('verifyToken', () => {
+    it('should verify valid token', async () => {
+      const mockUser = {
+        id: 'user1',
+        email: 'test@example.com',
+        verification_token: 'hashed-token',
+        verification_token_expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        email_verified: false
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockUser, error: null });
+      mockSupabaseClient.eq.mockResolvedValue({ data: null, error: null });
+
+      const result = await EmailVerificationOracle.verifyToken('test@example.com', 'test-token');
+
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Email verified successfully');
+    });
+
+    it('should reject expired token', async () => {
+      const mockUser = {
+        id: 'user1',
+        email: 'test@example.com',
+        verification_token: 'hashed-token',
+        verification_token_expires: new Date(Date.now() - 24 * 60 * 60 * 1000), // Expired
+        email_verified: false
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockUser, error: null });
+
+      const result = await EmailVerificationOracle.verifyToken('test@example.com', 'test-token');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Token expired');
+    });
+
+    it('should reject invalid token', async () => {
+      const mockUser = {
+        id: 'user1',
+        email: 'test@example.com',
+        verification_token: 'hashed-token',
+        verification_token_expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        email_verified: false
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockUser, error: null });
+      require('bcrypt').compare.mockResolvedValue(false);
+
+      const result = await EmailVerificationOracle.verifyToken('test@example.com', 'invalid-token');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Invalid token');
+    });
+
+    it('should handle user not found', async () => {
+      mockSupabaseClient.single.mockResolvedValue({ data: null, error: null });
+
+      const result = await EmailVerificationOracle.verifyToken('test@example.com', 'test-token');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('User not found');
+    });
+
+    it('should handle already verified email', async () => {
+      const mockUser = {
+        id: 'user1',
+        email: 'test@example.com',
+        verification_token: 'hashed-token',
+        verification_token_expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        email_verified: true
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockUser, error: null });
+
+      const result = await EmailVerificationOracle.verifyToken('test@example.com', 'test-token');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Email already verified');
+    });
+  });
+
+  describe('sendVerificationEmail', () => {
+    it('should send verification email successfully', async () => {
+      mockResendClient.emails.send.mockResolvedValue({ 
+        id: 'email-123',
+        to: 'test@example.com'
+      });
+
+      const result = await EmailVerificationOracle.sendVerificationEmail(
+        'test@example.com',
+        'John Doe',
+        'test-token'
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockResendClient.emails.send).toHaveBeenCalledWith({
+        from: 'JobPing <noreply@getjobping.com>',
+        to: 'test@example.com',
+        subject: 'Verify your email address',
+        html: expect.stringContaining('test-token')
+      });
+    });
+
+    it('should handle email sending errors', async () => {
+      mockResendClient.emails.send.mockRejectedValue(new Error('Email sending failed'));
+
+      const result = await EmailVerificationOracle.sendVerificationEmail(
+        'test@example.com',
+        'John Doe',
+        'test-token'
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Email sending failed');
+    });
+
+    it('should handle missing name', async () => {
+      mockResendClient.emails.send.mockResolvedValue({ 
+        id: 'email-123',
+        to: 'test@example.com'
+      });
+
+      const result = await EmailVerificationOracle.sendVerificationEmail(
+        'test@example.com',
+        undefined,
+        'test-token'
+      );
+
+      expect(result.success).toBe(true);
+      const sendCall = mockResendClient.emails.send.mock.calls[0][0];
+      expect(sendCall.html).toContain('Hello!');
+    });
+  });
+
+  describe('resendVerificationEmail', () => {
+    it('should resend verification email', async () => {
+      const mockUser = {
+        id: 'user1',
+        email: 'test@example.com',
+        full_name: 'John Doe',
+        email_verified: false
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockUser, error: null });
+      mockSupabaseClient.eq.mockResolvedValue({ data: null, error: null });
+      mockResendClient.emails.send.mockResolvedValue({ 
+        id: 'email-123',
+        to: 'test@example.com'
+      });
+
+      const result = await EmailVerificationOracle.resendVerificationEmail('test@example.com');
+
+      expect(result.success).toBe(true);
+      expect(mockSupabaseClient.update).toHaveBeenCalled();
+      expect(mockResendClient.emails.send).toHaveBeenCalled();
+    });
+
+    it('should handle user not found', async () => {
+      mockSupabaseClient.single.mockResolvedValue({ data: null, error: null });
+
+      const result = await EmailVerificationOracle.resendVerificationEmail('test@example.com');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('User not found');
+    });
+
+    it('should handle already verified email', async () => {
+      const mockUser = {
+        id: 'user1',
+        email: 'test@example.com',
+        full_name: 'John Doe',
+        email_verified: true
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockUser, error: null });
+
+      const result = await EmailVerificationOracle.resendVerificationEmail('test@example.com');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Email already verified');
+    });
+  });
+
+  describe('cleanupExpiredTokens', () => {
+    it('should cleanup expired tokens', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ data: null, error: null });
+
+      const result = await EmailVerificationOracle.cleanupExpiredTokens();
+
+      expect(result.success).toBe(true);
+      expect(mockSupabaseClient.update).toHaveBeenCalledWith({
+        verification_token: null,
+        verification_token_expires: null
+      });
+    });
+
+    it('should handle cleanup errors', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ 
+        data: null, 
+        error: { message: 'Cleanup failed' } 
+      });
+
+      const result = await EmailVerificationOracle.cleanupExpiredTokens();
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Cleanup failed');
+    });
+  });
+
+  describe('getVerificationStatus', () => {
+    it('should return verification status for verified user', async () => {
+      const mockUser = {
+        id: 'user1',
+        email: 'test@example.com',
+        email_verified: true,
+        verification_token: null
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockUser, error: null });
+
+      const result = await EmailVerificationOracle.getVerificationStatus('test@example.com');
+
+      expect(result.verified).toBe(true);
+      expect(result.hasToken).toBe(false);
+    });
+
+    it('should return verification status for unverified user', async () => {
+      const mockUser = {
+        id: 'user1',
+        email: 'test@example.com',
+        email_verified: false,
+        verification_token: 'hashed-token'
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockUser, error: null });
+
+      const result = await EmailVerificationOracle.getVerificationStatus('test@example.com');
+
+      expect(result.verified).toBe(false);
+      expect(result.hasToken).toBe(true);
+    });
+
+    it('should handle user not found', async () => {
+      mockSupabaseClient.single.mockResolvedValue({ data: null, error: null });
+
+      const result = await EmailVerificationOracle.getVerificationStatus('test@example.com');
+
+      expect(result.verified).toBe(false);
+      expect(result.hasToken).toBe(false);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle missing environment variables', () => {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      expect(() => EmailVerificationOracle.getSupabaseClient()).toThrow('Missing Supabase configuration');
+    });
+
+    it('should handle crypto randomBytes errors', async () => {
+      require('crypto').randomBytes.mockImplementation(() => {
+        throw new Error('Crypto error');
+      });
+
+      await expect(EmailVerificationOracle.generateVerificationToken('test@example.com'))
+        .rejects.toThrow('Crypto error');
+    });
+
+    it('should handle bcrypt errors', async () => {
+      require('bcrypt').hash.mockRejectedValue(new Error('Bcrypt error'));
+
+      await expect(EmailVerificationOracle.generateVerificationToken('test@example.com'))
+        .rejects.toThrow('Bcrypt error');
+    });
   });
 });
-

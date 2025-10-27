@@ -41,7 +41,6 @@ export class DatabaseQueryOptimizer {
     limit?: number;
     categories?: string[];
     locations?: string[];
-    freshnessTier?: string;
     excludeSent?: boolean;
     useCache?: boolean;
   } = {}): Promise<OptimizedQueryResult<any>> {
@@ -76,7 +75,6 @@ export class DatabaseQueryOptimizer {
         posted_at,
         created_at,
         job_hash,
-        freshness_tier,
         is_sent
       `)
       .eq('is_active', true)
@@ -91,9 +89,6 @@ export class DatabaseQueryOptimizer {
       query = query.in('location', config.locations);
     }
 
-    if (config.freshnessTier) {
-      query = query.eq('freshness_tier', config.freshnessTier);
-    }
 
     if (config.excludeSent) {
       query = query.eq('is_sent', false);
@@ -250,7 +245,6 @@ export class DatabaseQueryOptimizer {
         match_score,
         match_reason,
         confidence_score,
-        freshness_tier,
         processing_method,
         matched_at,
         created_at
@@ -412,7 +406,6 @@ export const RECOMMENDED_INDEXES = [
   'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_categories_gin ON jobs USING GIN(categories);',
   'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_posted_at_desc ON jobs(posted_at DESC);',
   'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_is_active_posted ON jobs(is_active, posted_at DESC);',
-  'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_freshness_tier ON jobs(freshness_tier);',
   'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_location ON jobs(location);',
   'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_jobs_is_sent ON jobs(is_sent);',
 

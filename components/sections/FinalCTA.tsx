@@ -39,7 +39,7 @@ export default function FinalCTA() {
       title: "Investment Banking Analyst Intern – Financial Sponsors Group",
       company: "Guggenheim Partners",
       location: "London, England",
-      job_url: "https://uk.indeed.com/viewjob?jk=e35ae28b179f6b06",
+      job_url: "#", // Placeholder - will be replaced with real job URL from database
       description: "Guggenheim Partners is a global investment and advisory firm with a track record of delivering results through innovative solutions. Join our Financial Sponsors Group for a 6-month internship starting January 2026.",
       is_internship: true,
       match_score: 92
@@ -48,7 +48,7 @@ export default function FinalCTA() {
       title: "Graduate Trainee - Finance",
       company: "NatWest Group",
       location: "London, England",
-      job_url: "https://www.linkedin.com/jobs/view/4313740922",
+      job_url: "#", // Placeholder - will be replaced with real job URL from database
       description: "Join NatWest Group's Finance Graduate Programme. Gain hands-on experience across financial planning, analysis, and reporting while building your career at one of the UK's leading banks.",
       is_graduate: true,
       match_score: 88

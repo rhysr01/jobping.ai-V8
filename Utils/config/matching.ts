@@ -30,10 +30,9 @@ export const MATCHING_CONFIG = {
   scoring: {
     // Weight distribution (must sum to 100)
     weights: {
-      eligibility: 35,
-      careerPath: 30,
-      location: 20,
-      freshness: 15,
+      eligibility: 40,
+      careerPath: 35,
+      location: 25,
     },
     
     // Score thresholds (use decimals for tests expecting 0-1 scale)
@@ -61,7 +60,6 @@ export const MATCHING_CONFIG = {
     lowConfidenceThreshold: 0.4,
     backfillEnabled: true,
     diversityFactor: 0.3,
-    freshnessWeight: 0.2,
     emergencyFallbackEnabled: true,
     maxEmergencyMatches: 3,
   },
@@ -107,13 +105,6 @@ export const MATCHING_CONFIG = {
     jobReservationTtl: 300000, // 5 minutes
   },
 
-  // Freshness Tier Definitions
-  freshness: {
-    ultraFreshHours: 24,
-    freshDays: 3,
-    comprehensiveDays: 7,
-    maxDaysToConsider: 30,
-  },
 
   // Feature Flags
   features: {
@@ -141,7 +132,6 @@ export function getScoringWeights() {
     eligibility: weights.eligibility / 100,
     careerPath: weights.careerPath / 100,
     location: weights.location / 100,
-    freshness: weights.freshness / 100,
   };
 }
 

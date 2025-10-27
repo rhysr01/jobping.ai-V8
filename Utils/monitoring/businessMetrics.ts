@@ -203,7 +203,7 @@ export class BusinessMetricsCollector {
 
     const matchedJobs = matches?.length || 0;
 
-    // Calculate job freshness (jobs posted within last 7 days)
+    // Calculate job recency (jobs posted within last 7 days)
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const freshJobs = jobRows.filter((j: JobRow) => 
       j.posted_at != null && new Date(j.posted_at as string) > sevenDaysAgo

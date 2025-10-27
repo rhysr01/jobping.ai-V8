@@ -112,7 +112,6 @@ describe('FallbackMatchingService', () => {
           eligibility: 100,
           careerPath: 80,
           location: 90,
-          freshness: 70,
           confidence: 0.8
         }
       },
@@ -128,7 +127,6 @@ describe('FallbackMatchingService', () => {
           eligibility: 100,
           careerPath: 70,
           location: 80,
-          freshness: 60,
           confidence: 0.7
         }
       },
@@ -144,7 +142,6 @@ describe('FallbackMatchingService', () => {
           eligibility: 100,
           careerPath: 60,
           location: 70,
-          freshness: 50,
           confidence: 0.6
         }
       }
@@ -164,7 +161,6 @@ describe('FallbackMatchingService', () => {
             eligibility: 100,
             careerPath: 80,
             location: 90,
-            freshness: 70,
             confidence: 0.8
           }
         }
@@ -182,7 +178,6 @@ describe('FallbackMatchingService', () => {
             eligibility: 100,
             careerPath: 70,
             location: 80,
-            freshness: 60,
             confidence: 0.7
           }
         }
@@ -228,7 +223,6 @@ describe('FallbackMatchingService', () => {
               eligibility: 100,
               careerPath: 70,
               location: 80,
-              freshness: 60,
               confidence: 0.7
             }
           }
@@ -261,9 +255,9 @@ describe('FallbackMatchingService', () => {
       expect(result.length).toBeGreaterThan(0);
     });
 
-    it('should filter by freshness when specified', () => {
+    it('should filter by other criteria when specified', () => {
       const result = fallbackService.generateMatchesByCriteria(mockJobs, mockUser, {
-        freshness: true
+        careerPath: true
       });
 
       expect(mockScoringService.scoreJobsForUser).toHaveBeenCalledWith(mockJobs, mockUser);
@@ -325,7 +319,6 @@ describe('FallbackMatchingService', () => {
             eligibility: 70,
             careerPath: 50,
             location: 40,
-            freshness: 30,
             confidence: 0.3
           }
         }
@@ -350,7 +343,6 @@ describe('FallbackMatchingService', () => {
             eligibility: 100,
             careerPath: 80,
             location: 90,
-            freshness: 70,
             confidence: 0.8
           }
         }
@@ -369,7 +361,6 @@ describe('FallbackMatchingService', () => {
       expect(stats.maxMatches).toBe(MATCHING_CONFIG.fallback.maxMatches);
       expect(stats.lowConfidenceThreshold).toBe(MATCHING_CONFIG.fallback.lowConfidenceThreshold);
       expect(stats.diversityFactor).toBe(MATCHING_CONFIG.fallback.diversityFactor);
-      expect(stats.freshnessWeight).toBe(MATCHING_CONFIG.fallback.freshnessWeight);
       expect(stats.emergencyFallbackEnabled).toBe(MATCHING_CONFIG.fallback.emergencyFallbackEnabled);
       expect(stats.maxEmergencyMatches).toBe(MATCHING_CONFIG.fallback.maxEmergencyMatches);
     });

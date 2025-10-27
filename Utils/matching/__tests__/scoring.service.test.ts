@@ -72,15 +72,6 @@ describe('ScoringService', () => {
       expect(score.location).toBe(100);
     });
 
-    it('should calculate freshness score correctly', () => {
-      const freshJob: Job = {
-        ...mockJob,
-        posted_at: new Date().toISOString() // Posted today
-      };
-
-      const score = scoringService.calculateMatchScore(freshJob, mockUser);
-      expect(score.freshness).toBe(100);
-    });
 
     it('should calculate overall score with correct weights', () => {
       const perfectJob: Job = {
@@ -141,7 +132,6 @@ describe('ScoringService', () => {
         eligibility: 100,
         careerPath: 100,
         location: 100,
-        freshness: 100,
         confidence: 1.0
       };
 
@@ -166,7 +156,6 @@ describe('ScoringService', () => {
         eligibility: 0,
         careerPath: 40,
         location: 50,
-        freshness: 40,
         confidence: 0.7
       };
 
@@ -191,7 +180,6 @@ describe('ScoringService', () => {
           eligibility: 100,
           careerPath: 100,
           location: 100,
-          freshness: 100,
           confidence: 0.9
         }
       };
@@ -208,7 +196,6 @@ describe('ScoringService', () => {
           eligibility: 70,
           careerPath: 70,
           location: 75,
-          freshness: 70,
           confidence: 0.6
         }
       };
@@ -289,7 +276,6 @@ describe('ScoringService', () => {
             eligibility: 0.5,
             careerPath: 0.3,
             location: 0.1,
-            freshness: 0.1
           }
         }
       };

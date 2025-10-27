@@ -139,11 +139,6 @@ function SignupForm() {
 
   const selectedCareer = CAREER_PATHS.find(c => c.value === formData.careerPath);
 
-  // Debug logging
-  console.log('Step:', step);
-  console.log('CAREER_PATHS length:', CAREER_PATHS.length);
-  console.log('formData.careerPath:', formData.careerPath);
-  console.log('selectedCareer:', selectedCareer);
 
   const toggleArray = (arr: string[], value: string) => {
     return arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value];
@@ -325,8 +320,9 @@ function SignupForm() {
                 </div>
 
                 <div>
-                  <label className="block text-base font-bold text-white mb-3">Full Name *</label>
+                  <label htmlFor="fullName" className="block text-base font-bold text-white mb-3">Full Name *</label>
                   <input
+                    id="fullName"
                     type="text"
                     value={formData.fullName}
                     onChange={(e) => setFormData({...formData, fullName: e.target.value})}
@@ -336,8 +332,9 @@ function SignupForm() {
                 </div>
 
                 <div>
-                  <label className="block text-base font-bold text-white mb-3">Email *</label>
+                  <label htmlFor="email" className="block text-base font-bold text-white mb-3">Email *</label>
                   <input
+                    id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -355,7 +352,11 @@ function SignupForm() {
                       <motion.button
                         key={city}
                         type="button"
-                        onClick={() => formData.cities.length < 3 || formData.cities.includes(city) ? setFormData({...formData, cities: toggleArray(formData.cities, city)}) : null}
+                        onClick={() => {
+                          if (formData.cities.length < 3 || formData.cities.includes(city)) {
+                            setFormData({...formData, cities: toggleArray(formData.cities, city)});
+                          }
+                        }}
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.98 }}
                         className={`px-4 py-3.5 rounded-xl border-2 transition-all font-semibold text-sm ${

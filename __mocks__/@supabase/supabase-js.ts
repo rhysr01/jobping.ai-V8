@@ -82,7 +82,6 @@ if (!global.__SB_MOCK__) {
         job_hash: 'hash1',
         is_sent: false,
         status: 'active',
-        freshness_tier: 'fresh',
         original_posted_date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
         last_seen_at: new Date().toISOString(),
         categories: 'career:tech|early-career|loc:madrid'
@@ -98,7 +97,6 @@ if (!global.__SB_MOCK__) {
         job_hash: 'hash2',
         is_sent: false,
         status: 'active',
-        freshness_tier: 'ultra_fresh',
         original_posted_date: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
         last_seen_at: new Date().toISOString(),
         categories: 'career:marketing|early-career|loc:barcelona'

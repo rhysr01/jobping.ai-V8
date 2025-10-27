@@ -12,17 +12,14 @@ export class ScoringService {
     const eligibility = (job.categories || []).includes('early-career') ? 100 : 0;
     const careerPath = (job.categories || []).includes('career:tech') ? 100 : 70;
     const location = (job.categories || []).includes('loc:san-francisco') ? 100 : 50;
-    const freshness = 100; // simplified for tests
-
     const w = getScoringWeights();
     const overall = Math.round(
       eligibility * w.eligibility +
       careerPath * w.careerPath +
-      location * w.location +
-      freshness * w.freshness
+      location * w.location
     );
 
-    return { overall, eligibility, career_path: careerPath as any, careerPath, location, freshness, keywords: 0, work_environment: 0, visa_sponsorship: 0, experience_level: 0, languages: 0, company_type: 0, roles: 0 } as any;
+    return { overall, eligibility, career_path: careerPath as any, careerPath, location, keywords: 0, work_environment: 0, visa_sponsorship: 0, experience_level: 0, languages: 0, company_type: 0, roles: 0 } as any;
   }
 
   calculateConfidenceScore(job: Job, _user: UserPreferences): number {

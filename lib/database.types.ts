@@ -101,7 +101,6 @@ export type Database = {
           experience_required: string | null
           filtered_reason: string | null
           fingerprint: string | null
-          freshness_tier: string | null
           id: number
           is_active: boolean | null
           is_graduate: boolean | null
@@ -144,7 +143,6 @@ export type Database = {
           experience_required?: string | null
           filtered_reason?: string | null
           fingerprint?: string | null
-          freshness_tier?: string | null
           id?: number
           is_active?: boolean | null
           is_graduate?: boolean | null
@@ -187,7 +185,6 @@ export type Database = {
           experience_required?: string | null
           filtered_reason?: string | null
           fingerprint?: string | null
-          freshness_tier?: string | null
           id?: number
           is_active?: boolean | null
           is_graduate?: boolean | null

@@ -14,7 +14,7 @@ export const GET = asyncHandler(async (_req: NextRequest) => {
   // Fetch 50 recent quality jobs from popular cities
   const { data: jobs, error } = await supabase
     .from('jobs')
-    .select('job_hash, title, company, location, description, job_url, source, created_at, freshness_tier')
+    .select('job_hash, title, company, location, description, job_url, source, created_at')
     .eq('status', 'active')
     .in('location', ['London', 'Berlin', 'Amsterdam', 'Paris', 'Madrid'])
     .order('created_at', { ascending: false })

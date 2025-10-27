@@ -1,312 +1,406 @@
 /**
- * Query Optimizer Tests
- * Tests database query optimization
+ * Tests for Database Query Optimizer
  */
 
-describe('Query Optimization - Indexing', () => {
-  it('✅ Uses indexes for frequent queries', () => {
-    const indexedFields = ['email', 'created_at', 'job_hash'];
+import { QueryOptimizer, type QueryCache, type OptimizedJobQuery } from '@/Utils/performance/queryOptimizer';
+
+// Mock Supabase
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn()
+}));
+
+describe('QueryOptimizer', () => {
+  let optimizer: QueryOptimizer;
+  let mockSupabaseClient: any;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
     
-    expect(indexedFields).toContain('email');
+    mockSupabaseClient = {
+      from: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      gte: jest.fn().mockReturnThis(),
+      lte: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      single: jest.fn()
+    };
+
+    require('@supabase/supabase-js').createClient.mockReturnValue(mockSupabaseClient);
+    optimizer = new QueryOptimizer();
   });
 
-  it('✅ Creates composite indexes', () => {
-    const compositeIndex = ['user_id', 'created_at'];
-    
-    expect(compositeIndex).toHaveLength(2);
+  describe('getJobsForMatching', () => {
+    it('should fetch jobs with basic query', async () => {
+      const mockJobs = [
+        { id: 1, title: 'Software Engineer', company: 'Tech Corp', location: 'London' },
+        { id: 2, title: 'Data Scientist', company: 'Data Inc', location: 'Berlin' }
+      ];
+
+      mockSupabaseClient.limit.mockResolvedValue({ data: mockJobs, error: null });
+
+      const query: OptimizedJobQuery = {
+        select: ['id', 'title', 'company', 'location'],
+        filters: {
+          isActive: true
+        },
+        orderBy: {
+          field: 'created_at',
+          ascending: false
+        },
+        limit: 10
+      };
+
+      const result = await optimizer.getJobsForMatching(query);
+
+      expect(result).toEqual(mockJobs);
+      expect(mockSupabaseClient.from).toHaveBeenCalledWith('jobs');
+      expect(mockSupabaseClient.select).toHaveBeenCalledWith('id,title,company,location');
+      expect(mockSupabaseClient.eq).toHaveBeenCalledWith('is_active', true);
+      expect(mockSupabaseClient.order).toHaveBeenCalledWith('created_at', { ascending: false });
+      expect(mockSupabaseClient.limit).toHaveBeenCalledWith(10);
+    });
+
+    it('should apply multiple filters', async () => {
+      const mockJobs = [{ id: 1, title: 'Software Engineer', company: 'Tech Corp' }];
+
+      mockSupabaseClient.limit.mockResolvedValue({ data: mockJobs, error: null });
+
+      const query: OptimizedJobQuery = {
+        select: ['id', 'title', 'company'],
+        filters: {
+          isActive: true,
+          isSent: false,
+          source: ['mantiks', 'reed']
+        },
+        orderBy: {
+          field: 'created_at',
+          ascending: false
+        }
+      };
+
+      await optimizer.getJobsForMatching(query);
+
+      expect(mockSupabaseClient.eq).toHaveBeenCalledWith('is_active', true);
+      expect(mockSupabaseClient.eq).toHaveBeenCalledWith('is_sent', false);
+      expect(mockSupabaseClient.in).toHaveBeenCalledWith('source', ['mantiks', 'reed']);
+    });
+
+    it('should apply date range filter', async () => {
+      const mockJobs = [{ id: 1, title: 'Software Engineer' }];
+
+      mockSupabaseClient.limit.mockResolvedValue({ data: mockJobs, error: null });
+
+      const startDate = new Date('2024-01-01');
+      const endDate = new Date('2024-01-31');
+
+      const query: OptimizedJobQuery = {
+        select: ['id', 'title'],
+        filters: {
+          dateRange: {
+            field: 'created_at',
+            start: startDate,
+            end: endDate
+          }
+        },
+        orderBy: {
+          field: 'created_at',
+          ascending: false
+        }
+      };
+
+      await optimizer.getJobsForMatching(query);
+
+      expect(mockSupabaseClient.gte).toHaveBeenCalledWith('created_at', startDate.toISOString());
+      expect(mockSupabaseClient.lte).toHaveBeenCalledWith('created_at', endDate.toISOString());
+    });
+
+    it('should handle database errors', async () => {
+      mockSupabaseClient.limit.mockResolvedValue({ 
+        data: null, 
+        error: { message: 'Database error' } 
+      });
+
+      const query: OptimizedJobQuery = {
+        select: ['id', 'title'],
+        filters: {},
+        orderBy: {
+          field: 'created_at',
+          ascending: false
+        }
+      };
+
+      await expect(optimizer.getJobsForMatching(query)).rejects.toThrow('Database error');
+    });
+
+    it('should return empty array when no data', async () => {
+      mockSupabaseClient.limit.mockResolvedValue({ data: [], error: null });
+
+      const query: OptimizedJobQuery = {
+        select: ['id', 'title'],
+        filters: {},
+        orderBy: {
+          field: 'created_at',
+          ascending: false
+        }
+      };
+
+      const result = await optimizer.getJobsForMatching(query);
+
+      expect(result).toEqual([]);
+    });
   });
 
-  it('✅ Avoids over-indexing', () => {
-    const maxIndexes = 5;
-    const currentIndexes = 3;
-    
-    expect(currentIndexes).toBeLessThanOrEqual(maxIndexes);
+  describe('getCachedQuery', () => {
+    it('should return cached data when available', async () => {
+      const cacheKey = 'test-query';
+      const cachedData = [{ id: 1, title: 'Cached Job' }];
+      
+      // Manually set cache
+      (optimizer as any).cache[cacheKey] = {
+        data: cachedData,
+        timestamp: Date.now(),
+        ttl: 300000 // 5 minutes
+      };
+
+      const result = await optimizer.getCachedQuery(cacheKey);
+
+      expect(result).toEqual(cachedData);
+    });
+
+    it('should return null when cache is expired', async () => {
+      const cacheKey = 'expired-query';
+      const expiredData = [{ id: 1, title: 'Expired Job' }];
+      
+      // Set expired cache
+      (optimizer as any).cache[cacheKey] = {
+        data: expiredData,
+        timestamp: Date.now() - 600000, // 10 minutes ago
+        ttl: 300000 // 5 minutes TTL
+      };
+
+      const result = await optimizer.getCachedQuery(cacheKey);
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null when cache key does not exist', async () => {
+      const result = await optimizer.getCachedQuery('non-existent-key');
+
+      expect(result).toBeNull();
+    });
   });
 
-  it('✅ Indexes foreign keys', () => {
-    const foreignKeys = ['user_id', 'job_id'];
-    const indexes = ['user_id', 'job_id', 'created_at'];
-    
-    foreignKeys.forEach(fk => {
-      expect(indexes).toContain(fk);
+  describe('setCachedQuery', () => {
+    it('should cache query data', async () => {
+      const cacheKey = 'test-query';
+      const data = [{ id: 1, title: 'Test Job' }];
+
+      await optimizer.setCachedQuery(cacheKey, data);
+
+      const cached = (optimizer as any).cache[cacheKey];
+      expect(cached.data).toEqual(data);
+      expect(cached.timestamp).toBeDefined();
+      expect(cached.ttl).toBeDefined();
+    });
+
+    it('should use custom TTL', async () => {
+      const cacheKey = 'test-query';
+      const data = [{ id: 1, title: 'Test Job' }];
+      const customTTL = 600000; // 10 minutes
+
+      await optimizer.setCachedQuery(cacheKey, data, customTTL);
+
+      const cached = (optimizer as any).cache[cacheKey];
+      expect(cached.ttl).toBe(customTTL);
+    });
+  });
+
+  describe('clearCache', () => {
+    it('should clear all cached data', async () => {
+      // Set some cache data
+      (optimizer as any).cache['key1'] = { data: [], timestamp: Date.now(), ttl: 300000 };
+      (optimizer as any).cache['key2'] = { data: [], timestamp: Date.now(), ttl: 300000 };
+
+      await optimizer.clearCache();
+
+      expect(Object.keys((optimizer as any).cache)).toHaveLength(0);
+    });
+  });
+
+  describe('getCacheStats', () => {
+    it('should return cache statistics', async () => {
+      // Set some cache data
+      (optimizer as any).cache['key1'] = { data: [], timestamp: Date.now(), ttl: 300000 };
+      (optimizer as any).cache['key2'] = { data: [], timestamp: Date.now(), ttl: 300000 };
+
+      const stats = await optimizer.getCacheStats();
+
+      expect(stats.totalKeys).toBe(2);
+      expect(stats.hitRate).toBeDefined();
+      expect(stats.memoryUsage).toBeDefined();
+    });
+
+    it('should return zero stats for empty cache', async () => {
+      const stats = await optimizer.getCacheStats();
+
+      expect(stats.totalKeys).toBe(0);
+      expect(stats.hitRate).toBe(0);
+      expect(stats.memoryUsage).toBe(0);
+    });
+  });
+
+  describe('optimizeQuery', () => {
+    it('should optimize query structure', async () => {
+      const query: OptimizedJobQuery = {
+        select: ['id', 'title', 'company', 'location'],
+        filters: {
+          isActive: true,
+          source: ['mantiks']
+        },
+        orderBy: {
+          field: 'created_at',
+          ascending: false
+        },
+        limit: 100
+      };
+
+      const optimized = optimizer.optimizeQuery(query);
+
+      expect(optimized.select).toEqual(['id', 'title', 'company', 'location']);
+      expect(optimized.filters).toEqual({
+        isActive: true,
+        source: ['mantiks']
+      });
+      expect(optimized.orderBy).toEqual({
+        field: 'created_at',
+        ascending: false
+      });
+      expect(optimized.limit).toBe(100);
+    });
+
+    it('should add default values for missing fields', async () => {
+      const query: OptimizedJobQuery = {
+        select: ['id', 'title'],
+        filters: {},
+        orderBy: {
+          field: 'created_at',
+          ascending: false
+        }
+      };
+
+      const optimized = optimizer.optimizeQuery(query);
+
+      expect(optimized.select).toEqual(['id', 'title']);
+      expect(optimized.filters).toEqual({});
+      expect(optimized.orderBy).toEqual({
+        field: 'created_at',
+        ascending: false
+      });
+      expect(optimized.limit).toBeUndefined();
+    });
+  });
+
+  describe('batchQueries', () => {
+    it('should execute multiple queries in batch', async () => {
+      const mockJobs1 = [{ id: 1, title: 'Job 1' }];
+      const mockJobs2 = [{ id: 2, title: 'Job 2' }];
+
+      mockSupabaseClient.limit
+        .mockResolvedValueOnce({ data: mockJobs1, error: null })
+        .mockResolvedValueOnce({ data: mockJobs2, error: null });
+
+      const queries = [
+        {
+          select: ['id', 'title'],
+          filters: { isActive: true },
+          orderBy: { field: 'created_at', ascending: false }
+        },
+        {
+          select: ['id', 'title'],
+          filters: { isActive: false },
+          orderBy: { field: 'created_at', ascending: false }
+        }
+      ];
+
+      const results = await optimizer.batchQueries(queries);
+
+      expect(results).toHaveLength(2);
+      expect(results[0]).toEqual(mockJobs1);
+      expect(results[1]).toEqual(mockJobs2);
+    });
+
+    it('should handle partial failures in batch', async () => {
+      const mockJobs1 = [{ id: 1, title: 'Job 1' }];
+
+      mockSupabaseClient.limit
+        .mockResolvedValueOnce({ data: mockJobs1, error: null })
+        .mockResolvedValueOnce({ data: null, error: { message: 'Database error' } });
+
+      const queries = [
+        {
+          select: ['id', 'title'],
+          filters: { isActive: true },
+          orderBy: { field: 'created_at', ascending: false }
+        },
+        {
+          select: ['id', 'title'],
+          filters: { isActive: false },
+          orderBy: { field: 'created_at', ascending: false }
+        }
+      ];
+
+      await expect(optimizer.batchQueries(queries)).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle missing environment variables', () => {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      expect(() => new QueryOptimizer()).toThrow();
+    });
+
+    it('should handle very large result sets', async () => {
+      const largeJobArray = Array.from({ length: 10000 }, (_, i) => ({
+        id: i,
+        title: `Job ${i}`,
+        company: `Company ${i}`
+      }));
+
+      mockSupabaseClient.limit.mockResolvedValue({ data: largeJobArray, error: null });
+
+      const query: OptimizedJobQuery = {
+        select: ['id', 'title', 'company'],
+        filters: {},
+        orderBy: {
+          field: 'created_at',
+          ascending: false
+        }
+      };
+
+      const result = await optimizer.getJobsForMatching(query);
+
+      expect(result).toHaveLength(10000);
+    });
+
+    it('should handle concurrent cache operations', async () => {
+      const cacheKey = 'concurrent-test';
+      const data = [{ id: 1, title: 'Concurrent Job' }];
+
+      const promises = [
+        optimizer.setCachedQuery(cacheKey, data),
+        optimizer.getCachedQuery(cacheKey),
+        optimizer.setCachedQuery(cacheKey, data)
+      ];
+
+      await Promise.all(promises);
+
+      const cached = (optimizer as any).cache[cacheKey];
+      expect(cached.data).toEqual(data);
     });
   });
 });
-
-describe('Query Optimization - Selection', () => {
-  it('✅ Selects only needed columns', () => {
-    const selectedColumns = ['id', 'email', 'name'];
-    const allColumns = ['id', 'email', 'name', 'password_hash', 'metadata'];
-    
-    expect(selectedColumns.length).toBeLessThan(allColumns.length);
-  });
-
-  it('✅ Avoids SELECT *', () => {
-    const query = 'SELECT id, email FROM users';
-    
-    expect(query).not.toContain('SELECT *');
-  });
-
-  it('✅ Limits result set size', () => {
-    const limit = 100;
-    const maxLimit = 1000;
-    
-    expect(limit).toBeLessThanOrEqual(maxLimit);
-  });
-
-  it('✅ Uses pagination', () => {
-    const pageSize = 50;
-    const page = 1;
-    const offset = (page - 1) * pageSize;
-    
-    expect(offset).toBe(0);
-  });
-});
-
-describe('Query Optimization - Filtering', () => {
-  it('✅ Applies WHERE clause early', () => {
-    const hasWhereClause = true;
-    
-    expect(hasWhereClause).toBe(true);
-  });
-
-  it('✅ Uses indexed columns in WHERE', () => {
-    const whereColumn = 'email';
-    const indexedColumns = ['email', 'created_at'];
-    
-    expect(indexedColumns).toContain(whereColumn);
-  });
-
-  it('✅ Avoids functions in WHERE clause', () => {
-    const query = 'SELECT * FROM users WHERE email = ?';
-    
-    expect(query).not.toContain('LOWER(');
-    expect(query).not.toContain('UPPER(');
-  });
-
-  it('✅ Uses proper data types in comparisons', () => {
-    const id = 123; // Number, not string
-    
-    expect(typeof id).toBe('number');
-  });
-});
-
-describe('Query Optimization - Joins', () => {
-  it('✅ Uses appropriate join type', () => {
-    const joinTypes = ['INNER', 'LEFT', 'RIGHT'];
-    const selectedJoin = 'INNER';
-    
-    expect(joinTypes).toContain(selectedJoin);
-  });
-
-  it('✅ Joins on indexed columns', () => {
-    const joinColumn = 'user_id';
-    const indexedColumns = ['user_id', 'job_id'];
-    
-    expect(indexedColumns).toContain(joinColumn);
-  });
-
-  it('✅ Limits join complexity', () => {
-    const maxJoins = 3;
-    const currentJoins = 2;
-    
-    expect(currentJoins).toBeLessThanOrEqual(maxJoins);
-  });
-
-  it('✅ Avoids cross joins', () => {
-    const query = 'SELECT * FROM users INNER JOIN jobs ON users.id = jobs.user_id';
-    
-    expect(query).not.toContain('CROSS JOIN');
-  });
-});
-
-describe('Query Optimization - Aggregation', () => {
-  it('✅ Uses COUNT efficiently', () => {
-    const query = 'SELECT COUNT(*) FROM users';
-    
-    expect(query).toContain('COUNT');
-  });
-
-  it('✅ Groups by indexed columns', () => {
-    const groupByColumn = 'user_id';
-    const indexedColumns = ['user_id'];
-    
-    expect(indexedColumns).toContain(groupByColumn);
-  });
-
-  it('✅ Uses HAVING after GROUP BY', () => {
-    const query = 'SELECT user_id, COUNT(*) FROM matches GROUP BY user_id HAVING COUNT(*) > 5';
-    
-    expect(query).toContain('HAVING');
-  });
-
-  it('✅ Limits aggregation result size', () => {
-    const limit = 100;
-    
-    expect(limit).toBeGreaterThan(0);
-  });
-});
-
-describe('Query Optimization - Caching', () => {
-  it('✅ Caches frequent queries', () => {
-    const cache = new Map();
-    const queryKey = 'users:active';
-    const result = [{ id: 1 }];
-    
-    cache.set(queryKey, result);
-    
-    expect(cache.has(queryKey)).toBe(true);
-  });
-
-  it('✅ Invalidates cache on updates', () => {
-    const cache = new Map();
-    cache.set('users:1', { id: 1, name: 'John' });
-    
-    // Simulate update
-    cache.delete('users:1');
-    
-    expect(cache.has('users:1')).toBe(false);
-  });
-
-  it('✅ Sets cache TTL', () => {
-    const ttl = 300; // 5 minutes
-    const maxTTL = 3600; // 1 hour
-    
-    expect(ttl).toBeLessThanOrEqual(maxTTL);
-  });
-
-  it('✅ Checks cache before query', () => {
-    const cache = new Map();
-    const key = 'query-result';
-    cache.set(key, []);
-    
-    const hasCached = cache.has(key);
-    
-    expect(hasCached).toBe(true);
-  });
-});
-
-describe('Query Optimization - Batch Operations', () => {
-  it('✅ Batches inserts', () => {
-    const batchSize = 100;
-    const records = 250;
-    const batches = Math.ceil(records / batchSize);
-    
-    expect(batches).toBe(3);
-  });
-
-  it('✅ Uses bulk updates', () => {
-    const updateCount = 50;
-    const batchSize = 10;
-    
-    expect(updateCount).toBeGreaterThan(batchSize);
-  });
-
-  it('✅ Limits batch size', () => {
-    const batchSize = 100;
-    const maxBatchSize = 1000;
-    
-    expect(batchSize).toBeLessThanOrEqual(maxBatchSize);
-  });
-
-  it('✅ Handles batch errors gracefully', () => {
-    const successfulInserts = 90;
-    const totalAttempts = 100;
-    const successRate = (successfulInserts / totalAttempts) * 100;
-    
-    expect(successRate).toBeGreaterThan(80);
-  });
-});
-
-describe('Query Optimization - Explain Plans', () => {
-  it('✅ Analyzes query execution plan', () => {
-    const usesIndex = true;
-    
-    expect(usesIndex).toBe(true);
-  });
-
-  it('✅ Identifies sequential scans', () => {
-    const scanType = 'index';
-    
-    expect(scanType).not.toBe('sequential');
-  });
-
-  it('✅ Measures query cost', () => {
-    const queryCost = 50;
-    const acceptableThreshold = 100;
-    
-    expect(queryCost).toBeLessThan(acceptableThreshold);
-  });
-
-  it('✅ Tracks query execution time', () => {
-    const executionTimeMs = 150;
-    const maxTimeMs = 1000;
-    
-    expect(executionTimeMs).toBeLessThan(maxTimeMs);
-  });
-});
-
-describe('Query Optimization - Connection Management', () => {
-  it('✅ Uses connection pooling', () => {
-    const poolSize = 10;
-    const minPoolSize = 5;
-    
-    expect(poolSize).toBeGreaterThanOrEqual(minPoolSize);
-  });
-
-  it('✅ Limits active connections', () => {
-    const activeConnections = 8;
-    const maxConnections = 20;
-    
-    expect(activeConnections).toBeLessThan(maxConnections);
-  });
-
-  it('✅ Reuses connections', () => {
-    const pool: any[] = [];
-    const connection = { id: 1, active: false };
-    
-    pool.push(connection);
-    
-    expect(pool.length).toBe(1);
-  });
-
-  it('✅ Closes idle connections', () => {
-    const idleTimeMs = 300000; // 5 minutes
-    const maxIdleTimeMs = 600000; // 10 minutes
-    
-    const shouldClose = idleTimeMs < maxIdleTimeMs;
-    
-    expect(shouldClose).toBe(true);
-  });
-});
-
-describe('Query Optimization - Transaction Management', () => {
-  it('✅ Uses transactions for multiple operations', () => {
-    const operationCount = 5;
-    const useTransaction = operationCount > 1;
-    
-    expect(useTransaction).toBe(true);
-  });
-
-  it('✅ Commits transactions on success', () => {
-    const success = true;
-    const action = success ? 'commit' : 'rollback';
-    
-    expect(action).toBe('commit');
-  });
-
-  it('✅ Rolls back transactions on error', () => {
-    const error = true;
-    const action = error ? 'rollback' : 'commit';
-    
-    expect(action).toBe('rollback');
-  });
-
-  it('✅ Sets transaction isolation level', () => {
-    const isolationLevels = ['READ COMMITTED', 'REPEATABLE READ', 'SERIALIZABLE'];
-    const selected = 'READ COMMITTED';
-    
-    expect(isolationLevels).toContain(selected);
-  });
-});
-

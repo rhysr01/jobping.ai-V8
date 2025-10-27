@@ -969,10 +969,6 @@ Requirements:
     return { points: 10, reason: 'established company' };
   }
 
-  /**
-   * Calculate recency/freshness score
-   */
-  // Recency scoring removed: All jobs filtered to 60 days, so freshness doesn't matter!
 
   /**
    * Get quality label based on score

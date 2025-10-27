@@ -17,6 +17,7 @@ import {
   SEND_PLAN
 } from '@/Utils/sendConfiguration';
 import { Job } from '@/scrapers/types';
+import { getCategoryPriorityScore, jobMatchesUserCategories, WORK_TYPE_CATEGORIES, mapFormLabelToDatabase, getStudentSatisfactionScore } from '@/Utils/matching/categoryMapper';
 
 // Type definitions for better type safety
 interface MatchMetrics {
@@ -65,24 +66,18 @@ interface PerformanceMetrics {
 
 // Rate limiting and job caps managed by production middleware and SEND_PLAN
 
-// Freshness tier distribution with fallback logic - MVP Final (exactly 5 jobs)
-const TIER_DISTRIBUTION = {
+// Student satisfaction job distribution - prioritizes what students told us they want
+const JOB_DISTRIBUTION = {
   free: {
-    ultra_fresh: parseInt(process.env.FREE_ULTRA_FRESH || '2'),
-    fresh: parseInt(process.env.FREE_FRESH || '2'),
-    comprehensive: parseInt(process.env.FREE_COMPREHENSIVE || '1'),
-    fallback_order: ['fresh', 'ultra_fresh', 'comprehensive'] // If tier is empty, try these
+    jobs_per_user: parseInt(process.env.FREE_JOBS_PER_USER || '5')
   },
   premium: {
-    ultra_fresh: parseInt(process.env.PREMIUM_ULTRA_FRESH || '2'),
-    fresh: parseInt(process.env.PREMIUM_FRESH || '2'),
-    comprehensive: parseInt(process.env.PREMIUM_COMPREHENSIVE || '1'),
-    fallback_order: ['fresh', 'ultra_fresh', 'comprehensive']
+    jobs_per_user: parseInt(process.env.PREMIUM_JOBS_PER_USER || '8')
   }
 };
 
 // Production-ready job interface with validation
-interface JobWithFreshness {
+interface Job {
   id: string;
   title: string;
   company: string;
@@ -93,7 +88,6 @@ interface JobWithFreshness {
   job_hash: string;
   is_sent: boolean;
   status: string;
-  freshness_tier: 'ultra_fresh' | 'fresh' | 'comprehensive' | null;
   original_posted_date: string | null;
   last_seen_at: string | null;
 }
@@ -119,7 +113,7 @@ async function validateDatabaseSchema(supabase: SupabaseClient): Promise<boolean
     // Check if required columns exist by attempting a sample query
     const { data, error } = await supabase
       .from('jobs')
-      .select('status, freshness_tier, original_posted_date, last_seen_at')
+      .select('status, original_posted_date, last_seen_at')
       .limit(1);
     
     if (error) {
@@ -141,72 +135,105 @@ async function validateDatabaseSchema(supabase: SupabaseClient): Promise<boolean
 
 // Date helper moved to centralized lib/date-helpers.ts
 
-// Tier distribution with intelligent fallback logic
-function distributeJobsByFreshness(
-  jobs: JobWithFreshness[], 
+// Student satisfaction job distribution - prioritizes what students told us they want
+function distributeJobs(
+  jobs: Job[],
   userTier: 'free' | 'premium' = 'free',
-  userId: string
-): { jobs: JobWithFreshness[], metrics: MatchMetrics } {
+  userId: string,
+  userCareerPath?: string,
+  userFormValues?: string[],
+  userWorkEnvironment?: string,
+  userEntryLevel?: string,
+  userCompanyTypes?: string[]
+): { jobs: Job[], metrics: MatchMetrics } {
   const startTime = Date.now();
   
   console.log(`Distributing jobs for ${userTier} user ${userId}. Total jobs: ${jobs.length}`);
   
-  // Validate and clean job data - assign fallback freshness for all jobs
-  const validJobs = jobs.map(job => {
-    // Assign fallback freshness tier if missing
-    if (!job.freshness_tier) {
-      job.freshness_tier = assignFallbackFreshnessTier(job.created_at);
-    }
-    if (!job.original_posted_date) {
-      job.original_posted_date = job.created_at; // Use created_at as fallback
-    }
-    return job;
-  }).filter(job => job.job_hash && job.title && job.company);
-  
-  // Separate jobs by freshness tier
-  const ultraFreshJobs = validJobs.filter(job => job.freshness_tier === 'ultra_fresh');
-  const freshJobs = validJobs.filter(job => job.freshness_tier === 'fresh');
-  const comprehensiveJobs = validJobs.filter(job => job.freshness_tier === 'comprehensive');
-  
-  const tierCounts = {
-    ultra_fresh: ultraFreshJobs.length,
-    fresh: freshJobs.length,
-    comprehensive: comprehensiveJobs.length
-  };
-  
-  console.log(`Job breakdown for ${userId} - Ultra Fresh: ${tierCounts.ultra_fresh}, Fresh: ${tierCounts.fresh}, Comprehensive: ${tierCounts.comprehensive}`);
+  // Validate and clean job data
+  const validJobs = jobs.filter(job => job.job_hash && job.title && job.company);
   
   // Get distribution limits based on user tier
-  const config = TIER_DISTRIBUTION[userTier];
-  const selectedJobs: JobWithFreshness[] = [];
-  
-  // Smart selection with fallback logic
-  selectedJobs.push(...selectJobsFromTier(ultraFreshJobs, config.ultra_fresh, 'ultra_fresh'));
-  selectedJobs.push(...selectJobsFromTier(freshJobs, config.fresh, 'fresh'));
-  selectedJobs.push(...selectJobsFromTier(comprehensiveJobs, config.comprehensive, 'comprehensive'));
-  
-  // Fallback logic: if we don't have enough jobs, pull from other tiers
-  const targetTotal = config.ultra_fresh + config.fresh + config.comprehensive;
+  const config = JOB_DISTRIBUTION[userTier];
   const maxAllowed = SEND_PLAN[userTier].perSend;
+  const targetCount = Math.min(config.jobs_per_user, maxAllowed);
   
-  if (selectedJobs.length < targetTotal && selectedJobs.length < maxAllowed) {
-    const remainingSlots = Math.min(targetTotal - selectedJobs.length, maxAllowed - selectedJobs.length);
-    const usedJobHashes = new Set(selectedJobs.map(job => job.job_hash));
-    
-    // Try fallback tiers in order
-    for (const fallbackTier of config.fallback_order) {
-      if (remainingSlots <= 0) break;
-      
-      const tierJobs = validJobs.filter(job => 
-        job.freshness_tier === fallbackTier && !usedJobHashes.has(job.job_hash)
+  // Select jobs for maximum student satisfaction
+  // Simple approach: give students what they told us they want
+  const selectedJobs = validJobs
+    .sort((a, b) => {
+      // Primary sort: User preference satisfaction (most important for happiness)
+      const satisfactionScoreA = getStudentSatisfactionScore(
+        a.categories || [],
+        userFormValues || [],
+        a.work_environment,
+        a.experience_required,
+        userWorkEnvironment,
+        userEntryLevel,
+        userCompanyTypes
       );
-      
-      const additionalJobs = selectJobsFromTier(tierJobs, remainingSlots, fallbackTier);
-      selectedJobs.push(...additionalJobs);
-      
-      additionalJobs.forEach(job => usedJobHashes.add(job.job_hash));
-    }
-  }
+      const satisfactionScoreB = getStudentSatisfactionScore(
+        b.categories || [],
+        userFormValues || [],
+        b.work_environment,
+        b.experience_required,
+        userWorkEnvironment,
+        userEntryLevel,
+        userCompanyTypes
+      );
+      if (satisfactionScoreA !== satisfactionScoreB) {
+        return satisfactionScoreB - satisfactionScoreA;
+      }
+
+      // Secondary sort: User career path alignment (if they specified one)
+      const userDatabaseCategory = userCareerPath ? mapFormLabelToDatabase(userCareerPath) : null;
+      const userPrefersAllCategories = !userCareerPath || userCareerPath === 'Not Sure Yet / General';
+
+      let categoryMatchA = 0;
+      let categoryMatchB = 0;
+
+      if (userDatabaseCategory && userDatabaseCategory !== 'all-categories') {
+        categoryMatchA = a.categories?.includes(userDatabaseCategory) ? 1 : 0;
+        categoryMatchB = b.categories?.includes(userDatabaseCategory) ? 1 : 0;
+      } else if (userPrefersAllCategories) {
+        categoryMatchA = a.categories?.filter(cat => WORK_TYPE_CATEGORIES.includes(cat)).length || 0;
+        categoryMatchB = b.categories?.filter(cat => WORK_TYPE_CATEGORIES.includes(cat)).length || 0;
+      }
+
+      if (categoryMatchA !== categoryMatchB) {
+        return categoryMatchB - categoryMatchA;
+      }
+
+      // Tertiary sort: Student-critical data completeness (what they care about)
+      const studentCriticalA =
+        (a.city ? 1 : 0) +                    // Location data (they need to know where)
+        (a.work_environment ? 1 : 0) +        // Work environment preference
+        (a.experience_required ? 1 : 0) +     // Experience level clarity
+        (a.is_graduate || a.is_internship ? 1 : 0); // Early career relevance
+
+      const studentCriticalB =
+        (b.city ? 1 : 0) +
+        (b.work_environment ? 1 : 0) +
+        (b.experience_required ? 1 : 0) +
+        (b.is_graduate || b.is_internship ? 1 : 0);
+
+      if (studentCriticalA !== studentCriticalB) {
+        return studentCriticalB - studentCriticalA;
+      }
+
+      // Quaternary sort: Job quality indicators (better info = happier students)
+      const qualityA = (a.title?.length || 0) + (a.company?.length || 0) + (a.description?.length || 0);
+      const qualityB = (b.title?.length || 0) + (b.company?.length || 0) + (b.description?.length || 0);
+      if (qualityA !== qualityB) {
+        return qualityB - qualityA;
+      }
+
+      // Quinary sort: recency (newer jobs feel more relevant)
+      const dateA = new Date(a.original_posted_date || a.created_at);
+      const dateB = new Date(b.original_posted_date || b.created_at);
+      return dateB.getTime() - dateA.getTime();
+    })
+    .slice(0, targetCount);
   
   const processingTime = Date.now() - startTime;
   
@@ -217,41 +244,15 @@ function distributeJobsByFreshness(
     metrics: {
       totalJobs: jobs.length,
       distributedJobs: selectedJobs.length,
-      tierDistribution: tierCounts,
       processingTime,
       originalJobCount: jobs.length,
       validJobCount: validJobs.length,
-      selectedJobCount: selectedJobs.length,
-      fallbacksUsed: selectedJobs.length < targetTotal
+      selectedJobCount: selectedJobs.length
     }
   };
 }
 
-// Helper function to select jobs from a specific tier
-function selectJobsFromTier(tierJobs: JobWithFreshness[], limit: number, tierName: string): JobWithFreshness[] {
-  return tierJobs
-    .sort((a, b) => {
-      // Primary sort: original posting date (most recent first)
-      const dateA = new Date(a.original_posted_date || a.created_at);
-      const dateB = new Date(b.original_posted_date || b.created_at);
-      if (dateA.getTime() !== dateB.getTime()) {
-        return dateB.getTime() - dateA.getTime();
-      }
-      // Secondary sort: last seen (most recently confirmed first)
-      const lastSeenA = new Date(a.last_seen_at || a.created_at);
-      const lastSeenB = new Date(b.last_seen_at || b.created_at);
-      return lastSeenB.getTime() - lastSeenA.getTime();
-    })
-    .slice(0, limit);
-}
 
-// Fallback freshness tier assignment
-function assignFallbackFreshnessTier(createdAt: string): 'ultra_fresh' | 'fresh' | 'comprehensive' {
-  const hoursAgo = (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60);
-  if (hoursAgo <= 48) return 'ultra_fresh';
-  if (hoursAgo <= 168) return 'fresh'; // 168 hours = 1 week
-  return 'comprehensive';
-}
 
 // Performance monitoring utility
 function trackPerformance(): { startTime: number; getMetrics: () => PerformanceMetrics } {
@@ -642,7 +643,7 @@ const matchUsersHandler = async (req: NextRequest) => {
     const isSchemaValid = await validateDatabaseSchema(supabase);
     if (!isSchemaValid) {
       return NextResponse.json({ 
-        error: 'Database schema validation failed. Missing required columns: status, freshness_tier, original_posted_date, last_seen_at' 
+        error: 'Database schema validation failed. Missing required columns: status, original_posted_date, last_seen_at' 
       }, { status: 500 });
     }
 
@@ -668,10 +669,9 @@ const matchUsersHandler = async (req: NextRequest) => {
     // Transform user data to match expected format
     const transformedUsers = userMatchingService.transformUsers(users);
 
-    // 2. Fetch jobs with UTC-safe date calculation and EU/Early Career filtering
+    // 2. Fetch active jobs for accuracy-focused matching
     const jobFetchStart = Date.now();
     lap('fetch_jobs');
-    const thirtyDaysAgo = getDateDaysAgo(30);
 
     // EU location hints for filtering
     const EU_HINTS = [
@@ -696,9 +696,8 @@ const matchUsersHandler = async (req: NextRequest) => {
 
     const { data: jobs, error: jobsError } = await supabase
       .from('jobs')
-      .select('job_hash, title, company, location, description, source, created_at, freshness_tier, original_posted_date, last_seen_at, status, job_url')
-      .eq('status', 'active')
-      .gte('created_at', thirtyDaysAgo.toISOString())
+      .select('job_hash, title, company, location, description, source, created_at, original_posted_date, last_seen_at, status, job_url, is_active, is_graduate, is_internship, career_path, target_cities, skills')
+      .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(jobCap);
 
@@ -737,14 +736,8 @@ const matchUsersHandler = async (req: NextRequest) => {
 
     // Skip in-memory job reservations; Redis global lock already protects this run
 
-    // Log overall freshness distribution
-    const globalTierCounts = jobs.reduce((acc: Record<string, number>, job: any) => {
-      const tier = job.freshness_tier || 'unknown';
-      acc[tier] = (acc[tier] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    console.log('Global job freshness distribution:', globalTierCounts);
+    // Log overall job distribution
+    console.log(`Total jobs fetched: ${jobs.length}`);
 
     // 3. Process each user in parallel
     let totalAIProcessingTime = 0;
@@ -791,16 +784,26 @@ const matchUsersHandler = async (req: NextRequest) => {
           console.log(`  Next 40 range: ${Math.max(...next40Scores.filter((s: any) => typeof s === 'number'))} - ${Math.min(...next40Scores.filter((s: any) => typeof s === 'number'))}`);
         }
         
-        // Apply freshness distribution with fallback logic
-        const tierDistributionStart = Date.now();
+        // Apply simple job distribution
+        const distributionStart = Date.now();
         lap('distribute');
-        const { jobs: distributedJobs, metrics: tierMetrics } = distributeJobsByFreshness(
-          considered, 
+        // Get user form values for student satisfaction scoring
+        const userFormValues = user.career_path
+          ? [mapFormLabelToDatabase(user.career_path)]
+          : undefined;
+
+        const { jobs: distributedJobs, metrics: distributionMetrics } = distributeJobs(
+          considered,
           user.subscription_tier || 'free',
-          user.email
+          user.email,
+          user.career_path,
+          userFormValues,
+          user.work_environment,
+          user.entry_level_preference,
+          user.company_types
         );
-        const tierDistributionTime = Date.now() - tierDistributionStart;
-        totalTierDistributionTime += tierDistributionTime;
+        const distributionTime = Date.now() - distributionStart;
+        totalTierDistributionTime += distributionTime;
 
         // AI will pick best 5 from these top 50 pre-filtered & distributed jobs
         const capped = distributedJobs.slice(0, 50);
@@ -818,11 +821,8 @@ const matchUsersHandler = async (req: NextRequest) => {
         lap('ai_or_rules');
 
         // Use the consolidated matching engine
-        // Cast to Job[] by stripping freshness-only props for the matching engine
-        const jobsForMatching = distributedJobs.map(j => {
-          const { freshness_tier, freshness_score, ...rest } = j as any;
-          return rest as Job;
-        });
+        // Cast to Job[] for the matching engine
+        const jobsForMatching = distributedJobs as Job[];
         const result = await matcher.performMatching(
           jobsForMatching,
           user as unknown as UserPreferences,
@@ -1036,14 +1036,8 @@ const matchUsersHandler = async (req: NextRequest) => {
           }
         );
 
-        // Calculate tier distribution for results
-        const matchTierCounts = matches.reduce((acc, match) => {
-          const job = distributedJobs.find(j => j.job_hash === match.job_hash);
-          if (job?.freshness_tier) {
-            acc[job.freshness_tier] = (acc[job.freshness_tier] || 0) + 1;
-          }
-          return acc;
-        }, {} as Record<string, number>);
+        // Calculate match distribution for results
+        const matchCounts = matches.length;
 
         return { user: user.email, success: true, matches: matches.length };
 

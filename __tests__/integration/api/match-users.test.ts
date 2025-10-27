@@ -117,7 +117,6 @@ describe.skip('/api/match-users Integration Tests', () => {
           created_at: new Date().toISOString(),
           is_sent: false,
           status: 'active',
-          freshness_tier: 'ultra_fresh'
         },
         {
           id: '2',
@@ -141,7 +140,6 @@ describe.skip('/api/match-users Integration Tests', () => {
           created_at: new Date().toISOString(),
           is_sent: false,
           status: 'active',
-          freshness_tier: 'fresh'
         },
         {
           id: '3',
@@ -165,7 +163,6 @@ describe.skip('/api/match-users Integration Tests', () => {
           created_at: new Date().toISOString(),
           is_sent: false,
           status: 'active',
-          freshness_tier: 'fresh'
         }
       ],
       matches: [],
@@ -388,46 +385,6 @@ describe.skip('/api/match-users Integration Tests', () => {
       expect(data.processed).toBe(2); // Both free and premium users
     });
 
-    it('should filter jobs by freshness tier correctly', async () => {
-      // Add some jobs with different freshness tiers
-      global.__SB_MOCK__?.jobs?.push({
-        id: '4',
-        title: 'Old Job',
-        company: 'Old Corp',
-        location: 'Old City',
-        job_url: 'https://example.com/job4',
-        description: 'Old job posting',
-        experience_required: 'entry-level',
-        work_environment: 'office',
-        source: 'test',
-        scrape_timestamp: new Date().toISOString(),
-        posted_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        original_posted_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        last_seen_at: new Date().toISOString(),
-        is_active: true,
-        job_hash: 'hash4',
-        categories: ['early-career'],
-        language_requirements: ['English'],
-        company_profile_url: '',
-        created_at: new Date().toISOString(),
-        is_sent: false,
-        status: 'active',
-        freshness_tier: 'comprehensive' // Should be filtered out
-      });
-
-      const request = new NextRequest('http://localhost:3000/api/match-users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ limit: 10 }),
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      // Should only process ultra_fresh and fresh jobs
-    });
   });
 
   describe('GET /api/match-users', () => {

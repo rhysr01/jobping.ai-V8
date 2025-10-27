@@ -147,7 +147,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const { data: jobs, error: jobsError } = await supabase
       .from('jobs')
-      .select('job_hash, title, company, location, description, source, created_at, freshness_tier, original_posted_date, last_seen_at, status, job_url')
+      .select('job_hash, title, company, location, description, source, created_at, original_posted_date, last_seen_at, status, job_url')
       .eq('status', 'active')
       .gte('created_at', sevenDaysAgo.toISOString())
       .order('created_at', { ascending: false })

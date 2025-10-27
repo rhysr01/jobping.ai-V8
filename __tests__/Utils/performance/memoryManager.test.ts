@@ -1,260 +1,414 @@
 /**
- * Memory Manager Tests
- * Tests memory optimization and management
+ * Tests for Memory Management and Cleanup Utilities
  */
 
-describe('Memory Management - Monitoring', () => {
-  it('✅ Tracks memory usage', () => {
-    const usedMemory = process.memoryUsage().heapUsed;
-    const totalMemory = process.memoryUsage().heapTotal;
+import { MemoryManager, type MemoryConfig, type MemoryStats } from '@/Utils/performance/memoryManager';
+
+// Mock process.memoryUsage
+const mockMemoryUsage = jest.fn();
+
+describe('MemoryManager', () => {
+  let memoryManager: MemoryManager;
+  let originalMemoryUsage: any;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
     
-    expect(usedMemory).toBeGreaterThan(0);
-    expect(totalMemory).toBeGreaterThanOrEqual(usedMemory);
+    // Mock process.memoryUsage
+    originalMemoryUsage = process.memoryUsage;
+    process.memoryUsage = mockMemoryUsage;
+    
+    // Default mock memory usage (100MB used, 1GB total)
+    mockMemoryUsage.mockReturnValue({
+      rss: 100 * 1024 * 1024, // 100MB
+      heapTotal: 1024 * 1024 * 1024, // 1GB
+      heapUsed: 100 * 1024 * 1024, // 100MB
+      external: 0,
+      arrayBuffers: 0
+    });
   });
 
-  it('✅ Calculates memory usage percentage', () => {
-    const usedMemory = 50 * 1024 * 1024; // 50 MB
-    const totalMemory = 100 * 1024 * 1024; // 100 MB
-    const percentage = (usedMemory / totalMemory) * 100;
+  afterEach(() => {
+    // Restore original process.memoryUsage
+    process.memoryUsage = originalMemoryUsage;
     
-    expect(percentage).toBe(50);
-  });
-
-  it('✅ Detects high memory usage', () => {
-    const usagePercentage = 85;
-    const threshold = 80;
-    
-    const isHigh = usagePercentage > threshold;
-    
-    expect(isHigh).toBe(true);
-  });
-
-  it('✅ Monitors heap size', () => {
-    const heapSize = process.memoryUsage().heapTotal;
-    
-    expect(heapSize).toBeGreaterThan(0);
-  });
-});
-
-describe('Memory Management - Cleanup', () => {
-  it('✅ Triggers garbage collection when needed', () => {
-    const memoryHigh = true;
-    const shouldGC = memoryHigh;
-    
-    expect(shouldGC).toBe(true);
-  });
-
-  it('✅ Clears unused caches', () => {
-    const cache = new Map();
-    cache.set('key1', 'value1');
-    cache.set('key2', 'value2');
-    
-    cache.clear();
-    
-    expect(cache.size).toBe(0);
-  });
-
-  it('✅ Removes expired cache entries', () => {
-    const now = Date.now();
-    const entries = new Map([
-      ['key1', { value: 'val1', expiresAt: now - 1000 }], // Expired
-      ['key2', { value: 'val2', expiresAt: now + 10000 }] // Valid
-    ]);
-    
-    for (const [key, entry] of entries) {
-      if (entry.expiresAt < now) {
-        entries.delete(key);
-      }
+    // Clean up any running intervals
+    if (memoryManager) {
+      memoryManager.stopMonitoring();
     }
-    
-    expect(entries.size).toBe(1);
-    expect(entries.has('key2')).toBe(true);
   });
 
-  it('✅ Limits cache size', () => {
-    const maxSize = 100;
-    const cache = new Map();
-    
-    // Simulate adding beyond limit
-    for (let i = 0; i < 150; i++) {
-      cache.set(`key${i}`, `value${i}`);
+  describe('constructor', () => {
+    it('should initialize with default config', () => {
+      memoryManager = new MemoryManager();
+
+      expect(memoryManager).toBeDefined();
+      expect(memoryManager.getConfig().maxMemoryUsage).toBe(512);
+      expect(memoryManager.getConfig().gcThreshold).toBe(0.8);
+      expect(memoryManager.getConfig().cleanupInterval).toBe(30000);
+      expect(memoryManager.getConfig().enableMonitoring).toBe(false); // Disabled in test
+    });
+
+    it('should initialize with custom config', () => {
+      const customConfig: Partial<MemoryConfig> = {
+        maxMemoryUsage: 1024,
+        gcThreshold: 0.9,
+        cleanupInterval: 60000,
+        enableMonitoring: false
+      };
+
+      memoryManager = new MemoryManager(customConfig);
+
+      expect(memoryManager.getConfig().maxMemoryUsage).toBe(1024);
+      expect(memoryManager.getConfig().gcThreshold).toBe(0.9);
+      expect(memoryManager.getConfig().cleanupInterval).toBe(60000);
+      expect(memoryManager.getConfig().enableMonitoring).toBe(false);
+    });
+
+    it('should disable monitoring in test environment', () => {
+      memoryManager = new MemoryManager({ enableMonitoring: true });
+
+      expect(memoryManager.getConfig().enableMonitoring).toBe(false);
+    });
+  });
+
+  describe('getMemoryStats', () => {
+    it('should return current memory statistics', () => {
+      memoryManager = new MemoryManager();
+
+      const stats = memoryManager.getMemoryStats();
+
+      expect(stats.used).toBe(100); // 100MB
+      expect(stats.total).toBe(1024); // 1GB
+      expect(stats.free).toBe(924); // 1GB - 100MB
+      expect(stats.percentage).toBeCloseTo(9.77, 1); // 100/1024 * 100
+      expect(stats.timestamp).toBeDefined();
+    });
+
+    it('should handle zero total memory', () => {
+      mockMemoryUsage.mockReturnValue({
+        rss: 0,
+        heapTotal: 0,
+        heapUsed: 0,
+        external: 0,
+        arrayBuffers: 0
+      });
+
+      memoryManager = new MemoryManager();
+
+      const stats = memoryManager.getMemoryStats();
+
+      expect(stats.used).toBe(0);
+      expect(stats.total).toBe(0);
+      expect(stats.free).toBe(0);
+      expect(stats.percentage).toBe(0);
+    });
+
+    it('should handle very large memory usage', () => {
+      mockMemoryUsage.mockReturnValue({
+        rss: 2048 * 1024 * 1024, // 2GB
+        heapTotal: 4096 * 1024 * 1024, // 4GB
+        heapUsed: 2048 * 1024 * 1024, // 2GB
+        external: 0,
+        arrayBuffers: 0
+      });
+
+      memoryManager = new MemoryManager();
+
+      const stats = memoryManager.getMemoryStats();
+
+      expect(stats.used).toBe(2048);
+      expect(stats.total).toBe(4096);
+      expect(stats.free).toBe(2048);
+      expect(stats.percentage).toBe(50);
+    });
+  });
+
+  describe('isMemoryUsageHigh', () => {
+    it('should return true when memory usage exceeds threshold', () => {
+      mockMemoryUsage.mockReturnValue({
+        rss: 900 * 1024 * 1024, // 900MB
+        heapTotal: 1024 * 1024 * 1024, // 1GB
+        heapUsed: 900 * 1024 * 1024, // 900MB
+        external: 0,
+        arrayBuffers: 0
+      });
+
+      memoryManager = new MemoryManager({ gcThreshold: 0.8 });
+
+      expect(memoryManager.isMemoryUsageHigh()).toBe(true);
+    });
+
+    it('should return false when memory usage is below threshold', () => {
+      mockMemoryUsage.mockReturnValue({
+        rss: 100 * 1024 * 1024, // 100MB
+        heapTotal: 1024 * 1024 * 1024, // 1GB
+        heapUsed: 100 * 1024 * 1024, // 100MB
+        external: 0,
+        arrayBuffers: 0
+      });
+
+      memoryManager = new MemoryManager({ gcThreshold: 0.8 });
+
+      expect(memoryManager.isMemoryUsageHigh()).toBe(false);
+    });
+
+    it('should use custom threshold', () => {
+      mockMemoryUsage.mockReturnValue({
+        rss: 600 * 1024 * 1024, // 600MB
+        heapTotal: 1024 * 1024 * 1024, // 1GB
+        heapUsed: 600 * 1024 * 1024, // 600MB
+        external: 0,
+        arrayBuffers: 0
+      });
+
+      memoryManager = new MemoryManager({ gcThreshold: 0.5 });
+
+      expect(memoryManager.isMemoryUsageHigh()).toBe(true);
+    });
+  });
+
+  describe('forceGarbageCollection', () => {
+    it('should trigger garbage collection', () => {
+      memoryManager = new MemoryManager();
+
+      const result = memoryManager.forceGarbageCollection();
+
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Garbage collection triggered');
+    });
+
+    it('should update last GC time', () => {
+      memoryManager = new MemoryManager();
+
+      const beforeGc = memoryManager.getLastGcTime();
       
-      if (cache.size > maxSize) {
-        const firstKey = cache.keys().next().value;
-        cache.delete(firstKey);
-      }
-    }
-    
-    expect(cache.size).toBeLessThanOrEqual(maxSize);
+      // Wait a bit to ensure time difference
+      jest.advanceTimersByTime(100);
+      
+      memoryManager.forceGarbageCollection();
+      
+      const afterGc = memoryManager.getLastGcTime();
+      
+      expect(afterGc).toBeGreaterThan(beforeGc);
+    });
+  });
+
+  describe('addCleanupCallback', () => {
+    it('should add cleanup callback', () => {
+      memoryManager = new MemoryManager();
+      const callback = jest.fn();
+
+      memoryManager.addCleanupCallback(callback);
+
+      expect(memoryManager.getCleanupCallbacks().size).toBe(1);
+    });
+
+    it('should add multiple cleanup callbacks', () => {
+      memoryManager = new MemoryManager();
+      const callback1 = jest.fn();
+      const callback2 = jest.fn();
+
+      memoryManager.addCleanupCallback(callback1);
+      memoryManager.addCleanupCallback(callback2);
+
+      expect(memoryManager.getCleanupCallbacks().size).toBe(2);
+    });
+  });
+
+  describe('removeCleanupCallback', () => {
+    it('should remove cleanup callback', () => {
+      memoryManager = new MemoryManager();
+      const callback = jest.fn();
+
+      memoryManager.addCleanupCallback(callback);
+      expect(memoryManager.getCleanupCallbacks().size).toBe(1);
+
+      memoryManager.removeCleanupCallback(callback);
+      expect(memoryManager.getCleanupCallbacks().size).toBe(0);
+    });
+
+    it('should handle removing non-existent callback', () => {
+      memoryManager = new MemoryManager();
+      const callback = jest.fn();
+
+      memoryManager.removeCleanupCallback(callback);
+
+      expect(memoryManager.getCleanupCallbacks().size).toBe(0);
+    });
+  });
+
+  describe('runCleanup', () => {
+    it('should run all cleanup callbacks', () => {
+      memoryManager = new MemoryManager();
+      const callback1 = jest.fn();
+      const callback2 = jest.fn();
+
+      memoryManager.addCleanupCallback(callback1);
+      memoryManager.addCleanupCallback(callback2);
+
+      memoryManager.runCleanup();
+
+      expect(callback1).toHaveBeenCalled();
+      expect(callback2).toHaveBeenCalled();
+    });
+
+    it('should handle callback errors gracefully', () => {
+      memoryManager = new MemoryManager();
+      const callback1 = jest.fn().mockImplementation(() => {
+        throw new Error('Callback error');
+      });
+      const callback2 = jest.fn();
+
+      memoryManager.addCleanupCallback(callback1);
+      memoryManager.addCleanupCallback(callback2);
+
+      // Should not throw
+      expect(() => memoryManager.runCleanup()).not.toThrow();
+
+      expect(callback1).toHaveBeenCalled();
+      expect(callback2).toHaveBeenCalled();
+    });
+  });
+
+  describe('startMonitoring', () => {
+    it('should start monitoring when enabled', () => {
+      // Mock setInterval
+      const setIntervalSpy = jest.spyOn(global, 'setInterval');
+      
+      memoryManager = new MemoryManager({ enableMonitoring: true });
+
+      expect(setIntervalSpy).toHaveBeenCalled();
+      
+      setIntervalSpy.mockRestore();
+    });
+
+    it('should not start monitoring when disabled', () => {
+      const setIntervalSpy = jest.spyOn(global, 'setInterval');
+      
+      memoryManager = new MemoryManager({ enableMonitoring: false });
+
+      expect(setIntervalSpy).not.toHaveBeenCalled();
+      
+      setIntervalSpy.mockRestore();
+    });
+  });
+
+  describe('stopMonitoring', () => {
+    it('should stop monitoring', () => {
+      memoryManager = new MemoryManager({ enableMonitoring: false });
+      
+      // Manually start monitoring
+      memoryManager.startMonitoring();
+      
+      const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+      
+      memoryManager.stopMonitoring();
+
+      expect(clearIntervalSpy).toHaveBeenCalled();
+      
+      clearIntervalSpy.mockRestore();
+    });
+  });
+
+  describe('getConfig', () => {
+    it('should return current configuration', () => {
+      const config: Partial<MemoryConfig> = {
+        maxMemoryUsage: 1024,
+        gcThreshold: 0.9,
+        cleanupInterval: 60000
+      };
+
+      memoryManager = new MemoryManager(config);
+
+      const returnedConfig = memoryManager.getConfig();
+
+      expect(returnedConfig.maxMemoryUsage).toBe(1024);
+      expect(returnedConfig.gcThreshold).toBe(0.9);
+      expect(returnedConfig.cleanupInterval).toBe(60000);
+    });
+  });
+
+  describe('getLastGcTime', () => {
+    it('should return last GC time', () => {
+      memoryManager = new MemoryManager();
+
+      const lastGcTime = memoryManager.getLastGcTime();
+
+      expect(lastGcTime).toBe(0); // Initial value
+    });
+
+    it('should return updated GC time after force GC', () => {
+      memoryManager = new MemoryManager();
+
+      memoryManager.forceGarbageCollection();
+      const lastGcTime = memoryManager.getLastGcTime();
+
+      expect(lastGcTime).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getCleanupCallbacks', () => {
+    it('should return cleanup callbacks set', () => {
+      memoryManager = new MemoryManager();
+      const callback = jest.fn();
+
+      memoryManager.addCleanupCallback(callback);
+
+      const callbacks = memoryManager.getCleanupCallbacks();
+
+      expect(callbacks).toBeInstanceOf(Set);
+      expect(callbacks.size).toBe(1);
+      expect(callbacks.has(callback)).toBe(true);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle process.memoryUsage throwing error', () => {
+      mockMemoryUsage.mockImplementation(() => {
+        throw new Error('Memory usage error');
+      });
+
+      memoryManager = new MemoryManager();
+
+      expect(() => memoryManager.getMemoryStats()).toThrow('Memory usage error');
+    });
+
+    it('should handle negative memory values', () => {
+      mockMemoryUsage.mockReturnValue({
+        rss: -100,
+        heapTotal: 1024 * 1024 * 1024,
+        heapUsed: -100,
+        external: 0,
+        arrayBuffers: 0
+      });
+
+      memoryManager = new MemoryManager();
+
+      const stats = memoryManager.getMemoryStats();
+
+      expect(stats.used).toBe(0); // Should be clamped to 0
+      expect(stats.total).toBe(1024);
+      expect(stats.free).toBe(1024);
+    });
+
+    it('should handle very small memory values', () => {
+      mockMemoryUsage.mockReturnValue({
+        rss: 1,
+        heapTotal: 2,
+        heapUsed: 1,
+        external: 0,
+        arrayBuffers: 0
+      });
+
+      memoryManager = new MemoryManager();
+
+      const stats = memoryManager.getMemoryStats();
+
+      expect(stats.used).toBe(0); // Should be rounded to 0
+      expect(stats.total).toBe(0);
+      expect(stats.free).toBe(0);
+    });
   });
 });
-
-describe('Memory Management - Optimization', () => {
-  it('✅ Uses weak references for cache', () => {
-    const weakMap = new WeakMap();
-    const obj = { id: 1 };
-    
-    weakMap.set(obj, 'value');
-    
-    expect(weakMap.has(obj)).toBe(true);
-  });
-
-  it('✅ Deduplicates strings', () => {
-    const str1 = 'repeated-string';
-    const str2 = 'repeated-string';
-    
-    expect(str1 === str2).toBe(true); // String interning
-  });
-
-  it('✅ Reuses object pools', () => {
-    const pool: any[] = [];
-    const maxPoolSize = 10;
-    
-    // Return object to pool
-    const obj = { data: 'value' };
-    if (pool.length < maxPoolSize) {
-      pool.push(obj);
-    }
-    
-    expect(pool.length).toBe(1);
-  });
-
-  it('✅ Streams large datasets', () => {
-    const batchSize = 100;
-    const totalRecords = 1000;
-    const batches = Math.ceil(totalRecords / batchSize);
-    
-    expect(batches).toBe(10);
-  });
 });
-
-describe('Memory Management - Leak Detection', () => {
-  it('✅ Detects growing memory over time', () => {
-    const measurements = [100, 120, 140, 160, 180];
-    const isGrowing = measurements[measurements.length - 1] > measurements[0];
-    
-    expect(isGrowing).toBe(true);
-  });
-
-  it('✅ Identifies leaked references', () => {
-    const references = new WeakSet();
-    const obj = { id: 1 };
-    
-    references.add(obj);
-    
-    expect(references.has(obj)).toBe(true);
-  });
-
-  it('✅ Clears event listeners', () => {
-    const listeners = new Map();
-    listeners.set('event1', () => {});
-    
-    listeners.clear();
-    
-    expect(listeners.size).toBe(0);
-  });
-
-  it('✅ Closes database connections', () => {
-    let connectionOpen = true;
-    
-    // Simulate close
-    connectionOpen = false;
-    
-    expect(connectionOpen).toBe(false);
-  });
-});
-
-describe('Memory Management - Allocation', () => {
-  it('✅ Allocates memory efficiently', () => {
-    const buffer = Buffer.alloc(1024); // 1 KB
-    
-    expect(buffer.length).toBe(1024);
-  });
-
-  it('✅ Reuses allocated buffers', () => {
-    const buffer = Buffer.allocUnsafe(1024);
-    buffer.fill(0);
-    
-    expect(buffer.length).toBe(1024);
-  });
-
-  it('✅ Limits buffer size', () => {
-    const maxBufferSize = 10 * 1024 * 1024; // 10 MB
-    const requestedSize = 5 * 1024 * 1024; // 5 MB
-    
-    const shouldAllocate = requestedSize <= maxBufferSize;
-    
-    expect(shouldAllocate).toBe(true);
-  });
-
-  it('✅ Handles out of memory errors', () => {
-    const memoryAvailable = false;
-    const shouldThrow = !memoryAvailable;
-    
-    expect(shouldThrow).toBe(true);
-  });
-});
-
-describe('Memory Management - Profiling', () => {
-  it('✅ Measures allocation rate', () => {
-    const allocationsPerSecond = 1000;
-    const threshold = 5000;
-    
-    const isNormal = allocationsPerSecond < threshold;
-    
-    expect(isNormal).toBe(true);
-  });
-
-  it('✅ Tracks large object allocations', () => {
-    const objectSize = 1024 * 1024; // 1 MB
-    const largeObjectThreshold = 512 * 1024; // 512 KB
-    
-    const isLarge = objectSize > largeObjectThreshold;
-    
-    expect(isLarge).toBe(true);
-  });
-
-  it('✅ Monitors external memory', () => {
-    const externalMemory = process.memoryUsage().external;
-    
-    expect(externalMemory).toBeGreaterThanOrEqual(0);
-  });
-
-  it('✅ Tracks array buffer memory', () => {
-    const arrayBuffers = process.memoryUsage().arrayBuffers;
-    
-    expect(arrayBuffers).toBeGreaterThanOrEqual(0);
-  });
-});
-
-describe('Memory Management - Best Practices', () => {
-  it('✅ Nullifies large objects when done', () => {
-    let largeObject: any = { data: new Array(1000) };
-    
-    largeObject = null;
-    
-    expect(largeObject).toBeNull();
-  });
-
-  it('✅ Uses const for immutable data', () => {
-    const immutableData = { id: 1 };
-    
-    expect(immutableData).toBeDefined();
-  });
-
-  it('✅ Avoids global variables', () => {
-    const localVar = 'scoped';
-    
-    expect(localVar).toBe('scoped');
-  });
-
-  it('✅ Closes file handles', () => {
-    let fileOpen = true;
-    
-    // Simulate close
-    fileOpen = false;
-    
-    expect(fileOpen).toBe(false);
-  });
-});
-

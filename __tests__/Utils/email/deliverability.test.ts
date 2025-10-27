@@ -1,288 +1,444 @@
 /**
- * Email Deliverability Tests
- * Tests email validation and deliverability checks
+ * Tests for Email Deliverability System
  */
 
-describe('Email Deliverability - Validation', () => {
-  it('✅ Validates email format', () => {
-    const validEmail = 'user@example.com';
-    const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(validEmail);
-    
-    expect(isValid).toBe(true);
-  });
+import {
+  validateEmailDeliverability,
+  recordBounce,
+  recordUnsubscribe,
+  getDeliverabilityMetrics,
+  shouldPauseSending,
+  getBounceRecords,
+  getUnsubscribeRecords,
+  cleanupOldRecords,
+  type EmailDeliverabilityMetrics,
+  type BounceRecord,
+  type UnsubscribeRecord
+} from '@/Utils/email/deliverability';
 
-  it('✅ Rejects invalid email format', () => {
-    const invalidEmail = 'notanemail';
-    const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(invalidEmail);
-    
-    expect(isValid).toBe(false);
-  });
+// Mock Supabase
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn()
+}));
 
-  it('✅ Validates domain exists', () => {
-    const email = 'user@example.com';
-    const domain = email.split('@')[1];
-    
-    expect(domain).toBe('example.com');
-  });
+describe('Email Deliverability System', () => {
+  let mockSupabaseClient: any;
 
-  it('✅ Checks for disposable email domains', () => {
-    const disposableDomains = new Set(['tempmail.com', '10minutemail.com']);
-    const email = 'user@gmail.com';
-    const domain = email.split('@')[1];
+  beforeEach(() => {
+    jest.clearAllMocks();
     
-    const isDisposable = disposableDomains.has(domain);
-    
-    expect(isDisposable).toBe(false);
-  });
-
-  it('✅ Detects role-based emails', () => {
-    const roleEmails = ['admin@', 'noreply@', 'support@'];
-    const email = 'admin@example.com';
-    
-    const isRole = roleEmails.some(role => email.startsWith(role));
-    
-    expect(isRole).toBe(true);
-  });
-
-  it('✅ Validates email length', () => {
-    const email = 'user@example.com';
-    const maxLength = 254; // RFC 5321
-    
-    expect(email.length).toBeLessThanOrEqual(maxLength);
-  });
-});
-
-describe('Email Deliverability - SPF', () => {
-  it('✅ SPF record structure is valid', () => {
-    const spfRecord = 'v=spf1 include:_spf.google.com ~all';
-    
-    expect(spfRecord).toContain('v=spf1');
-  });
-
-  it('✅ SPF record includes authorized senders', () => {
-    const spfRecord = 'v=spf1 include:_spf.google.com ~all';
-    
-    expect(spfRecord).toContain('include:');
-  });
-
-  it('✅ SPF record has policy directive', () => {
-    const spfRecord = 'v=spf1 include:_spf.google.com ~all';
-    const policies = ['~all', '-all', '+all'];
-    
-    const hasPolicy = policies.some(policy => spfRecord.includes(policy));
-    
-    expect(hasPolicy).toBe(true);
-  });
-});
-
-describe('Email Deliverability - DKIM', () => {
-  it('✅ DKIM selector is defined', () => {
-    const selector = 'default';
-    
-    expect(selector).toBeTruthy();
-    expect(typeof selector).toBe('string');
-  });
-
-  it('✅ DKIM domain is defined', () => {
-    const domain = 'example.com';
-    
-    expect(domain).toBeTruthy();
-    expect(domain).toContain('.');
-  });
-
-  it('✅ DKIM signature contains required fields', () => {
-    const signature = 'v=1; a=rsa-sha256; d=example.com; s=selector';
-    
-    expect(signature).toContain('v=');
-    expect(signature).toContain('a=');
-    expect(signature).toContain('d=');
-    expect(signature).toContain('s=');
-  });
-});
-
-describe('Email Deliverability - DMARC', () => {
-  it('✅ DMARC record structure is valid', () => {
-    const dmarcRecord = 'v=DMARC1; p=quarantine; rua=mailto:report@example.com';
-    
-    expect(dmarcRecord).toContain('v=DMARC1');
-  });
-
-  it('✅ DMARC policy is defined', () => {
-    const dmarcRecord = 'v=DMARC1; p=quarantine';
-    const policies = ['none', 'quarantine', 'reject'];
-    
-    const hasPolicy = policies.some(policy => dmarcRecord.includes(`p=${policy}`));
-    
-    expect(hasPolicy).toBe(true);
-  });
-
-  it('✅ DMARC reporting address is valid', () => {
-    const reportingAddress = 'mailto:report@example.com';
-    
-    expect(reportingAddress).toContain('mailto:');
-    expect(reportingAddress).toContain('@');
-  });
-});
-
-describe('Email Deliverability - Bounce Handling', () => {
-  it('✅ Identifies hard bounce', () => {
-    const bounceType = 'Permanent';
-    const isHardBounce = bounceType === 'Permanent';
-    
-    expect(isHardBounce).toBe(true);
-  });
-
-  it('✅ Identifies soft bounce', () => {
-    const bounceType = 'Transient';
-    const isSoftBounce = bounceType === 'Transient';
-    
-    expect(isSoftBounce).toBe(true);
-  });
-
-  it('✅ Marks hard bounced emails for suppression', () => {
-    const bounceType = 'Permanent';
-    const shouldSuppress = bounceType === 'Permanent';
-    
-    expect(shouldSuppress).toBe(true);
-  });
-
-  it('✅ Retries soft bounced emails', () => {
-    const bounceType = 'Transient';
-    const retryCount = 0;
-    const maxRetries = 3;
-    
-    const shouldRetry = bounceType === 'Transient' && retryCount < maxRetries;
-    
-    expect(shouldRetry).toBe(true);
-  });
-});
-
-describe('Email Deliverability - Suppression List', () => {
-  it('✅ Maintains suppression list', () => {
-    const suppressionList = new Set(['bounced@example.com']);
-    
-    expect(suppressionList.has('bounced@example.com')).toBe(true);
-  });
-
-  it('✅ Prevents sending to suppressed addresses', () => {
-    const suppressionList = new Set(['bounced@example.com']);
-    const recipient = 'bounced@example.com';
-    
-    const shouldSend = !suppressionList.has(recipient);
-    
-    expect(shouldSend).toBe(false);
-  });
-
-  it('✅ Allows sending to non-suppressed addresses', () => {
-    const suppressionList = new Set(['bounced@example.com']);
-    const recipient = 'valid@example.com';
-    
-    const shouldSend = !suppressionList.has(recipient);
-    
-    expect(shouldSend).toBe(true);
-  });
-
-  it('✅ Adds to suppression list on hard bounce', () => {
-    const suppressionList = new Set<string>();
-    const bouncedEmail = 'invalid@example.com';
-    
-    suppressionList.add(bouncedEmail);
-    
-    expect(suppressionList.has(bouncedEmail)).toBe(true);
-  });
-});
-
-describe('Email Deliverability - Headers', () => {
-  it('✅ Sets unsubscribe header', () => {
-    const headers = {
-      'List-Unsubscribe': '<https://example.com/unsubscribe>'
+    mockSupabaseClient = {
+      from: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      gte: jest.fn().mockReturnThis(),
+      lte: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      single: jest.fn()
     };
-    
-    expect(headers['List-Unsubscribe']).toBeTruthy();
+
+    require('@supabase/supabase-js').createClient.mockReturnValue(mockSupabaseClient);
   });
 
-  it('✅ Sets message ID header', () => {
-    const messageId = '<unique-id@example.com>';
-    
-    expect(messageId).toContain('@');
-    expect(messageId).toMatch(/^<.*>$/);
+  describe('validateEmailDeliverability', () => {
+    it('should validate email deliverability setup', async () => {
+      const result = await validateEmailDeliverability('test@example.com');
+
+      expect(result.isValid).toBeDefined();
+      expect(result.checks).toBeDefined();
+      expect(result.checks.spf).toBeDefined();
+      expect(result.checks.dkim).toBeDefined();
+      expect(result.checks.dmarc).toBeDefined();
+    });
+
+    it('should check SPF record', async () => {
+      const result = await validateEmailDeliverability('test@example.com');
+
+      expect(result.checks.spf).toHaveProperty('valid');
+      expect(result.checks.spf).toHaveProperty('record');
+    });
+
+    it('should check DKIM record', async () => {
+      const result = await validateEmailDeliverability('test@example.com');
+
+      expect(result.checks.dkim).toHaveProperty('valid');
+      expect(result.checks.dkim).toHaveProperty('record');
+    });
+
+    it('should check DMARC record', async () => {
+      const result = await validateEmailDeliverability('test@example.com');
+
+      expect(result.checks.dmarc).toHaveProperty('valid');
+      expect(result.checks.dmarc).toHaveProperty('record');
+    });
   });
 
-  it('✅ Sets from address', () => {
-    const from = 'JobPing <noreply@getjobping.com>';
-    
-    expect(from).toContain('@');
+  describe('recordBounce', () => {
+    it('should record hard bounce', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ data: null, error: null });
+
+      const result = await recordBounce('test@example.com', 'hard', 'Invalid email address');
+
+      expect(result.success).toBe(true);
+      expect(mockSupabaseClient.insert).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        bounce_type: 'hard',
+        reason: 'Invalid email address',
+        timestamp: expect.any(Date),
+        retry_count: 0
+      });
+    });
+
+    it('should record soft bounce', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ data: null, error: null });
+
+      const result = await recordBounce('test@example.com', 'soft', 'Mailbox full');
+
+      expect(result.success).toBe(true);
+      expect(mockSupabaseClient.insert).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        bounce_type: 'soft',
+        reason: 'Mailbox full',
+        timestamp: expect.any(Date),
+        retry_count: 0
+      });
+    });
+
+    it('should record complaint', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ data: null, error: null });
+
+      const result = await recordBounce('test@example.com', 'complaint', 'User marked as spam');
+
+      expect(result.success).toBe(true);
+      expect(mockSupabaseClient.insert).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        bounce_type: 'complaint',
+        reason: 'User marked as spam',
+        timestamp: expect.any(Date),
+        retry_count: 0
+      });
+    });
+
+    it('should handle database errors', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ 
+        data: null, 
+        error: { message: 'Database error' } 
+      });
+
+      const result = await recordBounce('test@example.com', 'hard', 'Invalid email');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Database error');
+    });
   });
 
-  it('✅ Sets reply-to address', () => {
-    const replyTo = 'support@getjobping.com';
-    
-    expect(replyTo).toMatch(/@/);
+  describe('recordUnsubscribe', () => {
+    it('should record email link unsubscribe', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ data: null, error: null });
+
+      const result = await recordUnsubscribe('test@example.com', 'email_link', 'User clicked unsubscribe');
+
+      expect(result.success).toBe(true);
+      expect(mockSupabaseClient.insert).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        reason: 'User clicked unsubscribe',
+        timestamp: expect.any(Date),
+        source: 'email_link'
+      });
+    });
+
+    it('should record dashboard unsubscribe', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ data: null, error: null });
+
+      const result = await recordUnsubscribe('test@example.com', 'dashboard');
+
+      expect(result.success).toBe(true);
+      expect(mockSupabaseClient.insert).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        reason: undefined,
+        timestamp: expect.any(Date),
+        source: 'dashboard'
+      });
+    });
+
+    it('should record complaint unsubscribe', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ data: null, error: null });
+
+      const result = await recordUnsubscribe('test@example.com', 'complaint', 'User marked as spam');
+
+      expect(result.success).toBe(true);
+      expect(mockSupabaseClient.insert).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        reason: 'User marked as spam',
+        timestamp: expect.any(Date),
+        source: 'complaint'
+      });
+    });
+
+    it('should handle database errors', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ 
+        data: null, 
+        error: { message: 'Database error' } 
+      });
+
+      const result = await recordUnsubscribe('test@example.com', 'email_link');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Database error');
+    });
+  });
+
+  describe('getDeliverabilityMetrics', () => {
+    it('should return deliverability metrics', async () => {
+      const mockMetrics = {
+        total_sent: 1000,
+        total_delivered: 950,
+        total_bounced: 30,
+        total_complaints: 5,
+        total_unsubscribes: 15,
+        total_spam: 2
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockMetrics, error: null });
+
+      const result = await getDeliverabilityMetrics();
+
+      expect(result.deliveryRate).toBeCloseTo(95, 1);
+      expect(result.bounceRate).toBeCloseTo(3, 1);
+      expect(result.complaintRate).toBeCloseTo(0.5, 1);
+      expect(result.unsubscribeRate).toBeCloseTo(1.5, 1);
+      expect(result.spamRate).toBeCloseTo(0.2, 1);
+      expect(result.lastChecked).toBeDefined();
+    });
+
+    it('should handle missing metrics data', async () => {
+      mockSupabaseClient.single.mockResolvedValue({ data: null, error: null });
+
+      const result = await getDeliverabilityMetrics();
+
+      expect(result.deliveryRate).toBe(0);
+      expect(result.bounceRate).toBe(0);
+      expect(result.complaintRate).toBe(0);
+      expect(result.unsubscribeRate).toBe(0);
+      expect(result.spamRate).toBe(0);
+    });
+
+    it('should handle database errors', async () => {
+      mockSupabaseClient.single.mockResolvedValue({ 
+        data: null, 
+        error: { message: 'Database error' } 
+      });
+
+      const result = await getDeliverabilityMetrics();
+
+      expect(result.deliveryRate).toBe(0);
+      expect(result.bounceRate).toBe(0);
+      expect(result.complaintRate).toBe(0);
+      expect(result.unsubscribeRate).toBe(0);
+      expect(result.spamRate).toBe(0);
+    });
+  });
+
+  describe('shouldPauseSending', () => {
+    it('should pause sending when bounce rate is high', async () => {
+      const mockMetrics = {
+        total_sent: 1000,
+        total_delivered: 800,
+        total_bounced: 200, // 20% bounce rate
+        total_complaints: 5,
+        total_unsubscribes: 15,
+        total_spam: 2
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockMetrics, error: null });
+
+      const result = await shouldPauseSending();
+
+      expect(result.shouldPause).toBe(true);
+      expect(result.reason).toContain('bounce rate');
+    });
+
+    it('should pause sending when complaint rate is high', async () => {
+      const mockMetrics = {
+        total_sent: 1000,
+        total_delivered: 950,
+        total_bounced: 30,
+        total_complaints: 20, // 2% complaint rate
+        total_unsubscribes: 15,
+        total_spam: 2
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockMetrics, error: null });
+
+      const result = await shouldPauseSending();
+
+      expect(result.shouldPause).toBe(true);
+      expect(result.reason).toContain('complaint rate');
+    });
+
+    it('should not pause sending when rates are normal', async () => {
+      const mockMetrics = {
+        total_sent: 1000,
+        total_delivered: 950,
+        total_bounced: 30,
+        total_complaints: 5,
+        total_unsubscribes: 15,
+        total_spam: 2
+      };
+
+      mockSupabaseClient.single.mockResolvedValue({ data: mockMetrics, error: null });
+
+      const result = await shouldPauseSending();
+
+      expect(result.shouldPause).toBe(false);
+      expect(result.reason).toContain('Normal rates');
+    });
+  });
+
+  describe('getBounceRecords', () => {
+    it('should return bounce records', async () => {
+      const mockBounces = [
+        {
+          email: 'test1@example.com',
+          bounce_type: 'hard',
+          reason: 'Invalid email',
+          timestamp: new Date(),
+          retry_count: 0
+        },
+        {
+          email: 'test2@example.com',
+          bounce_type: 'soft',
+          reason: 'Mailbox full',
+          timestamp: new Date(),
+          retry_count: 1
+        }
+      ];
+
+      mockSupabaseClient.limit.mockResolvedValue({ data: mockBounces, error: null });
+
+      const result = await getBounceRecords(10);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].email).toBe('test1@example.com');
+      expect(result[0].bounceType).toBe('hard');
+      expect(result[1].email).toBe('test2@example.com');
+      expect(result[1].bounceType).toBe('soft');
+    });
+
+    it('should handle database errors', async () => {
+      mockSupabaseClient.limit.mockResolvedValue({ 
+        data: null, 
+        error: { message: 'Database error' } 
+      });
+
+      const result = await getBounceRecords(10);
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getUnsubscribeRecords', () => {
+    it('should return unsubscribe records', async () => {
+      const mockUnsubscribes = [
+        {
+          email: 'test1@example.com',
+          reason: 'User clicked unsubscribe',
+          timestamp: new Date(),
+          source: 'email_link'
+        },
+        {
+          email: 'test2@example.com',
+          reason: 'User marked as spam',
+          timestamp: new Date(),
+          source: 'complaint'
+        }
+      ];
+
+      mockSupabaseClient.limit.mockResolvedValue({ data: mockUnsubscribes, error: null });
+
+      const result = await getUnsubscribeRecords(10);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].email).toBe('test1@example.com');
+      expect(result[0].source).toBe('email_link');
+      expect(result[1].email).toBe('test2@example.com');
+      expect(result[1].source).toBe('complaint');
+    });
+
+    it('should handle database errors', async () => {
+      mockSupabaseClient.limit.mockResolvedValue({ 
+        data: null, 
+        error: { message: 'Database error' } 
+      });
+
+      const result = await getUnsubscribeRecords(10);
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('cleanupOldRecords', () => {
+    it('should cleanup old bounce records', async () => {
+      mockSupabaseClient.lte.mockResolvedValue({ data: null, error: null });
+
+      const result = await cleanupOldRecords(30);
+
+      expect(result.success).toBe(true);
+      expect(mockSupabaseClient.lte).toHaveBeenCalledWith('timestamp', expect.any(Date));
+    });
+
+    it('should cleanup old unsubscribe records', async () => {
+      mockSupabaseClient.lte.mockResolvedValue({ data: null, error: null });
+
+      const result = await cleanupOldRecords(30);
+
+      expect(result.success).toBe(true);
+      expect(mockSupabaseClient.lte).toHaveBeenCalledWith('timestamp', expect.any(Date));
+    });
+
+    it('should handle cleanup errors', async () => {
+      mockSupabaseClient.lte.mockResolvedValue({ 
+        data: null, 
+        error: { message: 'Cleanup failed' } 
+      });
+
+      const result = await cleanupOldRecords(30);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Cleanup failed');
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle missing environment variables', () => {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      expect(() => require('@supabase/supabase-js').createClient()).toThrow();
+    });
+
+    it('should handle invalid email addresses', async () => {
+      const result = await validateEmailDeliverability('invalid-email');
+
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should handle empty bounce reason', async () => {
+      mockSupabaseClient.eq.mockResolvedValue({ data: null, error: null });
+
+      const result = await recordBounce('test@example.com', 'hard', '');
+
+      expect(result.success).toBe(true);
+      expect(mockSupabaseClient.insert).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        bounce_type: 'hard',
+        reason: '',
+        timestamp: expect.any(Date),
+        retry_count: 0
+      });
+    });
   });
 });
-
-describe('Email Deliverability - Content', () => {
-  it('✅ Includes plain text version', () => {
-    const hasPlainText = true;
-    
-    expect(hasPlainText).toBe(true);
-  });
-
-  it('✅ HTML to text ratio is reasonable', () => {
-    const htmlLength = 1000;
-    const textLength = 500;
-    const ratio = textLength / htmlLength;
-    
-    expect(ratio).toBeGreaterThan(0.3); // At least 30%
-  });
-
-  it('✅ Avoids spam trigger words excessively', () => {
-    const subject = 'Your personalized job matches';
-    const spamWords = ['FREE!!!', 'CLICK NOW!!!', 'WIN!!!'];
-    
-    const hasSpam = spamWords.some(word => subject.toUpperCase().includes(word));
-    
-    expect(hasSpam).toBe(false);
-  });
-
-  it('✅ Includes unsubscribe link in body', () => {
-    const html = '<p>Content</p><a href="https://example.com/unsubscribe">Unsubscribe</a>';
-    
-    expect(html.toLowerCase()).toContain('unsubscribe');
-  });
-});
-
-describe('Email Deliverability - Reputation', () => {
-  it('✅ Tracks sender reputation score', () => {
-    const reputationScore = 85; // Out of 100
-    
-    expect(reputationScore).toBeGreaterThanOrEqual(0);
-    expect(reputationScore).toBeLessThanOrEqual(100);
-  });
-
-  it('✅ Monitors complaint rate', () => {
-    const sent = 1000;
-    const complaints = 1;
-    const complaintRate = (complaints / sent) * 100;
-    
-    expect(complaintRate).toBeLessThan(1); // Less than 1%
-  });
-
-  it('✅ Monitors bounce rate', () => {
-    const sent = 1000;
-    const bounces = 30;
-    const bounceRate = (bounces / sent) * 100;
-    
-    expect(bounceRate).toBeLessThan(10); // Less than 10%
-  });
-
-  it('✅ Pauses sending on high complaint rate', () => {
-    const complaintRate = 0.2; // 0.2%
-    const threshold = 0.1; // 0.1%
-    
-    const shouldPause = complaintRate > threshold;
-    
-    expect(shouldPause).toBe(true);
-  });
-});
-

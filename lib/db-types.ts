@@ -246,7 +246,6 @@ export type Database = {
           description: string | null
           experience_required: string | null
           filtered_reason: string | null
-          freshness_tier: string | null
           id: number
           is_active: boolean | null
           is_graduate: boolean | null
@@ -288,7 +287,6 @@ export type Database = {
           description?: string | null
           experience_required?: string | null
           filtered_reason?: string | null
-          freshness_tier?: string | null
           id?: number
           is_active?: boolean | null
           is_graduate?: boolean | null
@@ -330,7 +328,6 @@ export type Database = {
           description?: string | null
           experience_required?: string | null
           filtered_reason?: string | null
-          freshness_tier?: string | null
           id?: number
           is_active?: boolean | null
           is_graduate?: boolean | null
@@ -518,7 +515,6 @@ export type Database = {
           cache_hit: boolean | null
           created_at: string | null
           fallback_reason: string | null
-          freshness_tier: string | null
           id: number
           job_hash: string
           match_algorithm: string | null
@@ -537,7 +533,6 @@ export type Database = {
           cache_hit?: boolean | null
           created_at?: string | null
           fallback_reason?: string | null
-          freshness_tier?: string | null
           id?: number
           job_hash: string
           match_algorithm?: string | null
@@ -556,7 +551,6 @@ export type Database = {
           cache_hit?: boolean | null
           created_at?: string | null
           fallback_reason?: string | null
-          freshness_tier?: string | null
           id?: number
           job_hash?: string
           match_algorithm?: string | null
@@ -801,7 +795,7 @@ export type Database = {
         Args: { loc: string }
         Returns: string
       }
-      update_job_freshness_tiers: {
+      update_job_tiers: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

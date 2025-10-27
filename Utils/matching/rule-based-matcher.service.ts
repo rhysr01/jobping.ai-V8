@@ -5,13 +5,14 @@
 
 import { Job } from '../../scrapers/types';
 import { UserPreferences, MatchResult, MatchScore, AiProvenance } from './types';
-import { 
-  normalizeToString, 
-  cats, 
-  hasEligibility, 
-  careerSlugs, 
-  locTag 
+import {
+  normalizeToString,
+  cats,
+  hasEligibility,
+  careerSlugs,
+  locTag
 } from './normalizers';
+import { validateLocationCompatibility } from './validators';
 
 // ================================
 // RULE-BASED MATCHING
@@ -28,17 +29,16 @@ export function applyHardGates(job: Job, userPrefs: UserPreferences): { passed: 
 
   // Check location compatibility
   if (userPrefs.target_cities && userPrefs.target_cities.length > 0) {
-    const jobLocation = job.location?.toLowerCase() || '';
-    const userCities = userPrefs.target_cities.map(city => city.toLowerCase());
-    
-    const locationMatch = userCities.some(city => 
-      jobLocation.includes(city) || 
-      jobLocation.includes('remote') ||
-      jobLocation.includes('hybrid')
+    // Enhanced location matching using structured data
+    const locationValidation = validateLocationCompatibility(
+      [job.location || ''],
+      userPrefs.target_cities,
+      job.city || undefined,
+      job.country || undefined
     );
 
-    if (!locationMatch) {
-      return { passed: false, reason: 'Location mismatch' };
+    if (!locationValidation.compatible) {
+      return { passed: false, reason: `Location mismatch: ${locationValidation.reasons[0]}` };
     }
   }
 
