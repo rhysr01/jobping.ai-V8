@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server';
 // ERROR TYPES AND CLASSES
 // ================================
 
+/* eslint-disable no-unused-vars */
 export enum ErrorCode {
   // Validation Errors (4xx)
   VALIDATION_ERROR = 'VALIDATION_ERROR',
@@ -41,6 +42,7 @@ export enum ErrorCode {
   CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
   NETWORK_ERROR = 'NETWORK_ERROR',
 }
+/* eslint-enable no-unused-vars */
 
 export enum ErrorSeverity {
   LOW = 'low',

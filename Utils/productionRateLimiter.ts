@@ -204,7 +204,6 @@ class ProductionRateLimiter {
 
     if (isTestMode()) {
       this.bypass = true;
-      console.log('🧪 Test mode: bypass limiter & skip Redis');
       return;
     }
 
@@ -223,7 +222,6 @@ class ProductionRateLimiter {
         });
 
         this.redisClient.on('connect', () => {
-          console.log('✅ Redis connected for production rate limiter');
           this.isRedisConnected = true;
         });
 
@@ -246,7 +244,6 @@ class ProductionRateLimiter {
     if (this.redisClient && this.isRedisConnected) {
       try {
         await this.redisClient.quit();
-        console.log('🔌 Redis disconnected for rate limiter');
       } catch (error) {
         console.error('❌ Error disconnecting Redis:', error);
       }
@@ -421,7 +418,6 @@ class ProductionRateLimiter {
   ): Promise<NextResponse | null> {
     // Skip rate limiting in test mode
     if (process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1') {
-      console.log('🧪 Test mode: bypassing rate limiter');
       return null;
     }
 
@@ -481,7 +477,6 @@ class ProductionRateLimiter {
       } else {
         this.fallbackMap.delete(key);
       }
-      console.log(`✅ Rate limit reset for ${key}`);
     } catch (error) {
       console.error('❌ Failed to reset rate limit:', error);
     }
@@ -586,7 +581,6 @@ class ProductionRateLimiter {
   resetScraperThrottle(platform: string): void {
     this.scraperThrottleLevel.delete(`scraper:${platform}`);
     this.scraperRequestTimes.delete(`scraper:${platform}`);
-    console.log(`✅ Reset throttle level for ${platform}`);
   }
 
   /**
@@ -666,7 +660,6 @@ let cleanupTimer: NodeJS.Timeout | null = null;
 
 function startCleanupTimer() {
   if (isTestMode()) {
-    console.log('🧪 Test mode: Skipping cleanup timer for rate limiter');
     return;
   }
   
@@ -700,7 +693,6 @@ export async function resetLimiterForTests() {
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('🔄 Shutting down Production Rate Limiter...');
   if (cleanupTimer) {
     clearInterval(cleanupTimer);
   }
@@ -711,7 +703,6 @@ process.on('SIGINT', async () => {
 });
 
 process.on('SIGTERM', async () => {
-  console.log('🔄 Shutting down Production Rate Limiter...');
   if (cleanupTimer) {
     clearInterval(cleanupTimer);
   }

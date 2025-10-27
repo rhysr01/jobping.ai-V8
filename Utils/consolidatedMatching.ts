@@ -84,7 +84,6 @@ export class ConsolidatedMatchingEngine {
     // Cache key format: "finance_london+paris_entry_v2025-10-09_1234"
     const cacheKey = `${userSegment}_${jobPoolVersion}`;
     
-    console.log(`🔑 Cache key: ${cacheKey} (date-based for better sharing)`);
     return cacheKey;
   }
 
@@ -102,7 +101,6 @@ export class ConsolidatedMatchingEngine {
     const cacheKey = this.generateCacheKey(jobs, userPrefs);
     const cached = this.matchCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      console.log(`💰 Cache hit for ${userPrefs.email} - saved AI call!`);
       return {
         matches: cached.matches,
         method: 'ai_success',
@@ -128,7 +126,6 @@ export class ConsolidatedMatchingEngine {
       if (aiMatches && aiMatches.length > 0) {
         // Cache successful AI matches
         this.matchCache.set(cacheKey, { matches: aiMatches, timestamp: Date.now() });
-        console.log(`💾 Cached matches for ${userPrefs.email}`);
         
         return {
           matches: aiMatches,
@@ -342,7 +339,6 @@ Keep match reasons 2-3 sentences max. Make every word count.`
       return `${i+1}. [${job.job_hash}] ${job.title} @ ${job.company} | ${job.location}`;
     }).join('\n');
     
-    console.log(`Sending ${jobsToAnalyze.length} pre-filtered jobs to AI for deep analysis`);
 
     return `You are a career matching expert. Analyze these jobs and match them to the user's profile.
 
@@ -939,7 +935,7 @@ Requirements:
   /**
    * Calculate company tier/quality score
    */
-  private calculateCompanyTierScore(company: string, jobText: string): { points: number; reason: string } {
+  private calculateCompanyTierScore(company: string, _jobText: string): { points: number; reason: string } {
     // Famous companies get small bonus - but unknown companies are ALSO valued!
     const famousCompanies = [
       // Tech Giants

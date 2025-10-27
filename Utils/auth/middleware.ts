@@ -24,6 +24,8 @@ export enum AuthLevel {
   SYSTEM = 'system'
 }
 
+// Note: AuthLevel enum is defined for future use but not currently used in the codebase
+
 // User session interface
 export interface UserSession {
   email: string;

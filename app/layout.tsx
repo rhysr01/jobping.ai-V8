@@ -1,6 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
+import StructuredData from "@/components/StructuredData";
+import FAQSchema from "@/components/FAQSchema";
 
 export const metadata: Metadata = {
   title: "JobPing · Five roles. Zero scrolling.",
@@ -64,6 +66,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={GeistSans.variable}>
+      <head>
+        <StructuredData />
+        <FAQSchema />
+      </head>
       <body className="text-white premium-bg custom-scrollbar">
         <a
           href="#main"
