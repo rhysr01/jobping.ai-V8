@@ -23,7 +23,8 @@ export const GET = async (req: NextRequest) => {
     console.log('✅ API Key valid, domains:', domains.data);
     
     // Check if getjobping.com is verified
-    const getjobpingDomain = domains.data?.find((d: any) => d.name === 'getjobping.com');
+    const domainsList = Array.isArray(domains.data) ? domains.data : [];
+    const getjobpingDomain = domainsList.find((d: any) => d.name === 'getjobping.com');
     if (getjobpingDomain) {
       apiKeyTest.details += ` | getjobping.com verified: ${getjobpingDomain.status === 'verified'}`;
     } else {
