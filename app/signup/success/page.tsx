@@ -25,11 +25,11 @@ export default function SignupSuccess() {
           </h1>
 
           <p className="text-xl sm:text-2xl text-zinc-300 mb-4">
-            Your AI career assistant is finding your perfect matches
+            Check your inbox for your welcome email with initial matches
           </p>
 
           <div className="inline-block bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-2xl font-bold text-lg mb-8 shadow-[0_8px_24px_rgba(16,185,129,0.4)]">
-            Your First Matches Arriving in 48 Hours
+            Welcome Email with Your First Matches
           </div>
 
           <div className="glass-card rounded-2xl p-8 sm:p-10 mb-8 text-left">
@@ -41,10 +41,10 @@ export default function SignupSuccess() {
                   1
                 </div>
                 <div>
-                  <div className="font-semibold text-white mb-1">Check Your Email (Within 48 Hours)</div>
-                  <div className="text-zinc-400 text-sm">You'll receive your first hand-picked roles that match your profile perfectly</div>
+                  <div className="font-semibold text-white mb-1">Check Your Inbox Now</div>
+                  <div className="text-zinc-400 text-sm">Look for your welcome email with 5-10 hand-picked matches (depending on your plan)</div>
                   <div className="mt-2 text-xs text-yellow-400 font-semibold">
-                    ⚠️ Check your spam/junk folder if you don't see it in your inbox!
+                    ⚠️ Check your spam/junk folder if you don't see it!
                   </div>
                 </div>
               </div>
@@ -64,8 +64,8 @@ export default function SignupSuccess() {
                   3
                 </div>
                 <div>
-                  <div className="font-semibold text-white mb-1">Weekly Updates</div>
-                  <div className="text-zinc-400 text-sm">Fresh roles every week, matched to your preferences</div>
+                  <div className="font-semibold text-white mb-1">Ongoing Updates</div>
+                  <div className="text-zinc-400 text-sm">Free: 5 new roles every week • Premium: 5 roles every 48 hours</div>
                 </div>
               </div>
             </div>
