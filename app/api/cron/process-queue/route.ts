@@ -1,4 +1,4 @@
-// 🚀 CRON-TRIGGERED QUEUE PROCESSING
+//  CRON-TRIGGERED QUEUE PROCESSING
 // Processes N jobs per call - no setInterval workers
 // Handles cold starts and scales automatically
 
@@ -20,7 +20,7 @@ const MAX_PROCESSING_TIME = parseInt(process.env.MAX_PROCESSING_TIME || '25000')
 const processQueueHandler = asyncHandler(async (_request: NextRequest) => {
   const startTime = Date.now();
   
-  console.log('🚀 Starting cron queue processing...');
+  console.log(' Starting cron queue processing...');
 
   // Get pending batches from match_batch table
   const { data: pendingBatches, error: batchError } = await supabase
@@ -31,12 +31,12 @@ const processQueueHandler = asyncHandler(async (_request: NextRequest) => {
     .limit(BATCH_SIZE);
 
   if (batchError) {
-    console.error('❌ Error fetching pending batches:', batchError);
+    console.error(' Error fetching pending batches:', batchError);
     throw new AppError('Database error', 500, 'DB_FETCH_ERROR', { error: batchError.message });
   }
 
   if (!pendingBatches || pendingBatches.length === 0) {
-    console.log('✅ No pending batches to process');
+    console.log(' No pending batches to process');
     return NextResponse.json({ 
       processed: 0, 
       message: 'No pending batches',
@@ -44,7 +44,7 @@ const processQueueHandler = asyncHandler(async (_request: NextRequest) => {
     });
   }
 
-  console.log(`📦 Processing ${pendingBatches.length} batches...`);
+  console.log(`� Processing ${pendingBatches.length} batches...`);
 
   let processedCount = 0;
   let successCount = 0;
@@ -54,7 +54,7 @@ const processQueueHandler = asyncHandler(async (_request: NextRequest) => {
   for (const batch of pendingBatches) {
     // Check if we're approaching time limit
     if (Date.now() - startTime > MAX_PROCESSING_TIME) {
-      console.log('⏰ Approaching time limit, stopping processing');
+      console.log(' Approaching time limit, stopping processing');
       break;
     }
 
@@ -84,7 +84,7 @@ const processQueueHandler = asyncHandler(async (_request: NextRequest) => {
           .eq('id', batch.id);
 
         successCount++;
-        console.log(`✅ Batch ${batch.id} processed successfully`);
+        console.log(` Batch ${batch.id} processed successfully`);
       } else {
         // Mark as failed
         await supabase
@@ -97,13 +97,13 @@ const processQueueHandler = asyncHandler(async (_request: NextRequest) => {
           .eq('id', batch.id);
 
         errorCount++;
-        console.log(`❌ Batch ${batch.id} failed:`, result.error);
+        console.log(` Batch ${batch.id} failed:`, result.error);
       }
 
       processedCount++;
 
     } catch (error) {
-      console.error(`❌ Error processing batch ${batch.id}:`, error);
+      console.error(` Error processing batch ${batch.id}:`, error);
       
       // Mark as failed
       await supabase
@@ -129,7 +129,7 @@ const processQueueHandler = asyncHandler(async (_request: NextRequest) => {
     message: `Processed ${processedCount} batches in ${duration}ms`
   };
 
-  console.log('✅ Queue processing complete:', response);
+  console.log(' Queue processing complete:', response);
   return NextResponse.json(response);
 });
 

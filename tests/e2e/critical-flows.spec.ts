@@ -20,7 +20,7 @@ test.describe('Critical User Flows', () => {
     await expect(page.locator('[data-testid="pricing"]')).toBeVisible();
     
     // Check for key messaging
-    await expect(page.locator('h1:has-text("Five roles. Zero scrolling.")')).toBeVisible();
+    await expect(page.locator('h1:has-text("No logins. Zero scrolling. Jobs in your inbox.")')).toBeVisible();
     await expect(page.locator('text=Weekly job matches')).toBeVisible();
   });
 
@@ -36,7 +36,7 @@ test.describe('Critical User Flows', () => {
     // Check premium tier
     await expect(page.locator('text=Premium')).toBeVisible();
     await expect(page.locator('text=15 roles/week')).toBeVisible();
-    await expect(page.locator('text=€7/month')).toBeVisible();
+    await expect(page.locator('text=��7/month')).toBeVisible();
     
     // Check CTA buttons
     await expect(page.locator('text=Start Free')).toBeVisible();
@@ -88,7 +88,7 @@ test.describe('Critical User Flows', () => {
     await page.setViewportSize({ width: 375, height: 667 });
     
     // Check if mobile navigation works
-    await expect(page.locator('h1:has-text("Five roles. Zero scrolling.")')).toBeVisible();
+    await expect(page.locator('h1:has-text("No logins. Zero scrolling. Jobs in your inbox.")')).toBeVisible();
     
     // Check if pricing cards stack properly
     await page.locator('text=Pricing').click();
@@ -201,16 +201,16 @@ test.describe('Accessibility Tests', () => {
 test.describe('Cross-browser Compatibility', () => {
   test('Works in Chrome', async ({ page, browserName }) => {
     await page.goto('/');
-    await expect(page.locator('h1:has-text("Five roles. Zero scrolling.")')).toBeVisible();
+    await expect(page.locator('h1:has-text("No logins. Zero scrolling. Jobs in your inbox.")')).toBeVisible();
   });
 
   test('Works in Firefox', async ({ page, browserName }) => {
     await page.goto('/');
-    await expect(page.locator('h1:has-text("Five roles. Zero scrolling.")')).toBeVisible();
+    await expect(page.locator('h1:has-text("No logins. Zero scrolling. Jobs in your inbox.")')).toBeVisible();
   });
 
   test('Works in Safari', async ({ page, browserName }) => {
     await page.goto('/');
-    await expect(page.locator('h1:has-text("Five roles. Zero scrolling.")')).toBeVisible();
+    await expect(page.locator('h1:has-text("No logins. Zero scrolling. Jobs in your inbox.")')).toBeVisible();
   });
 });

@@ -19,7 +19,7 @@ export interface ReEngagementResult {
  * Send re-engagement emails to inactive users
  */
 export async function sendReEngagementEmails(): Promise<ReEngagementResult> {
-  console.log('🔄 Starting re-engagement email process...');
+  console.log(' Starting re-engagement email process...');
   
   const result: ReEngagementResult = {
     success: true,
@@ -32,11 +32,11 @@ export async function sendReEngagementEmails(): Promise<ReEngagementResult> {
     const candidates = await getReEngagementCandidates();
     
     if (candidates.length === 0) {
-      console.log('✅ No users need re-engagement emails');
+      console.log(' No users need re-engagement emails');
       return result;
     }
 
-    console.log(`📧 Found ${candidates.length} users for re-engagement`);
+    console.log(` Found ${candidates.length} users for re-engagement`);
 
     // Send emails to each candidate
     for (const user of candidates) {
@@ -44,20 +44,20 @@ export async function sendReEngagementEmails(): Promise<ReEngagementResult> {
         await sendReEngagementEmail(user);
         await markReEngagementSent(user.email);
         result.emailsSent++;
-        console.log(`✅ Re-engagement email sent to ${user.email}`);
+        console.log(` Re-engagement email sent to ${user.email}`);
       } catch (error) {
         const errorMessage = `Failed to send re-engagement email to ${user.email}: ${error}`;
-        console.error(`❌ ${errorMessage}`);
+        console.error(` ${errorMessage}`);
         result.errors.push(errorMessage);
         result.success = false;
       }
     }
 
-    console.log(`📊 Re-engagement complete: ${result.emailsSent} emails sent, ${result.errors.length} errors`);
+    console.log(` Re-engagement complete: ${result.emailsSent} emails sent, ${result.errors.length} errors`);
     
   } catch (error) {
     const errorMessage = `Re-engagement process failed: ${error}`;
-    console.error(`❌ ${errorMessage}`);
+    console.error(` ${errorMessage}`);
     result.errors.push(errorMessage);
     result.success = false;
   }

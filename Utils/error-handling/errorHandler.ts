@@ -10,7 +10,6 @@ import { NextResponse } from 'next/server';
 // ERROR TYPES AND CLASSES
 // ================================
 
-/* eslint-disable no-unused-vars */
 export enum ErrorCode {
   // Validation Errors (4xx)
   VALIDATION_ERROR = 'VALIDATION_ERROR',
@@ -42,7 +41,6 @@ export enum ErrorCode {
   CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
   NETWORK_ERROR = 'NETWORK_ERROR',
 }
-/* eslint-enable no-unused-vars */
 
 export enum ErrorSeverity {
   LOW = 'low',
@@ -265,16 +263,16 @@ export class ErrorHandler {
 
     switch (error.severity) {
       case ErrorSeverity.CRITICAL:
-        console.error('🚨 CRITICAL ERROR:', logData);
+        console.error('CRITICAL ERROR:', logData);
         break;
       case ErrorSeverity.HIGH:
-        console.error('❌ HIGH SEVERITY ERROR:', logData);
+        console.error('HIGH SEVERITY ERROR:', logData);
         break;
       case ErrorSeverity.MEDIUM:
-        console.warn('⚠️ MEDIUM SEVERITY ERROR:', logData);
+        console.warn('MEDIUM SEVERITY ERROR:', logData);
         break;
       case ErrorSeverity.LOW:
-        console.info('ℹ️ LOW SEVERITY ERROR:', logData);
+        console.info('LOW SEVERITY ERROR:', logData);
         break;
     }
   }

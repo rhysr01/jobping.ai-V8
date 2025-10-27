@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('❌ Verify email API error:', error);
+    console.error(' Verify email API error:', error);
     return errorResponse.internal(request, 'Verification failed');
   }
 }

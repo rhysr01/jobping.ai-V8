@@ -11,7 +11,7 @@ type BasicJob = {
 type UserPreferencesLike = {
   rolePreference?: string | null;
   locationPreference?: string | null;
-  salaryPreference?: string | null; // e.g. "â‚¬45-65k" or "â‚¬50k+"
+  salaryPreference?: string | null; // e.g. "‚¬45-65k" or "‚¬50k+"
 };
 
 function getDayContext(date: Date = new Date()): string {

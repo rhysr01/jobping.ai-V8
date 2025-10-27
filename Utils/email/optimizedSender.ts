@@ -1,4 +1,4 @@
-// 🚀 OPTIMIZED EMAIL SENDER - PRODUCTION READY
+//  OPTIMIZED EMAIL SENDER - PRODUCTION READY
 
 import { EmailJobCard } from './types';
 import { getResendClient, getSupabaseClient, EMAIL_CONFIG } from './clients';
@@ -109,7 +109,7 @@ export async function sendWelcomeEmail({
   try {
     // Check suppression list
     if (await isEmailSuppressed(to)) {
-      console.log(`📧 Email suppressed: ${to}`);
+      console.log(` Email suppressed: ${to}`);
       return { suppressed: true };
     }
 
@@ -124,26 +124,26 @@ export async function sendWelcomeEmail({
     const text = createWelcomeEmailText(userName, matchCount, tier);
     const unsubscribeHeaders = createDeliverabilityHeaders(to);
     
-    console.log(`📧 Sending welcome email from: ${EMAIL_CONFIG.from} to: ${to}`);
+    console.log(` Sending welcome email from: ${EMAIL_CONFIG.from} to: ${to}`);
     
     const { data, error } = await resend.emails.send({
       from: EMAIL_CONFIG.from,
       to: [to],
-      subject: '🎯 Welcome to JobPing - Your AI Career Assistant is Ready!',
+      subject: '� Welcome to JobPing - Your AI Career Assistant is Ready!',
       html: html,
       text: text,
       headers: unsubscribeHeaders,
     });
 
     if (error) {
-      console.error('❌ Resend API error:', error);
+      console.error(' Resend API error:', error);
       throw error;
     }
 
-    console.log('✅ Welcome email sent successfully, Email ID:', data?.id);
+    console.log(' Welcome email sent successfully, Email ID:', data?.id);
     return data;
   } catch (error) {
-    console.error('❌ Welcome email failed:', error);
+    console.error(' Welcome email failed:', error);
     throw error;
   }
 }
@@ -175,7 +175,7 @@ export async function sendMatchedJobsEmail({
   try {
     // Check suppression list first
     if (await isEmailSuppressed(to)) {
-      console.log(`📧 Email suppressed: ${to}`);
+      console.log(` Email suppressed: ${to}`);
       return { suppressed: true };
     }
 
@@ -191,7 +191,7 @@ export async function sendMatchedJobsEmail({
       .single();
     
     if (existingSend) {
-      console.log(`📧 Email already sent: ${sendToken}`);
+      console.log(` Email already sent: ${sendToken}`);
       return { id: existingSend.id, alreadySent: true };
     }
 
@@ -209,8 +209,8 @@ export async function sendMatchedJobsEmail({
     const text = createJobMatchesEmailText(jobs, userName, subscriptionTier, isSignupEmail, personalization);
     
     const subject = subjectOverride ?? (isSignupEmail 
-      ? `🎯 Welcome to JobPing - ${jobs.length} Job Matches Found!`
-      : `🎯 ${jobs.length} Fresh Job Matches - JobPing`);
+      ? `� Welcome to JobPing - ${jobs.length} Job Matches Found!`
+      : `� ${jobs.length} Fresh Job Matches - JobPing`);
 
     // Send email with optimized retry logic
     const resend = getResendClient();
@@ -239,16 +239,16 @@ export async function sendMatchedJobsEmail({
           status: 'sent'
         });
 
-        console.log(`✅ Email sent successfully (attempt ${attempt})`);
+        console.log(` Email sent successfully (attempt ${attempt})`);
         return { ...data, sendToken };
         
       } catch (error) {
         lastError = error;
-        console.error(`❌ Email attempt ${attempt} failed:`, error instanceof Error ? error.message : String(error));
+        console.error(` Email attempt ${attempt} failed:`, error instanceof Error ? error.message : String(error));
         
         if (attempt < EMAIL_CONFIG.maxRetries) {
           const delay = Math.pow(2, attempt) * EMAIL_CONFIG.retryDelay;
-          console.log(`⏳ Retrying in ${delay}ms...`);
+          console.log(`� Retrying in ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
@@ -267,7 +267,7 @@ export async function sendMatchedJobsEmail({
     
     throw lastError;
   } catch (error) {
-    console.error('❌ Email sending failed:', error);
+    console.error(' Email sending failed:', error);
     throw error;
   }
 }

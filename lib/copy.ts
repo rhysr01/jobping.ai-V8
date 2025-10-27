@@ -2,9 +2,9 @@
  * Centralized copy strings for consistent messaging across the application
  */
 
-export const CTA_FREE = "Get 5 matches — Free";
+export const CTA_FREE = "Get 5 matches  Free";
 export const CTA_PREMIUM = "Upgrade to Premium";
-export const VP_TAGLINE = "Stop searching. Start applying.\nWeekly matches for early-career roles across Europe — delivered to your inbox.";
+export const VP_TAGLINE = "Stop searching. Start applying.\nNo logins. Zero scrolling. Jobs in your inbox.";
 
 // Hero section
 export const HERO_TITLE = "JobPing";
@@ -56,10 +56,10 @@ export const FREE_PLAN_FEATURES = [
 
 // Premium plan
 export const PREMIUM_PLAN_TITLE = "Premium";
-export const PREMIUM_PLAN_SUBTITLE = "3× weekly";
-export const PREMIUM_PLAN_PRICE = "€7";
+export const PREMIUM_PLAN_SUBTITLE = "3� weekly";
+export const PREMIUM_PLAN_PRICE = "��7";
 export const PREMIUM_PLAN_PRICE_UNIT = "/mo";
-export const PREMIUM_PLAN_ANNUAL = "€20 for 3 months (save €1)";
+export const PREMIUM_PLAN_ANNUAL = "��20 for 3 months (save ��1)";
 export const PREMIUM_PLAN_FEATURES = [
   "10 matches on signup",
   "60+ jobs per month (3x per week)",

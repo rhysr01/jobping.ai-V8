@@ -238,12 +238,12 @@ export class ConsolidatedMatchingEngine {
 Your job: Find 5 perfect job matches and explain WHY they're exciting.
 
 Write match reasons that create "WOW" moments:
-✅ BE SPECIFIC: "You need React + TypeScript. This role uses both PLUS Next.js"
-✅ BE PERSONAL: Reference their feedback, preferences, location
-✅ BE CONFIDENT: "You're overqualified for this (easy interview)"
-✅ BE EMOTIONAL: "This is the startup you'll tell your friends about"
+BE SPECIFIC: "You need React + TypeScript. This role uses both PLUS Next.js"
+BE PERSONAL: Reference their feedback, preferences, location
+BE CONFIDENT: "You're overqualified for this (easy interview)"
+BE EMOTIONAL: "This is the startup you'll tell your friends about"
 
-❌ NEVER use: "Good match", "Aligns with preferences", "Strong fit" (boring!)
+NEVER use: "Good match", "Aligns with preferences", "Strong fit" (boring!)
 
 Keep match reasons 2-3 sentences max. Make every word count.`
         },
@@ -615,7 +615,7 @@ Requirements:
    */
   private calculateEarlyCareerScore(jobText: string, title: string, job?: any, userPrefs?: UserPreferences): { points: number; reason: string } {
     // CRITICAL: Distinguish between internship, graduate, and junior roles!
-    const internshipTerms = ['intern', 'internship', 'stage', 'praktikum', 'prácticas', 'tirocinio', 'stagiar'];
+    const internshipTerms = ['intern', 'internship', 'stage', 'praktikum', 'pr�cticas', 'tirocinio', 'stagiar'];
     const graduateTerms = ['graduate', 'new grad', 'grad scheme', 'grad program', 'graduate programme', 'trainee program', 'grad trainee'];
     const juniorTerms = ['junior', 'entry level', 'associate', 'assistant', 'junior analyst', 'junior consultant'];
     const programmeTerms = ['programme', 'program', 'scheme', 'rotation', 'campus'];
@@ -895,7 +895,7 @@ Requirements:
   }
 
   /**
-   * Calculate profile overlap boost (≥2 overlaps = boost)
+   * Calculate profile overlap boost (2 overlaps = boost)
    */
   private calculateProfileOverlap(
     userProfile: { skills: Set<string>; industries: Set<string>; locations: Set<string> },
@@ -924,7 +924,7 @@ Requirements:
       }
     }
 
-    // Boost if ≥2 overlaps
+    // Boost if 2 overlaps
     if (overlapCount >= 2) {
       return Math.min(20, 5 + (overlapCount * 2)); // 7-20 points based on overlap count
     }

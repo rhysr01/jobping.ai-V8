@@ -57,7 +57,7 @@ export class CVParserService {
    */
   async parseCV(cvUrl: string, userEmail: string): Promise<CVData | null> {
     try {
-      console.log(`📄 Parsing CV for ${userEmail} from ${cvUrl}`);
+      console.log(` Parsing CV for ${userEmail} from ${cvUrl}`);
       
       // Fetch CV content
       const cvText = await this.fetchCVContent(cvUrl);
@@ -69,7 +69,7 @@ export class CVParserService {
       // Parse with GPT-4o-mini (cheap + fast)
       const cvData = await this.parseWithAI(cvText);
       
-      console.log(`✅ CV parsed successfully for ${userEmail}`);
+      console.log(` CV parsed successfully for ${userEmail}`);
       return cvData;
       
     } catch (error) {

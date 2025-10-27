@@ -29,15 +29,15 @@ export default function Pricing() {
             </div>
             <ul className="mt-3 sm:mt-4 space-y-2 sm:space-y-3 p-muted text-sm sm:text-base">
               <li className="flex items-start gap-2 sm:gap-3">
-                <span className="text-green-500 mt-0.5">âœ“</span>
+                <span className="text-green-500 mt-0.5"></span>
                 <span>AI-matched to your profile</span>
               </li>
               <li className="flex items-start gap-2 sm:gap-3">
-                <span className="text-green-500 mt-0.5">âœ“</span>
-                <span>No duplicates â€¢ Quality filtered</span>
+                <span className="text-green-500 mt-0.5"></span>
+                <span>No duplicates ¢ Quality filtered</span>
               </li>
               <li className="flex items-start gap-2 sm:gap-3">
-                <span className="text-green-500 mt-0.5">âœ“</span>
+                <span className="text-green-500 mt-0.5"></span>
                 <span>Email support</span>
               </li>
             </ul>
@@ -61,14 +61,14 @@ export default function Pricing() {
             </div>
 
             <h3 className="text-2xl sm:text-3xl md:text-4xl font-black mt-4 bg-gradient-to-r from-brand-400 to-purple-500 bg-clip-text text-transparent">Premium</h3>
-            <p className="mt-3 text-zinc-300 text-sm sm:text-base font-semibold">3Ã— more opportunities â€¢ 24-hour early access</p>
+            <p className="mt-3 text-zinc-300 text-sm sm:text-base font-semibold">3Ã more opportunities ¢ 24-hour early access</p>
             
             <div className="mt-4 sm:mt-6 mb-3 bg-black/30 rounded-2xl p-4 sm:p-6 border border-brand-500/30">
               <div className="text-2xl sm:text-3xl font-black text-white mb-1">10 roles on signup</div>
               <div className="text-zinc-300 text-xs sm:text-sm mb-3">within 48 hours</div>
               <div className="border-t border-brand-500/30 pt-3 mt-3">
                 <div className="text-4xl sm:text-5xl md:text-6xl font-black bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent mb-1">15 roles/week</div>
-                <div className="text-zinc-300 text-xs sm:text-sm">5 roles Mon â€¢ 5 roles Wed â€¢ 5 roles Fri</div>
+                <div className="text-zinc-300 text-xs sm:text-sm">5 roles Mon ¢ 5 roles Wed ¢ 5 roles Fri</div>
               </div>
               <div className="border-t border-brand-500/30 pt-3 mt-3">
                 <div className="text-xl sm:text-2xl font-black text-brand-300 mb-2">= 70+ jobs/month</div>
@@ -76,38 +76,38 @@ export default function Pricing() {
               </div>
               <div className="border-t border-brand-500/30 pt-4 mt-4">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl sm:text-4xl md:text-5xl font-black text-white">â‚¬7</span>
+                  <span className="text-3xl sm:text-4xl md:text-5xl font-black text-white">‚¬7</span>
                   <span className="text-zinc-300 text-base sm:text-lg font-semibold">/month</span>
                 </div>
                 <div className="mt-2 text-xs sm:text-sm text-zinc-400">
-                  or <span className="text-white font-bold">â‚¬15/quarter</span> <span className="ml-2 text-green-400 font-semibold">(save â‚¬6!)</span>
+                  or <span className="text-white font-bold">‚¬15/quarter</span> <span className="ml-2 text-green-400 font-semibold">(save ‚¬6!)</span>
                 </div>
               </div>
             </div>
 
             <ul className="space-y-3 sm:space-y-4 p-muted text-sm sm:text-base">
               <li className="flex items-start gap-3 sm:gap-4">
-                <span className="text-brand-400 mt-0.5 text-xl">âœ“</span>
+                <span className="text-brand-400 mt-0.5 text-xl"></span>
                 <span><strong className="text-white text-base sm:text-lg">3 emails per week</strong> (Mon/Wed/Fri) with 5 roles each</span>
               </li>
               <li className="flex items-start gap-3 sm:gap-4">
-                <span className="text-brand-400 mt-0.5 text-xl">âœ“</span>
-                <span><strong className="text-white text-base sm:text-lg">70+ jobs per month</strong> (2.3Ã— more than free)</span>
+                <span className="text-brand-400 mt-0.5 text-xl"></span>
+                <span><strong className="text-white text-base sm:text-lg">70+ jobs per month</strong> (2.3Ã more than free)</span>
               </li>
               <li className="flex items-start gap-3 sm:gap-4">
-                <span className="text-brand-400 mt-0.5 text-xl">âœ“</span>
+                <span className="text-brand-400 mt-0.5 text-xl"></span>
                 <span><strong className="text-white text-base sm:text-lg">24-hour early access</strong> to fresh roles</span>
               </li>
               <li className="flex items-start gap-3 sm:gap-4">
-                <span className="text-brand-400 mt-0.5 text-xl">âœ“</span>
+                <span className="text-brand-400 mt-0.5 text-xl"></span>
                 <span className="text-white">Hot match alerts (2/week for urgent roles)</span>
               </li>
               <li className="flex items-start gap-3 sm:gap-4">
-                <span className="text-brand-400 mt-0.5 text-xl">âœ“</span>
+                <span className="text-brand-400 mt-0.5 text-xl"></span>
                 <span className="text-white">Advanced filters and preferences</span>
               </li>
               <li className="flex items-start gap-3 sm:gap-4">
-                <span className="text-brand-400 mt-0.5 text-xl">âœ“</span>
+                <span className="text-brand-400 mt-0.5 text-xl"></span>
                 <span className="text-white">Priority support</span>
               </li>
             </ul>

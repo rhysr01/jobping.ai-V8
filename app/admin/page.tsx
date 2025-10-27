@@ -65,7 +65,7 @@ export default function PilotAdminDashboard() {
     <div className="min-h-screen bg-black py-20 md:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <h1 className="text-3xl md:text-4xl font-semibold text-white mb-8 tracking-tight">
-          🚀 JobPing Pilot Dashboard
+           JobPing Pilot Dashboard
         </h1>
         
         {/* Real-time Status */}

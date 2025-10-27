@@ -1,10 +1,10 @@
-# ğŸ¯ AI Matching Prompt - Needs Optimization
+# ¯ AI Matching Prompt - Needs Optimization
 
 ## Current Issues
 
 Looking at `Utils/matching/ai-matching.service.ts`, the prompt has **major issues**:
 
-### âŒ **Problem 1: Generic Career Focus**
+###  **Problem 1: Generic Career Focus**
 ```typescript
 // Line 240
 - Career Focus: ${profile.careerFocus || 'Not specified'}
@@ -21,29 +21,29 @@ This is generic! Should use the **10 specific career path categories**:
 - Tech & Transformation
 - Sustainability & ESG
 
-### âŒ **Problem 2: Doesn't Leverage Clean Location Data**
+###  **Problem 2: Doesn't Leverage Clean Location Data**
 ```typescript
 // Line 393-403
 - Location: ${job.location}
 ```
 Should emphasize that **100% of jobs have clean city data** across 14 target cities!
 
-### âŒ **Problem 3: Generic "Categories" Field**
+###  **Problem 3: Generic "Categories" Field**
 ```typescript
 // Line 398
 - Categories: ${job.categories?.join(', ')}
 ```
 Should explicitly state these are **business school career paths** that match user preferences!
 
-### âŒ **Problem 4: Missing Language Requirements**
+###  **Problem 4: Missing Language Requirements**
 The prompt doesn't mention that **84% of jobs have language requirements**!
 
-### âŒ **Problem 5: No Early-Career Emphasis**
+###  **Problem 5: No Early-Career Emphasis**
 91.9% of jobs are flagged as early-career, but the prompt doesn't emphasize this!
 
 ---
 
-## âœ… **Optimized Prompt Structure**
+##  **Optimized Prompt Structure**
 
 ### **USER CONTEXT (Line 236-249)**
 
@@ -60,7 +60,7 @@ USER PROFILE:
 USER PROFILE:
 - Email: ${profile.email}
 - Career Paths (SELECT FROM): 
-  ${profile.career_path?.map(p => `âœ“ ${p}`).join('\n  ') || 'All paths'}
+  ${profile.career_path?.map(p => ` ${p}`).join('\n  ') || 'All paths'}
   
   [Available paths: Strategy & Business Design, Data & Analytics, 
    Retail & Luxury, Sales & Client Success, Marketing & Growth, 
@@ -112,7 +112,7 @@ MATCH PRIORITY:
 
 ---
 
-## ğŸ“ **CODE CHANGES NEEDED**
+##  **CODE CHANGES NEEDED**
 
 ### **File: `/Users/rhysrowlands/jobping/Utils/matching/ai-matching.service.ts`**
 
@@ -122,7 +122,7 @@ Replace with:
 ```typescript
 private buildUserContext(profile: NormalizedUserProfile): string {
   const careerPaths = profile.career_path && profile.career_path.length > 0
-    ? profile.career_path.map(p => `  âœ“ ${this.formatCareerPath(p)}`).join('\n')
+    ? profile.career_path.map(p => `   ${this.formatCareerPath(p)}`).join('\n')
     : '  (Open to all career paths)';
     
   return `
@@ -133,22 +133,22 @@ CAREER PATH PREFERENCES (Priority #1 for matching):
 ${careerPaths}
 
 Available Career Paths:
-  â€¢ Strategy & Business Design
-  â€¢ Data & Analytics  
-  â€¢ Retail & Luxury
-  â€¢ Sales & Client Success
-  â€¢ Marketing & Growth
-  â€¢ Finance & Investment
-  â€¢ Operations & Supply Chain
-  â€¢ Product & Innovation
-  â€¢ Tech & Transformation
-  â€¢ Sustainability & ESG
+  ¢ Strategy & Business Design
+  ¢ Data & Analytics  
+  ¢ Retail & Luxury
+  ¢ Sales & Client Success
+  ¢ Marketing & Growth
+  ¢ Finance & Investment
+  ¢ Operations & Supply Chain
+  ¢ Product & Innovation
+  ¢ Tech & Transformation
+  ¢ Sustainability & ESG
 
 TARGET CITIES (100% verified data):
-${profile.target_cities?.map(c => `  â€¢ ${c}`).join('\n') || '  â€¢ Flexible across all 14 cities'}
+${profile.target_cities?.map(c => `  ¢ ${c}`).join('\n') || '  ¢ Flexible across all 14 cities'}
 
 LANGUAGES SPOKEN:
-${profile.languages_spoken?.map(l => `  â€¢ ${l}`).join('\n') || '  â€¢ English'}
+${profile.languages_spoken?.map(l => `  ¢ ${l}`).join('\n') || '  ¢ English'}
 
 OTHER PREFERENCES:
 - Work Environment: ${profile.work_environment || 'Flexible'}
@@ -199,24 +199,24 @@ private buildJobsContext(jobs: EnrichedJob[]): string {
       
     return `
 JOB ${index}:
-â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
-ğŸ“Œ Title: ${job.title}
-ğŸ¢ Company: ${job.company}
-ğŸ“ Location: ${job.city}, ${job.country} (verified)
-ğŸ¯ Career Path(s): ${careerPaths}
-ğŸ—£ï¸ Languages Required: ${languages}
-ğŸ“Š Experience: ${job.experience_required || 'Entry-level'}
-ğŸ”¥ Freshness: ${job.freshness_tier || 'Active'}
+
+ Title: ${job.title}
+¢ Company: ${job.company}
+ Location: ${job.city}, ${job.country} (verified)
+¯ Career Path(s): ${careerPaths}
+£ Languages Required: ${languages}
+ Experience: ${job.experience_required || 'Entry-level'}
+ Freshness: ${job.freshness_tier || 'Active'}
 
-ğŸ“„ Description (first 400 chars):
+ Description (first 400 chars):
 ${job.description?.substring(0, 400).trim()}...
 
 MATCH CRITERIA:
-âœ“ Career path match with user preferences?
-âœ“ City in user's target cities?
-âœ“ User speaks required languages?
-âœ“ Role appropriate for early-career?
-â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+ Career path match with user preferences?
+ City in user's target cities?
+ User speaks required languages?
+ Role appropriate for early-career?
+
 `;
   }).join('\n');
 }
@@ -249,7 +249,7 @@ Return ONLY valid JSON array with matches.`
 
 ---
 
-## ğŸš€ **Expected Impact**
+##  **Expected Impact**
 
 ### **Before (Current):**
 - Generic "Career Focus" matching
@@ -261,11 +261,11 @@ Return ONLY valid JSON array with matches.`
 - Precise career path matching (10 categories)
 - Leverages 100% clean city data
 - Uses 84% language requirement data
-- **Hit rate: 85-95%** âœ…
+- **Hit rate: 85-95%** 
 
 ---
 
-## âœ… **Action Items**
+##  **Action Items**
 
 1. Update `ai-matching.service.ts` with the 3 changes above
 2. Test with a sample user
@@ -273,5 +273,5 @@ Return ONLY valid JSON array with matches.`
 
 ---
 
-**This optimization will make your AI matching 30-40% better by leveraging the pristine database you just built!** ğŸ¯
+**This optimization will make your AI matching 30-40% better by leveraging the pristine database you just built!** ¯
 

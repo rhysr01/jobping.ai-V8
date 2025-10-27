@@ -72,7 +72,7 @@ export class AlertingSystem {
     // Check cooldown to prevent spam
     const lastAlert = this.alertCache.get(alertId);
     if (lastAlert && Date.now() - lastAlert < this.cooldownPeriod) {
-      console.log(`⏸️ Alert ${alertId} in cooldown, skipping`);
+      console.log(` Alert ${alertId} in cooldown, skipping`);
       return;
     }
 
@@ -86,7 +86,7 @@ export class AlertingSystem {
       metadata
     };
 
-    console.log(`🚨 ${type.toUpperCase()} ALERT: ${component} - ${message}`);
+    console.log(` ${type.toUpperCase()} ALERT: ${component} - ${message}`);
 
     // Store alert in database
     if (this.config.database.enabled) {
@@ -131,7 +131,7 @@ export class AlertingSystem {
 
   private async sendEmailAlert(alert: Alert): Promise<void> {
     try {
-      const subject = `🚨 JobPing ${alert.type.toUpperCase()}: ${alert.component}`;
+      const subject = ` JobPing ${alert.type.toUpperCase()}: ${alert.component}`;
       const html = this.generateEmailAlertHtml(alert);
 
       for (const recipient of this.config.email.recipients) {
@@ -143,7 +143,7 @@ export class AlertingSystem {
         });
       }
 
-      console.log(`📧 Email alert sent to ${this.config.email.recipients.length} recipients`);
+      console.log(` Email alert sent to ${this.config.email.recipients.length} recipients`);
     } catch (error) {
       console.error('Failed to send email alert:', error);
     }
@@ -152,7 +152,7 @@ export class AlertingSystem {
   private async sendSlackAlert(alert: Alert): Promise<void> {
     try {
       const color = alert.type === 'critical' ? 'danger' : alert.type === 'warning' ? 'warning' : 'good';
-      const emoji = alert.type === 'critical' ? '🚨' : alert.type === 'warning' ? '⚠️' : 'ℹ️';
+      const emoji = alert.type === 'critical' ? '' : alert.type === 'warning' ? '' : '';
 
       const payload = {
         text: `${emoji} JobPing ${alert.type.toUpperCase()} Alert`,
@@ -198,7 +198,7 @@ export class AlertingSystem {
         throw new Error(`Slack webhook failed: ${response.status}`);
       }
 
-      console.log('📱 Slack alert sent');
+      console.log('� Slack alert sent');
     } catch (error) {
       console.error('Failed to send Slack alert:', error);
     }
@@ -277,7 +277,7 @@ export class AlertingSystem {
         .update({ resolved: true, resolved_at: new Date().toISOString() })
         .eq('id', alertId);
 
-      console.log(`✅ Alert ${alertId} marked as resolved`);
+      console.log(` Alert ${alertId} marked as resolved`);
     } catch (error) {
       console.error('Failed to resolve alert:', error);
     }

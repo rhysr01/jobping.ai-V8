@@ -71,10 +71,10 @@ export default function Hero() {
         </motion.div>
         
         <h1 className="mt-6 sm:mt-8 text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] max-w-[20ch] mx-auto px-2">
-          Five roles. Zero scrolling.
+          No logins. Zero scrolling. Jobs in your inbox.
         </h1>
         <p className="mt-6 sm:mt-8 text-lg sm:text-xl md:text-2xl text-zinc-300 max-w-[62ch] mx-auto leading-relaxed px-4">
-          Internships, grad programmes, and early-career opportunities. Sent to your inbox.
+          Internships, grad programmes, and early-career opportunities delivered weekly.
         </p>
         <p className="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg text-zinc-400 max-w-[58ch] mx-auto px-4">
           Stop searching. Start applying.
@@ -89,7 +89,7 @@ export default function Hero() {
         >
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-500 text-white text-xs sm:text-sm font-bold px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-lg">
             <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-            {activeJobs} active early-career roles • Updated daily
+            {activeJobs} active early-career roles � Updated daily
           </div>
         </motion.div>
         
@@ -107,12 +107,12 @@ export default function Hero() {
             Get My 10 Roles in 48 Hours
           </a>
           <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-zinc-500">
-            No logins • No spam • Unsubscribe anytime
+            No logins � No spam � Unsubscribe anytime
           </p>
         </motion.div>
       </div>
 
-      {/* Big background orbs — dramatic motion */}
+      {/* Big background orbs  dramatic motion */}
       <motion.div
         aria-hidden
         initial={{ opacity: 0, y: -20, scale: 0.8 }}

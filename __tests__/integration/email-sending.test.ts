@@ -4,7 +4,7 @@
  */
 
 describe('Critical Business Logic - Email Sending', () => {
-  it('✅ Email has required fields (to, subject, html)', () => {
+  it(' Email has required fields (to, subject, html)', () => {
     const email = {
       to: 'user@example.com',
       subject: 'Your job matches',
@@ -16,7 +16,7 @@ describe('Critical Business Logic - Email Sending', () => {
     expect(email.html).toBeTruthy();
   });
 
-  it('✅ Email validates recipient address', () => {
+  it(' Email validates recipient address', () => {
     const validEmail = 'user@example.com';
     const invalidEmail = 'notanemail';
 
@@ -24,19 +24,19 @@ describe('Critical Business Logic - Email Sending', () => {
     expect(invalidEmail).not.toMatch(/@.*\./);
   });
 
-  it('✅ Email subject is not empty', () => {
+  it(' Email subject is not empty', () => {
     const subject = 'Your personalized job matches';
 
     expect(subject.length).toBeGreaterThan(0);
   });
 
-  it('✅ Email HTML contains unsubscribe link', () => {
+  it(' Email HTML contains unsubscribe link', () => {
     const html = '<p>Jobs</p><a href="https://example.com/unsubscribe">Unsubscribe</a>';
 
     expect(html).toContain('unsubscribe');
   });
 
-  it('✅ Email respects suppression list', () => {
+  it(' Email respects suppression list', () => {
     const suppressionList = new Set(['blocked@example.com']);
     const recipient = 'blocked@example.com';
 
@@ -45,35 +45,35 @@ describe('Critical Business Logic - Email Sending', () => {
     expect(shouldSend).toBe(false);
   });
 
-  it('✅ Email does not send to unsubscribed users', () => {
+  it(' Email does not send to unsubscribed users', () => {
     const unsubscribed = true;
     const shouldSend = !unsubscribed;
 
     expect(shouldSend).toBe(false);
   });
 
-  it('✅ Email includes tracking parameters', () => {
+  it(' Email includes tracking parameters', () => {
     const trackingUrl = 'https://example.com/track?user=123&email=456';
 
     expect(trackingUrl).toContain('user=');
     expect(trackingUrl).toContain('email=');
   });
 
-  it('✅ Email respects delivery pause', () => {
+  it(' Email respects delivery pause', () => {
     const deliveryPaused = true;
     const shouldSend = !deliveryPaused;
 
     expect(shouldSend).toBe(false);
   });
 
-  it('✅ Email requires verified email address', () => {
+  it(' Email requires verified email address', () => {
     const emailVerified = true;
     const shouldSend = emailVerified;
 
     expect(shouldSend).toBe(true);
   });
 
-  it('✅ Email batch size is reasonable', () => {
+  it(' Email batch size is reasonable', () => {
     const batchSize = 50;
     const maxBatchSize = 100;
 
@@ -82,28 +82,28 @@ describe('Critical Business Logic - Email Sending', () => {
 });
 
 describe('Critical Business Logic - Stripe Webhooks', () => {
-  it('✅ Webhook signature is required', () => {
+  it(' Webhook signature is required', () => {
     const signature = 'stripe-signature-hash';
 
     expect(signature).toBeTruthy();
     expect(typeof signature).toBe('string');
   });
 
-  it('✅ Webhook handles checkout.session.completed', () => {
+  it(' Webhook handles checkout.session.completed', () => {
     const eventType = 'checkout.session.completed';
     const validEvents = ['checkout.session.completed', 'customer.subscription.updated'];
 
     expect(validEvents).toContain(eventType);
   });
 
-  it('✅ Webhook handles customer.subscription.updated', () => {
+  it(' Webhook handles customer.subscription.updated', () => {
     const eventType = 'customer.subscription.updated';
     const validEvents = ['checkout.session.completed', 'customer.subscription.updated'];
 
     expect(validEvents).toContain(eventType);
   });
 
-  it('✅ Webhook validates event structure', () => {
+  it(' Webhook validates event structure', () => {
     const event = {
       id: 'evt_123',
       type: 'checkout.session.completed',
@@ -119,7 +119,7 @@ describe('Critical Business Logic - Stripe Webhooks', () => {
     expect(event).toHaveProperty('data');
   });
 
-  it('✅ Webhook extracts customer email', () => {
+  it(' Webhook extracts customer email', () => {
     const eventData = {
       object: {
         customer_email: 'premium@example.com'
@@ -131,7 +131,7 @@ describe('Critical Business Logic - Stripe Webhooks', () => {
     expect(email).toBe('premium@example.com');
   });
 
-  it('✅ Webhook activates premium subscription', () => {
+  it(' Webhook activates premium subscription', () => {
     const subscriptionActive = false;
     let updated = subscriptionActive;
     
@@ -141,7 +141,7 @@ describe('Critical Business Logic - Stripe Webhooks', () => {
     expect(updated).toBe(true);
   });
 
-  it('✅ Webhook handles missing email gracefully', () => {
+  it(' Webhook handles missing email gracefully', () => {
     const eventData = {
       object: {}
     };
@@ -151,14 +151,14 @@ describe('Critical Business Logic - Stripe Webhooks', () => {
     expect(email).toBeNull();
   });
 
-  it('✅ Webhook returns 400 for invalid signature', () => {
+  it(' Webhook returns 400 for invalid signature', () => {
     const signatureValid = false;
     const statusCode = signatureValid ? 200 : 400;
 
     expect(statusCode).toBe(400);
   });
 
-  it('✅ Webhook returns 200 for successful processing', () => {
+  it(' Webhook returns 200 for successful processing', () => {
     const processed = true;
     const statusCode = processed ? 200 : 500;
 

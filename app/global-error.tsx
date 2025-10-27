@@ -12,7 +12,7 @@ export default function GlobalError({
       <body style={{ margin: 0, padding: 0, background: '#000', color: '#fff', fontFamily: 'system-ui' }}>
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
           <div style={{ maxWidth: '400px', textAlign: 'center' }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>⚠️</div>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}></div>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Something went wrong!</h2>
             <p style={{ color: '#888', marginBottom: '2rem' }}>
               We've been notified. Please try refreshing the page.

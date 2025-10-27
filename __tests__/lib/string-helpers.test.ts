@@ -108,7 +108,7 @@ describe('String Helpers - truncate', () => {
   });
 
   it('should handle unicode characters', () => {
-    const result = truncate('Hello ä¸–ç•Œ test', 10);
+    const result = truncate('Hello ä–ç• test', 10);
     expect(result.length).toBe(10);
   });
 

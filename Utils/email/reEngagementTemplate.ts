@@ -45,7 +45,7 @@ export function generateReEngagementEmail(data: ReEngagementEmailData): string {
             border: 1px solid #1A1A1A;
         }
         .header {
-            /* Match site brand gradient: indigo â†’ purple */
+            /* Match site brand gradient: indigo † purple */
             background: linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #8B5CF6 100%);
             padding: 40px 32px;
             text-align: center;
@@ -216,14 +216,14 @@ export function generateReEngagementEmail(data: ReEngagementEmailData): string {
         
         <div class="content">
             <div class="greeting">
-                <h1 class="greeting-title">We miss you, ${userName || 'there'}! ðŸ‘‹</h1>
+                <h1 class="greeting-title">We miss you, ${userName || 'there'}! </h1>
                 <p class="greeting-text">
                     It's been a while since you've opened our emails. We've been finding some amazing opportunities that might be perfect for you.
                 </p>
             </div>
             
             <div class="re-engagement-box">
-                <h2 class="re-engagement-title">ðŸŽ¯ Ready to get back on track?</h2>
+                <h2 class="re-engagement-title">¯ Ready to get back on track?</h2>
                 <p class="re-engagement-text">
                     We've paused your job matches to avoid cluttering your inbox. But we're still finding great opportunities for you!
                 </p>

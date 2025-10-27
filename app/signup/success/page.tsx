@@ -44,7 +44,7 @@ export default function SignupSuccess() {
                   <div className="font-semibold text-white mb-1">Check Your Inbox Now</div>
                   <div className="text-zinc-400 text-sm">Look for your welcome email with 5-10 hand-picked matches (depending on your plan)</div>
                   <div className="mt-2 text-xs text-yellow-400 font-semibold">
-                    ⚠️ Check your spam/junk folder if you don't see it!
+                    Check your spam/junk folder if you don't see it!
                   </div>
                 </div>
               </div>
@@ -65,7 +65,7 @@ export default function SignupSuccess() {
                 </div>
                 <div>
                   <div className="font-semibold text-white mb-1">Ongoing Updates</div>
-                  <div className="text-zinc-400 text-sm">Free: 5 new roles every week • Premium: 5 roles every 48 hours</div>
+                  <div className="text-zinc-400 text-sm">Free: 5 new roles every week � Premium: 5 roles every 48 hours</div>
                 </div>
               </div>
             </div>

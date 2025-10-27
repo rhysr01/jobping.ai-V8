@@ -278,8 +278,8 @@ export function performRobustMatching(jobs: Job[], userPrefs: UserPreferences): 
 }
 
 export function generateRobustFallbackMatches(jobs: Job[], userPrefs: UserPreferences): MatchResult[] {
-  console.log('🔄 Using rule-based fallback matching');
-  console.log(`🧠 Using legacy robust fallback for ${userPrefs.email}`);
+  console.log(' Using rule-based fallback matching');
+  console.log(` Using legacy robust fallback for ${userPrefs.email}`);
   
   return performRobustMatching(jobs, userPrefs);
 }

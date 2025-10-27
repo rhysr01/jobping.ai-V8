@@ -53,7 +53,7 @@ export class MetricsCollector {
     const timestamp = new Date().toISOString();
     const startTime = Date.now();
 
-    console.log('📊 Collecting system metrics...');
+    console.log(' Collecting system metrics...');
 
     // Collect all metrics in parallel
     const [
@@ -102,7 +102,7 @@ export class MetricsCollector {
       }
     };
 
-    console.log(`✅ Metrics collected in ${responseTime}ms`);
+    console.log(` Metrics collected in ${responseTime}ms`);
     return metrics;
   }
 

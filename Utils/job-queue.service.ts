@@ -69,7 +69,7 @@ export class JobQueueService {
         status: job.status
       });
 
-    console.log(`📋 Added job ${jobId} of type ${type} with priority ${priority}`);
+    console.log(` Added job ${jobId} of type ${type} with priority ${priority}`);
     return jobId;
   }
 
@@ -78,7 +78,7 @@ export class JobQueueService {
    * @deprecated This method is deprecated. Use cron endpoints for reliable processing.
    */
   async startProcessing(): Promise<void> {
-    console.warn('⚠️ startProcessing() is deprecated. Use cron endpoints instead:');
+    console.warn(' startProcessing() is deprecated. Use cron endpoints instead:');
     console.warn('  - GET /api/cron/process-email-queue');
     console.warn('  - GET /api/cron/process-scraping-queue');
     console.warn('  - GET /api/cron/process-ai-matching');
@@ -93,7 +93,7 @@ export class JobQueueService {
    * @deprecated This method is deprecated. Cron endpoints don't need stopping.
    */
   async stopProcessing(): Promise<void> {
-    console.warn('⚠️ stopProcessing() is deprecated. Cron endpoints handle their own lifecycle.');
+    console.warn(' stopProcessing() is deprecated. Cron endpoints handle their own lifecycle.');
   }
 
   /**
@@ -104,7 +104,7 @@ export class JobQueueService {
     type: string, 
     processor: (job: JobQueueItem) => Promise<any>
   ): Promise<void> {
-    console.warn(`⚠️ processNextJob(${type}) is deprecated. Use cron endpoints instead.`);
+    console.warn(` processNextJob(${type}) is deprecated. Use cron endpoints instead.`);
   }
 
   /**
@@ -189,7 +189,7 @@ export class JobQueueService {
     if (newAttempts >= job.maxAttempts) {
       // Max attempts reached, mark as failed
       await this.updateJobStatus(job.id, 'failed', error.message);
-      console.error(`❌ Job ${job.id} failed permanently after ${newAttempts} attempts:`, error);
+      console.error(` Job ${job.id} failed permanently after ${newAttempts} attempts:`, error);
     } else {
       // Retry with exponential backoff
       const retryDelay = Math.min(1000 * Math.pow(2, newAttempts), 300000); // Max 5 minutes
@@ -205,7 +205,7 @@ export class JobQueueService {
         })
         .eq('id', job.id);
       
-      console.log(`🔄 Job ${job.id} will retry in ${retryDelay}ms (attempt ${newAttempts}/${job.maxAttempts})`);
+      console.log(` Job ${job.id} will retry in ${retryDelay}ms (attempt ${newAttempts}/${job.maxAttempts})`);
     }
   }
 

@@ -1,4 +1,4 @@
-// 🔄 SIMPLE FEEDBACK SYSTEM INTEGRATION - DIRECT DATABASE STORAGE
+//  SIMPLE FEEDBACK SYSTEM INTEGRATION - DIRECT DATABASE STORAGE
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -45,9 +45,9 @@ export class EmailFeedbackIntegration {
     if (style === 'minimal') {
       return `
         <div style="text-align: center; margin: 16px 0;">
-          <a href="${baseUrl}?action=positive&job=${jobHash}&email=${encodedEmail}" style="background: #FFFFFF; color: #000000; padding: 8px 16px; border-radius: 6px; text-decoration: none; margin: 0 4px; font-size: 12px; font-weight: 500; transition: all 0.2s ease;">👍</a>
-          <a href="${baseUrl}?action=neutral&job=${jobHash}&email=${encodedEmail}" style="background: #888888; color: #FFFFFF; padding: 8px 16px; border-radius: 6px; text-decoration: none; margin: 0 4px; font-size: 12px; font-weight: 500; transition: all 0.2s ease;">🤔</a>
-          <a href="${baseUrl}?action=negative&job=${jobHash}&email=${encodedEmail}" style="background: #666666; color: #FFFFFF; padding: 8px 16px; border-radius: 6px; text-decoration: none; margin: 0 4px; font-size: 12px; font-weight: 500; transition: all 0.2s ease;">👎</a>
+          <a href="${baseUrl}?action=positive&job=${jobHash}&email=${encodedEmail}" style="background: #FFFFFF; color: #000000; padding: 8px 16px; border-radius: 6px; text-decoration: none; margin: 0 4px; font-size: 12px; font-weight: 500; transition: all 0.2s ease;"></a>
+          <a href="${baseUrl}?action=neutral&job=${jobHash}&email=${encodedEmail}" style="background: #888888; color: #FFFFFF; padding: 8px 16px; border-radius: 6px; text-decoration: none; margin: 0 4px; font-size: 12px; font-weight: 500; transition: all 0.2s ease;">�</a>
+          <a href="${baseUrl}?action=negative&job=${jobHash}&email=${encodedEmail}" style="background: #666666; color: #FFFFFF; padding: 8px 16px; border-radius: 6px; text-decoration: none; margin: 0 4px; font-size: 12px; font-weight: 500; transition: all 0.2s ease;"></a>
         </div>
       `;
     }
@@ -57,11 +57,11 @@ export class EmailFeedbackIntegration {
       <div style="margin-top: 16px; padding: 16px; background: #111111; border-radius: 8px; border: 1px solid #333333;">
         <div style="font-size: 14px; font-weight: 500; color: #FFFFFF; margin-bottom: 12px; text-align: center;">How was this match?</div>
         <div style="text-align: center; margin-bottom: 12px;">
-          <a href="${baseUrl}?action=positive&score=5&job=${jobHash}&email=${encodedEmail}" style="background: #FFFFFF; color: #000000; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin: 0 4px; transition: all 0.2s ease;">⭐ Perfect</a>
-          <a href="${baseUrl}?action=positive&score=4&job=${jobHash}&email=${encodedEmail}" style="background: #FFFFFF; color: #000000; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin: 0 4px; transition: all 0.2s ease;">👍 Good</a>
-          <a href="${baseUrl}?action=neutral&score=3&job=${jobHash}&email=${encodedEmail}" style="background: #888888; color: #FFFFFF; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin: 0 4px; transition: all 0.2s ease;">🤔 OK</a>
-          <a href="${baseUrl}?action=negative&score=2&job=${jobHash}&email=${encodedEmail}" style="background: #666666; color: #FFFFFF; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin: 0 4px; transition: all 0.2s ease;">👎 Poor</a>
-          <a href="${baseUrl}?action=negative&score=1&job=${jobHash}&email=${encodedEmail}" style="background: #666666; color: #FFFFFF; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin: 0 4px; transition: all 0.2s ease;">❌ Bad</a>
+          <a href="${baseUrl}?action=positive&score=5&job=${jobHash}&email=${encodedEmail}" style="background: #FFFFFF; color: #000000; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin: 0 4px; transition: all 0.2s ease;">� Perfect</a>
+          <a href="${baseUrl}?action=positive&score=4&job=${jobHash}&email=${encodedEmail}" style="background: #FFFFFF; color: #000000; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin: 0 4px; transition: all 0.2s ease;"> Good</a>
+          <a href="${baseUrl}?action=neutral&score=3&job=${jobHash}&email=${encodedEmail}" style="background: #888888; color: #FFFFFF; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin: 0 4px; transition: all 0.2s ease;">� OK</a>
+          <a href="${baseUrl}?action=negative&score=2&job=${jobHash}&email=${encodedEmail}" style="background: #666666; color: #FFFFFF; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin: 0 4px; transition: all 0.2s ease;"> Poor</a>
+          <a href="${baseUrl}?action=negative&score=1&job=${jobHash}&email=${encodedEmail}" style="background: #666666; color: #FFFFFF; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; margin: 0 4px; transition: all 0.2s ease;"> Bad</a>
         </div>
         <div style="font-size: 11px; color: #888888; text-align: center; margin-top: 8px;">Your feedback helps improve job matching</div>
       </div>
@@ -103,7 +103,7 @@ export class EmailFeedbackIntegration {
       // Record directly to database
       await this.recordFeedbackToDatabase(simpleData);
       
-      console.log(`📝 Email feedback processed: ${verdict} for job ${feedbackData.jobHash}`);
+      console.log(` Email feedback processed: ${verdict} for job ${feedbackData.jobHash}`);
       
     } catch (error) {
       console.error('Failed to process email feedback:', error);
@@ -166,7 +166,7 @@ export class EmailFeedbackIntegration {
         console.error('Failed to record feedback:', error);
         // Don't throw - we want feedback to work even if DB fails
       } else {
-        console.log(`✅ Feedback recorded: ${feedbackData.verdict} for job ${feedbackData.jobHash}`);
+        console.log(` Feedback recorded: ${feedbackData.verdict} for job ${feedbackData.jobHash}`);
       }
     } catch (error) {
       console.error('Error recording feedback to database:', error);

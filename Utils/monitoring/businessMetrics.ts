@@ -124,7 +124,7 @@ export class BusinessMetricsCollector {
       await this.checkAlerts(metrics);
 
       // Log collection time
-      console.log(`📊 Metrics collected in ${Date.now() - startTime}ms`);
+      console.log(` Metrics collected in ${Date.now() - startTime}ms`);
 
       return metrics;
 
@@ -496,7 +496,7 @@ export class MetricTracker {
     
     // Log to console in development
     if (process.env.NODE_ENV === 'development') {
-      console.log(`📊 Metric: ${name} = ${value}`, tags);
+      console.log(` Metric: ${name} = ${value}`, tags);
     }
   }
 

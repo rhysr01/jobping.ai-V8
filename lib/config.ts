@@ -3,7 +3,7 @@ export const englishSeeds = [
 ];
 
 export const localPacks: Record<string, string[]> = {
-  es: ["programa de graduados","programa de prácticas","becario","prácticas","junior","analista","trainee","primer empleo"],
+  es: ["programa de graduados","programa de pr�cticas","becario","pr�cticas","junior","analista","trainee","primer empleo"],
   fr: ["programme diplômé","jeune diplômé","stagiaire","stage","junior","analyste","alternance","VIE"],
   de: ["Trainee","Absolventenprogramm","Werkstudent","Praktikum","Junior","Analyst"],
   it: ["programma neolaureati","neolaureato","stagista","tirocinio","junior","analista"],

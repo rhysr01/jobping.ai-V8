@@ -185,7 +185,7 @@ describe('HMAC Security Utilities', () => {
     });
 
     it('should handle unicode characters', () => {
-      const unicodeData = 'Hello ä¸–ç•Œ ğŸŒ';
+      const unicodeData = 'Hello ä–ç• ';
       const signature = hmacSign(unicodeData, testSecret);
       expect(hmacVerify(unicodeData, signature, testSecret)).toBe(true);
     });

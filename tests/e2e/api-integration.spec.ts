@@ -34,7 +34,7 @@ test.describe('API Integration - Full User Flow', () => {
   test('Complete API flow - Signup to Email', async ({ request }) => {
     const user = testUsers[0];
     
-    console.log(`🚀 Testing complete API flow for ${user.email}`);
+    console.log(` Testing complete API flow for ${user.email}`);
     
     // Step 1: Signup API
     const signupResponse = await request.post('/api/signup', {
@@ -64,7 +64,7 @@ test.describe('API Integration - Full User Flow', () => {
     const signupData = await signupResponse.json();
     expect(signupData).toHaveProperty('success', true);
     
-    console.log('✅ Signup API successful');
+    console.log(' Signup API successful');
     
     // Step 2: Verify user was created in database
     const userCheckResponse = await request.get(`/api/users/${user.email}`);
@@ -85,17 +85,17 @@ test.describe('API Integration - Full User Flow', () => {
     expect(matchData).toHaveProperty('matches');
     expect(matchData.matches.length).toBeGreaterThan(0);
     
-    console.log(`✅ Matching API successful - ${matchData.matches.length} matches found`);
+    console.log(` Matching API successful - ${matchData.matches.length} matches found`);
     
     // Step 4: Check email was queued
     const emailQueueResponse = await request.get('/api/email-queue');
     expect(emailQueueResponse.status()).toBe(200);
     
-    console.log('✅ Complete API flow successful');
+    console.log(' Complete API flow successful');
   });
 
   test('Bulk user signup and matching', async ({ request }) => {
-    console.log('🚀 Testing bulk user operations');
+    console.log(' Testing bulk user operations');
     
     // Signup multiple users
     const signupPromises = testUsers.map(user => 
@@ -130,7 +130,7 @@ test.describe('API Integration - Full User Flow', () => {
       expect(response.status()).toBe(200);
     }
     
-    console.log('✅ Bulk signup successful');
+    console.log(' Bulk signup successful');
     
     // Trigger bulk matching
     const matchResponse = await request.post('/api/match-users', {
@@ -147,11 +147,11 @@ test.describe('API Integration - Full User Flow', () => {
     expect(matchData).toHaveProperty('processed');
     expect(matchData.processed).toBeGreaterThan(0);
     
-    console.log(`✅ Bulk matching successful - ${matchData.processed} users processed`);
+    console.log(` Bulk matching successful - ${matchData.processed} users processed`);
   });
 
   test('Error handling and edge cases', async ({ request }) => {
-    console.log('🚀 Testing error handling');
+    console.log(' Testing error handling');
     
     // Test 1: Invalid email format
     const invalidEmailResponse = await request.post('/api/signup', {
@@ -216,11 +216,11 @@ test.describe('API Integration - Full User Flow', () => {
     
     expect(duplicateResponse.status()).toBe(409);
     
-    console.log('✅ Error handling working correctly');
+    console.log(' Error handling working correctly');
   });
 
   test('Performance and load testing', async ({ request }) => {
-    console.log('🚀 Testing performance under load');
+    console.log(' Testing performance under load');
     
     const startTime = Date.now();
     
@@ -261,14 +261,14 @@ test.describe('API Integration - Full User Flow', () => {
     const totalTime = endTime - startTime;
     const avgTime = totalTime / responses.length;
     
-    console.log(`✅ Load test completed - ${responses.length} requests in ${totalTime}ms (avg: ${avgTime}ms)`);
+    console.log(` Load test completed - ${responses.length} requests in ${totalTime}ms (avg: ${avgTime}ms)`);
     
     // Performance assertions
     expect(avgTime).toBeLessThan(2000); // Average response time under 2 seconds
   });
 
   test('Database consistency and data integrity', async ({ request }) => {
-    console.log('🚀 Testing database consistency');
+    console.log(' Testing database consistency');
     
     const user = {
       fullName: 'DB Test User',
@@ -322,11 +322,11 @@ test.describe('API Integration - Full User Flow', () => {
     expect(updatedUserData.cities).toEqual(['Berlin', 'Amsterdam']);
     expect(updatedUserData.experience).toBe('2 years');
     
-    console.log('✅ Database consistency verified');
+    console.log(' Database consistency verified');
   });
 
   test('Email delivery and tracking', async ({ request }) => {
-    console.log('🚀 Testing email delivery');
+    console.log(' Testing email delivery');
     
     const user = {
       fullName: 'Email Test User',
@@ -372,6 +372,6 @@ test.describe('API Integration - Full User Flow', () => {
     const trackingResponse = await request.get(`/api/email-tracking/${user.email}`);
     expect(trackingResponse.status()).toBe(200);
     
-    console.log('✅ Email delivery system working');
+    console.log(' Email delivery system working');
   });
 });

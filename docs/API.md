@@ -1,4 +1,4 @@
-# 🔌 JobPing API Documentation
+#  JobPing API Documentation
 
 ## Base URL
 

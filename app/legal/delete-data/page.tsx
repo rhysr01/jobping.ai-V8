@@ -24,7 +24,7 @@ export default function DeleteDataPage() {
       const result = await response.json();
 
       if (response.ok) {
-        setMessage('✅ Your data has been successfully deleted. We\'re sorry to see you go!');
+        setMessage(' Your data has been successfully deleted. We\'re sorry to see you go!');
         setEmail('');
       } else {
         setError(result.error || 'Failed to delete data. Please contact support.');
@@ -50,7 +50,7 @@ export default function DeleteDataPage() {
 
           <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-lg mb-8">
             <p className="text-sm text-red-300">
-              <strong className="text-red-200">⚠️ Warning:</strong> This action cannot be undone. All your preferences, matches, and account data will be permanently deleted.
+              <strong className="text-red-200"> Warning:</strong> This action cannot be undone. All your preferences, matches, and account data will be permanently deleted.
             </p>
           </div>
 

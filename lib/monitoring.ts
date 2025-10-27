@@ -186,11 +186,11 @@ class Logger {
     } else {
       // Human-readable logging for development
       const emoji = {
-        [LogLevel.DEBUG]: '🐛',
-        [LogLevel.INFO]: 'ℹ️',
-        [LogLevel.WARN]: '⚠️',
-        [LogLevel.ERROR]: '❌',
-        [LogLevel.CRITICAL]: '🚨',
+        [LogLevel.DEBUG]: '',
+        [LogLevel.INFO]: '',
+        [LogLevel.WARN]: '',
+        [LogLevel.ERROR]: '',
+        [LogLevel.CRITICAL]: '',
       }[level];
 
       const contextStr = Object.keys(context).length > 0 

@@ -1,4 +1,4 @@
-// 🚀 EMAIL QUEUE PROCESSOR
+//  EMAIL QUEUE PROCESSOR
 // Handles processing of email batches from the queue
 // Includes idempotency checks and deliverability safety
 
@@ -26,7 +26,7 @@ interface MatchBatch {
 
 export async function processEmailQueue(batch: MatchBatch): Promise<QueueProcessorResult> {
   try {
-    console.log(`📧 Processing email queue for batch ${batch.id} (${batch.user_email})`);
+    console.log(` Processing email queue for batch ${batch.id} (${batch.user_email})`);
 
     // 1. Check if email is suppressed
     const { data: suppression } = await supabase
@@ -37,7 +37,7 @@ export async function processEmailQueue(batch: MatchBatch): Promise<QueueProcess
       .single();
 
     if (suppression) {
-      console.log(`🚫 Email suppressed for ${batch.user_email}`);
+      console.log(`� Email suppressed for ${batch.user_email}`);
       return { success: false, error: 'Email address suppressed' };
     }
 
@@ -52,7 +52,7 @@ export async function processEmailQueue(batch: MatchBatch): Promise<QueueProcess
       .single();
 
     if (existingSend) {
-      console.log(`⏭️ Email already sent today for ${batch.user_email}`);
+      console.log(`� Email already sent today for ${batch.user_email}`);
       return { success: false, error: 'Email already sent today' };
     }
 
@@ -81,12 +81,12 @@ export async function processEmailQueue(batch: MatchBatch): Promise<QueueProcess
       .limit(5); // Send top 5 matches
 
     if (matchesError) {
-      console.error('❌ Error fetching matches:', matchesError);
+      console.error(' Error fetching matches:', matchesError);
       return { success: false, error: 'Failed to fetch matches' };
     }
 
     if (!matches || matches.length === 0) {
-      console.log(`📭 No matches found for ${batch.user_email}`);
+      console.log(`� No matches found for ${batch.user_email}`);
       return { success: false, error: 'No matches to send' };
     }
 
@@ -102,25 +102,25 @@ export async function processEmailQueue(batch: MatchBatch): Promise<QueueProcess
         personalization: {
           role: 'Software Developer', // TODO: Get from user preferences
           location: 'Europe',
-          salaryRange: '€40k+'
+          salaryRange: '��40k+'
         }
       });
 
       // Check if email was suppressed or already sent
       if ('suppressed' in emailResult && emailResult.suppressed) {
-        console.log(`🚫 Email suppressed for ${batch.user_email}`);
+        console.log(`� Email suppressed for ${batch.user_email}`);
         return { success: false, error: 'Email address suppressed' };
       }
 
       if ('alreadySent' in emailResult && emailResult.alreadySent) {
-        console.log(`⏭️ Email already sent for ${batch.user_email}`);
+        console.log(`� Email already sent for ${batch.user_email}`);
         return { success: false, error: 'Email already sent today' };
       }
 
-      console.log(`✅ Email sent successfully to ${batch.user_email}`);
+      console.log(` Email sent successfully to ${batch.user_email}`);
       
     } catch (error) {
-      console.error('❌ Email send failed:', error);
+      console.error(' Email send failed:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
 
@@ -138,15 +138,15 @@ export async function processEmailQueue(batch: MatchBatch): Promise<QueueProcess
       });
 
     if (logError) {
-      console.error('❌ Failed to log email send:', logError);
+      console.error(' Failed to log email send:', logError);
       // Don't fail the whole operation for logging errors
     }
 
-    console.log(`✅ Email sent successfully to ${batch.user_email} (${matches.length} matches)`);
+    console.log(` Email sent successfully to ${batch.user_email} (${matches.length} matches)`);
     return { success: true, matchesCount: matches.length };
 
   } catch (error) {
-    console.error('❌ Queue processing error:', error);
+    console.error(' Queue processing error:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 
@@ -170,14 +170,14 @@ export async function createMatchBatch(userEmail: string): Promise<{ success: bo
       .single();
 
     if (error) {
-      console.error('❌ Error creating match batch:', error);
+      console.error(' Error creating match batch:', error);
       return { success: false, error: error.message };
     }
 
     return { success: true, batchId: data.id };
 
   } catch (error) {
-    console.error('❌ Batch creation error:', error);
+    console.error(' Batch creation error:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 

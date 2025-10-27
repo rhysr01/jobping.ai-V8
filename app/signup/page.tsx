@@ -57,10 +57,10 @@ function SignupForm() {
   ];
   
   const COMPANY_SIZES = [
-    { value: 'startup', label: 'Startup (1-50)', emoji: 'üöÄ' },
-    { value: 'scaleup', label: 'Scale-up (50-500)', emoji: 'üìà' },
-    { value: 'enterprise', label: 'Enterprise (500+)', emoji: 'üè¢' },
-    { value: 'any', label: 'Any Size', emoji: 'üåü' }
+    { value: 'startup', label: 'Startup (1-50)', emoji: '' },
+    { value: 'scaleup', label: 'Scale-up (50-500)', emoji: 'à' },
+    { value: 'enterprise', label: 'Enterprise (500+)', emoji: '¢' },
+    { value: 'any', label: 'Any Size', emoji: '' }
   ];
   
   const COMMON_SKILLS = [
@@ -76,61 +76,61 @@ function SignupForm() {
     { 
       value: 'strategy', 
       label: 'Strategy & Business Design', 
-      emoji: 'üìä', 
+      emoji: '', 
       roles: ['Business Analyst', 'Associate Consultant', 'Junior Consultant', 'Strategy Analyst', 'Consulting Intern', 'Junior Business Analyst', 'Transformation Analyst', 'Management Consulting Intern', 'Growth Consultant', 'Business Analyst Trainee', 'Junior Associate', 'Strategy Consultant', 'Digital Transformation Analyst', 'Operations Excellence Consultant', 'Business Strategy Intern']
     },
     { 
       value: 'finance', 
       label: 'Finance & Investment', 
-      emoji: 'üí∞', 
+      emoji: '', 
       roles: ['Financial Analyst', 'Finance Intern', 'Investment Banking Analyst', 'Risk Analyst', 'Audit Associate', 'Finance Trainee', 'FP&A Analyst', 'Credit Analyst', 'Investment Analyst', 'Junior Accountant', 'Corporate Finance Analyst', 'M&A Analyst', 'Treasury Analyst', 'Junior Tax Associate', 'Finance Graduate']
     },
     { 
       value: 'sales', 
       label: 'Sales & Client Success', 
-      emoji: 'üéØ', 
+      emoji: 'Ø', 
       roles: ['Sales Development Representative (SDR)', 'Business Development Representative (BDR)', 'Inside Sales Representative', 'Account Executive', 'Business Development Associate', 'Sales Trainee', 'Customer Success Associate', 'Revenue Operations Analyst', 'Sales Operations Analyst', 'Graduate Sales Programme', 'Business Development Intern', 'Channel Sales Associate', 'Account Development Representative', 'Junior Sales Executive', 'Client Success Manager']
     },
     { 
       value: 'marketing', 
       label: 'Marketing & Growth', 
-      emoji: 'üöÄ', 
+      emoji: '', 
       roles: ['Marketing Intern', 'Social Media Intern', 'Digital Marketing Assistant', 'Marketing Coordinator', 'Growth Marketing Intern', 'Content Marketing Intern', 'Brand Assistant', 'Marketing Assistant', 'Junior Marketing Associate', 'Email Marketing Trainee', 'SEO/SEM Intern', 'Trade Marketing Intern', 'Marketing Graduate Programme', 'Junior B2B Marketing Coordinator', 'Marketing Campaign Assistant']
     },
     { 
       value: 'data', 
       label: 'Data & Analytics', 
-      emoji: 'üìà', 
+      emoji: 'à', 
       roles: ['Data Analyst', 'Junior Data Analyst', 'Analytics Intern', 'Business Intelligence Intern', 'Data Analyst Trainee', 'Junior Data Scientist', 'Data Science Trainee', 'Junior Data Engineer', 'BI Engineer Intern', 'Analytics Associate', 'Data Analytics Graduate', 'Insights Analyst', 'Junior BI Developer', 'Data Assistant', 'Research & Analytics Intern']
     },
     { 
       value: 'operations', 
       label: 'Operations & Supply Chain', 
-      emoji: '‚öôÔ∏è', 
+      emoji: '', 
       roles: ['Operations Analyst', 'Supply Chain Analyst', 'Logistics Analyst', 'Procurement Analyst', 'Operations Intern', 'Inventory Planner', 'Operations Coordinator', 'Supply Chain Trainee', 'Logistics Planning Graduate', 'Demand Planning Intern', 'Operations Management Trainee', 'Fulfilment Specialist', 'Sourcing Analyst', 'Process Improvement Analyst', 'Supply Chain Graduate']
     },
     { 
       value: 'product', 
       label: 'Product & Innovation', 
-      emoji: 'üí°', 
+      emoji: '', 
       roles: ['Associate Product Manager (APM)', 'Product Analyst', 'Product Management Intern', 'Junior Product Manager', 'Product Operations Associate', 'Product Designer', 'UX Intern', 'Product Research Assistant', 'Innovation Analyst', 'Product Development Coordinator', 'Product Marketing Assistant', 'Product Owner Graduate', 'Assistant Product Manager', 'Product Strategy Intern', 'Technical Product Specialist']
     },
     { 
       value: 'tech', 
       label: 'Tech & Engineering', 
-      emoji: 'üíª', 
+      emoji: 'ª', 
       roles: ['Software Engineer Intern', 'Cloud Engineer Intern', 'DevOps Engineer Intern', 'Data Engineer Intern', 'Systems Analyst', 'IT Support Analyst', 'Application Support Analyst', 'Technology Analyst', 'QA/Test Analyst', 'Platform Engineer Intern', 'Cybersecurity Analyst', 'IT Operations Trainee', 'Technical Consultant', 'Solutions Engineer Graduate', 'IT Business Analyst']
     },
     { 
       value: 'sustainability', 
       label: 'Sustainability & ESG', 
-      emoji: 'üå±', 
+      emoji: '±', 
       roles: ['ESG Intern', 'Sustainability Strategy Intern', 'Junior ESG Analyst', 'Sustainability Graduate Programme', 'ESG Data Analyst Intern', 'Corporate Responsibility Intern', 'Environmental Analyst', 'Sustainability Reporting Trainee', 'Climate Analyst', 'Sustainable Finance Analyst', 'ESG Assurance Intern', 'Sustainability Communications Intern', 'Junior Impact Analyst', 'Sustainability Operations Assistant', 'Green Finance Analyst']
     },
     { 
       value: 'unsure', 
       label: 'Not Sure Yet / General', 
-      emoji: 'ü§î', 
+      emoji: '§', 
       roles: ['Graduate Trainee', 'Rotational Graduate Program', 'Management Trainee', 'Business Graduate Analyst', 'Entry Level Program Associate', 'Future Leaders Programme', 'General Analyst', 'Operations Graduate', 'Commercial Graduate', 'Early Careers Program', 'Project Coordinator', 'Business Operations Analyst', 'Emerging Leaders Associate', 'Corporate Graduate Programme', 'Generalist Trainee']
     },
   ];
@@ -256,7 +256,7 @@ function SignupForm() {
               animate={{ opacity: 1, scale: 1 }}
               className="inline-block bg-gradient-to-r from-brand-500 to-purple-600 text-white px-6 py-2 rounded-full font-bold text-sm mb-2 shadow-[0_0_20px_rgba(99,102,241,0.6)]"
             >
-              ‚ú® Premium Plan Selected - 10 roles on signup + 15 roles per week
+               Premium Plan Selected - 10 roles on signup + 15 roles per week
             </motion.div>
           )}
           <motion.div
@@ -266,7 +266,7 @@ function SignupForm() {
             className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-500 text-white text-xs sm:text-sm font-bold px-4 sm:px-6 py-2 rounded-full shadow-lg"
           >
             <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-            {activeJobs} active roles ‚Ä¢ Updated daily
+            {activeJobs} active roles ¢ Updated daily
           </motion.div>
         </motion.div>
 
@@ -280,7 +280,7 @@ function SignupForm() {
                   i === step ? 'bg-gradient-to-br from-brand-500 to-purple-600 text-white shadow-[0_0_24px_rgba(99,102,241,0.6)]' :
                   'bg-zinc-800 text-zinc-500'
                 }`}>
-                  {i < step ? '‚úì' : i}
+                  {i < step ? '' : i}
                 </div>
                 <span className="hidden sm:inline text-sm font-semibold text-zinc-400">
                   {i === 1 ? 'Basics' : i === 2 ? 'Preferences' : 'Career'}
@@ -412,7 +412,7 @@ function SignupForm() {
                   whileTap={{ scale: 0.98 }}
                   className="btn-primary w-full text-xl py-6 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
-                  Continue to Preferences ‚Üí
+                  Continue to Preferences Ü
                 </motion.button>
               </motion.div>
             )}
@@ -590,7 +590,7 @@ function SignupForm() {
                     whileTap={{ scale: 0.98 }}
                     className="btn-secondary flex-1 py-5 text-lg"
                   >
-                    ‚Üê Back
+                    Ü Back
                   </motion.button>
                   <motion.button
                     onClick={() => setStep(3)}
@@ -605,7 +605,7 @@ function SignupForm() {
                   >
                     {(!formData.experience || !formData.visaStatus || formData.entryLevelPreferences.length === 0)
                       ? 'Complete Required Fields'
-                      : 'Continue to Career Path ‚Üí'}
+                      : 'Continue to Career Path Ü'}
                   </motion.button>
                 </div>
               </motion.div>
@@ -673,7 +673,7 @@ function SignupForm() {
                             <div className="text-xs text-zinc-500 mt-1">{path.roles.length} roles</div>
                           </div>
                           {formData.careerPath === path.value && (
-                            <div className="text-brand-400 text-2xl">‚úì</div>
+                            <div className="text-brand-400 text-2xl"></div>
                           )}
                         </div>
                       </motion.button>
@@ -704,7 +704,7 @@ function SignupForm() {
                         className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-[0_0_8px_rgba(99,102,241,0.3)] hover:shadow-[0_0_12px_rgba(99,102,241,0.5)]"
                         title={`Select all ${selectedCareer.roles.length} roles in ${selectedCareer.label}`}
                       >
-                        ‚úÖ Select All {selectedCareer.roles.length} Roles
+                         Select All {selectedCareer.roles.length} Roles
                       </motion.button>
                       <motion.button
                         type="button"
@@ -714,7 +714,7 @@ function SignupForm() {
                         className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-sm font-semibold rounded-lg transition-colors"
                         title="Clear all selected roles"
                       >
-                        üóëÔ∏è Clear All
+                         Clear All
                       </motion.button>
                     </div>
 
@@ -748,7 +748,7 @@ function SignupForm() {
                             <span className="flex items-center justify-between">
                               {role}
                               {formData.roles.includes(role) && (
-                                <span className="text-brand-400 ml-2">‚úì</span>
+                                <span className="text-brand-400 ml-2"></span>
                               )}
                             </span>
                           </motion.button>
@@ -777,7 +777,7 @@ function SignupForm() {
                     className="btn-secondary flex-1 py-5 text-lg"
                     disabled={loading}
                   >
-                    ‚Üê Back
+                    Ü Back
                   </motion.button>
                   <motion.button
                     onClick={() => setStep(4)}
@@ -817,13 +817,13 @@ function SignupForm() {
                         </>
                       ) : (
                         <>
-                          <span>üéØ</span>
+                          <span>Ø</span>
                           <span>{formData.careerPath && formData.roles.length === 0 ? 'Select Roles to Finish' : 'Complete Signup'}</span>
                           <motion.span
                             animate={{ x: [0, 4, 0] }}
                             transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}
                           >
-                            ‚Üí
+                            Ü
                           </motion.span>
                         </>
                       )}
@@ -850,7 +850,7 @@ function SignupForm() {
 
                 {/* Industry Preferences */}
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-white">üè¢ Industry Preferences</h3>
+                  <h3 className="text-xl font-bold text-white">¢ Industry Preferences</h3>
                   <p className="text-sm text-zinc-400">Select industries you're interested in (optional)</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {INDUSTRIES.map((industry) => (
@@ -879,7 +879,7 @@ function SignupForm() {
 
                 {/* Company Size Preference */}
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-white">üìä Company Size Preference</h3>
+                  <h3 className="text-xl font-bold text-white"> Company Size Preference</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {COMPANY_SIZES.map((size) => (
                       <motion.button
@@ -905,7 +905,7 @@ function SignupForm() {
 
                 {/* Career Keywords */}
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-white">üéØ Career Keywords</h3>
+                  <h3 className="text-xl font-bold text-white">Ø Career Keywords</h3>
                   <p className="text-sm text-zinc-400">Describe what you're looking for in your own words (optional)</p>
                   <p className="text-xs text-zinc-500">Examples: "customer-facing", "data-driven", "creative problem-solving", "client interaction", "analytical work"</p>
                   <textarea
@@ -921,7 +921,7 @@ function SignupForm() {
 
                 {/* Skills */}
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-white">üíª Skills & Technologies</h3>
+                  <h3 className="text-xl font-bold text-white">ª Skills & Technologies</h3>
                   <p className="text-sm text-zinc-400">Select skills you have or want to develop (optional)</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                     {COMMON_SKILLS.map((skill) => (
@@ -983,7 +983,7 @@ function SignupForm() {
                     whileTap={{ scale: 0.98 }}
                     className="btn-secondary flex-1 py-5 text-lg"
                   >
-                    ‚Üê Back
+                    Ü Back
                   </motion.button>
                   <motion.button
                     onClick={handleSubmit}
@@ -1008,13 +1008,13 @@ function SignupForm() {
                       </>
                     ) : (
                       <>
-                        <span>üöÄ</span>
+                        <span></span>
                         <span>Get My 10 Roles</span>
                         <motion.span
                           animate={{ x: [0, 4, 0] }}
                           transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}
                         >
-                          ‚Üí
+                          Ü
                         </motion.span>
                       </>
                     )}
@@ -1037,7 +1037,7 @@ function SignupForm() {
             <span className="text-sm font-bold text-zinc-300">
               {activeJobs} active early-career roles
             </span>
-            <span className="text-zinc-600">‚Ä¢</span>
+            <span className="text-zinc-600">¢</span>
             <span className="text-sm text-zinc-400">Updated daily</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-zinc-500 px-4">
@@ -1047,21 +1047,21 @@ function SignupForm() {
               </svg>
               <span>No CV required</span>
             </div>
-            <span className="text-zinc-700">‚Ä¢</span>
+            <span className="text-zinc-700">¢</span>
             <div className="flex items-center gap-1.5">
               <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <span>No spam</span>
             </div>
-            <span className="text-zinc-700">‚Ä¢</span>
+            <span className="text-zinc-700">¢</span>
             <div className="flex items-center gap-1.5">
               <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <span>Cancel anytime</span>
             </div>
-            <span className="text-zinc-700">‚Ä¢</span>
+            <span className="text-zinc-700">¢</span>
             <div className="flex items-center gap-1.5">
               <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />

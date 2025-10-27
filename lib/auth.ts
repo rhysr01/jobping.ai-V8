@@ -1,4 +1,4 @@
-// 🔒 AUTHENTICATION & AUTHORIZATION WRAPPER
+//  AUTHENTICATION & AUTHORIZATION WRAPPER
 // Phase 0: Lock the doors - prevent abuse and misconfig
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -39,7 +39,7 @@ export function withAuth(
       const expectedSystemKey = process.env.SYSTEM_API_KEY;
       
       if (!expectedSystemKey) {
-        console.error('❌ SYSTEM_API_KEY not configured');
+        console.error(' SYSTEM_API_KEY not configured');
         return NextResponse.json(
           { error: 'Server configuration error' },
           { status: 500 }
@@ -52,9 +52,9 @@ export function withAuth(
 
       if (!systemKey || systemKey !== expectedSystemKey) {
         if (isInternalCall) {
-          console.log('✅ Allowing internal Vercel call');
+          console.log(' Allowing internal Vercel call');
         } else {
-          console.warn(`🚫 Unauthorized system access attempt from ${request.headers.get('x-forwarded-for') || 'unknown'}`);
+          console.warn(`� Unauthorized system access attempt from ${request.headers.get('x-forwarded-for') || 'unknown'}`);
           console.warn(`   Received key: ${systemKey?.substring(0, 10)}...`);
           console.warn(`   Expected key: ${expectedSystemKey?.substring(0, 10)}...`);
           return NextResponse.json(
@@ -73,7 +73,7 @@ export function withAuth(
                           'unknown';
       
       // For now, just log rate limit attempts
-      console.log(`📊 Rate limit check for ${rateLimitKey} on ${request.url}`);
+      console.log(` Rate limit check for ${rateLimitKey} on ${request.url}`);
     }
 
     // 4. BUILD AUTH CONTEXT
@@ -88,7 +88,7 @@ export function withAuth(
     try {
       return await handler(request, context);
     } catch (error) {
-      console.error('❌ Auth wrapper error:', error);
+      console.error(' Auth wrapper error:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -97,7 +97,7 @@ export function withAuth(
   };
 }
 
-// 🔒 PRODUCTION SECRET VALIDATION
+//  PRODUCTION SECRET VALIDATION
 export function validateProductionSecrets(): { ready: boolean; errors: string[] } {
   const errors: string[] = [];
   const isProduction = process.env.NODE_ENV === 'production';
@@ -124,7 +124,7 @@ export function validateProductionSecrets(): { ready: boolean; errors: string[] 
   };
 }
 
-// 🔒 ENVIRONMENT HYGIENE CHECK
+//  ENVIRONMENT HYGIENE CHECK
 export function validateEnvHygiene(): { clean: boolean; violations: string[] } {
   const violations: string[] = [];
 

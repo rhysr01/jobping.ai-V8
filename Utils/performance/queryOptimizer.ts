@@ -53,7 +53,7 @@ export class QueryOptimizer {
     // Check cache first
     const cached = this.getFromCache(cacheKey);
     if (cached) {
-      console.log('📦 Cache hit for jobs matching query');
+      console.log('� Cache hit for jobs matching query');
       return cached;
     }
 
@@ -103,7 +103,7 @@ export class QueryOptimizer {
       }
 
       const duration = Date.now() - startTime;
-      console.log(`📊 Jobs query completed in ${duration}ms, returned ${data?.length || 0} jobs`);
+      console.log(` Jobs query completed in ${duration}ms, returned ${data?.length || 0} jobs`);
 
       // Cache the result
       this.setCache(cacheKey, data || []);
@@ -111,7 +111,7 @@ export class QueryOptimizer {
       return data || [];
 
     } catch (error) {
-      console.error('❌ Optimized job query failed:', error);
+      console.error(' Optimized job query failed:', error);
       throw error;
     }
   }
@@ -124,7 +124,7 @@ export class QueryOptimizer {
     
     const cached = this.getFromCache(cacheKey);
     if (cached) {
-      console.log('📦 Cache hit for users matching query');
+      console.log('� Cache hit for users matching query');
       return cached;
     }
 
@@ -142,7 +142,7 @@ export class QueryOptimizer {
       }
 
       const duration = Date.now() - startTime;
-      console.log(`📊 Users query completed in ${duration}ms, returned ${data?.length || 0} users`);
+      console.log(` Users query completed in ${duration}ms, returned ${data?.length || 0} users`);
 
       // Cache for 2 minutes (users change less frequently)
       this.setCache(cacheKey, data || [], 2 * 60 * 1000);
@@ -150,7 +150,7 @@ export class QueryOptimizer {
       return data || [];
 
     } catch (error) {
-      console.error('❌ Optimized user query failed:', error);
+      console.error(' Optimized user query failed:', error);
       throw error;
     }
   }
@@ -162,7 +162,7 @@ export class QueryOptimizer {
     if (jobUpdates.length === 0) return;
 
     const startTime = Date.now();
-    console.log(`🔄 Batch updating ${jobUpdates.length} jobs...`);
+    console.log(` Batch updating ${jobUpdates.length} jobs...`);
 
     // Process in chunks to avoid query size limits
     const chunkSize = 100;
@@ -190,13 +190,13 @@ export class QueryOptimizer {
         }
 
       } catch (error) {
-        console.error('❌ Batch update chunk failed:', error);
+        console.error(' Batch update chunk failed:', error);
         // Continue with other chunks
       }
     }
 
     const duration = Date.now() - startTime;
-    console.log(`✅ Batch update completed in ${duration}ms`);
+    console.log(` Batch update completed in ${duration}ms`);
 
     // Clear related caches
     this.clearCachePattern('jobs_matching');
@@ -209,7 +209,7 @@ export class QueryOptimizer {
     if (matches.length === 0) return;
 
     const startTime = Date.now();
-    console.log(`🔄 Batch inserting ${matches.length} matches...`);
+    console.log(` Batch inserting ${matches.length} matches...`);
 
     try {
       const { error } = await this.supabase
@@ -224,10 +224,10 @@ export class QueryOptimizer {
       }
 
       const duration = Date.now() - startTime;
-      console.log(`✅ Match insertion completed in ${duration}ms`);
+      console.log(` Match insertion completed in ${duration}ms`);
 
     } catch (error) {
-      console.error('❌ Batch match insertion failed:', error);
+      console.error(' Batch match insertion failed:', error);
       throw error;
     }
   }
@@ -260,7 +260,7 @@ export class QueryOptimizer {
       }
 
       const duration = Date.now() - startTime;
-      console.log(`📊 Recent jobs query completed in ${duration}ms`);
+      console.log(` Recent jobs query completed in ${duration}ms`);
 
       // Cache for 1 minute (recent jobs change frequently)
       this.setCache(cacheKey, data || [], 60 * 1000);
@@ -268,7 +268,7 @@ export class QueryOptimizer {
       return data || [];
 
     } catch (error) {
-      console.error('❌ Recent jobs query failed:', error);
+      console.error(' Recent jobs query failed:', error);
       throw error;
     }
   }
@@ -321,7 +321,7 @@ export class QueryOptimizer {
       });
 
       const duration = Date.now() - startTime;
-      console.log(`📊 Job stats query completed in ${duration}ms`);
+      console.log(` Job stats query completed in ${duration}ms`);
 
       // Cache for 5 minutes
       this.setCache(cacheKey, stats, 5 * 60 * 1000);
@@ -329,7 +329,7 @@ export class QueryOptimizer {
       return stats;
 
     } catch (error) {
-      console.error('❌ Job stats query failed:', error);
+      console.error(' Job stats query failed:', error);
       throw error;
     }
   }
@@ -369,7 +369,7 @@ export class QueryOptimizer {
 
   public clearCache(): void {
     this.cache = {};
-    console.log('🗑️ Query cache cleared');
+    console.log(' Query cache cleared');
   }
 
   public getCacheStats(): { size: number; keys: string[] } {

@@ -191,7 +191,7 @@ export const CAREER_PATH_PRIORITY = {
   'unknown': -2
 } as const;
 
-// Synonym → slug mapping dictionary
+// Synonym � slug mapping dictionary
 export const CAREER_PATH_SYNONYMS: Record<string, string> = {
   // Strategy synonyms
   'business development': 'strategy',
@@ -384,7 +384,7 @@ export function normalizeCareerPath(input: string | string[] | null | undefined)
     });
     
     // Log warning for multiple matches
-    console.warn(`⚠️ Multiple career paths detected: ${validMatches.join(', ')}. Using highest priority: ${validMatches[0]}`);
+    console.warn(` Multiple career paths detected: ${validMatches.join(', ')}. Using highest priority: ${validMatches[0]}`);
   }
   
   // Return single highest priority match
@@ -411,11 +411,11 @@ export function testCareerPathNormalization() {
     { input: ['invalid1', 'invalid2'], expected: ['unsure'] }, // No valid found
   ];
 
-  console.log('🧪 Testing career path normalization:');
+  console.log(' Testing career path normalization:');
   testCases.forEach(({ input, expected }) => {
     const result = normalizeCareerPath(input);
     const passed = JSON.stringify(result) === JSON.stringify(expected);
-    console.log(`${passed ? '✅' : '❌'} "${input}" → ${JSON.stringify(result)} (expected: ${JSON.stringify(expected)})`);
+    console.log(`${passed ? '' : ''} "${input}" � ${JSON.stringify(result)} (expected: ${JSON.stringify(expected)})`);
   });
 }
 

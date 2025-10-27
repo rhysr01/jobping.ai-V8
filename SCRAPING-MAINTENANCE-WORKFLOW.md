@@ -1,10 +1,10 @@
-# 🔄 Scraping Maintenance Workflow
+#  Scraping Maintenance Workflow
 
 Run this workflow **AFTER every scraping session** to maintain database quality.
 
 ---
 
-## 📋 Quick Checklist
+##  Quick Checklist
 
 ### 1. Run the Scraper
 ```bash
@@ -24,14 +24,14 @@ psql $DATABASE_URL -f scripts/post-scrape-maintenance.sql
 ```
 
 **What it does:**
-- ✅ Fixes missing city/country/location data
-- ✅ Normalizes all location formats
-- ✅ Removes non-target cities
-- ✅ Filters senior/manager roles
-- ✅ Removes non-business school jobs (healthcare, retail, law, etc.)
-- ✅ Applies all 10 career path categories
-- ✅ Enriches language requirements
-- ✅ Provides stats on new jobs
+-  Fixes missing city/country/location data
+-  Normalizes all location formats
+-  Removes non-target cities
+-  Filters senior/manager roles
+-  Removes non-business school jobs (healthcare, retail, law, etc.)
+-  Applies all 10 career path categories
+-  Enriches language requirements
+-  Provides stats on new jobs
 
 ### 3. Review the Stats
 The script will show:
@@ -42,19 +42,19 @@ The script will show:
 
 ---
 
-## 🎯 What Gets Filtered Out Automatically
+## � What Gets Filtered Out Automatically
 
-### ❌ Non-Target Cities
+###  Non-Target Cities
 Only keeps these 14 cities:
 - **UK:** London, Manchester, Birmingham, Belfast
 - **Ireland:** Dublin
 - **EU:** Paris, Milan, Berlin, Madrid, Amsterdam, Munich, Hamburg, Zurich, Rome, Brussels
 
-### ❌ Senior/Manager Roles
+###  Senior/Manager Roles
 Filters jobs with titles containing:
 - senior, manager, director, head of, lead
 
-### ❌ Non-Business School Jobs
+###  Non-Business School Jobs
 Filters:
 - Healthcare: nurse, doctor, medical, healthcare
 - Manual labor: retail, warehouse, driver, cashier
@@ -64,7 +64,7 @@ Filters:
 
 ---
 
-## 📊 Career Path Categories (10 Total)
+##  Career Path Categories (10 Total)
 
 The script automatically labels new jobs:
 
@@ -81,7 +81,7 @@ The script automatically labels new jobs:
 
 ---
 
-## 🚨 Troubleshooting
+##  Troubleshooting
 
 ### Issue: Too many jobs filtered out
 **Check:** Are scrapers pulling jobs from wrong cities?
@@ -96,20 +96,20 @@ The script automatically labels new jobs:
 
 ---
 
-## 📈 Expected Quality Metrics
+## � Expected Quality Metrics
 
 After running maintenance, your database should maintain:
 
-- ✅ **100%** city data completeness
-- ✅ **98%+** country data completeness
-- ✅ **90%+** early-career flagged
-- ✅ **60%+** career path labeled
-- ✅ **80%+** language requirements
-- ✅ **70%+** keep rate (30% filtered is normal!)
+-  **100%** city data completeness
+-  **98%+** country data completeness
+-  **90%+** early-career flagged
+-  **60%+** career path labeled
+-  **80%+** language requirements
+-  **70%+** keep rate (30% filtered is normal!)
 
 ---
 
-## 🔄 Recommended Schedule
+##  Recommended Schedule
 
 | Scraper | Frequency | Why |
 |---------|-----------|-----|
@@ -121,7 +121,7 @@ After running maintenance, your database should maintain:
 
 ---
 
-## 🎯 One-Line Command (After Scraping)
+## � One-Line Command (After Scraping)
 
 ```bash
 psql $DATABASE_URL -f scripts/post-scrape-maintenance.sql | tail -50
@@ -131,7 +131,7 @@ This runs maintenance and shows the summary stats.
 
 ---
 
-## ✅ Success Criteria
+##  Success Criteria
 
 Your maintenance is working if:
 1. New jobs appear in your 14 target cities only
@@ -141,5 +141,5 @@ Your maintenance is working if:
 
 ---
 
-**That's it! Keep this workflow and your database will stay pristine forever.** 🚀
+**That's it! Keep this workflow and your database will stay pristine forever.** 
 

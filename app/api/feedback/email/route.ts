@@ -225,7 +225,7 @@ async function recordFeedbackToDatabase(feedbackData: SimpleFeedbackData) {
       console.error('Failed to record feedback:', error);
       // Don't throw - we want feedback to work even if DB fails
     } else {
-      console.log(`✅ Feedback recorded: ${feedbackData.verdict} for job ${feedbackData.jobHash}`);
+      console.log(` Feedback recorded: ${feedbackData.verdict} for job ${feedbackData.jobHash}`);
     }
   } catch (error) {
     console.error('Error recording feedback to database:', error);
@@ -239,10 +239,10 @@ function generateThankYouPage(action: string, jobHash: string, email: string, sc
                 action === 'scored' ? `Thanks for rating this ${score}/5!` :
                 'Thanks for your feedback!';
 
-  const message = action === 'positive' ? '🧠 Our AI is learning! We\'ll send you more jobs like this.' :
-                  action === 'negative' ? '🧠 Our AI is learning! We\'ll avoid similar jobs in the future.' :
-                  action === 'scored' ? '🧠 Our AI is getting smarter! Your rating improves future matches.' :
-                  '🧠 Our AI is learning from your feedback!';
+  const message = action === 'positive' ? ' Our AI is learning! We\'ll send you more jobs like this.' :
+                  action === 'negative' ? ' Our AI is learning! We\'ll avoid similar jobs in the future.' :
+                  action === 'scored' ? ' Our AI is getting smarter! Your rating improves future matches.' :
+                  ' Our AI is learning from your feedback!';
 
   return new NextResponse(`
     <!DOCTYPE html>
@@ -355,7 +355,7 @@ function generateThankYouPage(action: string, jobHash: string, email: string, sc
     </head>
     <body>
       <div class="container">
-        <div class="success-icon">✅</div>
+        <div class="success-icon"></div>
         <h1>${title}</h1>
         <p>${message}</p>
         <div class="buttons">
@@ -491,9 +491,9 @@ function generateExplanationForm(jobHash: string, email: string, job: any) {
             <label for="verdict">How relevant was this job?</label>
             <select id="verdict" name="verdict" required>
               <option value="">Select...</option>
-              <option value="positive">👍 Good match</option>
-              <option value="neutral">🤔 OK match</option>
-              <option value="negative">👎 Not for me</option>
+              <option value="positive"> Good match</option>
+              <option value="neutral">� OK match</option>
+              <option value="negative"> Not for me</option>
             </select>
           </div>
           

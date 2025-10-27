@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Billing API error:', error);
+    console.error(' Billing API error:', error);
     return NextResponse.json(
       { error: 'Failed to retrieve billing information' },
       { status: 500 }
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Billing update error:', error);
+    console.error(' Billing update error:', error);
     return NextResponse.json(
       { error: 'Failed to update billing information' },
       { status: 500 }
@@ -230,7 +230,7 @@ export async function PUT(req: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Subscription management error:', error);
+    console.error(' Subscription management error:', error);
     return NextResponse.json(
       { error: 'Failed to manage subscription' },
       { status: 500 }

@@ -1,4 +1,4 @@
-// ðŸ“§ EMAIL PREVIEW SYSTEM - TEST NEW DESIGNS WITH FEEDBACK INTEGRATION
+//  EMAIL PREVIEW SYSTEM - TEST NEW DESIGNS WITH FEEDBACK INTEGRATION
 
 import { createWelcomeEmail, createJobMatchesEmail } from './optimizedTemplates';
 import { EmailJobCard } from './types';
@@ -40,7 +40,7 @@ export class EmailPreviewSystem {
     return sampleJobs.slice(0, count).map((job, index) => ({
       job: {
         ...job,
-        salary: `â‚¬${(60 + index * 20)}k - â‚¬${(80 + index * 25)}k`,
+        salary: `‚¬${(60 + index * 20)}k - ‚¬${(80 + index * 25)}k`,
         skills: ['React', 'TypeScript', 'Node.js', 'AWS'],
         experience: '3-5 years'
       },
@@ -179,7 +179,7 @@ export class EmailPreviewSystem {
 <body>
   <div class="preview-container">
     <h1 style="text-align: center; color: #111827; margin-bottom: 40px;">
-      ðŸŽ¯ JobPing Email Preview System
+      ¯ JobPing Email Preview System
     </h1>
     
     <div class="preview-section">
@@ -226,25 +226,25 @@ export class EmailPreviewSystem {
       <div class="preview-title">Design Features</div>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
         <div style="padding: 16px; background: #f8fafc; border-radius: 8px;">
-          <h4 style="margin: 0 0 8px 0; color: #374151;">ðŸŽ¨ Modern Design</h4>
+          <h4 style="margin: 0 0 8px 0; color: #374151;"> Modern Design</h4>
           <p style="margin: 0; font-size: 14px; color: #6b7280;">
             Clean, minimalist design matching your frontend aesthetic
           </p>
         </div>
         <div style="padding: 16px; background: #f8fafc; border-radius: 8px;">
-          <h4 style="margin: 0 0 8px 0; color: #374151;">ðŸ“± Mobile-First</h4>
+          <h4 style="margin: 0 0 8px 0; color: #374151;">± Mobile-First</h4>
           <p style="margin: 0; font-size: 14px; color: #6b7280;">
             Responsive design optimized for all devices
           </p>
         </div>
         <div style="padding: 16px; background: #f8fafc; border-radius: 8px;">
-          <h4 style="margin: 0 0 8px 0; color: #374151;">ðŸ”„ Feedback System</h4>
+          <h4 style="margin: 0 0 8px 0; color: #374151;"> Feedback System</h4>
           <p style="margin: 0; font-size: 14px; color: #6b7280;">
             Integrated feedback collection for AI learning
           </p>
         </div>
         <div style="padding: 16px; background: #f8fafc; border-radius: 8px;">
-          <h4 style="margin: 0 0 8px 0; color: #374151;">ðŸŽ¯ User Experience</h4>
+          <h4 style="margin: 0 0 8px 0; color: #374151;">¯ User Experience</h4>
           <p style="margin: 0; font-size: 14px; color: #6b7280;">
             Clear CTAs and intuitive navigation
           </p>

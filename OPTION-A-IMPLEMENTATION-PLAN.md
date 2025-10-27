@@ -1,18 +1,18 @@
-# 🎯 OPTION A: FULL FIX IMPLEMENTATION PLAN
+# � OPTION A: FULL FIX IMPLEMENTATION PLAN
 
-## 📋 OVERVIEW:
+##  OVERVIEW:
 
 **Total Time**: 6 hours over 3 weeks  
 **Goal**: Migrate all 55 routes to standardized error handling + fix type safety gaps  
-**Status**: ✅ STARTING NOW
+**Status**:  STARTING NOW
 
 ---
 
-## 📅 WEEK 1: CRITICAL ROUTES (2 hours)
+##  WEEK 1: CRITICAL ROUTES (2 hours)
 
 ### **Day 1: Error Handler Migration (1.5 hours)**
 
-1. **`/api/webhook-tally/route.ts`** (30 min) ⚠️ COMPLEX
+1. **`/api/webhook-tally/route.ts`** (30 min)  COMPLEX
    - 773 lines, multiple try/catch blocks
    - Strategy: Wrap main POST handler, keep internal try/catch
    - Test with: Mock Tally webhook payload
@@ -22,7 +22,7 @@
    - Full asyncHandler migration
    - Test with: Email submission
 
-3. **`/api/send-scheduled-emails/route.ts`** (40 min) ⚠️ COMPLEX
+3. **`/api/send-scheduled-emails/route.ts`** (40 min)  COMPLEX
    - Large route with email logic
    - Wrap main handler, keep internal error handling
    - Test with: Cron trigger
@@ -30,14 +30,14 @@
 ### **Day 2: Type Safety Fixes (30 min)**
 
 4. **Fix `/app/api/match-users/route.ts` type gaps**
-   - Line 129: `metrics: any` → create `MatchMetrics` interface
-   - Line 719: `job: any` → use `Job` type from types
-   - Line 789: `userProvenance: any` → create `MatchProvenance` interface
+   - Line 129: `metrics: any` � create `MatchMetrics` interface
+   - Line 719: `job: any` � use `Job` type from types
+   - Line 789: `userProvenance: any` � create `MatchProvenance` interface
    - Lines 766-769: Debug logs (skip - acceptable)
 
 ---
 
-## 📅 WEEK 2: USER-FACING ROUTES (2 hours)
+##  WEEK 2: USER-FACING ROUTES (2 hours)
 
 ### **High-Traffic Routes (1 hour)**
 
@@ -69,7 +69,7 @@
 
 ---
 
-## 📅 WEEK 3: ADMIN & CRON ROUTES (2 hours)
+##  WEEK 3: ADMIN & CRON ROUTES (2 hours)
 
 ### **Admin Routes (1 hour)**
 
@@ -93,7 +93,7 @@
 
 ---
 
-## 🛠️ MIGRATION TEMPLATES:
+##  MIGRATION TEMPLATES:
 
 ### **Template A: Simple Route (Most routes)**
 
@@ -166,7 +166,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
 ---
 
-## 📊 PROGRESS TRACKING:
+##  PROGRESS TRACKING:
 
 ### **Week 1: Critical Routes**
 - [ ] webhook-tally (30 min)
@@ -197,7 +197,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
 ---
 
-## ✅ SUCCESS CRITERIA:
+##  SUCCESS CRITERIA:
 
 1. **All 55+ routes use asyncHandler**
 2. **Consistent error responses across all APIs**
@@ -207,7 +207,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
 ---
 
-## 🚀 GETTING STARTED:
+##  GETTING STARTED:
 
 **Right now**: Start with webhook-tally (most complex first!)
 
@@ -224,14 +224,14 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
 ---
 
-## 📝 NOTES:
+##  NOTES:
 
 **Why asyncHandler is better**:
-1. ✅ Consistent error logging
-2. ✅ Structured error responses
-3. ✅ Automatic error handling
-4. ✅ Less boilerplate
-5. ✅ Type-safe error classes
+1.  Consistent error logging
+2.  Structured error responses
+3.  Automatic error handling
+4.  Less boilerplate
+5.  Type-safe error classes
 
 **Special Considerations**:
 - webhook-tally: Keep internal try/catch for sub-operations
@@ -239,5 +239,5 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 - Admin routes: Can be more aggressive (less critical)
 - Scraper routes: May need different error handling
 
-**Let's go!** 🎯
+**Let's go!** �
 

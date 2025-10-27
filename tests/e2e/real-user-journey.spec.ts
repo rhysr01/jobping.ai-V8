@@ -51,7 +51,7 @@ test.describe('Real User Journey - Multiple Signups', () => {
   test('Complete user journey - Free tier signup', async ({ page }) => {
     const user = testUsers[0];
     
-    console.log(`🚀 Testing complete user journey for ${user.name} (${user.tier} tier)`);
+    console.log(` Testing complete user journey for ${user.name} (${user.tier} tier)`);
     
     // Step 1: Land on homepage
     await expect(page.locator('h1:has-text("Five roles. Zero scrolling.")')).toBeVisible();
@@ -68,13 +68,13 @@ test.describe('Real User Journey - Multiple Signups', () => {
     await expect(page).toHaveURL(/.*success/);
     await expect(page.locator('text=Welcome to JobPing')).toBeVisible();
     
-    console.log(`✅ Free tier signup completed for ${user.name}`);
+    console.log(` Free tier signup completed for ${user.name}`);
   });
 
   test('Complete user journey - Premium tier signup', async ({ page }) => {
     const user = testUsers[1];
     
-    console.log(`🚀 Testing premium tier signup for ${user.name}`);
+    console.log(` Testing premium tier signup for ${user.name}`);
     
     // Step 1: Go to pricing section
     await page.locator('text=Pricing').click();
@@ -90,17 +90,17 @@ test.describe('Real User Journey - Multiple Signups', () => {
     // Step 4: Verify premium features
     await expect(page.locator('text=Premium Plan Selected')).toBeVisible();
     
-    console.log(`✅ Premium tier signup completed for ${user.name}`);
+    console.log(` Premium tier signup completed for ${user.name}`);
   });
 
   test('Multiple rapid signups - Stress test', async ({ page }) => {
-    console.log('🚀 Testing multiple rapid signups');
+    console.log(' Testing multiple rapid signups');
     
     // Test rapid signups to catch race conditions
     for (let i = 0; i < 3; i++) {
       const user = testUsers[i];
       
-      console.log(`🚀 Starting signup ${i + 1}/3 for ${user.name}`);
+      console.log(` Starting signup ${i + 1}/3 for ${user.name}`);
       
       // Navigate to signup
       await page.goto(`/signup?tier=${user.tier}`);
@@ -115,11 +115,11 @@ test.describe('Real User Journey - Multiple Signups', () => {
       await page.waitForTimeout(1000);
     }
     
-    console.log('✅ Multiple rapid signups completed successfully');
+    console.log(' Multiple rapid signups completed successfully');
   });
 
   test('Form validation and error handling', async ({ page }) => {
-    console.log('🚀 Testing form validation');
+    console.log(' Testing form validation');
     
     await page.goto('/signup?tier=free');
     
@@ -151,11 +151,11 @@ test.describe('Real User Journey - Multiple Signups', () => {
     await page.locator('button:has-text("Continue to Preferences")').click();
     await expect(page.locator('text=Your preferences')).toBeVisible();
     
-    console.log('✅ Form validation working correctly');
+    console.log(' Form validation working correctly');
   });
 
   test('Mobile user journey', async ({ page }) => {
-    console.log('🚀 Testing mobile user journey');
+    console.log(' Testing mobile user journey');
     
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
@@ -175,13 +175,13 @@ test.describe('Real User Journey - Multiple Signups', () => {
     // Verify mobile success
     await expect(page.locator('text=Welcome to JobPing')).toBeVisible();
     
-    console.log('✅ Mobile user journey completed');
+    console.log(' Mobile user journey completed');
   });
 
   test('Cross-browser compatibility - Real user flows', async ({ page, browserName }) => {
     const user = testUsers[0];
     
-    console.log(`🌐 Testing ${browserName} browser compatibility`);
+    console.log(` Testing ${browserName} browser compatibility`);
     
     // Basic functionality test
     await page.goto('/');
@@ -203,11 +203,11 @@ test.describe('Real User Journey - Multiple Signups', () => {
     await expect(page.locator('input[type="email"]')).toHaveValue(user.email);
     await expect(page.locator('input[type="text"]')).toHaveValue(user.name);
     
-    console.log(`✅ ${browserName} browser compatibility verified`);
+    console.log(` ${browserName} browser compatibility verified`);
   });
 
   test('Performance under load - Multiple concurrent users', async ({ page, context }) => {
-    console.log('🚀 Testing performance under load');
+    console.log(' Testing performance under load');
     
     // Simulate multiple browser contexts (different users)
     const contexts = await Promise.all([
@@ -240,11 +240,11 @@ test.describe('Real User Journey - Multiple Signups', () => {
     // Cleanup
     await Promise.all(contexts.map(ctx => ctx?.close()));
     
-    console.log('✅ Concurrent user load test completed');
+    console.log(' Concurrent user load test completed');
   });
 
   test('Error recovery and resilience', async ({ page }) => {
-    console.log('🚀 Testing error recovery');
+    console.log(' Testing error recovery');
     
     // Test network interruption simulation
     await page.goto('/signup?tier=free');
@@ -273,18 +273,18 @@ test.describe('Real User Journey - Multiple Signups', () => {
     // Wait for next step or error
     try {
       await page.waitForSelector('text=Your preferences', { timeout: 5000 });
-      console.log('✅ Form progression working despite network issues');
+      console.log(' Form progression working despite network issues');
     } catch (error) {
       // Check if error handling is working
       const errorVisible = await page.locator('text=Something went wrong').isVisible();
       if (errorVisible) {
-        console.log('✅ Error handling working correctly');
+        console.log(' Error handling working correctly');
       }
     }
   });
 
   test('Accessibility compliance - Real user scenarios', async ({ page }) => {
-    console.log('🚀 Testing accessibility compliance');
+    console.log(' Testing accessibility compliance');
     
     await page.goto('/signup?tier=free');
     
@@ -308,13 +308,13 @@ test.describe('Real User Journey - Multiple Signups', () => {
     await page.keyboard.press('Tab');
     await page.keyboard.press('Enter'); // Try to submit with Enter
     
-    console.log('✅ Accessibility compliance verified');
+    console.log(' Accessibility compliance verified');
   });
 });
 
 // Helper function to fill signup form
 async function fillSignupForm(page: any, user: any, fastMode = false) {
-  console.log(`📝 Filling signup form for ${user.name}`);
+  console.log(` Filling signup form for ${user.name}`);
   
   // Step 1: Basic info
   await page.fill('input[type="text"]', user.name);
@@ -380,7 +380,7 @@ async function fillSignupForm(page: any, user: any, fastMode = false) {
     await page.waitForSelector('text=Welcome to JobPing');
   }
   
-  console.log(`✅ Form completed for ${user.name}`);
+  console.log(` Form completed for ${user.name}`);
 }
 
 // Helper function to get career path label

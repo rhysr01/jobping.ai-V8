@@ -15,7 +15,7 @@ const MAX_PROCESSING_TIME = parseInt(process.env.MAX_PROCESSING_TIME || '25000')
 const processAIMatchingHandler = asyncHandler(async (_request: NextRequest) => {
   const startTime = Date.now();
   
-  console.log('🚀 Starting cron AI matching processing...');
+  console.log(' Starting cron AI matching processing...');
   
   // Get pending AI matching jobs
   const { data: jobs, error: fetchError } = await supabase
@@ -29,12 +29,12 @@ const processAIMatchingHandler = asyncHandler(async (_request: NextRequest) => {
     .limit(BATCH_SIZE);
 
   if (fetchError) {
-    console.error('❌ Error fetching AI matching jobs:', fetchError);
+    console.error(' Error fetching AI matching jobs:', fetchError);
     throw new AppError('Failed to fetch jobs', 500, 'DB_FETCH_ERROR', { details: fetchError.message });
   }
 
   if (!jobs || jobs.length === 0) {
-    console.log('✅ No pending AI matching jobs to process');
+    console.log(' No pending AI matching jobs to process');
     return NextResponse.json({ 
       message: 'No jobs to process',
       processed: 0,
@@ -42,7 +42,7 @@ const processAIMatchingHandler = asyncHandler(async (_request: NextRequest) => {
     });
   }
 
-  console.log(`🤖 Processing ${jobs.length} AI matching jobs...`);
+  console.log(`�� Processing ${jobs.length} AI matching jobs...`);
   
   let processed = 0;
   let failed = 0;
@@ -51,7 +51,7 @@ const processAIMatchingHandler = asyncHandler(async (_request: NextRequest) => {
   for (const job of jobs) {
     // Check if we're running out of time
     if (Date.now() - startTime > MAX_PROCESSING_TIME) {
-      console.log('⏰ Time limit reached, stopping processing');
+      console.log(' Time limit reached, stopping processing');
       break;
     }
 
@@ -91,7 +91,7 @@ const processAIMatchingHandler = asyncHandler(async (_request: NextRequest) => {
           .insert(matchInserts);
 
         if (insertError) {
-          console.error('❌ Error inserting matches:', insertError);
+          console.error(' Error inserting matches:', insertError);
         }
       }
 
@@ -109,10 +109,10 @@ const processAIMatchingHandler = asyncHandler(async (_request: NextRequest) => {
         .eq('id', job.id);
 
       processed++;
-      console.log(`✅ Completed AI matching job ${job.id} for ${userEmail}: ${result.matches?.length || 0} matches`);
+      console.log(` Completed AI matching job ${job.id} for ${userEmail}: ${result.matches?.length || 0} matches`);
 
     } catch (error) {
-      console.error(`❌ Failed to process AI matching job ${job.id}:`, error);
+      console.error(` Failed to process AI matching job ${job.id}:`, error);
       
       // Handle failure with retry logic
       const newAttempts = (job.attempts || 0) + 1;
@@ -129,7 +129,7 @@ const processAIMatchingHandler = asyncHandler(async (_request: NextRequest) => {
           })
           .eq('id', job.id);
         
-        console.error(`❌ Job ${job.id} failed permanently after ${newAttempts} attempts`);
+        console.error(` Job ${job.id} failed permanently after ${newAttempts} attempts`);
       } else {
         // Retry with exponential backoff
         const retryDelay = Math.min(1000 * Math.pow(2, newAttempts), 300000); // Max 5 minutes
@@ -145,7 +145,7 @@ const processAIMatchingHandler = asyncHandler(async (_request: NextRequest) => {
           })
           .eq('id', job.id);
         
-        console.log(`🔄 Job ${job.id} will retry in ${retryDelay}ms (attempt ${newAttempts}/${maxAttempts})`);
+        console.log(` Job ${job.id} will retry in ${retryDelay}ms (attempt ${newAttempts}/${maxAttempts})`);
       }
       
       failed++;
@@ -153,7 +153,7 @@ const processAIMatchingHandler = asyncHandler(async (_request: NextRequest) => {
   }
 
   const duration = Date.now() - startTime;
-  console.log(`✅ AI matching processing complete: ${processed} processed, ${failed} failed in ${duration}ms`);
+  console.log(` AI matching processing complete: ${processed} processed, ${failed} failed in ${duration}ms`);
 
   return NextResponse.json({
     message: 'AI matching processing complete',

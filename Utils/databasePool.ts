@@ -51,10 +51,10 @@ class DatabasePool {
         // Perform initial health check
         this.performHealthCheck();
         
-        console.log('✅ Database connection pool initialized');
+        console.log(' Database connection pool initialized');
         
       } catch (error) {
-        console.error('❌ Failed to initialize database pool:', error);
+        console.error(' Failed to initialize database pool:', error);
         
         // Sentry error tracking for database initialization failures
         Sentry.captureException(error, {
@@ -85,7 +85,7 @@ class DatabasePool {
       const { error } = await this.instance!.from('jobs').select('count').limit(1);
       
       if (error) {
-        console.warn('⚠️ Database health check failed:', error.message);
+        console.warn(' Database health check failed:', error.message);
         
         // Sentry warning for database health check failures
         Sentry.addBreadcrumb({
@@ -101,7 +101,7 @@ class DatabasePool {
       return true;
       
     } catch (error) {
-      console.error('❌ Database health check error:', error);
+      console.error(' Database health check error:', error);
       return false;
     }
   }
@@ -121,9 +121,9 @@ class DatabasePool {
         // Supabase client doesn't have explicit close method
         // but we can clean up our reference
         this.instance = null;
-        console.log('✅ Database connection pool closed');
+        console.log(' Database connection pool closed');
       } catch (error) {
-        console.error('❌ Error closing database pool:', error);
+        console.error(' Error closing database pool:', error);
       }
     }
   }
@@ -152,13 +152,13 @@ export const getDatabasePoolStatus = () => DatabasePool.getPoolStatus();
 
 // Graceful shutdown handling
 process.on('SIGTERM', async () => {
-  console.log('🔄 SIGTERM received, closing database pool...');
+  console.log(' SIGTERM received, closing database pool...');
   await closeDatabasePool();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('🔄 SIGINT received, closing database pool...');
+  console.log(' SIGINT received, closing database pool...');
   await closeDatabasePool();
   process.exit(0);
 });

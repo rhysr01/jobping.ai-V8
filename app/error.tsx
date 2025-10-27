@@ -25,7 +25,7 @@ export default function Error({
     <div className="min-h-screen flex items-center justify-center bg-black p-4">
       <div className="max-w-md w-full p-8 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl">
         <div className="text-center mb-6">
-          <div className="text-6xl mb-4">⚠️</div>
+          <div className="text-6xl mb-4"></div>
           <h2 className="text-2xl font-bold text-white mb-2">
             Something went wrong
           </h2>
@@ -45,7 +45,7 @@ export default function Error({
           href="/"
           className="block w-full mt-3 text-center text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
         >
-          ← Back to home
+          � Back to home
         </Link>
       </div>
     </div>

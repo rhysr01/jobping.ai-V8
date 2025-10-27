@@ -72,7 +72,7 @@ const createJobCard = (card: EmailJobCard, userEmail: string) => {
     : '';
   
   const hotBadge = isHotMatch
-    ? `<div style="background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.primaryDark} 100%); color: ${COLORS.white}; padding: 12px 24px; border-radius: 50px; font-weight: 700; margin-bottom: 20px; display: inline-block; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3);">HOT MATCH • ${matchScore}%</div>`
+    ? `<div style="background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.primaryDark} 100%); color: ${COLORS.white}; padding: 12px 24px; border-radius: 50px; font-weight: 700; margin-bottom: 20px; display: inline-block; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3);">HOT MATCH � ${matchScore}%</div>`
     : '';
   
   return `
@@ -196,13 +196,13 @@ export function createWelcomeEmailOptimized(userName?: string, matchCount: numbe
       </div>
       <div style="margin-top: 16px; padding: 16px; background-color: #EEF2FF; border-radius: 8px; border: 2px solid ${COLORS.primary};">
         <div style="color: ${COLORS.primary}; font-size: 14px; font-weight: 700; margin-bottom: 8px;">
-          Want 3× more opportunities?
+          Want 3� more opportunities?
         </div>
         <div style="color: ${COLORS.gray700}; font-size: 14px; margin-bottom: 12px;">
           Upgrade to Premium for 70+ jobs per month vs 30 on free tier
         </div>
         <a href="https://www.getjobping.com/upgrade" style="display: inline-block; background: ${COLORS.primary}; color: ${COLORS.white}; padding: 12px 24px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 14px;">
-          Upgrade to Premium - €7/month
+          Upgrade to Premium - ��7/month
         </a>
       </div>`;
   
@@ -245,13 +245,13 @@ export function createWelcomeEmailOptimized(userName?: string, matchCount: numbe
                     </div>
                     
                     <div style="font-size: 18px; color: ${COLORS.gray700}; margin: 24px 0; font-weight: 500; line-height: 1.7;">
-                      You'll automatically receive your first ${matchCount} hand-picked matches within 48 hours—no spam, just quality opportunities matched to your profile.
+                      You'll automatically receive your first ${matchCount} hand-picked matches within 48 hoursno spam, just quality opportunities matched to your profile.
                     </div>
                     
                     <!-- Spam Warning -->
                     <div style="margin: 24px 0; padding: 20px; background-color: #FEF3C7; border-radius: 8px; border-left: 4px solid #F59E0B;">
                       <div style="color: #92400E; font-size: 16px; font-weight: 700; margin-bottom: 8px;">
-                        ⚠️ Check Your Spam Folder
+                         Check Your Spam Folder
                       </div>
                       <div style="color: #78350F; font-size: 15px; line-height: 1.7;">
                         Our emails sometimes land in spam/junk. Check there if you don't see them in your inbox!
@@ -266,7 +266,7 @@ export function createWelcomeEmailOptimized(userName?: string, matchCount: numbe
                     </div>
                     
                     <div style="margin-top: 24px; font-size: 15px; color: ${COLORS.gray700}; line-height: 1.7;">
-                      Sit back and relax. We'll send your matches automatically—no action needed!
+                      Sit back and relax. We'll send your matches automaticallyno action needed!
                     </div>
                   </td>
                 </tr>
@@ -336,7 +336,7 @@ export function createJobMatchesEmailOptimized(
                         ${title}
                       </div>
                       <div style="font-size: 18px; color: ${COLORS.gray700}; font-weight: 500; line-height: 1.6;">
-                        ${greeting} found roles that match you—no spam, just quality
+                        ${greeting} found roles that match youno spam, just quality
                       </div>
                     </div>
                     

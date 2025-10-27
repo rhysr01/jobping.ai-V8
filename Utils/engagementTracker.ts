@@ -75,7 +75,7 @@ export async function updateUserEngagement(
     if (error) {
       console.error('Error updating user engagement:', error);
     } else {
-      console.log(`✅ Updated engagement for ${email}: ${engagementType}`);
+      console.log(` Updated engagement for ${email}: ${engagementType}`);
     }
   } catch (error) {
     console.error('Failed to update user engagement:', error);
@@ -112,7 +112,7 @@ export async function markReEngagementSent(email: string): Promise<void> {
   if (error) {
     console.error('Error marking re-engagement as sent:', error);
   } else {
-    console.log(`✅ Marked re-engagement sent for ${email}`);
+    console.log(` Marked re-engagement sent for ${email}`);
   }
 }
 
@@ -243,6 +243,6 @@ export async function resetUserEngagement(email: string): Promise<void> {
   if (error) {
     console.error('Error resetting user engagement:', error);
   } else {
-    console.log(`✅ Reset engagement for ${email}`);
+    console.log(` Reset engagement for ${email}`);
   }
 }

@@ -1,4 +1,4 @@
-// 📧 GMAIL-COMPATIBLE EMAIL TEMPLATES
+//  GMAIL-COMPATIBLE EMAIL TEMPLATES
 // Uses table-based layout + inline styles for maximum compatibility
 
 import { EmailJobCard } from './types';
@@ -75,7 +75,7 @@ const createJobCard = (card: EmailJobCard, userEmail: string) => {
     : '';
   
   const hotBadge = isHotMatch
-    ? `<div style="background-color: ${COLORS.purpleLight}; color: ${COLORS.white}; padding: 8px 16px; border-radius: 8px; font-weight: 600; margin-bottom: 16px; display: inline-block; font-size: 13px;">Hot Match • ${matchScore}% Match</div>`
+    ? `<div style="background-color: ${COLORS.purpleLight}; color: ${COLORS.white}; padding: 8px 16px; border-radius: 8px; font-weight: 600; margin-bottom: 16px; display: inline-block; font-size: 13px;">Hot Match � ${matchScore}% Match</div>`
     : '';
   
   return `
@@ -112,7 +112,7 @@ const createJobCard = (card: EmailJobCard, userEmail: string) => {
                     <tr>
                       <td align="center">
                         <a href="${card.job.job_url}" style="display: block; background-color: ${COLORS.purple}; color: ${COLORS.white}; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 15px; text-align: center; margin: 12px 0;">
-                          Apply Now →
+                          Apply Now �
                         </a>
                       </td>
                     </tr>
@@ -144,31 +144,31 @@ const createJobCard = (card: EmailJobCard, userEmail: string) => {
                     <tr>
                       <td width="20%" align="center">
                         <a href="https://www.getjobping.com/api/feedback/email?action=positive&score=5&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(139,92,246,0.1);" target="_blank">
-                          <span style="display: block; font-size: 20px; margin-bottom: 4px;">⭐</span>
+                          <span style="display: block; font-size: 20px; margin-bottom: 4px;">�</span>
                           <span>Perfect</span>
                         </a>
                       </td>
                       <td width="20%" align="center">
                         <a href="https://www.getjobping.com/api/feedback/email?action=positive&score=4&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(99,102,241,0.1);" target="_blank">
-                          <span style="display: block; font-size: 20px; margin-bottom: 4px;">👍</span>
+                          <span style="display: block; font-size: 20px; margin-bottom: 4px;"></span>
                           <span>Good</span>
                         </a>
                       </td>
                       <td width="20%" align="center">
                         <a href="https://www.getjobping.com/api/feedback/email?action=neutral&score=3&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(245,158,11,0.1);" target="_blank">
-                          <span style="display: block; font-size: 20px; margin-bottom: 4px;">🤔</span>
+                          <span style="display: block; font-size: 20px; margin-bottom: 4px;">�</span>
                           <span>OK</span>
                         </a>
                       </td>
                       <td width="20%" align="center">
                         <a href="https://www.getjobping.com/api/feedback/email?action=negative&score=2&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(239,68,68,0.1);" target="_blank">
-                          <span style="display: block; font-size: 20px; margin-bottom: 4px;">👎</span>
+                          <span style="display: block; font-size: 20px; margin-bottom: 4px;"></span>
                           <span>Poor</span>
                         </a>
                       </td>
                       <td width="20%" align="center">
                         <a href="https://www.getjobping.com/api/feedback/email?action=negative&score=1&job=${card.job.job_hash || 'unknown'}&email=${encodeURIComponent(userEmail)}" style="display: block; padding: 12px 8px; border-radius: 8px; text-decoration: none; text-align: center; border: 1px solid #2a2a2a; font-size: 11px; font-weight: 500; color: #888; background-color: rgba(220,38,38,0.1);" target="_blank">
-                          <span style="display: block; font-size: 20px; margin-bottom: 4px;">❌</span>
+                          <span style="display: block; font-size: 20px; margin-bottom: 4px;"></span>
                           <span>Bad</span>
                         </a>
                       </td>
@@ -176,7 +176,7 @@ const createJobCard = (card: EmailJobCard, userEmail: string) => {
                   </table>
                   
                   <div style="font-size: 12px; color: ${COLORS.purpleLight}; text-align: center; margin-top: 14px; font-weight: 600;">
-                    🧠 Our AI gets smarter with every rating
+                     Our AI gets smarter with every rating
                   </div>
                 </td>
               </tr>
@@ -216,18 +216,18 @@ export function createWelcomeEmailGmail(userName?: string, matchCount: number = 
                 <tr>
                   <td align="center">
                     <div style="font-size: 32px; font-weight: 700; color: ${COLORS.white}; margin-bottom: 12px; letter-spacing: -1px; line-height: 1.2;">
-                      Welcome${greeting}! 🎉
+                      Welcome${greeting}! 
                     </div>
                     <div style="font-size: 16px; color: ${COLORS.gray400}; margin-bottom: 16px; font-weight: 400; line-height: 1.6;">
                       Your AI career assistant is now active and working for you.
                     </div>
                     
                     <div style="background-color: ${COLORS.green}; color: ${COLORS.white}; padding: 16px 28px; border-radius: 16px; font-weight: 700; margin: 24px auto; max-width: fit-content; font-size: 18px;">
-                      🚀 ${matchCount} perfect matches found!
+                       ${matchCount} perfect matches found!
                     </div>
                     
                     <div style="font-size: 16px; color: ${COLORS.gray400}; margin-bottom: 16px; font-weight: 400; line-height: 1.6;">
-                      We found roles that actually fit your profile—no job board spam, just quality opportunities.
+                      We found roles that actually fit your profileno job board spam, just quality opportunities.
                     </div>
                     
                     <div style="margin-top: 24px; color: ${COLORS.gray500}; font-size: 14px;">
@@ -264,14 +264,14 @@ export function createJobMatchesEmailGmail(
   }
 ): string {
   const premiumBadge = subscriptionTier === 'premium' 
-    ? `<div style="background-color: ${COLORS.gold}; color: ${COLORS.black}; padding: 12px 28px; border-radius: 20px; text-align: center; font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 24px; letter-spacing: 1px; display: inline-block;">⭐ Premium Member</div>` 
+    ? `<div style="background-color: ${COLORS.gold}; color: ${COLORS.black}; padding: 12px 28px; border-radius: 20px; text-align: center; font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 24px; letter-spacing: 1px; display: inline-block;">� Premium Member</div>` 
     : '';
   
   const title = isSignupEmail 
-    ? '5 perfect matches just dropped 🎯' 
+    ? '5 perfect matches just dropped �' 
     : personalization?.dayText 
-      ? `Your fresh ${personalization.dayText} matches 🎯`
-      : `${jobCards.length} new matches for you 🎯`;
+      ? `Your fresh ${personalization.dayText} matches �`
+      : `${jobCards.length} new matches for you �`;
   
   const greeting = userName ? `${userName}, we` : 'We';
   
@@ -304,7 +304,7 @@ export function createJobMatchesEmailGmail(
                         ${title}
                       </div>
                       <div style="font-size: 16px; color: ${COLORS.gray400}; margin-bottom: 16px; font-weight: 400; line-height: 1.6;">
-                        ${greeting} found roles that actually match you—no generic spam, just quality.
+                        ${greeting} found roles that actually match youno generic spam, just quality.
                       </div>
                     </div>
                     

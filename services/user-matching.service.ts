@@ -20,7 +20,7 @@ export class UserMatchingService {
     let users: User[] = [];
     let usersError: Error | null = null;
     
-    console.log('🔍 About to query users table...');
+    console.log(' About to query users table...');
     
     try {
       const result = await this.supabase
@@ -29,7 +29,7 @@ export class UserMatchingService {
         .eq('email_verified', true)
         .limit(limit);
       
-      console.log('🔍 Users query result:', { data: result.data?.length, error: result.error });
+      console.log(' Users query result:', { data: result.data?.length, error: result.error });
       users = result.data || [];
       usersError = result.error;
     } catch (error: any) {
@@ -51,7 +51,7 @@ export class UserMatchingService {
         .limit(limit);
       users = refetch.data || [];
       usersError = refetch.error;
-      console.log('🔍 Test refetch without email_verified filter:', { data: users.length, error: usersError });
+      console.log(' Test refetch without email_verified filter:', { data: users.length, error: usersError });
     }
 
     if (usersError) {
@@ -83,7 +83,7 @@ export class UserMatchingService {
    * Prevents N+1 query problem by fetching in one query
    */
   async getPreviousMatchesForUsers(userEmails: string[]) {
-    console.log('📊 Batch fetching all previous matches...');
+    console.log(' Batch fetching all previous matches...');
     const batchStart = Date.now();
     
     const { data: allPreviousMatches, error: matchError } = await this.supabase
@@ -95,7 +95,7 @@ export class UserMatchingService {
       console.error('Failed to fetch previous matches:', matchError);
     }
     
-    // Build lookup map: email → Set<job_hash>
+    // Build lookup map: email � Set<job_hash>
     const matchesByUser = new Map<string, Set<string>>();
     (allPreviousMatches || []).forEach(match => {
       if (!matchesByUser.has(match.user_email)) {
@@ -104,7 +104,7 @@ export class UserMatchingService {
       matchesByUser.get(match.user_email)!.add(match.job_hash);
     });
     
-    console.log(`✅ Loaded ${allPreviousMatches?.length || 0} matches for ${userEmails.length} users in ${Date.now() - batchStart}ms`);
+    console.log(` Loaded ${allPreviousMatches?.length || 0} matches for ${userEmails.length} users in ${Date.now() - batchStart}ms`);
     
     return matchesByUser;
   }
@@ -153,7 +153,7 @@ export class UserMatchingService {
       throw insertError;
     }
     
-    console.log(`✅ Saved ${matchEntries.length} matches to database`);
+    console.log(` Saved ${matchEntries.length} matches to database`);
   }
 }
 

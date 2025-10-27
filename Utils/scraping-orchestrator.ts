@@ -188,7 +188,7 @@ export class ScrapingOrchestrator {
     error?: string
   ): Promise<void> {
     // Log to database for monitoring
-    console.log(`📊 Scraping ${company}: ${success ? '✅' : '❌'} - ${jobsFound} jobs${error ? ` - ${error}` : ''}`);
+    console.log(` Scraping ${company}: ${success ? '' : ''} - ${jobsFound} jobs${error ? ` - ${error}` : ''}`);
   }
 
   /**

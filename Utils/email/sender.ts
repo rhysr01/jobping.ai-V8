@@ -1,4 +1,4 @@
-// 🚀 OPTIMIZED EMAIL SENDER - PRODUCTION READY
+//  OPTIMIZED EMAIL SENDER - PRODUCTION READY
 
 // Deprecated: prefer optimizedSender with personalization. Keep compatibility by delegating.
 import { sendMatchedJobsEmail as optimizedSendMatched, sendWelcomeEmail as optimizedSendWelcome } from './optimizedSender';

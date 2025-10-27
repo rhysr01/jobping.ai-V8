@@ -63,7 +63,7 @@ describe('Scraper Utils - classifyEarlyCareer', () => {
     // German
     expect(classifyEarlyCareer({ title: 'Praktikum', description: 'Traineeprogramm', url: '', company: '', location: '', source: '' })).toBe(true);
     // Spanish
-    expect(classifyEarlyCareer({ title: 'Prácticas', description: 'Recién titulado', url: '', company: '', location: '', source: '' })).toBe(true);
+    expect(classifyEarlyCareer({ title: 'Pr�cticas', description: 'Recién titulado', url: '', company: '', location: '', source: '' })).toBe(true);
   });
 });
 

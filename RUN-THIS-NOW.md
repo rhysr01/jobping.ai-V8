@@ -1,4 +1,4 @@
-# 🚀 Run This Now to Improve Categorization
+#  Run This Now to Improve Categorization
 
 ## Current Status
 - Categorization: **59.5%** (4,736 jobs)
@@ -43,7 +43,7 @@ psql $DATABASE_URL -f scripts/improve-categorization.sql
    - Admin roles: back office, middle office, impiegato, employé, clerk
 
 6. **Marketing & Growth** - Added:
-   - Multi-language: kommunikation, comunicazione, campagne, pubblicità
+   - Multi-language: kommunikation, comunicazione, campagne, pubblicit�
    - campaign, influence, PR
 
 7. **Product & Innovation** - Added:
@@ -60,9 +60,9 @@ After running, you should see:
 
 ## Then Update Future Scrapes
 
-Good news! I already updated `post-scrape-maintenance.sql` with these improved patterns, so all future scrapes will automatically get 85%+ categorization! 🎉
+Good news! I already updated `post-scrape-maintenance.sql` with these improved patterns, so all future scrapes will automatically get 85%+ categorization! 
 
 ---
 
-**Run the command above now!** ⬆️
+**Run the command above now!** ��
 

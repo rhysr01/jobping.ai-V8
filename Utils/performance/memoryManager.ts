@@ -83,12 +83,12 @@ export class MemoryManager {
       const afterStats = this.getMemoryStats();
       
       const freed = beforeStats.used - afterStats.used;
-      console.log(`🗑️ Garbage collection freed ${freed}MB of memory`);
+      console.log(` Garbage collection freed ${freed}MB of memory`);
       
       this.lastGcTime = Date.now();
       return true;
     } else {
-      console.warn('⚠️ Garbage collection not available. Run with --expose-gc flag.');
+      console.warn(' Garbage collection not available. Run with --expose-gc flag.');
       return false;
     }
   }
@@ -111,7 +111,7 @@ export class MemoryManager {
    * Run all cleanup callbacks
    */
   runCleanupCallbacks(): void {
-    console.log(`🧹 Running ${this.cleanupCallbacks.size} cleanup callbacks...`);
+    console.log(` Running ${this.cleanupCallbacks.size} cleanup callbacks...`);
     
     for (const callback of this.cleanupCallbacks) {
       try {
@@ -128,7 +128,7 @@ export class MemoryManager {
   performMemoryCleanup(): MemoryStats {
     const beforeStats = this.getMemoryStats();
     
-    console.log(`🧹 Starting memory cleanup. Current usage: ${beforeStats.used}MB (${beforeStats.percentage.toFixed(1)}%)`);
+    console.log(` Starting memory cleanup. Current usage: ${beforeStats.used}MB (${beforeStats.percentage.toFixed(1)}%)`);
     
     // Run cleanup callbacks
     this.runCleanupCallbacks();
@@ -142,7 +142,7 @@ export class MemoryManager {
     const afterStats = this.getMemoryStats();
     const freed = beforeStats.used - afterStats.used;
     
-    console.log(`✅ Memory cleanup completed. Freed ${freed}MB. New usage: ${afterStats.used}MB (${afterStats.percentage.toFixed(1)}%)`);
+    console.log(` Memory cleanup completed. Freed ${freed}MB. New usage: ${afterStats.used}MB (${afterStats.percentage.toFixed(1)}%)`);
     
     return afterStats;
   }
@@ -156,12 +156,12 @@ export class MemoryManager {
       
       // Log memory usage if high
       if (stats.percentage > 70) {
-        console.warn(`⚠️ High memory usage: ${stats.used}MB (${stats.percentage.toFixed(1)}%)`);
+        console.warn(` High memory usage: ${stats.used}MB (${stats.percentage.toFixed(1)}%)`);
       }
       
       // Auto-cleanup if threshold exceeded
       if (this.isMemoryHigh()) {
-        console.log('🚨 Memory threshold exceeded, performing cleanup...');
+        console.log(' Memory threshold exceeded, performing cleanup...');
         this.performMemoryCleanup();
       }
       
@@ -383,7 +383,7 @@ export function withMemoryMonitoring<T extends any[], R>(
     const beforeStats = getMemoryStats();
     
     if (options.logMemory) {
-      console.log(`📊 Memory before: ${beforeStats.used}MB (${beforeStats.percentage.toFixed(1)}%)`);
+      console.log(` Memory before: ${beforeStats.used}MB (${beforeStats.percentage.toFixed(1)}%)`);
     }
     
     const result = fn(...args);
@@ -391,12 +391,12 @@ export function withMemoryMonitoring<T extends any[], R>(
     const afterStats = getMemoryStats();
     
     if (options.logMemory) {
-      console.log(`📊 Memory after: ${afterStats.used}MB (${afterStats.percentage.toFixed(1)}%)`);
+      console.log(` Memory after: ${afterStats.used}MB (${afterStats.percentage.toFixed(1)}%)`);
     }
     
     // Auto-cleanup if threshold exceeded
     if (options.cleanupThreshold && afterStats.percentage > options.cleanupThreshold) {
-      console.log('🧹 Auto-cleanup triggered by memory threshold');
+      console.log(' Auto-cleanup triggered by memory threshold');
       performMemoryCleanup();
     }
     

@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   try {
     const { platforms = ['all'] } = await req.json();
     
-    console.log(`🚀 Scrape request for platforms: ${platforms.join(', ')}`);
+    console.log(` Scrape request for platforms: ${platforms.join(', ')}`);
     
     // For production, this endpoint is handled by the automation system
     // Users don't need to manually trigger scraping

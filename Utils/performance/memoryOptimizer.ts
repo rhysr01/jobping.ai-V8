@@ -73,11 +73,11 @@ export class MemoryOptimizer {
       global.gc();
       const after = this.getMemoryStats();
       
-      console.log(`🗑️ Garbage collection: ${before.heapUsed} → ${after.heapUsed} (freed: ${before.heapUsed - after.heapUsed})`);
+      console.log(` Garbage collection: ${before.heapUsed} � ${after.heapUsed} (freed: ${before.heapUsed - after.heapUsed})`);
       return true;
     }
     
-    console.warn('⚠️ Garbage collection not available (run with --expose-gc)');
+    console.warn(' Garbage collection not available (run with --expose-gc)');
     return false;
   }
 
@@ -96,7 +96,7 @@ export class MemoryOptimizer {
    * Optimize memory usage
    */
   optimizeMemory(): void {
-    console.log('🧹 Starting memory optimization...');
+    console.log(' Starting memory optimization...');
     
     const before = this.getMemoryStats();
     
@@ -115,7 +115,7 @@ export class MemoryOptimizer {
     const after = this.getMemoryStats();
     const saved = before.heapUsed - after.heapUsed;
     
-    console.log(`✅ Memory optimization complete: freed ${saved} bytes`);
+    console.log(` Memory optimization complete: freed ${saved} bytes`);
   }
 
   /**
@@ -133,7 +133,7 @@ export class MemoryOptimizer {
       
       // Check for high memory usage
       if (this.isMemoryUsageHigh()) {
-        console.warn(`⚠️ High memory usage detected: ${(stats.heapUsed / stats.heapTotal * 100).toFixed(1)}%`);
+        console.warn(` High memory usage detected: ${(stats.heapUsed / stats.heapTotal * 100).toFixed(1)}%`);
         
         // Auto-optimize if threshold exceeded
         this.optimizeMemory();
@@ -171,7 +171,7 @@ export class MemoryOptimizer {
     
     if (isGrowing) {
       const growth = recent[recent.length - 1].heapUsed - recent[0].heapUsed;
-      console.warn(`🚨 Potential memory leak detected: ${growth} bytes growth over ${recent.length * 30} seconds`);
+      console.warn(` Potential memory leak detected: ${growth} bytes growth over ${recent.length * 30} seconds`);
       
       // Trigger optimization
       this.optimizeMemory();
@@ -182,7 +182,7 @@ export class MemoryOptimizer {
    * Perform regular cleanup
    */
   private performCleanup(): void {
-    console.log('🧹 Performing regular memory cleanup...');
+    console.log(' Performing regular memory cleanup...');
     
     // Clear old cache entries
     this.clearOldCacheEntries();
@@ -213,7 +213,7 @@ export class MemoryOptimizer {
       (global as any).cache.clear();
     }
     
-    console.log('🗑️ Caches cleared');
+    console.log(' Caches cleared');
   }
 
   /**
@@ -222,7 +222,7 @@ export class MemoryOptimizer {
   private clearOldCacheEntries(): void {
     // Implementation would depend on your caching system
     // This is a placeholder for cache cleanup logic
-    console.log('🗑️ Old cache entries cleared');
+    console.log(' Old cache entries cleared');
   }
 
   /**
@@ -232,7 +232,7 @@ export class MemoryOptimizer {
     // Clear any orphaned intervals
     // Note: This is a simplified example
     // In a real app, you'd track your own intervals
-    console.log('🗑️ Intervals cleaned up');
+    console.log(' Intervals cleaned up');
   }
 
   /**
@@ -241,7 +241,7 @@ export class MemoryOptimizer {
   private clearUnusedReferences(): void {
     // Clear any global variables that might hold references
     // This is application-specific
-    console.log('🗑️ Unused references cleared');
+    console.log(' Unused references cleared');
   }
 
   /**
@@ -307,7 +307,7 @@ export class MemoryOptimizer {
       this.cleanupInterval = null;
     }
     
-    console.log('🛑 Memory monitoring stopped');
+    console.log(' Memory monitoring stopped');
   }
 
   /**

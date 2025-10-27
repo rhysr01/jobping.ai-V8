@@ -1,6 +1,6 @@
 # Contributing to JobPing
 
-Thanks for your interest in contributing! 🎯
+Thanks for your interest in contributing! �
 
 ## Setup
 
@@ -129,5 +129,5 @@ git commit -m "docs: update API documentation"
 - Open an issue
 - Email: engineering@getjobping.com
 
-Thanks for contributing! 🚀
+Thanks for contributing! 
 

@@ -1,18 +1,7 @@
 {
   "extends": "next/core-web-vitals",
   "rules": {
-    "no-unused-vars": ["warn", {
-      "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_",
-      "ignoreRestSiblings": true,
-      "args": "after-used"
-    }],
-    "@typescript-eslint/no-unused-vars": ["warn", {
-      "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_",
-      "ignoreRestSiblings": true,
-      "args": "after-used"
-    }],
+    "no-unused-vars": "off",
     "react/no-unescaped-entities": "off"
   },
   "overrides": [

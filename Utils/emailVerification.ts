@@ -124,7 +124,7 @@ export class EmailVerificationOracle {
       await resend.emails.send({
         from: 'JobPing <noreply@getjobping.com>',
         to: [email],
-        subject: '🎯 Verify your JobPing account',
+        subject: '� Verify your JobPing account',
         html: `
           <!DOCTYPE html>
           <html lang="en">
@@ -219,7 +219,7 @@ export class EmailVerificationOracle {
           <body>
             <div class="container">
               <div class="header">
-                <div class="logo">🎯 JobPing</div>
+                <div class="logo">� JobPing</div>
                 <div class="tagline">AI-Powered Career Intelligence</div>
               </div>
               
@@ -245,10 +245,10 @@ export class EmailVerificationOracle {
         `
       });
       
-      console.log(`📧 Verification email sent to: ${email}`);
+      console.log(` Verification email sent to: ${email}`);
       return true;
     } catch (error) {
-      console.error('❌ Verification email failed:', error);
+      console.error(' Verification email failed:', error);
       return false;
     }
   }
@@ -259,7 +259,7 @@ export class EmailVerificationOracle {
       const isTestMode = process.env.NODE_ENV === 'test' || process.env.JOBPING_TEST_MODE === '1';
       
       if (isTestMode) {
-        console.log('🧪 Test mode: Email verification bypassed for testing');
+        console.log(' Test mode: Email verification bypassed for testing');
         return { success: true, user: { email: 'test@example.com', email_verified: true } };
       }
 
@@ -267,21 +267,21 @@ export class EmailVerificationOracle {
       const verificationResult = await this.verifyEmailToken(token);
       
       if (!verificationResult.success) {
-        console.log(`❌ Verification failed: ${verificationResult.error}`);
+        console.log(` Verification failed: ${verificationResult.error}`);
         return { success: false, error: verificationResult.error };
       }
 
       const user = verificationResult.user;
-      console.log(`✅ User ${user.email} verified successfully`);
+      console.log(` User ${user.email} verified successfully`);
 
       // Trigger welcome sequence for verified user (non-blocking)
       this.triggerWelcomeSequence(user).catch(error => {
-        console.error('⚠️ Welcome sequence failed (non-critical):', error);
+        console.error(' Welcome sequence failed (non-critical):', error);
       });
 
       return { success: true, user };
     } catch (error) {
-      console.error('❌ Email verification error:', error);
+      console.error(' Email verification error:', error);
       return { success: false, error: 'Verification failed' };
     }
   }
@@ -298,9 +298,9 @@ export class EmailVerificationOracle {
         body: JSON.stringify({ userId: user.id, isNewUser: true })
       });
       
-      console.log(`🎉 Welcome sequence triggered for: ${user.email}`);
+      console.log(` Welcome sequence triggered for: ${user.email}`);
     } catch (error) {
-      console.error('❌ Welcome sequence failed:', error);
+      console.error(' Welcome sequence failed:', error);
     }
   }
 
@@ -499,7 +499,7 @@ export class EmailVerificationOracle {
         <body>
           <div class="container">
             <div class="header">
-              <div class="logo">🎯 JobPing</div>
+              <div class="logo">� JobPing</div>
               <div class="tagline">AI-Powered Career Intelligence</div>
             </div>
             
@@ -520,7 +520,7 @@ export class EmailVerificationOracle {
               </div>
               
               <a href="https://getjobping.com/dashboard" class="cta-button">
-                View Dashboard →
+                View Dashboard �
               </a>
               
               <p class="footer-text">

@@ -6,7 +6,7 @@ const getMetricsHandler = async (request: NextRequest) => {
   const startTime = Date.now();
   
   try {
-    console.log('📊 Collecting metrics...');
+    console.log(' Collecting metrics...');
     
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -38,7 +38,7 @@ const getMetricsHandler = async (request: NextRequest) => {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('❌ Metrics collection error:', error);
+    console.error(' Metrics collection error:', error);
     return NextResponse.json({
       error: 'Failed to collect metrics',
       message: error instanceof Error ? error.message : 'Unknown error',

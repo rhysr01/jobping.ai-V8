@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const { daysThreshold = 7 } = await req.json();
     const supabase = getSupabaseClient();
 
-    console.log(`🧹 Starting job cleanup for jobs not seen in ${daysThreshold} days`);
+    console.log(` Starting job cleanup for jobs not seen in ${daysThreshold} days`);
 
     // Calculate the threshold date
     const thresholdDate = new Date();
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       .select('id, title, company, source, last_seen_at');
 
     if (updateError) {
-      console.error('❌ Job cleanup failed:', updateError);
+      console.error(' Job cleanup failed:', updateError);
       return NextResponse.json(
         { error: 'Failed to update jobs', details: updateError.message },
         { status: 500 }
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('is_active', true);
 
-    console.log(`✅ Job cleanup completed: ${inactiveJobs?.length || 0} jobs marked inactive`);
+    console.log(` Job cleanup completed: ${inactiveJobs?.length || 0} jobs marked inactive`);
 
     return NextResponse.json({
       success: true,
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: unknown) {
-    console.error('❌ Job cleanup error:', error);
+    console.error(' Job cleanup error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { error: 'Internal server error', details: errorMessage },
@@ -154,7 +154,7 @@ export async function GET() {
     });
 
   } catch (error: unknown) {
-    console.error('❌ Job cleanup stats error:', error);
+    console.error(' Job cleanup stats error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { error: 'Failed to get job statistics', details: errorMessage },

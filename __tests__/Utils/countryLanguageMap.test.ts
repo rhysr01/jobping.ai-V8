@@ -160,7 +160,7 @@ describe('Country Language Mapping', () => {
     it('should handle unicode characters', () => {
       expect(getCountryLanguage('Deutschland')).toBe('en'); // Default fallback
       expect(getCountryLanguage('España')).toBe('en'); // Default fallback
-      expect(getCountryLanguage('Россия')).toBe('en'); // Default fallback
+      expect(getCountryLanguage('��сс��')).toBe('en'); // Default fallback
     });
 
     it('should handle very short input', () => {

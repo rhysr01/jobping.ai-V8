@@ -7,7 +7,7 @@ Your emails don't match your website preview. Here's the fix:
 ### The Problem
 - **Website shows**: Purple gradients, modern hot match styling
 - **Emails send**: Gray/white design, no purple branding
-- **Impact**: Brand inconsistency → users confused
+- **Impact**: Brand inconsistency � users confused
 
 ### The Solution (2 weeks of work)
 
@@ -20,7 +20,7 @@ Your emails don't match your website preview. Here's the fix:
 
 2. **Add feature flag** (30 mins)
    - Edit: `/Utils/email/optimizedSender.ts`
-   - Add gradual rollout capability (0% → 5% → 25% → 50% → 100%)
+   - Add gradual rollout capability (0% � 5% � 25% � 50% � 100%)
 
 3. **Test thoroughly** (2-3 hours)
    - Gmail web + mobile
@@ -55,11 +55,11 @@ Your emails don't match your website preview. Here's the fix:
 
 ### Success Criteria
 
-- ✅ Emails match website preview exactly
-- ✅ Purple branding throughout
-- ✅ Works in Gmail, Outlook, Apple Mail
-- ✅ Open/click rates improve or stay flat
-- ✅ No increase in unsubscribes
+-  Emails match website preview exactly
+-  Purple branding throughout
+-  Works in Gmail, Outlook, Apple Mail
+-  Open/click rates improve or stay flat
+-  No increase in unsubscribes
 
 ### Full Details
 

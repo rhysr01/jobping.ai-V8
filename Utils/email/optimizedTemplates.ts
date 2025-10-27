@@ -1,4 +1,4 @@
-// 🎨 PREMIUM BRANDED EMAIL TEMPLATES - Matching Website Design
+//  PREMIUM BRANDED EMAIL TEMPLATES - Matching Website Design
 
 import { EmailJobCard } from './types';
 
@@ -351,7 +351,7 @@ body {
 }
 
 .feedback-note::before {
-  content: '🧠';
+  content: '';
   font-size: 14px;
 }
 
@@ -446,23 +446,23 @@ const FB = (h: string, e: string) => `
   <div class="feedback-grid">
     <div class="feedback-row">
       <a href="https://www.getjobping.com/api/feedback/email?action=positive&score=5&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-great" target="_blank" rel="noopener noreferrer">
-        <span class="emoji">⭐</span>
+        <span class="emoji">�</span>
         <span class="label">Perfect</span>
       </a>
       <a href="https://www.getjobping.com/api/feedback/email?action=positive&score=4&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-good" target="_blank" rel="noopener noreferrer">
-        <span class="emoji">👍</span>
+        <span class="emoji"></span>
         <span class="label">Good</span>
       </a>
       <a href="https://www.getjobping.com/api/feedback/email?action=neutral&score=3&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-ok" target="_blank" rel="noopener noreferrer">
-        <span class="emoji">🤔</span>
+        <span class="emoji">�</span>
         <span class="label">OK</span>
       </a>
       <a href="https://www.getjobping.com/api/feedback/email?action=negative&score=2&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-poor" target="_blank" rel="noopener noreferrer">
-        <span class="emoji">👎</span>
+        <span class="emoji"></span>
         <span class="label">Poor</span>
       </a>
       <a href="https://www.getjobping.com/api/feedback/email?action=negative&score=1&job=${h}&email=${encodeURIComponent(e)}" class="fb-btn fb-bad" target="_blank" rel="noopener noreferrer">
-        <span class="emoji">❌</span>
+        <span class="emoji"></span>
         <span class="label">Bad</span>
       </a>
     </div>
@@ -474,7 +474,7 @@ const FB = (h: string, e: string) => `
 // Header component with premium purple branding
 const H = `
 <div class="header">
-  <div class="jobping-logo">🎯 JobPing</div>
+  <div class="jobping-logo">� JobPing</div>
   <div class="tagline">AI-Powered Job Matching for Europe</div>
 </div>
 `;
@@ -482,7 +482,7 @@ const H = `
 // Footer with improved branding
 const F = `
 <div class="footer">
-  <div class="footer-logo">🎯 JobPing</div>
+  <div class="footer-logo">� JobPing</div>
   <p class="footer-tagline">AI-powered job matching for Europe</p>
   <p class="footer-text">
     <a href="https://www.getjobping.com/legal/unsubscribe" class="footer-link">Unsubscribe</a>
@@ -507,15 +507,15 @@ export function createWelcomeEmail(userName?: string, matchCount: number = 5): s
     ${H}
     <div class="content">
       <div class="greeting">
-        <h1 class="greeting-title">Welcome${greeting}! 🎉</h1>
+        <h1 class="greeting-title">Welcome${greeting}! </h1>
         <p class="greeting-text">
           Your AI career assistant is now active and working for you.
         </p>
         <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; padding: 16px 28px; border-radius: 16px; font-weight: 700; margin: 24px auto; max-width: fit-content; box-shadow: 0 8px 24px rgba(16,185,129,0.4); font-size: 18px;">
-          🚀 ${matchCount} perfect matches found!
+           ${matchCount} perfect matches found!
         </div>
         <p class="greeting-text">
-          We found roles that actually fit your profile—no job board spam, just quality opportunities.
+          We found roles that actually fit your profileno job board spam, just quality opportunities.
         </p>
         <p class="greeting-text" style="margin-top: 24px; color: #71717a; font-size: 14px;">
           Expect fresh matches in your inbox every week. Each email will be personalized to your preferences.
@@ -545,14 +545,14 @@ export function createJobMatchesEmail(
   }
 ): string {
   const premiumBadge = subscriptionTier === 'premium' 
-    ? '<div class="premium-badge">⭐ Premium Member</div>' 
+    ? '<div class="premium-badge">� Premium Member</div>' 
     : '';
   
   const title = isSignupEmail 
-    ? '5 perfect matches just dropped 🎯' 
+    ? '5 perfect matches just dropped �' 
     : personalization?.dayText 
-      ? `Your fresh ${personalization.dayText} matches 🎯`
-      : `${jobCards.length} new matches for you 🎯`;
+      ? `Your fresh ${personalization.dayText} matches �`
+      : `${jobCards.length} new matches for you �`;
   
   const greeting = userName ? `${userName}, we` : 'We';
   
@@ -562,7 +562,7 @@ export function createJobMatchesEmail(
     const cardClass = isHotMatch ? 'job-card hot-match' : 'job-card';
     
     const hotBadge = isHotMatch 
-      ? `<div class="hot-badge"><span class="pulse"></span>🔥 Hot Match • ${matchScore}% Match</div>`
+      ? `<div class="hot-badge"><span class="pulse"></span> Hot Match � ${matchScore}% Match</div>`
       : '';
     
     const description = card.job.description && card.job.description.trim().length > 0
@@ -575,8 +575,8 @@ export function createJobMatchesEmail(
     
     const applySection = card.job.job_url
       ? `<div class="apply-section">
-          <p class="apply-label">📎 Application Link</p>
-          <a href="${card.job.job_url}" class="apply-button" target="_blank" rel="noopener noreferrer">Apply Now →</a>
+          <p class="apply-label"> Application Link</p>
+          <a href="${card.job.job_url}" class="apply-button" target="_blank" rel="noopener noreferrer">Apply Now �</a>
           <p class="apply-link">${card.job.job_url}</p>
           <p class="apply-note">Or copy and paste this link into your browser</p>
         </div>`
@@ -587,7 +587,7 @@ export function createJobMatchesEmail(
         ${hotBadge}
         <div class="job-title">${card.job.title || 'Job Title'}</div>
         <div class="job-company">${card.job.company || 'Company'}</div>
-        <div class="job-location">📍 ${card.job.location || 'Location'}</div>
+        <div class="job-location"> ${card.job.location || 'Location'}</div>
         <div style="margin-top: 16px;">
           ${isHotMatch ? '' : `<span class="match-score">${matchScore}% Match</span>`}
         </div>
@@ -615,7 +615,7 @@ export function createJobMatchesEmail(
         ${premiumBadge}
         <h1 class="greeting-title">${title}</h1>
         <p class="greeting-text">
-          ${greeting} found roles that actually match you—no generic spam, just quality.
+          ${greeting} found roles that actually match youno generic spam, just quality.
         </p>
       </div>
       ${jobCardsHtml}

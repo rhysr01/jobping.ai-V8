@@ -1,4 +1,4 @@
-# 🎯 JobPing
+# � JobPing
 
 > AI-powered job matching for early-career roles across Europe. 5 perfect matches, weekly.
 
@@ -82,32 +82,32 @@ NEXT_PUBLIC_URL=https://getjobping.com
 
 ## Key Features
 
-### 🤖 AI-Powered Matching
+### �� AI-Powered Matching
 - GPT-3.5 for fast matching (90% of requests)
 - GPT-4 for complex profiles (10% threshold)
 - 48-hour shared cache for cost optimization
 - Per-user duplicate prevention
 
-### 📧 Smart Email Delivery
+###  Smart Email Delivery
 - Purple-branded emails matching website design
 - Hot match highlighting (90%+ scores)
 - Feedback system for AI learning
 - Engagement tracking
 
-### 🔒 Security
+###  Security
 - Row-level security on all tables
 - Rate limiting per endpoint
 - Input validation with Zod
 - CSRF protection
 - API key authentication
 
-### 📊 Job Scraping
+###  Job Scraping
 - Multi-source aggregation (Adzuna, Reed, JobSpy)
 - Automatic deduplication
 - Quality filtering
 - Daily automated runs via GitHub Actions
 
-### 💳 Subscriptions
+### � Subscriptions
 - Free tier: 5 jobs/week
 - Premium tier: 15 jobs/week (Mon/Wed/Fri)
 - Stripe integration
@@ -117,29 +117,29 @@ NEXT_PUBLIC_URL=https://getjobping.com
 
 ```
 jobping/
-├── app/                      # Next.js app directory
-│   ├── api/                 # API routes
-│   │   ├── subscribe/       # User signup
-│   │   ├── match-users/     # AI matching
-│   │   ├── webhook-tally/   # Form integration
-│   │   └── webhooks/stripe/ # Payment webhooks
-│   ├── components/          # React components
-│   └── (marketing)/         # Marketing pages
-├── components/              # Shared UI components
-│   └── sections/           # Landing page sections
-├── lib/                     # Core utilities
-│   ├── auth.ts            # Authentication
-│   ├── monitoring.ts      # Logging & metrics
-│   └── errors.ts          # Error handling
-├── Utils/                   # Business logic
-│   ├── email/             # Email templates & sending
-│   ├── matching/          # AI matching engine
-│   └── supabase.ts        # Database client
-├── scripts/                 # Automation scripts
-│   ├── jobspy-save.cjs    # JobSpy scraper
-│   └── adzuna-categories-scraper.cjs
-└── .github/workflows/       # CI/CD automation
-    └── scrape-jobs.yml    # Automated scraping
+ app/                      # Next.js app directory
+�    api/                 # API routes
+�   �    subscribe/       # User signup
+�   �    match-users/     # AI matching
+�   �    webhook-tally/   # Form integration
+�   �    webhooks/stripe/ # Payment webhooks
+�    components/          # React components
+�    (marketing)/         # Marketing pages
+ components/              # Shared UI components
+�    sections/           # Landing page sections
+ lib/                     # Core utilities
+�    auth.ts            # Authentication
+�    monitoring.ts      # Logging & metrics
+�    errors.ts          # Error handling
+ Utils/                   # Business logic
+�    email/             # Email templates & sending
+�    matching/          # AI matching engine
+�    supabase.ts        # Database client
+ scripts/                 # Automation scripts
+�    jobspy-save.cjs    # JobSpy scraper
+�    adzuna-categories-scraper.cjs
+ .github/workflows/       # CI/CD automation
+     scrape-jobs.yml    # Automated scraping
 ```
 
 ## Development
@@ -188,15 +188,15 @@ open coverage/lcov-report/index.html
 
 ```
 1. User signs up via Tally form
-   ↓
+   �
 2. Webhook triggers instant matching
-   ↓
+   �
 3. AI analyzes job pool (pre-filtered by location/experience)
-   ↓
+   �
 4. Top 5 matches saved to database
-   ↓
+   �
 5. Welcome email sent with matched jobs
-   ↓
+   �
 6. Weekly emails continue (Thursday for free, Mon/Wed/Fri for premium)
 ```
 
@@ -210,11 +210,11 @@ open coverage/lcov-report/index.html
 
 ### Cost Optimizations
 
-- ✅ Shared cache across API instances (singleton pattern)
-- ✅ Smart GPT-4 routing (only 10% of requests)
-- ✅ No description snippets in prompts (31% token reduction)
-- ✅ City clustering in cache keys
-- ✅ **Result**: $0.50/user/month → $0.05/user/month (90% reduction)
+-  Shared cache across API instances (singleton pattern)
+-  Smart GPT-4 routing (only 10% of requests)
+-  No description snippets in prompts (31% token reduction)
+-  City clustering in cache keys
+-  **Result**: $0.50/user/month � $0.05/user/month (90% reduction)
 
 ## Monitoring
 
@@ -247,7 +247,7 @@ npm run dev # Structured JSON logging
 
 Automatic deployment via Vercel:
 
-- **Production**: Push to `main` → https://getjobping.com
+- **Production**: Push to `main` � https://getjobping.com
 - **Preview**: Pull requests get preview URLs
 
 Manual deployment:
@@ -278,7 +278,7 @@ MIT License - see [LICENSE](./LICENSE)
 
 ## Acknowledgments
 
-Built with ❤️ using:
+Built with � using:
 - [Next.js](https://nextjs.org/)
 - [Supabase](https://supabase.com/)
 - [OpenAI](https://openai.com/)
@@ -288,4 +288,4 @@ Built with ❤️ using:
 
 ---
 
-**Made by [Rhys Rowlands](https://github.com/rhysr01)** ☕
+**Made by [Rhys Rowlands](https://github.com/rhysr01)** ��

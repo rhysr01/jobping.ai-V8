@@ -36,7 +36,7 @@ export const GET = asyncHandler(async (_req: NextRequest) => {
   const existingEmails = new Set(existingCVData?.map(d => d.user_email) || []);
   const usersToProcess = users.filter(u => !existingEmails.has(u.email));
   
-  console.log(`📄 Processing ${usersToProcess.length} CVs`);
+  console.log(` Processing ${usersToProcess.length} CVs`);
   
   let parsed = 0;
   let failed = 0;
@@ -60,10 +60,10 @@ export const GET = asyncHandler(async (_req: NextRequest) => {
           });
         
         parsed++;
-        console.log(`✅ Parsed CV for ${user.email}`);
+        console.log(` Parsed CV for ${user.email}`);
       } else {
         failed++;
-        console.warn(`❌ Failed to parse CV for ${user.email}`);
+        console.warn(` Failed to parse CV for ${user.email}`);
       }
       
       // Small delay to avoid rate limits

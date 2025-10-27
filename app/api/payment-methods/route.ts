@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Payment method creation error:', error);
+    console.error(' Payment method creation error:', error);
     
     // Handle specific Stripe errors
     if (error.type === 'StripeCardError') {
@@ -150,7 +150,7 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Payment methods fetch error:', error);
+    console.error(' Payment methods fetch error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch payment methods' },
       { status: 500 }
@@ -192,7 +192,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true, message: 'Payment method removed' });
 
   } catch (error) {
-    console.error('❌ Payment method removal error:', error);
+    console.error(' Payment method removal error:', error);
     return NextResponse.json(
       { error: 'Failed to remove payment method' },
       { status: 500 }

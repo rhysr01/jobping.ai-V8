@@ -1,6 +1,6 @@
-# 🧹 DEAD CODE AUDIT REPORT
+#  DEAD CODE AUDIT REPORT
 
-## ❌ COMPLETELY UNUSED FILES (DELETE THESE):
+##  COMPLETELY UNUSED FILES (DELETE THESE):
 
 ### **1. Utils Files (NOT imported anywhere)**:
 ```
@@ -61,7 +61,7 @@ lib/config.ts:
 
 ---
 
-## ⚠️ CRITICAL BUG FOUND:
+##  CRITICAL BUG FOUND:
 
 ### **GitHub Workflow Mismatch**:
 ```
@@ -81,28 +81,28 @@ This will FAIL in GitHub Actions!
 
 ---
 
-## ✅ USED FILES (Keep):
+##  USED FILES (Keep):
 
 ### **Utils (actively imported)**:
-- ✅ `ai-cost-manager.ts` - Used in send-scheduled-emails
-- ✅ `consolidatedMatching.ts` - Core matching logic (3 imports)
-- ✅ `emailVerification.ts` - Used in verify-email, webhook-tally
-- ✅ `engagementTracker.ts` - Used in send-scheduled-emails, track-engagement
-- ✅ `errorResponse.ts` - Used in create-checkout-session
-- ✅ `job-queue.service.ts` - Used in send-scheduled-emails
-- ✅ `productionRateLimiter.ts` - Used in checkout, re-engagement
-- ✅ `stripe.ts` - Payment processing
-- ✅ `supabase.ts` - Database client
+-  `ai-cost-manager.ts` - Used in send-scheduled-emails
+-  `consolidatedMatching.ts` - Core matching logic (3 imports)
+-  `emailVerification.ts` - Used in verify-email, webhook-tally
+-  `engagementTracker.ts` - Used in send-scheduled-emails, track-engagement
+-  `errorResponse.ts` - Used in create-checkout-session
+-  `job-queue.service.ts` - Used in send-scheduled-emails
+-  `productionRateLimiter.ts` - Used in checkout, re-engagement
+-  `stripe.ts` - Payment processing
+-  `supabase.ts` - Database client
 
 ### **Scripts (actively used)**:
-- ✅ `automation/real-job-runner.cjs` - Main automation
-- ✅ `scripts/jobspy-save.cjs` - JobSpy scraper
-- ✅ `scripts/adzuna-categories-scraper.cjs` - Adzuna scraper
-- ✅ `scripts/cleanup-jobs.ts` - Job cleanup (but has workflow bug!)
+-  `automation/real-job-runner.cjs` - Main automation
+-  `scripts/jobspy-save.cjs` - JobSpy scraper
+-  `scripts/adzuna-categories-scraper.cjs` - Adzuna scraper
+-  `scripts/cleanup-jobs.ts` - Job cleanup (but has workflow bug!)
 
 ---
 
-## 📊 SUMMARY:
+##  SUMMARY:
 
 **Total Dead Code**:
 - 11 completely unused Utils files
@@ -110,9 +110,9 @@ This will FAIL in GitHub Actions!
 - 1 critical workflow bug (cleanup-jobs.js vs .ts)
 
 **Recommendation**:
-1. 🔴 **CRITICAL**: Fix `.github/workflows/scrape-jobs.yml` to call `tsx scripts/cleanup-jobs.ts`
-2. 🟡 **MEDIUM**: Delete 11 unused Utils files (saves ~2000+ LOC)
-3. 🟢 **LOW**: Clean up unused lib/ exports (or comment as future use)
+1. � **CRITICAL**: Fix `.github/workflows/scrape-jobs.yml` to call `tsx scripts/cleanup-jobs.ts`
+2.  **MEDIUM**: Delete 11 unused Utils files (saves ~2000+ LOC)
+3. � **LOW**: Clean up unused lib/ exports (or comment as future use)
 
 **Cleanup Impact**:
 - Reduce codebase by ~2500 lines

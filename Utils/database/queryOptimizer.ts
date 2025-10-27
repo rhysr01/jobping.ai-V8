@@ -445,7 +445,7 @@ export async function createRecommendedIndexes(supabaseClient: any): Promise<voi
       if (error) {
         console.warn(`Failed to create index: ${error.message}`);
       } else {
-        console.log(`✅ Created index: ${indexQuery.split(' ')[5]}`);
+        console.log(` Created index: ${indexQuery.split(' ')[5]}`);
       }
     } catch (error) {
       console.warn(`Failed to create index: ${error}`);

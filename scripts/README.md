@@ -1,8 +1,8 @@
-# 🚀 JobPing Pilot Testing Scripts
+#  JobPing Pilot Testing Scripts
 
 This directory contains comprehensive testing scripts for validating JobPing system readiness for the 150-user pilot.
 
-## 📋 Available Scripts
+##  Available Scripts
 
 ### 1. `pilot-smoke.ts` - End-to-End System Validation
 Comprehensive smoke test that validates all critical system components.
@@ -13,7 +13,7 @@ Tests concurrent request handling, rate limiting, and Redis lock behavior.
 ### 3. `pilot-testing.js` - Legacy Pilot Testing
 Original pilot testing script (JavaScript version).
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 ```bash
@@ -36,7 +36,7 @@ JOBPING_TEST_MODE=1 NODE_ENV=test npx tsx scripts/lock-and-rl-check.ts
 JOBPING_TEST_MODE=1 NODE_ENV=test node scripts/pilot-testing.js
 ```
 
-## 📊 Pilot Smoke Test (`pilot-smoke.ts`)
+##  Pilot Smoke Test (`pilot-smoke.ts`)
 
 ### Purpose
 Validates complete end-to-end functionality for pilot readiness.
@@ -70,14 +70,14 @@ npx tsx scripts/pilot-smoke.ts --base https://jobping.ai
 - **Job Scraping**: Each scraper must meet funnel metrics
   - `raw > 0`
   - `eligible > 0`
-  - `inserted + updated ≥ 1`
+  - `inserted + updated  1`
   - `error < 10%`
   - `unknownLocation within caps`
-  - `career slug coverage ≥ 95%`
-- **AI Matching**: Average ≥3 matches per user
-- **Email Delivery**: Success and ≥1 email sent
+  - `career slug coverage  95%`
+- **AI Matching**: Average 3 matches per user
+- **Email Delivery**: Success and 1 email sent
 
-## 🔒 Lock & Rate Limit Harness (`lock-and-rl-check.ts`)
+##  Lock & Rate Limit Harness (`lock-and-rl-check.ts`)
 
 ### Purpose
 Tests concurrent request handling and rate limiting behavior.
@@ -105,7 +105,7 @@ REDIS_URL=redis://custom-host:6379 npx tsx scripts/lock-and-rl-check.ts
 - **Rate Limiting**: 30 requests trigger 429 (prod mode only)
 - **Lock Cleanup**: All locks clear within 180 seconds
 
-## 📧 Email Verification Testing (`email-verification-test.js`)
+##  Email Verification Testing (`email-verification-test.js`)
 
 **Comprehensive testing for the email verification system:**
 
@@ -146,7 +146,7 @@ node scripts/email-verification-test.js --email=your-email@example.com
 - Supabase connection for database tests
 - Local development server running on port 3000
 
-## 🧪 Legacy Pilot Testing (`pilot-testing.js`)
+##  Legacy Pilot Testing (`pilot-testing.js`)
 
 ### Purpose
 Original pilot testing script with comprehensive endpoint validation.
@@ -165,7 +165,7 @@ JOBPING_TEST_MODE=1 NODE_ENV=test node scripts/pilot-testing.js
 - Rate limiting
 - Error handling
 
-## 🔧 Environment Variables
+##  Environment Variables
 
 ### Required
 ```bash
@@ -180,9 +180,9 @@ JOBPING_TEST_MODE=1  # Enable test mode
 NODE_ENV=test        # Test environment
 ```
 
-## 📈 Success Criteria
+## � Success Criteria
 
-### Pilot Ready (≥90% success rate)
+### Pilot Ready (90% success rate)
 - All critical endpoints responding
 - Job scraping working with good funnel metrics
 - AI matching generating sufficient matches
@@ -200,7 +200,7 @@ NODE_ENV=test        # Test environment
 - Major system issues
 - Need to fix before proceeding
 
-## 🚨 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 
@@ -234,7 +234,7 @@ NODE_ENV=test        # Test environment
 DEBUG=1 JOBPING_TEST_MODE=1 npx tsx scripts/pilot-smoke.ts
 ```
 
-## 📄 Reports
+##  Reports
 
 ### Generated Files
 - `PILOT_SMOKE.md` - Comprehensive smoke test report
@@ -247,7 +247,7 @@ DEBUG=1 JOBPING_TEST_MODE=1 npx tsx scripts/pilot-smoke.ts
 - Critical failures and remediation steps
 - Overall pilot readiness assessment
 
-## 🔄 CI/CD Integration
+##  CI/CD Integration
 
 ### GitHub Actions Example
 ```yaml
@@ -265,7 +265,7 @@ DEBUG=1 JOBPING_TEST_MODE=1 npx tsx scripts/pilot-smoke.ts
 - `0` - All tests passed
 - `1` - Critical failures detected
 
-## 🎯 Next Steps
+## � Next Steps
 
 1. **Run smoke test** to validate system readiness
 2. **Review failures** and fix critical issues

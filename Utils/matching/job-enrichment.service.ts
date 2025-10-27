@@ -75,9 +75,9 @@ function calculateMarketDemand(job: Job): number {
 
 function extractSalaryRange(description: string): string {
   const salaryPatterns = [
-    /â‚¬(\d{1,3}(?:,\d{3})*(?:k)?)\s*-\s*â‚¬(\d{1,3}(?:,\d{3})*(?:k)?)/i,
-    /â‚¬(\d{1,3}(?:,\d{3})*(?:k)?)\s*to\s*â‚¬(\d{1,3}(?:,\d{3})*(?:k)?)/i,
-    /â‚¬(\d{1,3}(?:,\d{3})*(?:k)?)\s*per\s*(?:month|year)/i
+    /‚¬(\d{1,3}(?:,\d{3})*(?:k)?)\s*-\s*‚¬(\d{1,3}(?:,\d{3})*(?:k)?)/i,
+    /‚¬(\d{1,3}(?:,\d{3})*(?:k)?)\s*to\s*‚¬(\d{1,3}(?:,\d{3})*(?:k)?)/i,
+    /‚¬(\d{1,3}(?:,\d{3})*(?:k)?)\s*per\s*(?:month|year)/i
   ];
   
   for (const pattern of salaryPatterns) {

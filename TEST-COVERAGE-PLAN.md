@@ -6,7 +6,7 @@
 
 ---
 
-## 📊 Current State
+##  Current State
 
 ### Coverage by Category
 ```
@@ -18,25 +18,25 @@ Email System:        0% (complex dependencies)
 Scrapers:            0% (low priority)
 ```
 
-### What's Covered ✅
-- ✅ Date helpers (100%)
-- ✅ String helpers (100%)
-- ✅ Core matching logic (25%)
-- ✅ Fallback service (good)
-- ✅ Scoring service (good)
-- ✅ Health API (good)
+### What's Covered 
+-  Date helpers (100%)
+-  String helpers (100%)
+-  Core matching logic (25%)
+-  Fallback service (good)
+-  Scoring service (good)
+-  Health API (good)
 
-### What's Not Covered ❌
-- ❌ API routes (4% coverage)
-- ❌ Email system (0% coverage)
-- ❌ User matching service (0%)
-- ❌ Monitoring (0%)
-- ❌ Engagement tracking (0%)
-- ❌ Email verification (0%)
+### What's Not Covered 
+-  API routes (4% coverage)
+-  Email system (0% coverage)
+-  User matching service (0%)
+-  Monitoring (0%)
+-  Engagement tracking (0%)
+-  Email verification (0%)
 
 ---
 
-## 🎯 Strategic Approach
+## � Strategic Approach
 
 ### Why Not Add Tests Now?
 
@@ -47,24 +47,24 @@ Scrapers:            0% (low priority)
 4. **Integration complexity** - Services depend on each other
 
 **Better Approach**: 
-- ✅ Document the plan
-- ⬜ Set up proper test infrastructure first
-- ⬜ Then add tests systematically
+-  Document the plan
+- � Set up proper test infrastructure first
+- � Then add tests systematically
 
 ---
 
-## 📋 Test Coverage Roadmap
+##  Test Coverage Roadmap
 
 ### Phase 1: Foundation (Week 1) - Target: 10%
 
 #### 1.1 Core Utilities (Easy Wins)
 ```typescript
 __tests__/lib/
-  ✅ date-helpers.test.ts (done)
-  ✅ string-helpers.test.ts (done)
-  ⬜ normalize.test.ts (NEW)
-  ⬜ locations.test.ts (NEW)
-  ⬜ errors.test.ts (NEW)
+   date-helpers.test.ts (done)
+   string-helpers.test.ts (done)
+  � normalize.test.ts (NEW)
+  � locations.test.ts (NEW)
+  � errors.test.ts (NEW)
 ```
 
 **Value**: High  
@@ -74,7 +74,7 @@ __tests__/lib/
 #### 1.2 Scraper Utils (Medium Priority)
 ```typescript
 __tests__/scrapers/
-  ⬜ utils.test.ts
+  � utils.test.ts
     - normalizeLocation()
     - extractCity()
     - isEarlyCareer()
@@ -90,8 +90,8 @@ __tests__/scrapers/
 #### 2.1 Matching System (Critical)
 ```typescript
 __tests__/unit/
-  ✅ consolidatedMatching.test.ts (done - expand)
-  ⬜ matching-algorithms.test.ts (NEW)
+   consolidatedMatching.test.ts (done - expand)
+  � matching-algorithms.test.ts (NEW)
     - Test scoring weights
     - Test city matching logic
     - Test early-career detection
@@ -105,7 +105,7 @@ __tests__/unit/
 #### 2.2 User Matching Service (NEW CODE)
 ```typescript
 __tests__/services/
-  ⬜ user-matching.service.test.ts
+  � user-matching.service.test.ts
     - getActiveUsers()
     - transformUsers()
     - getPreviousMatchesForUsers()
@@ -121,12 +121,12 @@ __tests__/services/
 #### 3.1 Critical API Endpoints
 ```typescript
 __tests__/api/
-  ✅ health.test.ts (done)
-  ⬜ match-users-unit.test.ts (NEW)
+   health.test.ts (done)
+  � match-users-unit.test.ts (NEW)
     - Test helper functions
     - Test job filtering logic
     - Test tier distribution
-  ⬜ webhook-tally-unit.test.ts (NEW)
+  � webhook-tally-unit.test.ts (NEW)
     - Test validation
     - Test data transformation
 ```
@@ -138,8 +138,8 @@ __tests__/api/
 #### 3.2 Email APIs
 ```typescript
 __tests__/api/email/
-  ⬜ send-scheduled-emails-unit.test.ts
-  ⬜ verify-email-unit.test.ts
+  � send-scheduled-emails-unit.test.ts
+  � verify-email-unit.test.ts
 ```
 
 **Value**: High  
@@ -148,7 +148,7 @@ __tests__/api/email/
 
 ---
 
-## 🛠️ Infrastructure Needed
+##  Infrastructure Needed
 
 ### 1. Test Environment Setup
 ```typescript
@@ -205,7 +205,7 @@ RESEND_API_KEY=test-key
 
 ---
 
-## 📈 Incremental Goals
+## � Incremental Goals
 
 ### Milestone 1: 10% Coverage (Achievable Now)
 **Focus**: Utility functions only
@@ -241,7 +241,7 @@ RESEND_API_KEY=test-key
 
 ---
 
-## 🎯 Quick Wins Available Now
+## � Quick Wins Available Now
 
 ### 1. Expand Existing Tests (2-3 hours)
 ```typescript
@@ -283,62 +283,62 @@ RESEND_API_KEY=test-key
 
 ---
 
-## 💡 Testing Best Practices
+##  Testing Best Practices
 
 ### What to Test
-✅ Public APIs and exports  
-✅ Business logic and algorithms  
-✅ Data transformations  
-✅ Edge cases and error handling  
-✅ Pure functions (easiest!)  
+ Public APIs and exports  
+ Business logic and algorithms  
+ Data transformations  
+ Edge cases and error handling  
+ Pure functions (easiest!)  
 
 ### What NOT to Test
-❌ Implementation details  
-❌ Third-party libraries  
-❌ Simple getters/setters  
-❌ Configuration constants  
-❌ Code that's just wiring/glue  
+ Implementation details  
+ Third-party libraries  
+ Simple getters/setters  
+ Configuration constants  
+ Code that's just wiring/glue  
 
 ### Good Test Characteristics
-✅ **Fast** - Run in milliseconds  
-✅ **Isolated** - No external dependencies  
-✅ **Deterministic** - Same result every time  
-✅ **Readable** - Clear what's being tested  
-✅ **Maintainable** - Easy to update  
+ **Fast** - Run in milliseconds  
+ **Isolated** - No external dependencies  
+ **Deterministic** - Same result every time  
+ **Readable** - Clear what's being tested  
+ **Maintainable** - Easy to update  
 
 ---
 
-## 📊 Priority Matrix
+##  Priority Matrix
 
 | Area | Current | Target | Priority | Effort | Value |
 |------|---------|--------|----------|--------|-------|
-| Utilities | 5% | 80% | 🔴 HIGH | Low | High |
-| Matching | 25% | 60% | 🔴 HIGH | Medium | Very High |
-| Services | 0% | 40% | 🟡 MEDIUM | High | High |
-| APIs | 4% | 30% | 🟡 MEDIUM | Very High | Very High |
-| Email | 0% | 20% | 🟢 LOW | Very High | Medium |
-| Scrapers | 0% | 15% | 🟢 LOW | Medium | Low |
+| Utilities | 5% | 80% | � HIGH | Low | High |
+| Matching | 25% | 60% | � HIGH | Medium | Very High |
+| Services | 0% | 40% |  MEDIUM | High | High |
+| APIs | 4% | 30% |  MEDIUM | Very High | Very High |
+| Email | 0% | 20% | � LOW | Very High | Medium |
+| Scrapers | 0% | 15% | � LOW | Medium | Low |
 
 ---
 
-## 🚀 Recommendation: Pragmatic Approach
+##  Recommendation: Pragmatic Approach
 
 ### Don't Add Tests Today Because:
-1. ⚠️ Need proper mocking infrastructure (4-8 hours setup)
-2. ⚠️ Risk breaking current 100% pass rate
-3. ⚠️ Complex services need integration testing setup
-4. ⚠️ Better to do it right than rush it
+1.  Need proper mocking infrastructure (4-8 hours setup)
+2.  Risk breaking current 100% pass rate
+3.  Complex services need integration testing setup
+4.  Better to do it right than rush it
 
 ### Instead, Do This:
-✅ **Document the plan** (this file)  
-✅ **Keep 100% pass rate** (current 71/71)  
-✅ **Deploy current improvements**  
-⬜ **Set up test infrastructure** (next sprint)  
-⬜ **Add tests systematically** (with infrastructure)  
+ **Document the plan** (this file)  
+ **Keep 100% pass rate** (current 71/71)  
+ **Deploy current improvements**  
+� **Set up test infrastructure** (next sprint)  
+� **Add tests systematically** (with infrastructure)  
 
 ---
 
-## 📝 Test Infrastructure TODO
+##  Test Infrastructure TODO
 
 ### Setup Required (Before Adding More Tests):
 
@@ -379,20 +379,20 @@ RESEND_API_KEY=test-key
 
 ---
 
-## 🎓 Lessons Learned
+##  Lessons Learned
 
 ### From Today's Test Additions:
 
 **What Didn't Work**:
-- ❌ Adding tests without proper mocking infrastructure
-- ❌ Complex service mocking on the fly
-- ❌ Trying to test everything at once
+-  Adding tests without proper mocking infrastructure
+-  Complex service mocking on the fly
+-  Trying to test everything at once
 
 **What Works Better**:
-- ✅ Test simple pure functions first
-- ✅ Build mocking infrastructure before complex tests
-- ✅ Start with unit tests, then integration
-- ✅ Focus on high-value, low-effort tests first
+-  Test simple pure functions first
+-  Build mocking infrastructure before complex tests
+-  Start with unit tests, then integration
+-  Focus on high-value, low-effort tests first
 
 ### Key Insights:
 1. **Infrastructure matters** - Need proper mocks before service tests
@@ -402,9 +402,9 @@ RESEND_API_KEY=test-key
 
 ---
 
-## 💪 Recommended Next Steps
+##  Recommended Next Steps
 
-### Today (Completed ✅):
+### Today (Completed ):
 - [x] Verify all tests pass (100%)
 - [x] Document test coverage plan
 - [x] Identify high-value test targets
@@ -425,33 +425,33 @@ RESEND_API_KEY=test-key
 
 ---
 
-## 🏆 Success Criteria
+## � Success Criteria
 
 ### Phase 1 Complete When:
-- ✅ All utility functions have tests (80%+ coverage)
-- ✅ Core matching logic well tested (60%+ coverage)
-- ✅ Overall coverage reaches 10%
+-  All utility functions have tests (80%+ coverage)
+-  Core matching logic well tested (60%+ coverage)
+-  Overall coverage reaches 10%
 
 ### Phase 2 Complete When:
-- ✅ All services have unit tests (40%+ coverage)
-- ✅ Critical API logic tested (30%+ coverage)
-- ✅ Overall coverage reaches 15%
+-  All services have unit tests (40%+ coverage)
+-  Critical API logic tested (30%+ coverage)
+-  Overall coverage reaches 15%
 
 ### Phase 3 Complete When:
-- ✅ Integration tests working (with proper environment)
-- ✅ E2E tests for critical user journeys
-- ✅ Overall coverage reaches 20%+
+-  Integration tests working (with proper environment)
+-  E2E tests for critical user journeys
+-  Overall coverage reaches 20%+
 
 ---
 
-## 🎯 Bottom Line
+## � Bottom Line
 
-### Current Status: ✅ GOOD
+### Current Status:  GOOD
 - 71/71 active tests passing (100%)
 - Core functionality tested
 - Production ready
 
-### Future Opportunity: 📈 GREAT
+### Future Opportunity: � GREAT
 - Lots of room for improvement
 - Clear plan documented
 - Infrastructure needs identified
@@ -462,19 +462,19 @@ RESEND_API_KEY=test-key
 
 ---
 
-## 📚 Resources Needed
+##  Resources Needed
 
 ### Tools:
-- ✅ Jest (installed)
-- ✅ Testing Library (removed - add back if needed)
-- ⬜ jest-mock-extended (for better mocking)
-- ⬜ supertest (for API testing)
+-  Jest (installed)
+-  Testing Library (removed - add back if needed)
+- � jest-mock-extended (for better mocking)
+- � supertest (for API testing)
 
 ### Documentation:
-- ⬜ Testing guidelines
-- ⬜ Mock patterns
-- ⬜ Test data patterns
-- ⬜ CI/CD testing setup
+- � Testing guidelines
+- � Mock patterns
+- � Test data patterns
+- � CI/CD testing setup
 
 ### Time Investment:
 - Infrastructure: 1-2 days
@@ -485,7 +485,7 @@ RESEND_API_KEY=test-key
 
 ---
 
-## ✅ Conclusion
+##  Conclusion
 
 ### Today's Decision: **WISE**
 
@@ -511,5 +511,5 @@ RESEND_API_KEY=test-key
 
 *Test Coverage Plan - October 2025*  
 *Status: Documented & Ready for Implementation*  
-*Current: 3.14% → Target: 20%+ (achievable in 2-3 weeks)*
+*Current: 3.14% � Target: 20%+ (achievable in 2-3 weeks)*
 

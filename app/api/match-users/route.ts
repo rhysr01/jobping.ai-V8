@@ -106,7 +106,7 @@ async function validateDatabaseSchema(supabase: SupabaseClient): Promise<boolean
   try {
     // Skip schema validation in test environment
     if (process.env.NODE_ENV === 'test') {
-      console.log('🧪 Test mode: Skipping database schema validation');
+      console.log('Test mode: Skipping database schema validation');
       return true;
     }
     
@@ -276,9 +276,9 @@ function trackPerformance(): { startTime: number; getMetrics: () => PerformanceM
 
 /**
  * Smart location matching that handles variations like:
- * - "11ème Arrondissement, Paris" matches "Paris"
+ * - "11�me Arrondissement, Paris" matches "Paris"
  * - "Putney Heath, South West London" matches "London"
- * - "Paris, Île-de-France, France" matches "Paris"
+ * - "Paris, �le-de-France, France" matches "Paris"
  */
 function matchesLocation(jobLocation: string, targetCity: string): boolean {
   const jobLoc = jobLocation.toLowerCase();
@@ -291,7 +291,7 @@ function matchesLocation(jobLocation: string, targetCity: string): boolean {
   const locationVariations: Record<string, string[]> = {
     'london': ['london', 'greater london', 'central london', 'north london', 'south london', 'east london', 'west london', 'city of london'],
     'paris': ['paris', 'arrondissement', 'ile-de-france', 'île-de-france'],
-    'dublin': ['dublin', 'county dublin', 'baile átha cliath'],
+    'dublin': ['dublin', 'county dublin', 'baile �tha cliath'],
     'amsterdam': ['amsterdam', 'noord-holland', 'north holland'],
     'berlin': ['berlin', 'brandenburg'],
     'madrid': ['madrid', 'comunidad de madrid'],
@@ -300,7 +300,7 @@ function matchesLocation(jobLocation: string, targetCity: string): boolean {
     'rome': ['rome', 'roma', 'lazio'],
     'brussels': ['brussels', 'bruxelles', 'brussel', 'brussels-capital'],
     'lisbon': ['lisbon', 'lisboa'],
-    'copenhagen': ['copenhagen', 'københavn', 'capital region'],
+    'copenhagen': ['copenhagen', 'k�benhavn', 'capital region'],
     'stockholm': ['stockholm', 'stockholms län'],
     'oslo': ['oslo'],
     'helsinki': ['helsinki', 'uusimaa'],
@@ -352,7 +352,7 @@ async function preFilterJobsByUserPreferencesEnhanced(jobs: (ScrapersJob & { fre
       });
       
       if (feedbackBoosts.size > 0) {
-        console.log(`🎯 Feedback boosts for ${user.email}:`, Object.fromEntries(feedbackBoosts));
+        console.log(`� Feedback boosts for ${user.email}:`, Object.fromEntries(feedbackBoosts));
       }
     }
   } catch (error) {
@@ -377,7 +377,7 @@ async function preFilterJobsByUserPreferencesEnhanced(jobs: (ScrapersJob & { fre
         return targetCities.some(city => city && matchesLocation(job.location, city));
       });
       
-      console.log(`Location filter: ${jobs.length} → ${filteredJobs.length} jobs (cities: ${targetCities.join(', ')})`);
+      console.log(`Location filter: ${jobs.length} � ${filteredJobs.length} jobs (cities: ${targetCities.join(', ')})`);
     }
   }
   
@@ -446,15 +446,15 @@ async function preFilterJobsByUserPreferencesEnhanced(jobs: (ScrapersJob & { fre
       
       if (type === 'loc' && jobLocation.includes(value)) {
         score += boost;
-        console.log(`  📍 Boosted "${job.title}" by +${boost} (location: ${value})`);
+        console.log(`   Boosted "${job.title}" by +${boost} (location: ${value})`);
       }
       if (type === 'type' && (jobTitle.includes(value) || jobDesc.includes(value))) {
         score += boost;
-        console.log(`  🏢 Boosted "${job.title}" by +${boost} (company type: ${value})`);
+        console.log(`  � Boosted "${job.title}" by +${boost} (company type: ${value})`);
       }
       if (type === 'env' && jobLocation.includes(value)) {
         score += boost;
-        console.log(`  🏠 Boosted "${job.title}" by +${boost} (work env: ${value})`);
+        console.log(`   Boosted "${job.title}" by +${boost} (work env: ${value})`);
       }
     });
     
@@ -562,7 +562,7 @@ const matchUsersHandler = async (req: NextRequest) => {
       // lazy get redis from your limiter or a central redis helper you already have
       const limiter = getProductionRateLimiter();
       await limiter.initializeRedis();
-      // @ts-ignore — get the client if you expose it; if not, use your existing redis accessor
+      // @ts-ignore  get the client if you expose it; if not, use your existing redis accessor
       const redis = (limiter as any).redisClient;
 
       if (redis) {
@@ -730,9 +730,9 @@ const matchUsersHandler = async (req: NextRequest) => {
         )
       ).length;
       
-      console.log(`📊 Job Filtering Results:`);
-      console.log(`   • EU-based jobs: ${euJobs}/${jobs.length} (${Math.round(euJobs/jobs.length*100)}%)`);
-      console.log(`   • Early career jobs: ${earlyCareerJobs}/${jobs.length} (${Math.round(earlyCareerJobs/jobs.length*100)}%)`);
+      console.log(` Job Filtering Results:`);
+      console.log(`   � EU-based jobs: ${euJobs}/${jobs.length} (${Math.round(euJobs/jobs.length*100)}%)`);
+      console.log(`   � Early career jobs: ${earlyCareerJobs}/${jobs.length} (${Math.round(earlyCareerJobs/jobs.length*100)}%)`);
     }
 
     // Skip in-memory job reservations; Redis global lock already protects this run
@@ -775,7 +775,7 @@ const matchUsersHandler = async (req: NextRequest) => {
         // This reduces token cost by 50% while maintaining match quality
         // Top 50 contains all perfect/great matches from pre-filtering
         const considered = preFilteredJobs.slice(0, 50);
-        console.log(`📊 Pre-filter results for ${user.email}: ${preFilteredJobs.length} jobs → sending top 50 to AI`);
+        console.log(` Pre-filter results for ${user.email}: ${preFilteredJobs.length} jobs � sending top 50 to AI`);
         
         // Log score distribution to validate we're keeping the best jobs
         if (preFilteredJobs.length >= 50) {
@@ -840,7 +840,7 @@ const matchUsersHandler = async (req: NextRequest) => {
         // DIVERSITY: Ensure matches include multiple job boards AND multiple cities
         // This runs EVEN for cached results to ensure city distribution!
         if (matches && matches.length >= 3) {
-          console.log(`📊 Running diversity check (method: ${result.method}, cached: ${result.method === 'ai_success' && aiMatchingTime < 100})`);
+          console.log(` Running diversity check (method: ${result.method}, cached: ${result.method === 'ai_success' && aiMatchingTime < 100})`);
 
           const matchedJobs = matches.map(m => {
             const job = distributedJobs.find(j => j.job_hash === m.job_hash);
@@ -861,12 +861,12 @@ const matchUsersHandler = async (req: NextRequest) => {
             }).filter(Boolean)
           );
           
-          console.log(`📊 City diversity: ${matchedCities.size}/${targetCities.length} cities covered (${Array.from(matchedCities).join(', ')})`);
+          console.log(` City diversity: ${matchedCities.size}/${targetCities.length} cities covered (${Array.from(matchedCities).join(', ')})`);
           
           // CITY DIVERSITY: Evenly distribute jobs across selected cities
           if (targetCities.length >= 2 && matches.length >= 3) {
-            console.log(`📍 Ensuring even city distribution for ${targetCities.length} target cities`);
-            console.log(`📍 Available jobs pool: ${distributedJobs.length} jobs`);
+            console.log(` Ensuring even city distribution for ${targetCities.length} target cities`);
+            console.log(` Available jobs pool: ${distributedJobs.length} jobs`);
             
             // Calculate target distribution (3+2 for 2 cities, 2+2+1 for 3 cities, etc.)
             const jobsPerCity = Math.floor(5 / targetCities.length); // Base allocation
@@ -877,7 +877,7 @@ const matchUsersHandler = async (req: NextRequest) => {
               target: jobsPerCity + (index < extraJobs ? 1 : 0)
             }));
             
-            console.log(`📍 Target distribution: ${cityAllocations.map((c: { city: string; target: number }) => `${c.city}:${c.target}`).join(', ')}`);
+            console.log(` Target distribution: ${cityAllocations.map((c: { city: string; target: number }) => `${c.city}:${c.target}`).join(', ')}`);
             
             // Rebuild matches with even city distribution + relevance scoring
             const newMatches: JobMatch[] = [];
@@ -929,7 +929,7 @@ const matchUsersHandler = async (req: NextRequest) => {
                        !newMatches.some(m => m.job_hash === job.job_hash);
               });
               
-              console.log(`📍 ${allocation.city}: Found ${cityJobs.length} available jobs, need ${allocation.target}`);
+              console.log(` ${allocation.city}: Found ${cityJobs.length} available jobs, need ${allocation.target}`);
               
               // Score and sort by relevance (MOST relevant first)
               const scoredCityJobs = cityJobs
@@ -948,24 +948,24 @@ const matchUsersHandler = async (req: NextRequest) => {
                   confidence_score: 0.85
                 });
                 
-                console.log(`  ✅ Added: ${job.title} (score: ${relevanceScore})`);
+                console.log(`   Added: ${job.title} (score: ${relevanceScore})`);
               });
             }
             
             // Only replace matches if we got enough jobs from all cities
             if (newMatches.length >= 3) {
-              console.log(`✅ Rebuilt ${newMatches.length} matches with city diversity`);
+              console.log(` Rebuilt ${newMatches.length} matches with city diversity`);
               matches = newMatches.slice(0, 5); // Ensure exactly 5
             } else {
-              console.log(`⚠️ Not enough jobs across all cities (${newMatches.length}), keeping original matches`);
+              console.log(` Not enough jobs across all cities (${newMatches.length}), keeping original matches`);
             }
           } else {
-            console.log(`📍 City diversity check: ${targetCities.length} cities, need 3+ matches for diversity`);
+            console.log(` City diversity check: ${targetCities.length} cities, need 3+ matches for diversity`);
           }
           
           // SOURCE DIVERSITY: Ensure matches include multiple job boards (preferred: at least 2)
           if (uniqueSources.size === 1 && distributedJobs.length > 10) {
-            console.log(`📊 All ${matches.length} matches from ${Array.from(uniqueSources)[0]}, adding diversity...`);
+            console.log(` All ${matches.length} matches from ${Array.from(uniqueSources)[0]}, adding diversity...`);
             
             // Find jobs from OTHER sources in our pre-filtered pool
             const primarySource = Array.from(uniqueSources)[0];
@@ -984,7 +984,7 @@ const matchUsersHandler = async (req: NextRequest) => {
                 confidence_score: 0.75
               };
               
-              console.log(`✅ Added job from ${(alternativeJob as any).source} for diversity`);
+              console.log(` Added job from ${(alternativeJob as any).source} for diversity`);
             }
           }
           
@@ -1002,7 +1002,7 @@ const matchUsersHandler = async (req: NextRequest) => {
           }).filter(Boolean);
           const finalUniqueCities = new Set(finalCities);
           
-          console.log(`📊 Final diversity for ${user.email}: ${finalUniqueSources.size} sources (${Array.from(finalUniqueSources).join(', ')}), ${finalUniqueCities.size} cities (${Array.from(finalUniqueCities).join(', ')})`);
+          console.log(` Final diversity for ${user.email}: ${finalUniqueSources.size} sources (${Array.from(finalUniqueSources).join(', ')}), ${finalUniqueCities.size} cities (${Array.from(finalUniqueCities).join(', ')})`);
         }
 
         // Save matches using service with provenance tracking
@@ -1063,7 +1063,7 @@ const matchUsersHandler = async (req: NextRequest) => {
       : 0;
     
     if (errorRate > 10) {
-      console.warn(`🚨 High error rate detected: ${errorRate.toFixed(2)}%`);
+      console.warn(` High error rate detected: ${errorRate.toFixed(2)}%`);
       Sentry.captureMessage(`High error rate: ${errorRate.toFixed(2)}%`, {
         level: 'warning',
         tags: { errorRate: errorRate.toFixed(2) }
@@ -1122,7 +1122,7 @@ const matchUsersHandler = async (req: NextRequest) => {
     }
   }
 } catch (error) {
-  console.error('❌ Critical error in POST handler:', error);
+  console.error(' Critical error in POST handler:', error);
   return NextResponse.json({ 
     error: 'Internal server error', 
     message: error instanceof Error ? error.message : 'Unknown error' 

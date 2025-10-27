@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const event = constructWebhookEvent(body, signature);
     const supabase = getSupabaseClient();
 
-    console.log(`📦 Processing Stripe webhook: ${event.type}`);
+    console.log(`� Processing Stripe webhook: ${event.type}`);
 
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -84,13 +84,13 @@ export async function POST(req: NextRequest) {
       }
 
       default:
-        console.log(`ℹ️ Unhandled event type: ${event.type}`);
+        console.log(` Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });
 
   } catch (error) {
-    console.error('❌ Webhook error:', error);
+    console.error(' Webhook error:', error);
     return NextResponse.json(
       { error: 'Webhook signature verification failed' },
       { status: 400 }
@@ -102,11 +102,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, supabas
   const { userId, email } = session.metadata || {};
   
   if (!userId || !email) {
-    console.error('❌ Missing metadata in checkout session');
+    console.error(' Missing metadata in checkout session');
     return;
   }
 
-  console.log(`✅ Checkout completed for user: ${email}`);
+  console.log(` Checkout completed for user: ${email}`);
 
   // Update user subscription status
   const { error } = await supabase
@@ -120,7 +120,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, supabas
     .eq('email', email);
 
   if (error) {
-    console.error('❌ Failed to update user subscription:', error);
+    console.error(' Failed to update user subscription:', error);
   }
 }
 
@@ -128,11 +128,11 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription, supa
   const { userId, email } = subscription.metadata || {};
   
   if (!userId || !email) {
-    console.error('❌ Missing metadata in subscription');
+    console.error(' Missing metadata in subscription');
     return;
   }
 
-  console.log(`✅ Subscription created for user: ${email}`);
+  console.log(` Subscription created for user: ${email}`);
 
   // Update user subscription status
   const { error } = await supabase
@@ -147,7 +147,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription, supa
     .eq('email', email);
 
   if (error) {
-    console.error('❌ Failed to update user subscription:', error);
+    console.error(' Failed to update user subscription:', error);
   }
 }
 
@@ -155,11 +155,11 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription, supa
   const { userId, email } = subscription.metadata || {};
   
   if (!userId || !email) {
-    console.error('❌ Missing metadata in subscription');
+    console.error(' Missing metadata in subscription');
     return;
   }
 
-  console.log(`🔄 Subscription updated for user: ${email}`);
+  console.log(` Subscription updated for user: ${email}`);
 
   const isActive = subscription.status === 'active';
   const expiresAt = new Date((subscription as any).current_period_end * 1000).toISOString();
@@ -175,7 +175,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription, supa
     .eq('email', email);
 
   if (error) {
-    console.error('❌ Failed to update user subscription:', error);
+    console.error(' Failed to update user subscription:', error);
   }
 }
 
@@ -183,11 +183,11 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, supa
   const { userId, email } = subscription.metadata || {};
   
   if (!userId || !email) {
-    console.error('❌ Missing metadata in subscription');
+    console.error(' Missing metadata in subscription');
     return;
   }
 
-  console.log(`❌ Subscription cancelled for user: ${email}`);
+  console.log(` Subscription cancelled for user: ${email}`);
 
   // Downgrade user to free tier
   const { error } = await supabase
@@ -200,14 +200,14 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, supa
     .eq('email', email);
 
   if (error) {
-    console.error('❌ Failed to update user subscription:', error);
+    console.error(' Failed to update user subscription:', error);
   }
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice, supabase: any) {
   if (!(invoice as any).subscription) return;
 
-  console.log(`✅ Payment succeeded for subscription: ${(invoice as any).subscription}`);
+  console.log(` Payment succeeded for subscription: ${(invoice as any).subscription}`);
 
   // Get subscription details
   const { data: subscription } = await supabase
@@ -217,14 +217,14 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice, supabase: any) {
     .single();
 
   if (subscription) {
-    console.log(`✅ Payment processed for user: ${subscription.email}`);
+    console.log(` Payment processed for user: ${subscription.email}`);
   }
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice, supabase: any) {
   if (!(invoice as any).subscription) return;
 
-  console.log(`❌ Payment failed for subscription: ${(invoice as any).subscription}`);
+  console.log(` Payment failed for subscription: ${(invoice as any).subscription}`);
 
   // Get subscription details and potentially downgrade user
   const { data: subscription, error } = await supabase
@@ -234,7 +234,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice, supabase: any) {
     .single();
 
   if (subscription) {
-    console.log(`❌ Payment failed for user: ${subscription.email}`);
+    console.log(` Payment failed for user: ${subscription.email}`);
     
     // Update subscription status to past_due
     await supabase
@@ -252,7 +252,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice, supabase: any) {
 
 async function handlePaymentRecovery(invoice: Stripe.Invoice, supabase: any) {
   try {
-    console.log(`🔄 Initiating payment recovery for invoice: ${invoice.id}`);
+    console.log(` Initiating payment recovery for invoice: ${invoice.id}`);
     
     if (!(invoice as any).subscription) {
       console.warn('No subscription ID found for payment recovery');
@@ -274,7 +274,7 @@ async function handlePaymentRecovery(invoice: Stripe.Invoice, supabase: any) {
     // Send payment recovery email
     await sendPaymentRecoveryEmail(subscription.email, invoice);
     
-    console.log(`📧 Payment recovery email sent to: ${subscription.email}`);
+    console.log(` Payment recovery email sent to: ${subscription.email}`);
     
   } catch (error) {
     console.error('Error in payment recovery:', error);
@@ -284,7 +284,7 @@ async function handlePaymentRecovery(invoice: Stripe.Invoice, supabase: any) {
 async function sendPaymentRecoveryEmail(userEmail: string, invoice: Stripe.Invoice) {
   try {
     // This would integrate with your email service (Resend, SendGrid, etc.)
-    console.log(`📧 Sending payment recovery email to ${userEmail} for invoice ${invoice.id}`);
+    console.log(` Sending payment recovery email to ${userEmail} for invoice ${invoice.id}`);
     
     // Example implementation with Resend (you'd need to import and configure)
     // await resend.emails.send({

@@ -1,6 +1,6 @@
 # JobPing Documentation
 
-## 📚 Project Documentation
+##  Project Documentation
 
 ### Guides
 - [Developer Checklist](guides/DEVELOPER_CHECKLIST.md) - Onboarding guide for new developers

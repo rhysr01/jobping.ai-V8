@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 
     // Optional: Track click analytics
     if (userEmail) {
-      console.log(`📊 Job click: ${userEmail} → ${job.title} at ${job.company}`);
+      console.log(` Job click: ${userEmail} � ${job.title} at ${job.company}`);
       // Could save to analytics table here
     }
 

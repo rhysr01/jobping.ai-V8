@@ -39,7 +39,7 @@ jest.mock('openai', () => {
 });
 
 describe('Critical Business Logic - AI Matching Returns 5 Jobs', () => {
-  it('✅ AI matching returns results', async () => {
+  it(' AI matching returns results', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = Array.from({ length: 10 }, (_, i) => 
       buildMockJob({ job_hash: `job${i}`, categories: ['early-career'] })
@@ -53,7 +53,7 @@ describe('Critical Business Logic - AI Matching Returns 5 Jobs', () => {
     expect(Array.isArray(result.matches)).toBe(true);
   });
 
-  it('✅ Returned matches have required fields', async () => {
+  it(' Returned matches have required fields', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = Array.from({ length: 10 }, (_, i) => 
       buildMockJob({ job_hash: `job${i}`, categories: ['early-career'] })
@@ -71,7 +71,7 @@ describe('Critical Business Logic - AI Matching Returns 5 Jobs', () => {
     expect(result).toBeDefined();
   });
 
-  it('✅ Matching engine handles job arrays', async () => {
+  it(' Matching engine handles job arrays', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = Array.from({ length: 10 }, (_, i) => 
       buildMockJob({ job_hash: `job${i}`, categories: ['early-career'] })
@@ -86,7 +86,7 @@ describe('Critical Business Logic - AI Matching Returns 5 Jobs', () => {
 });
 
 describe('Critical Business Logic - Fallback to Rules', () => {
-  it('✅ Matcher handles rule-based mode', async () => {
+  it(' Matcher handles rule-based mode', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = Array.from({ length: 10 }, (_, i) => 
       buildMockJob({ job_hash: `job${i}`, categories: ['early-career'] })
@@ -99,7 +99,7 @@ describe('Critical Business Logic - Fallback to Rules', () => {
     expect(result.method).toBeDefined();
   });
 
-  it('✅ Matcher returns results in rule mode', async () => {
+  it(' Matcher returns results in rule mode', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = Array.from({ length: 10 }, (_, i) => 
       buildMockJob({ job_hash: `job${i}`, categories: ['early-career'] })
@@ -112,7 +112,7 @@ describe('Critical Business Logic - Fallback to Rules', () => {
     expect(Array.isArray(result.matches)).toBe(true);
   });
 
-  it('✅ Fallback provides reasonable confidence', async () => {
+  it(' Fallback provides reasonable confidence', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 10);
     const user = buildMockUser();
@@ -131,7 +131,7 @@ describe('Critical Business Logic - Cache Hit/Miss', () => {
     matcher['cache']?.clear?.();
   });
 
-  it('✅ Cache miss on first call', async () => {
+  it(' Cache miss on first call', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 5);
     const user = buildMockUser({ email: 'unique@test.com' });
@@ -142,7 +142,7 @@ describe('Critical Business Logic - Cache Hit/Miss', () => {
     expect(result.fromCache).toBeFalsy();
   });
 
-  it('✅ Returns results even without cache', async () => {
+  it(' Returns results even without cache', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 5);
     const user = buildMockUser();
@@ -153,7 +153,7 @@ describe('Critical Business Logic - Cache Hit/Miss', () => {
     expect(Array.isArray(result.matches)).toBe(true);
   });
 
-  it('✅ Handles empty job array', async () => {
+  it(' Handles empty job array', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const user = buildMockUser();
 
@@ -164,7 +164,7 @@ describe('Critical Business Logic - Cache Hit/Miss', () => {
 });
 
 describe('Critical Business Logic - Duplicate Job Prevention', () => {
-  it('✅ Matcher processes job arrays correctly', async () => {
+  it(' Matcher processes job arrays correctly', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = [
       buildMockJob({ job_hash: 'job1', categories: ['early-career'] }),
@@ -179,7 +179,7 @@ describe('Critical Business Logic - Duplicate Job Prevention', () => {
     expect(Array.isArray(result.matches)).toBe(true);
   });
 
-  it('✅ Matcher handles job deduplication logic', async () => {
+  it(' Matcher handles job deduplication logic', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = Array.from({ length: 5 }, () => 
       buildMockJob({ job_hash: 'same-job', categories: ['early-career'] })
@@ -194,7 +194,7 @@ describe('Critical Business Logic - Duplicate Job Prevention', () => {
 });
 
 describe('Critical Business Logic - Error Handling', () => {
-  it('✅ Handles invalid user data gracefully', async () => {
+  it(' Handles invalid user data gracefully', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 5);
     const invalidUser = {} as any;
@@ -206,7 +206,7 @@ describe('Critical Business Logic - Error Handling', () => {
     expect(result.matches).toBeDefined();
   });
 
-  it('✅ Handles jobs with missing required fields', async () => {
+  it(' Handles jobs with missing required fields', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = [
       { title: 'Engineer' } as any, // Missing required fields
@@ -220,7 +220,7 @@ describe('Critical Business Logic - Error Handling', () => {
     expect(result.matches).toBeDefined();
   });
 
-  it('✅ Returns empty array for no matches', async () => {
+  it(' Returns empty array for no matches', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = [buildMockJob({ categories: ['senior', 'executive'] })]; // Not early-career
     const user = buildMockUser({ entry_level_preference: 'entry' });
@@ -232,7 +232,7 @@ describe('Critical Business Logic - Error Handling', () => {
 });
 
 describe('Critical Business Logic - Performance', () => {
-  it('✅ Completes matching within reasonable time', async () => {
+  it(' Completes matching within reasonable time', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 50);
     const user = buildMockUser();
@@ -244,7 +244,7 @@ describe('Critical Business Logic - Performance', () => {
     expect(endTime - startTime).toBeLessThan(5000); // 5 seconds max
   });
 
-  it('✅ Handles large job arrays', async () => {
+  it(' Handles large job arrays', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 100);
     const user = buildMockUser();
@@ -256,7 +256,7 @@ describe('Critical Business Logic - Performance', () => {
 });
 
 describe('Core Functions - Cache Key Generation', () => {
-  it('✅ Generates consistent cache keys', async () => {
+  it(' Generates consistent cache keys', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = Array.from({ length: 5 }, (_, i) =>
       buildMockJob({ job_hash: `job${i}` })
@@ -280,7 +280,7 @@ describe('Core Functions - Cache Key Generation', () => {
     expect(true).toBe(true); // Cache logic is internal
   });
 
-  it('✅ Cache key includes career path', async () => {
+  it(' Cache key includes career path', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = [buildMockJob()];
     const user = buildMockUser({ career_path: ['data-science'] });
@@ -290,7 +290,7 @@ describe('Core Functions - Cache Key Generation', () => {
     expect(result).toBeDefined();
   });
 
-  it('✅ Cache key includes target cities', async () => {
+  it(' Cache key includes target cities', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = [buildMockJob()];
     const user = buildMockUser({ target_cities: ['Berlin', 'Paris'] });
@@ -300,7 +300,7 @@ describe('Core Functions - Cache Key Generation', () => {
     expect(result).toBeDefined();
   });
 
-  it('✅ Cache key includes entry level preference', async () => {
+  it(' Cache key includes entry level preference', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = [buildMockJob()];
     const user = buildMockUser({ entry_level_preference: 'mid' });
@@ -312,7 +312,7 @@ describe('Core Functions - Cache Key Generation', () => {
 });
 
 describe('Core Functions - Complexity Scoring', () => {
-  it('✅ Handles varying job counts', async () => {
+  it(' Handles varying job counts', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const smallSet = buildMockJob({}, 10);
     const largeSet = buildMockJob({}, 150);
@@ -325,7 +325,7 @@ describe('Core Functions - Complexity Scoring', () => {
     expect(result2).toBeDefined();
   });
 
-  it('✅ Handles users with many preferences', async () => {
+  it(' Handles users with many preferences', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 10);
     const simpleUser = buildMockUser({
@@ -347,7 +347,7 @@ describe('Core Functions - Complexity Scoring', () => {
 });
 
 describe('Core Functions - Prompt Building', () => {
-  it('✅ Builds prompts with user preferences', async () => {
+  it(' Builds prompts with user preferences', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 5);
     const user = buildMockUser({
@@ -361,7 +361,7 @@ describe('Core Functions - Prompt Building', () => {
     expect(result).toBeDefined();
   });
 
-  it('✅ Handles jobs with various attributes', async () => {
+  it(' Handles jobs with various attributes', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = [
       buildMockJob({ title: 'Software Engineer', company: 'Google', location: 'London' }),
@@ -375,7 +375,7 @@ describe('Core Functions - Prompt Building', () => {
     expect(result.matches).toBeDefined();
   });
 
-  it('✅ Limits jobs sent to AI', async () => {
+  it(' Limits jobs sent to AI', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 100); // More than JOBS_TO_ANALYZE (50)
     const user = buildMockUser();
@@ -389,7 +389,7 @@ describe('Core Functions - Prompt Building', () => {
 });
 
 describe('Core Functions - Rule-Based Fallback', () => {
-  it('✅ Falls back to rules on AI failure', async () => {
+  it(' Falls back to rules on AI failure', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 10);
     const user = buildMockUser();
@@ -399,7 +399,7 @@ describe('Core Functions - Rule-Based Fallback', () => {
     expect(result.method).toBe('rule_based');
   });
 
-  it('✅ Rule-based matching scores jobs', async () => {
+  it(' Rule-based matching scores jobs', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = [
       buildMockJob({ categories: ['early-career', 'tech'], location: 'London' }),
@@ -416,7 +416,7 @@ describe('Core Functions - Rule-Based Fallback', () => {
     expect(result.matches).toBeDefined();
   });
 
-  it('✅ Rule-based handles empty job array', async () => {
+  it(' Rule-based handles empty job array', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const user = buildMockUser();
 
@@ -426,7 +426,7 @@ describe('Core Functions - Rule-Based Fallback', () => {
     expect(result.method).toBe('rule_based');
   });
 
-  it('✅ Rule-based provides confidence score', async () => {
+  it(' Rule-based provides confidence score', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 5);
     const user = buildMockUser();
@@ -439,19 +439,19 @@ describe('Core Functions - Rule-Based Fallback', () => {
 });
 
 describe('Factory Function', () => {
-  it('✅ Creates matcher with API key', () => {
+  it(' Creates matcher with API key', () => {
     const matcher = createConsolidatedMatcher('test-api-key');
 
     expect(matcher).toBeInstanceOf(ConsolidatedMatchingEngine);
   });
 
-  it('✅ Creates matcher without API key', () => {
+  it(' Creates matcher without API key', () => {
     const matcher = createConsolidatedMatcher();
 
     expect(matcher).toBeInstanceOf(ConsolidatedMatchingEngine);
   });
 
-  it('✅ Created matcher can perform matching', async () => {
+  it(' Created matcher can perform matching', async () => {
     const matcher = createConsolidatedMatcher('test-key');
     const jobs = buildMockJob({}, 5);
     const user = buildMockUser();
@@ -463,7 +463,7 @@ describe('Factory Function', () => {
 });
 
 describe('Response Parsing', () => {
-  it('✅ Handles various match scores', async () => {
+  it(' Handles various match scores', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 5);
     const user = buildMockUser();
@@ -478,7 +478,7 @@ describe('Response Parsing', () => {
     }
   });
 
-  it('✅ Validates match reasons exist', async () => {
+  it(' Validates match reasons exist', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 5);
     const user = buildMockUser();
@@ -493,7 +493,7 @@ describe('Response Parsing', () => {
     }
   });
 
-  it('✅ Returns processing time', async () => {
+  it(' Returns processing time', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 5);
     const user = buildMockUser();
@@ -503,7 +503,7 @@ describe('Response Parsing', () => {
     expect(result.processingTime).toBeGreaterThanOrEqual(0);
   });
 
-  it('✅ Returns method indicator', async () => {
+  it(' Returns method indicator', async () => {
     const matcher = new ConsolidatedMatchingEngine('test-key');
     const jobs = buildMockJob({}, 5);
     const user = buildMockUser();

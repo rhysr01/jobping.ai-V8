@@ -8,7 +8,7 @@ const getDashboardHandler = async (request: NextRequest) => {
   const startTime = Date.now();
   
   try {
-    console.log('📊 Generating monitoring dashboard...');
+    console.log(' Generating monitoring dashboard...');
     
     // Collect all monitoring data in parallel
     const [
@@ -40,7 +40,7 @@ const getDashboardHandler = async (request: NextRequest) => {
     return NextResponse.json(dashboard);
 
   } catch (error) {
-    console.error('❌ Dashboard generation error:', error);
+    console.error(' Dashboard generation error:', error);
     return NextResponse.json({
       error: 'Failed to generate dashboard',
       message: error instanceof Error ? error.message : 'Unknown error',

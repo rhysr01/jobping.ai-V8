@@ -328,7 +328,7 @@ export default function BillingDashboard({ userId }: BillingDashboardProps) {
                       <CreditCard className="w-5 h-5 text-gray-600" />
                       <div>
                         <p className="font-medium">
-                          {method.brand.charAt(0).toUpperCase() + method.brand.slice(1)} â€¢â€¢â€¢â€¢ {method.last4}
+                          {method.brand.charAt(0).toUpperCase() + method.brand.slice(1)} ¢¢¢¢ {method.last4}
                         </p>
                         <p className="text-sm text-gray-600">
                           Expires {method.exp_month}/{method.exp_year}
@@ -369,7 +369,7 @@ export default function BillingDashboard({ userId }: BillingDashboardProps) {
                       <div>
                         <p className="font-medium">{formatCurrency(invoice.amount)}</p>
                         <p className="text-sm text-gray-600">
-                          {formatDate(invoice.created)} â€¢ {invoice.status}
+                          {formatDate(invoice.created)} ¢ {invoice.status}
                         </p>
                       </div>
                     </div>

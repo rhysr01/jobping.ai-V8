@@ -58,7 +58,7 @@ function SuccessContent() {
           </motion.div>
 
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            {isPromo ? 'ðŸŽ‰ Welcome to Premium!' : 'âœ… Payment Successful!'}
+            {isPromo ? ' Welcome to Premium!' : ' Payment Successful!'}
           </h1>
           
           <p className="text-zinc-300 text-lg mb-8">
@@ -73,15 +73,15 @@ function SuccessContent() {
             <h2 className="text-xl font-semibold mb-4">What's next?</h2>
             <ul className="space-y-3 text-zinc-300">
               <li className="flex items-start">
-                <span className="text-brand-400 mr-2">â†’</span>
+                <span className="text-brand-400 mr-2">†</span>
                 <span>Check your inbox for a welcome email</span>
               </li>
               <li className="flex items-start">
-                <span className="text-brand-400 mr-2">â†’</span>
+                <span className="text-brand-400 mr-2">†</span>
                 <span>You'll receive 5 instant job matches within 30 seconds</span>
               </li>
               <li className="flex items-start">
-                <span className="text-brand-400 mr-2">â†’</span>
+                <span className="text-brand-400 mr-2">†</span>
                 <span>Premium: Get 3 emails per week (Mon/Wed/Fri at 7:30 AM)</span>
               </li>
             </ul>

@@ -71,7 +71,7 @@ function VerifyEmailContent() {
             </svg>
           </div>
           
-          <h1 className="text-2xl font-bold text-white mb-4">🎉 Welcome to JobPing!</h1>
+          <h1 className="text-2xl font-bold text-white mb-4"> Welcome to JobPing!</h1>
           <p className="text-zinc-500 mb-6">{message}</p>
           
           {user && (
@@ -92,7 +92,7 @@ function VerifyEmailContent() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">Status:</span>
-                  <span className="text-white/80">✅ Verified & Active</span>
+                  <span className="text-white/80"> Verified & Active</span>
                 </div>
               </div>
             </div>
@@ -101,10 +101,10 @@ function VerifyEmailContent() {
           <div className="bg-white/5 border border-white/10 rounded-lg p-4 mb-6">
             <h3 className="text-white font-semibold mb-2">What's Next?</h3>
             <ul className="text-zinc-500 text-sm space-y-1 text-left">
-              <li>📊 AI is analyzing your profile</li>
-              <li>🔍 Finding your perfect job matches</li>
-              <li>📧 First matches arriving tomorrow at 11:11 AM</li>
-              <li>🎯 Expect 5 curated opportunities every week (or every 48 hours with Premium)</li>
+              <li> AI is analyzing your profile</li>
+              <li> Finding your perfect job matches</li>
+              <li> First matches arriving tomorrow at 11:11 AM</li>
+              <li>� Expect 5 curated opportunities every week (or every 48 hours with Premium)</li>
             </ul>
           </div>
           
@@ -137,9 +137,9 @@ function VerifyEmailContent() {
             Common issues:
           </p>
           <ul className="text-zinc-400 text-sm mt-2 space-y-1">
-            <li>• Link has expired (valid for 24 hours)</li>
-            <li>• Email already verified</li>
-            <li>• Invalid verification token</li>
+            <li>� Link has expired (valid for 24 hours)</li>
+            <li>� Email already verified</li>
+            <li>� Invalid verification token</li>
           </ul>
         </div>
         

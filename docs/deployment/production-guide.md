@@ -262,7 +262,7 @@ vercel inspect https://jobping.ai
 ### 3. **Custom Domain Setup**
 
 1. **Add Domain in Vercel Dashboard**
-   - Go to Project Settings â†’ Domains
+   - Go to Project Settings † Domains
    - Add `jobping.ai` and `www.jobping.ai`
    - Configure DNS records as instructed
 
@@ -286,7 +286,7 @@ vercel inspect https://jobping.ai
 ### 1. **Stripe Webhook Setup**
 
 1. **Create Webhook Endpoint**
-   - Go to Stripe Dashboard â†’ Webhooks
+   - Go to Stripe Dashboard † Webhooks
    - Add endpoint: `https://jobping.ai/api/webhooks/stripe`
    - Select events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
 

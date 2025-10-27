@@ -7,7 +7,7 @@ import FAQSchema from "@/components/FAQSchema";
 export const metadata: Metadata = {
   title: "JobPing · Five roles. Zero scrolling.",
   description:
-    "Weekly job matches for early-career roles across Europe — delivered to your inbox. 5 hand-picked roles per email. No dashboards. No scrolling marathons.",
+    "Weekly job matches for early-career roles across Europe  delivered to your inbox. 5 hand-picked roles per email. No dashboards. No scrolling marathons.",
   keywords: [
     "graduate jobs",
     "internships Europe",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "JobPing · Five roles. Zero scrolling.",
     description:
-      "Weekly job matches for early-career roles across Europe — delivered to your inbox. Hand-picked quality, zero noise.",
+      "Weekly job matches for early-career roles across Europe  delivered to your inbox. Hand-picked quality, zero noise.",
     url: "https://www.getjobping.com",
     siteName: "JobPing",
     locale: "en_US",

@@ -57,11 +57,11 @@ export function generatePersonalizedGreeting(context: PersonalizationContext): s
   const name = userName ? `, ${userName}` : '';
   
   if (subscriptionTier === 'premium') {
-    return `${baseGreeting}${name}! â­ Your premium job matches are ready.`;
+    return `${baseGreeting}${name}! ­ Your premium job matches are ready.`;
   } else if (engagementScore >= 70) {
-    return `${baseGreeting}${name}! ğŸ¯ Your personalized matches are here.`;
+    return `${baseGreeting}${name}! ¯ Your personalized matches are here.`;
   } else {
-    return `${baseGreeting}${name}! ğŸ‘‹ Here are your latest job opportunities.`;
+    return `${baseGreeting}${name}!  Here are your latest job opportunities.`;
   }
 }
 
@@ -79,17 +79,17 @@ export function generateTopMatchesBlock(
   if (preferredJobTypes.length > 0) {
     const jobTypeText = preferredJobTypes.slice(0, 2).join(' and ');
     content = `<div class="personalization-block">
-      <h3 style="color: #00D4AA; font-size: 18px; margin-bottom: 16px;">ğŸ¯ Top 5 ${jobTypeText} roles for you</h3>
+      <h3 style="color: #00D4AA; font-size: 18px; margin-bottom: 16px;">¯ Top 5 ${jobTypeText} roles for you</h3>
       <p style="color: #E5E5E5; margin-bottom: 20px;">Hand-picked based on your skills and preferences:</p>
     </div>`;
   } else if (engagementScore >= 60) {
     content = `<div class="personalization-block">
-      <h3 style="color: #00D4AA; font-size: 18px; margin-bottom: 16px;">â­ Your top matches</h3>
+      <h3 style="color: #00D4AA; font-size: 18px; margin-bottom: 16px;">­ Your top matches</h3>
       <p style="color: #E5E5E5; margin-bottom: 20px;">AI-selected opportunities based on your profile:</p>
     </div>`;
   } else {
     content = `<div class="personalization-block">
-      <h3 style="color: #00D4AA; font-size: 18px; margin-bottom: 16px;">ğŸš€ Fresh opportunities</h3>
+      <h3 style="color: #00D4AA; font-size: 18px; margin-bottom: 16px;"> Fresh opportunities</h3>
       <p style="color: #E5E5E5; margin-bottom: 20px;">Latest jobs matching your criteria:</p>
     </div>`;
   }
@@ -153,13 +153,13 @@ export async function generateSavedCompaniesBlock(
     }
 
     const content = `<div class="personalization-block">
-      <h3 style="color: #00D4AA; font-size: 18px; margin-bottom: 16px;">ğŸ’¼ New from companies you liked</h3>
+      <h3 style="color: #00D4AA; font-size: 18px; margin-bottom: 16px;">¼ New from companies you liked</h3>
       <p style="color: #E5E5E5; margin-bottom: 20px;">${newJobs.length} fresh opportunities from companies you've shown interest in:</p>
       ${newJobs.map(job => `
         <div style="background: #1A1A1A; padding: 16px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid #00D4AA;">
           <div style="font-weight: 500; color: #FFFFFF; margin-bottom: 4px;">${job.title}</div>
           <div style="color: #E5E5E5; font-size: 14px; margin-bottom: 4px;">${job.company}</div>
-          <div style="color: #A3A3A3; font-size: 12px;">ğŸ“ ${job.location}</div>
+          <div style="color: #A3A3A3; font-size: 12px;"> ${job.location}</div>
         </div>
       `).join('')}
     </div>`;
@@ -216,13 +216,13 @@ export async function generateFreshInternshipsBlock(
     }
 
     const content = `<div class="personalization-block">
-      <h3 style="color: #00D4AA; font-size: 18px; margin-bottom: 16px;">ğŸ“ Fresh internships & graduate schemes</h3>
+      <h3 style="color: #00D4AA; font-size: 18px; margin-bottom: 16px;"> Fresh internships & graduate schemes</h3>
       <p style="color: #E5E5E5; margin-bottom: 20px;">${internships.length} new early-career opportunities posted this week:</p>
       ${internships.map(job => `
         <div style="background: #1A1A1A; padding: 16px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid #00D4AA;">
           <div style="font-weight: 500; color: #FFFFFF; margin-bottom: 4px;">${job.title}</div>
           <div style="color: #E5E5E5; font-size: 14px; margin-bottom: 4px;">${job.company}</div>
-          <div style="color: #A3A3A3; font-size: 12px;">ğŸ“ ${job.location}</div>
+          <div style="color: #A3A3A3; font-size: 12px;"> ${job.location}</div>
         </div>
       `).join('')}
     </div>`;
@@ -252,19 +252,19 @@ export function generateCareerInsightBlock(context: PersonalizationContext): Per
 
   const insights = [
     {
-      title: "ğŸ’¡ Market Insight",
+      title: " Market Insight",
       content: "EU tech companies are hiring 23% more early-career roles this quarter compared to last year."
     },
     {
-      title: "ğŸ“ˆ Trending Skills",
+      title: "ˆ Trending Skills",
       content: "AI/ML, Cloud Computing, and Data Analytics are the most in-demand skills for 2024."
     },
     {
-      title: "ğŸŒ Remote Opportunities",
+      title: " Remote Opportunities",
       content: "67% of EU companies now offer hybrid or fully remote options for entry-level positions."
     },
     {
-      title: "âš¡ Quick Tip",
+      title: " Quick Tip",
       content: "Companies respond 3x faster to applications submitted within 48 hours of job posting."
     }
   ];
@@ -295,14 +295,14 @@ export function generatePersonalizedCTA(context: PersonalizationContext): Person
   let ctaUrl = 'https://www.getjobping.com/dashboard';
 
   if (subscriptionTier === 'premium') {
-    ctaText = 'View All Premium Matches â†’';
+    ctaText = 'View All Premium Matches †';
     ctaUrl = 'https://www.getjobping.com/dashboard?premium=true';
   } else if (engagementScore >= 70) {
-    ctaText = 'See More Matches â†’';
+    ctaText = 'See More Matches †';
   } else if (preferredJobTypes.length > 0) {
-    ctaText = `Find More ${preferredJobTypes[0]} Roles â†’`;
+    ctaText = `Find More ${preferredJobTypes[0]} Roles †`;
   } else {
-    ctaText = 'Explore All Opportunities â†’';
+    ctaText = 'Explore All Opportunities †';
   }
 
   const content = `<div style="text-align: center; margin: 32px 0;">

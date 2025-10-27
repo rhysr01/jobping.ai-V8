@@ -49,7 +49,7 @@ export class HealthChecker {
     const startTime = Date.now();
     const timestamp = new Date().toISOString();
 
-    console.log('🏥 Starting comprehensive health check...');
+    console.log(' Starting comprehensive health check...');
 
     // Run all health checks in parallel
     const [
@@ -91,7 +91,7 @@ export class HealthChecker {
       }
     };
 
-    console.log(`✅ Health check complete: ${overallStatus} (${duration}ms)`);
+    console.log(` Health check complete: ${overallStatus} (${duration}ms)`);
     return result;
   }
 

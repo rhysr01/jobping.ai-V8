@@ -2,21 +2,21 @@
 
 This directory contains SQL scripts to dramatically improve job matching quality and performance.
 
-## 📊 Current Database Issues (Before Improvements)
+##  Current Database Issues (Before Improvements)
 
 | Issue | Impact | Severity |
 |-------|--------|----------|
-| 99.5% missing city/country | Can't match by location | 🔴 Critical |
-| 35% missing descriptions | Weak AI matching | 🟡 High |
-| 100% missing language requirements | Can't filter by language | 🟡 High |
-| No indexes on key fields | Slow queries | 🟡 High |
-| 14,766 total jobs → only 12,748 early career | Mixed quality | 🟢 Resolved |
+| 99.5% missing city/country | Can't match by location | � Critical |
+| 35% missing descriptions | Weak AI matching |  High |
+| 100% missing language requirements | Can't filter by language |  High |
+| No indexes on key fields | Slow queries |  High |
+| 14,766 total jobs � only 12,748 early career | Mixed quality | � Resolved |
 
-## 🎯 Script Execution Order
+## � Script Execution Order
 
 Run these scripts in order after each job scraping session:
 
-### 1️⃣ **classify-early-career-jobs.sql** (REQUIRED - Run First)
+### 1�� **classify-early-career-jobs.sql** (REQUIRED - Run First)
 Automatically flags early career roles and filters out mid/senior positions.
 
 ```bash
@@ -33,7 +33,7 @@ psql $DATABASE_URL -f scripts/classify-early-career-jobs.sql
 
 ---
 
-### 2️⃣ **improve-matching-data-quality.sql** (REQUIRED - Run Second)
+### 2�� **improve-matching-data-quality.sql** (REQUIRED - Run Second)
 Enriches job data for better matching.
 
 ```bash
@@ -49,13 +49,13 @@ psql $DATABASE_URL -f scripts/improve-matching-data-quality.sql
 - Improves work environment classification
 
 **Expected improvements:**
-- City/Country coverage: 0.5% → **~95%**
-- Language requirements: 0% → **~90%**
+- City/Country coverage: 0.5% � **~95%**
+- Language requirements: 0% � **~90%**
 - Better company matching
 
 ---
 
-### 3️⃣ **create-matching-indexes.sql** (OPTIONAL - Run Once)
+### 3�� **create-matching-indexes.sql** (OPTIONAL - Run Once)
 Creates indexes for 10x faster matching queries.
 
 ```bash
@@ -70,11 +70,11 @@ psql $DATABASE_URL -f scripts/create-matching-indexes.sql
 - Composite indexes for common query patterns
 - Match table indexes for performance
 
-**Performance impact:** Matching queries go from **200-500ms → 10-50ms**
+**Performance impact:** Matching queries go from **200-500ms � 10-50ms**
 
 ---
 
-## 🔄 Automated Pipeline
+##  Automated Pipeline
 
 ### Recommended Workflow
 
@@ -100,35 +100,35 @@ psql $DATABASE_URL -c "VACUUM ANALYZE jobs;"
 
 ---
 
-## 📈 Data Quality Metrics
+## � Data Quality Metrics
 
 ### Before Improvements
 ```
 Total jobs: 14,766
-├─ Early career flagged: 50 (0.3%)
-├─ With city: 66 (0.5%)
-├─ With country: 66 (0.5%)
-├─ With language reqs: 0 (0%)
-└─ Missing descriptions: 35%
+ Early career flagged: 50 (0.3%)
+ With city: 66 (0.5%)
+ With country: 66 (0.5%)
+ With language reqs: 0 (0%)
+ Missing descriptions: 35%
 ```
 
 ### After Improvements
 ```
 Total active jobs: ~12,000
-├─ Early career flagged: ~11,980 (99.9%)
-├─ With city: ~11,400 (95%)
-├─ With country: ~11,400 (95%)
-├─ With language reqs: ~10,800 (90%)
-└─ Unflagged ambiguous: ~20 (0.1%)
+ Early career flagged: ~11,980 (99.9%)
+ With city: ~11,400 (95%)
+ With country: ~11,400 (95%)
+ With language reqs: ~10,800 (90%)
+ Unflagged ambiguous: ~20 (0.1%)
 ```
 
 ---
 
-## 🎓 What Gets Flagged as Early Career
+##  What Gets Flagged as Early Career
 
 ### Internships (`is_internship = true`)
 - English: intern, internship, placement, working student
-- Spanish: prácticas, becario
+- Spanish: pr�cticas, becario
 - Italian: stagista, tirocinio
 - French: stage, stagiaire
 - German: praktikum, werkstudent
@@ -157,7 +157,7 @@ Total active jobs: ~12,000
 
 ---
 
-## 🔍 Matching Query Examples
+##  Matching Query Examples
 
 ### Find Early Career Finance Jobs in London
 
@@ -208,7 +208,7 @@ LIMIT 100;
 
 ---
 
-## 🚀 Performance Tips
+##  Performance Tips
 
 ### 1. Keep Indexes Updated
 After bulk updates, run:
@@ -235,7 +235,7 @@ WHERE is_active = false
 
 ---
 
-## 📝 Maintenance Scripts
+##  Maintenance Scripts
 
 ### Check Data Quality
 ```sql
@@ -262,7 +262,7 @@ ORDER BY COUNT(*) DESC;
 
 ---
 
-## 🛠️ Troubleshooting
+##  Troubleshooting
 
 ### Script Fails with "Read-Only Transaction"
 You're connected to a read replica. Use the primary database connection.
@@ -283,7 +283,7 @@ WHERE is_active = true;
 
 ---
 
-## 📚 Additional Resources
+##  Additional Resources
 
 - [PostgreSQL Full-Text Search](https://www.postgresql.org/docs/current/textsearch.html)
 - [GIN Indexes for Arrays](https://www.postgresql.org/docs/current/gin.html)
@@ -291,7 +291,7 @@ WHERE is_active = true;
 
 ---
 
-## ✅ Success Checklist
+##  Success Checklist
 
 After running all scripts, verify:
 

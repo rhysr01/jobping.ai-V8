@@ -8,7 +8,7 @@ const getPerformanceHandler = async (request: NextRequest) => {
   const startTime = Date.now();
   
   try {
-    console.log('⚡ Collecting performance metrics...');
+    console.log(' Collecting performance metrics...');
     
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -57,7 +57,7 @@ const getPerformanceHandler = async (request: NextRequest) => {
     return NextResponse.json(performanceData);
 
   } catch (error) {
-    console.error('❌ Performance collection error:', error);
+    console.error(' Performance collection error:', error);
     return NextResponse.json({
       error: 'Failed to collect performance metrics',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -70,7 +70,7 @@ const optimizePerformanceHandler = async (request: NextRequest) => {
   const startTime = Date.now();
   
   try {
-    console.log('🧹 Starting performance optimization...');
+    console.log(' Starting performance optimization...');
     
     const optimizationResults = {
       timestamp: new Date().toISOString(),
@@ -112,12 +112,12 @@ const optimizePerformanceHandler = async (request: NextRequest) => {
     const memorySaved = optimizationResults.memory_before.heapUsed - optimizationResults.memory_after.heapUsed;
     optimizationResults.actions.push(`Memory freed: ${memorySaved} bytes`);
 
-    console.log(`✅ Performance optimization completed in ${optimizationResults.optimization_time}ms`);
+    console.log(` Performance optimization completed in ${optimizationResults.optimization_time}ms`);
 
     return NextResponse.json(optimizationResults);
 
   } catch (error) {
-    console.error('❌ Performance optimization error:', error);
+    console.error(' Performance optimization error:', error);
     return NextResponse.json({
       error: 'Failed to optimize performance',
       message: error instanceof Error ? error.message : 'Unknown error',

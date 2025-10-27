@@ -16,7 +16,7 @@ const supabase = createClient(
 );
 
 async function inspectSchema(): Promise<void> {
-  console.log('🔍 INSPECTING DATABASE SCHEMA');
+  console.log(' INSPECTING DATABASE SCHEMA');
   console.log('==============================');
 
   try {
@@ -27,21 +27,21 @@ async function inspectSchema(): Promise<void> {
       .limit(1);
 
     if (error) {
-      console.error('❌ Failed to query users table:', error.message);
+      console.error(' Failed to query users table:', error.message);
       return;
     }
 
     if (users && users.length > 0) {
-      console.log('✅ Found sample user, inspecting columns:');
-      console.log('📊 USERS TABLE COLUMNS:');
+      console.log(' Found sample user, inspecting columns:');
+      console.log(' USERS TABLE COLUMNS:');
       Object.keys(users[0]).forEach(column => {
         console.log(`   - ${column}: ${typeof users[0][column]} (${users[0][column] === null ? 'NULL' : 'has value'})`);
       });
     } else {
-      console.log('⚠️ No users found in database');
+      console.log(' No users found in database');
       
       // Try to create a minimal test user to see what's required
-      console.log('🧪 Attempting minimal user creation to discover required fields...');
+      console.log(' Attempting minimal user creation to discover required fields...');
       
       const minimalUser = {
         email: `schema-test-${Date.now()}@test.com`,
@@ -55,23 +55,23 @@ async function inspectSchema(): Promise<void> {
         .single();
 
       if (testError) {
-        console.log('❌ Minimal user creation failed:', testError.message);
-        console.log('💡 This helps us understand required fields');
+        console.log(' Minimal user creation failed:', testError.message);
+        console.log(' This helps us understand required fields');
       } else {
-        console.log('✅ Minimal user created successfully!');
-        console.log('📊 DISCOVERED USERS TABLE COLUMNS:');
+        console.log(' Minimal user created successfully!');
+        console.log(' DISCOVERED USERS TABLE COLUMNS:');
         Object.keys(testUser).forEach(column => {
           console.log(`   - ${column}: ${typeof testUser[column]} (${testUser[column] === null ? 'NULL' : 'has value'})`);
         });
 
         // Clean up test user
         await supabase.from('users').delete().eq('id', testUser.id);
-        console.log('🧹 Cleaned up test user');
+        console.log(' Cleaned up test user');
       }
     }
 
     // Also inspect other important tables
-    console.log('\n🔍 INSPECTING OTHER TABLES:');
+    console.log('\n INSPECTING OTHER TABLES:');
     
     // Jobs table
     const { data: jobs, error: jobsError } = await supabase
@@ -80,7 +80,7 @@ async function inspectSchema(): Promise<void> {
       .limit(1);
 
     if (!jobsError && jobs && jobs.length > 0) {
-      console.log('📊 JOBS TABLE COLUMNS:');
+      console.log(' JOBS TABLE COLUMNS:');
       Object.keys(jobs[0]).forEach(column => {
         console.log(`   - ${column}: ${typeof jobs[0][column]}`);
       });
@@ -93,14 +93,14 @@ async function inspectSchema(): Promise<void> {
       .limit(1);
 
     if (!matchesError && matches && matches.length > 0) {
-      console.log('📊 USER_JOB_MATCHES TABLE COLUMNS:');
+      console.log(' USER_JOB_MATCHES TABLE COLUMNS:');
       Object.keys(matches[0]).forEach(column => {
         console.log(`   - ${column}: ${typeof matches[0][column]}`);
       });
     }
 
   } catch (error) {
-    console.error('❌ Schema inspection failed:', (error as Error).message);
+    console.error(' Schema inspection failed:', (error as Error).message);
   }
 }
 

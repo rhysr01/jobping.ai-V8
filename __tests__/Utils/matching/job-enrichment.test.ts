@@ -76,13 +76,13 @@ describe('Job Enrichment - enrichJobData', () => {
 
   it('should extract salary range from description', () => {
     const jobWithSalary = buildMockJob({
-      description: 'Salary: â‚¬50,000 - â‚¬70,000 per year'
+      description: 'Salary: ‚¬50,000 - ‚¬70,000 per year'
     });
     const jobWithoutSalary = buildMockJob({
       description: 'Competitive salary offered'
     });
 
-    expect(enrichJobData(jobWithSalary).salaryRange).toContain('â‚¬');
+    expect(enrichJobData(jobWithSalary).salaryRange).toContain('‚¬');
     expect(enrichJobData(jobWithoutSalary).salaryRange).toBe('Competitive');
   });
 

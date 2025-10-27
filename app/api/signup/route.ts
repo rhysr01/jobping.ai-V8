@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
     }
 
-    console.log(`✅ User created: ${data.email}`);
+    console.log(` User created: ${data.email}`);
 
     // Trigger instant matching and email
     let matchesCount = 0;
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
           });
 
           matchesCount = matchEntries.length;
-          console.log(`✅ Saved ${matchesCount} matches for ${data.email}`);
+          console.log(` Saved ${matchesCount} matches for ${data.email}`);
 
           // Send welcome email with matched jobs
           try {
@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
               userName: userData.full_name,
               subscriptionTier: 'free',
               isSignupEmail: true,
-              subjectOverride: `🎉 Welcome to JobPing - Your First ${matchesCount} Matches!`,
+              subjectOverride: ` Welcome to JobPing - Your First ${matchesCount} Matches!`,
             });
 
             // Update user tracking fields after successful email send
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
               })
               .eq('email', userData.email);
 
-            console.log(`✅ Welcome email sent to ${data.email} with ${matchesCount} matches`);
+            console.log(` Welcome email sent to ${data.email} with ${matchesCount} matches`);
           } catch (emailError) {
             console.error('Email send failed (non-fatal):', emailError);
           }
@@ -195,7 +195,7 @@ export async function POST(req: NextRequest) {
               })
               .eq('email', userData.email);
 
-            console.log(`✅ Welcome email (no matches) sent to ${data.email}`);
+            console.log(` Welcome email (no matches) sent to ${data.email}`);
           } catch (emailError) {
             console.error('Welcome email failed:', emailError);
           }
@@ -221,7 +221,7 @@ export async function POST(req: NextRequest) {
           })
           .eq('email', userData.email);
 
-        console.log(`✅ Welcome email (matching failed) sent to ${data.email}`);
+        console.log(` Welcome email (matching failed) sent to ${data.email}`);
       } catch (emailError) {
         console.error('Welcome email failed:', emailError);
       }

@@ -1,6 +1,6 @@
 # Additional Cleanup Needed
 
-## 🚨 High Priority
+##  High Priority
 
 ### 1. Unused NPM Dependencies (12 packages)
 **Impact**: Reduces bundle size, improves install time, security surface
@@ -84,7 +84,7 @@ The remaining 152 warnings need proper ESLint config:
 }
 ```
 
-## 📊 Medium Priority
+##  Medium Priority
 
 ### 4. Duplicate Functionality Audit Needed
 Files to review for duplication:
@@ -113,7 +113,7 @@ WEEK1-COMPLETION-SUMMARY.md
 
 **Recommendation**: Consolidate into single current state doc
 
-## 🔍 Low Priority
+##  Low Priority
 
 ### 7. Code Patterns to Standardize
 
@@ -165,7 +165,7 @@ requiredEnvVars.forEach(varName => {
 });
 ```
 
-## 📋 Checklist
+##  Checklist
 
 ### Immediate (< 1 hour)
 - [ ] Remove unused npm dependencies
@@ -175,7 +175,7 @@ requiredEnvVars.forEach(varName => {
 
 ### Short-term (< 1 day)
 - [ ] Audit and consolidate duplicate services
-- [ ] Fix remaining ESLint warnings (152 → ~50)
+- [ ] Fix remaining ESLint warnings (152 � ~50)
 - [ ] Consolidate documentation
 - [ ] Add environment variable validation
 
@@ -185,7 +185,7 @@ requiredEnvVars.forEach(varName => {
 - [ ] Replace `any` types with proper types
 - [ ] Standardize import paths
 
-## 💡 Quick Wins
+##  Quick Wins
 
 **Commands you can run now:**
 
@@ -206,17 +206,17 @@ npm run lint
 npm run build
 ```
 
-## 🎯 Expected Impact
+## � Expected Impact
 
 After full cleanup:
 - **Bundle size**: -15-20% (remove unused deps)
 - **Install time**: -30% faster
-- **Lint warnings**: 152 → ~50 (mostly intentional)
+- **Lint warnings**: 152 � ~50 (mostly intentional)
 - **Code duplication**: Reduced
 - **Type safety**: Improved
-- **Test coverage**: 6.6% → 20%+
+- **Test coverage**: 6.6% � 20%+
 
-## ⚠️ Risks
+##  Risks
 
 **Low risk:**
 - Removing unused dependencies (they're truly unused)

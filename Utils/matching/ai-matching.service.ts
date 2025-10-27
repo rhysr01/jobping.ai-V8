@@ -134,7 +134,7 @@ export class AIMatchingService {
       const cachedResult = AIMatchingCache.get(cacheKey);
       
       if (cachedResult) {
-        console.log('ğŸ¯ Cache hit for AI matching');
+        console.log('¯ Cache hit for AI matching');
         return cachedResult;
       }
 
@@ -191,7 +191,7 @@ Return ONLY valid JSON array with matches.`
       AIMatchingCache.set(cacheKey, matches);
 
       const latency = Date.now() - startTime;
-      console.log(`ğŸ¤– AI matching completed in ${latency}ms, found ${matches.length} matches`);
+      console.log(`¤– AI matching completed in ${latency}ms, found ${matches.length} matches`);
 
       return matches;
 
@@ -232,13 +232,13 @@ ${jobsContext}
 You're a friendly career advisor (not a corporate recruiter). 
 Write match reasons that create a "WOW" moment:
 
-âœ… BE SPECIFIC: "You need React + TypeScript. This role uses both PLUS Next.js"
-âœ… BE PERSONAL: "Remember that remote role you rated 5â­? This is similar but pays â‚¬10K more"
-âœ… BE CONFIDENT: "You're overqualified for this (which means easy interview)"
-âœ… BE EMOTIONAL: "This is the kind of startup you'll tell your friends about"
+ BE SPECIFIC: "You need React + TypeScript. This role uses both PLUS Next.js"
+ BE PERSONAL: "Remember that remote role you rated 5­? This is similar but pays ‚¬10K more"
+ BE CONFIDENT: "You're overqualified for this (which means easy interview)"
+ BE EMOTIONAL: "This is the kind of startup you'll tell your friends about"
 
-âŒ DON'T: "Good match for your skills" (boring!)
-âŒ DON'T: "Aligns with your preferences" (corporate!)
+ DON'T: "Good match for your skills" (boring!)
+ DON'T: "Aligns with your preferences" (corporate!)
 
 For each match, return JSON with:
 - job_index: Index in jobs array (0-based)
@@ -252,11 +252,11 @@ Return ONLY valid JSON array, no other text.
 
   private buildUserContext(profile: NormalizedUserProfile): string {
     const careerPaths = profile.career_path && profile.career_path.length > 0
-      ? profile.career_path.map(p => `  âœ“ ${this.formatCareerPath(p)}`).join('\n')
+      ? profile.career_path.map(p => `   ${this.formatCareerPath(p)}`).join('\n')
       : '  (Open to all career paths)';
     
     const specificRoles = profile.roles_selected && profile.roles_selected.length > 0
-      ? profile.roles_selected.map(r => `  âœ“ ${r}`).join('\n')
+      ? profile.roles_selected.map(r => `   ${r}`).join('\n')
       : '  (Open to all role types)';
       
     return `
@@ -269,30 +269,30 @@ ${careerPaths}
 SPECIFIC ROLE TYPES (Priority #2 - BE PRECISE HERE!):
 ${specificRoles}
 
-ğŸš¨ IMPORTANT: Career Path + Role Type must BOTH match!
+ IMPORTANT: Career Path + Role Type must BOTH match!
 Examples:
-  â€¢ "Tech & Transformation" + "Software Engineer" = Software Intern/Engineer roles
-  â€¢ "Tech & Transformation" + "Sales" = Tech Sales/Business Development roles
-  â€¢ "Finance & Investment" + "Analyst" = Financial Analyst/Investment Analyst roles
-  â€¢ "Marketing & Growth" + "Content" = Content Marketing roles
+  ¢ "Tech & Transformation" + "Software Engineer" = Software Intern/Engineer roles
+  ¢ "Tech & Transformation" + "Sales" = Tech Sales/Business Development roles
+  ¢ "Finance & Investment" + "Analyst" = Financial Analyst/Investment Analyst roles
+  ¢ "Marketing & Growth" + "Content" = Content Marketing roles
 
 Available Career Paths:
-  â€¢ Strategy & Business Design
-  â€¢ Data & Analytics  
-  â€¢ Retail & Luxury
-  â€¢ Sales & Client Success
-  â€¢ Marketing & Growth
-  â€¢ Finance & Investment
-  â€¢ Operations & Supply Chain
-  â€¢ Product & Innovation
-  â€¢ Tech & Transformation
-  â€¢ Sustainability & ESG
+  ¢ Strategy & Business Design
+  ¢ Data & Analytics  
+  ¢ Retail & Luxury
+  ¢ Sales & Client Success
+  ¢ Marketing & Growth
+  ¢ Finance & Investment
+  ¢ Operations & Supply Chain
+  ¢ Product & Innovation
+  ¢ Tech & Transformation
+  ¢ Sustainability & ESG
 
 TARGET CITIES (100% verified location data):
-${profile.target_cities?.map(c => `  â€¢ ${c}`).join('\n') || '  â€¢ Flexible across all 14 cities'}
+${profile.target_cities?.map(c => `  ¢ ${c}`).join('\n') || '  ¢ Flexible across all 14 cities'}
 
 LANGUAGES SPOKEN:
-${profile.languages_spoken?.map(l => `  â€¢ ${l}`).join('\n') || '  â€¢ English'}
+${profile.languages_spoken?.map(l => `  ¢ ${l}`).join('\n') || '  ¢ English'}
 
 OTHER PREFERENCES:
 - Work Environment: ${profile.work_environment || 'Flexible'}
@@ -307,14 +307,14 @@ OTHER PREFERENCES:
 
 MATCHING RULES - ONLY 2 REQUIREMENTS, EVERYTHING ELSE IS OPTIONAL:
 
-ğŸš¨ ABSOLUTE REQUIREMENTS (MUST MATCH):
+ ABSOLUTE REQUIREMENTS (MUST MATCH):
 1. **Career Path + Role Type** - Job title/description MUST align with user's selected career path AND specific roles
    - Example: User selects "Tech" path + "Sales Representative" role = Match "Tech Sales" jobs
    - Example: User selects "Finance" path + "Analyst" role = Match "Financial Analyst" jobs
 
 2. **Location** - Job city MUST be in one of user's target cities (we have 100% location data)
 
-âœ¨ OPTIONAL PREFERENCES (BOOST SCORE IF MATCH, BUT JOBS CAN BE GREAT WITHOUT THEM):
+ OPTIONAL PREFERENCES (BOOST SCORE IF MATCH, BUT JOBS CAN BE GREAT WITHOUT THEM):
 3. **Languages** - Bonus if job lists languages user speaks (but 16% of jobs have NO language data - still show them!)
 4. **Remote Work** - Bonus if matches user preference (but missing data is OK)
 5. **Industry** - Bonus if matches user interests (but many jobs don't list industry - still show them!)
@@ -322,7 +322,7 @@ MATCHING RULES - ONLY 2 REQUIREMENTS, EVERYTHING ELSE IS OPTIONAL:
 7. **Skills** - Bonus if job mentions skills user has (but don't exclude jobs without skill tags!)
 8. **Career Keywords** - Bonus for jobs that match user's free-form description
 
-ğŸ¯ SCORING PHILOSOPHY:
+¯ SCORING PHILOSOPHY:
 - A job with ONLY career path + location match can be a 95+ score if it's perfect for the role!
 - Jobs with MORE metadata get BONUS points (not required points)
 - Don't penalize jobs for missing optional fields
@@ -374,10 +374,10 @@ ${cvInsights.map((insight: string) => `- ${insight}`).join('\n')}
       enhancedContext += `
 
 LEARNED PREFERENCES (from ${feedbackSummary.total} ratings):
-âœ… USER LOVES:
+ USER LOVES:
   ${feedbackSummary.loved.map((item: string) => `- ${item}`).join('\n  ')}
 
-âŒ USER AVOIDS:
+ USER AVOIDS:
   ${feedbackSummary.disliked.map((item: string) => `- ${item}`).join('\n  ')}
 `;
     }
@@ -500,25 +500,25 @@ LEARNED PREFERENCES (from ${feedbackSummary.total} ratings):
         
       return `
 JOB ${index}:
-â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
-ğŸ“Œ Title: ${job.title}
-ğŸ¢ Company: ${job.company}
-ğŸ“ Location: ${job.city}, ${job.country} (verified)
-ğŸ¯ Career Path(s): ${careerPaths}
-ğŸ—£ï¸ Languages Required: ${languages}
-ğŸ“Š Experience: ${job.experience_required || 'Entry-level'}
-ğŸ“… Posted: ${job.original_posted_date || job.created_at}
+
+ Title: ${job.title}
+¢ Company: ${job.company}
+ Location: ${job.city}, ${job.country} (verified)
+¯ Career Path(s): ${careerPaths}
+£ Languages Required: ${languages}
+ Experience: ${job.experience_required || 'Entry-level'}
+ Posted: ${job.original_posted_date || job.created_at}
 
-ğŸ“„ Description (first 400 chars):
+ Description (first 400 chars):
 ${job.description?.substring(0, 400).trim()}...
 
 MATCH CRITERIA:
-âœ“ Career path matches user's selected paths?
-âœ“ Role type matches user's specific role preferences? (e.g., "sales" vs "engineer")
-âœ“ City in user's target cities?
-âœ“ User speaks required languages?
-âœ“ Role appropriate for early-career?
-â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+ Career path matches user's selected paths?
+ Role type matches user's specific role preferences? (e.g., "sales" vs "engineer")
+ City in user's target cities?
+ User speaks required languages?
+ Role appropriate for early-career?
+
 `;
     }).join('\n');
   }

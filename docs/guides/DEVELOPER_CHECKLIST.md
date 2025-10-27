@@ -31,7 +31,7 @@
 - [ ] VML fallbacks for Outlook gradients
 - [ ] Fallback colors for all gradients
 - [ ] Web-safe fonts used
-- [ ] Touch targets ≥ 44px height
+- [ ] Touch targets  44px height
 
 ---
 
@@ -81,7 +81,7 @@
 
 ### Gmail Mobile (iOS/Android)
 - [ ] Layout responsive
-- [ ] Buttons tappable (≥44px)
+- [ ] Buttons tappable (44px)
 - [ ] Text readable on small screen
 - [ ] Purple colors visible
 - [ ] No horizontal scrolling
@@ -140,7 +140,7 @@
 - [ ] Query click rates (SQL)
 - [ ] Query unsubscribe rates (SQL)
 - [ ] Compare to legacy template
-- [ ] Any red flags? (No → proceed)
+- [ ] Any red flags? (No � proceed)
 
 ### Day 4: 25% Rollout
 - [ ] Set `NEW_EMAIL_TEMPLATE_ROLLOUT=25`
@@ -151,7 +151,7 @@
 - [ ] Check error logs daily
 - [ ] Query metrics
 - [ ] Compare to baseline
-- [ ] Any red flags? (No → proceed)
+- [ ] Any red flags? (No � proceed)
 
 ### Day 8: 50% Rollout
 - [ ] Set `NEW_EMAIL_TEMPLATE_ROLLOUT=50`
@@ -162,7 +162,7 @@
 - [ ] Check error logs daily
 - [ ] Query metrics
 - [ ] Statistical significance achieved?
-- [ ] Metrics stable or improved? (Yes → proceed)
+- [ ] Metrics stable or improved? (Yes � proceed)
 
 ### Day 12: 100% Rollout
 - [ ] Set `NEW_EMAIL_TEMPLATE_ROLLOUT=100`
@@ -173,7 +173,7 @@
 - [ ] Check error logs daily
 - [ ] Query final metrics
 - [ ] Compare to legacy baseline
-- [ ] Success criteria met? (Yes → proceed to cleanup)
+- [ ] Success criteria met? (Yes � proceed to cleanup)
 
 ---
 
@@ -209,35 +209,35 @@
 
 ## SUCCESS CRITERIA VERIFICATION
 
-### Code Quality ✅
+### Code Quality 
 - [ ] All files created
 - [ ] All tests passing
 - [ ] No console errors
 - [ ] Email size < 100KB
 - [ ] Works in all major clients
 
-### Visual Quality ✅
+### Visual Quality 
 - [ ] Emails match website preview
 - [ ] Purple branding throughout
 - [ ] Hot matches visually distinct
 - [ ] Professional appearance
 
-### Performance Metrics ✅
-- [ ] Open rate: ≥ baseline (or +10-15%)
+### Performance Metrics 
+- [ ] Open rate:  baseline (or +10-15%)
 - [ ] Click rate: +20-25%
 - [ ] Feedback rate: +30-40%
-- [ ] Unsubscribe rate: ≤ baseline (or -5%)
+- [ ] Unsubscribe rate: � baseline (or -5%)
 - [ ] Error rate: <1%
 
 ---
 
 ## RED FLAGS (STOP & ROLLBACK IF YOU SEE)
 
-- ❌ Open rate drops >10%
-- ❌ Unsubscribe rate increases >50%
-- ❌ Error rate >5%
-- ❌ User complaints about rendering
-- ❌ Emails not displaying in any major client
+-  Open rate drops >10%
+-  Unsubscribe rate increases >50%
+-  Error rate >5%
+-  User complaints about rendering
+-  Emails not displaying in any major client
 
 **If red flag detected**:
 1. Set `NEW_EMAIL_TEMPLATE_ROLLOUT=0` immediately

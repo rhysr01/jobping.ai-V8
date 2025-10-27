@@ -40,17 +40,17 @@ Welcome${userName ? `, ${userName}` : ''}!
 
 Your AI career assistant is finding your perfect matches.
 
-✅ Your First ${matchCount} Matches Arriving in 48 Hours
+ Your First ${matchCount} Matches Arriving in 48 Hours
 
-You'll automatically receive your first ${matchCount} hand-picked matches within 48 hours—no spam, just quality opportunities matched to your profile.
+You'll automatically receive your first ${matchCount} hand-picked matches within 48 hoursno spam, just quality opportunities matched to your profile.
 
-⚠️ CHECK YOUR SPAM FOLDER
+ CHECK YOUR SPAM FOLDER
 Our emails sometimes land in spam/junk. Check there if you don't see them in your inbox!
 
 What happens next?
 ${weeklyInfo}
 
-Sit back and relax. We'll send your matches automatically—no action needed!
+Sit back and relax. We'll send your matches automaticallyno action needed!
 
 ---
 
@@ -76,7 +76,7 @@ export function createJobMatchesEmailText(
   const greetingText = isSignupEmail ? 'Welcome! Here are your first' : 'Your fresh';
   const locationText = personalization?.location ? ` in ${personalization.location}` : '';
   const labelsText = personalization?.salaryRange || personalization?.entryLevelLabel 
-    ? `\n${[personalization.entryLevelLabel, personalization.salaryRange].filter(Boolean).join(' • ')}` 
+    ? `\n${[personalization.entryLevelLabel, personalization.salaryRange].filter(Boolean).join(' � ')}` 
     : '';
   
   const header = `JobPing - AI-Powered Job Matching for Europe
@@ -92,7 +92,7 @@ JOB MATCHES:
 
   const jobsText = jobs.map((job, index) => {
     const matchScore = job.match_score || job.matchResult?.match_score || 85;
-    const trending = matchScore >= 90 ? '🔥 Trending\n' : '';
+    const trending = matchScore >= 90 ? ' Trending\n' : '';
     
     return `${index + 1}. ${trending}${job.title || 'Job Title'}
    Company: ${job.company || 'Company'}

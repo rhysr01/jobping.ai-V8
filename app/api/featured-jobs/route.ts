@@ -72,7 +72,7 @@ export async function GET() {
     return NextResponse.json({
       jobs: [
         {
-          title: "Investment Banking Analyst Intern – Financial Sponsors Group",
+          title: "Investment Banking Analyst Intern  Financial Sponsors Group",
           company: "Guggenheim Partners",
           location: "London, England",
           job_url: "https://uk.indeed.com/viewjob?jk=e35ae28b179f6b06",

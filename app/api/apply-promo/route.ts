@@ -41,7 +41,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     return NextResponse.json({ 
       success: true,
       existingUser: true,
-      message: '🎉 Upgraded to premium! You\'re all set.',
+      message: ' Upgraded to premium! You\'re all set.',
       redirectUrl: null // No redirect needed - user already has profile
     });
   }
@@ -69,7 +69,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   return NextResponse.json({ 
     success: true,
     existingUser: false,
-    message: '✅ Promo code valid! Please complete your profile to activate premium.',
+    message: ' Promo code valid! Please complete your profile to activate premium.',
     redirectUrl: `${signupUrl}?email=${encodeURIComponent(email)}&promo=rhys`
   });
 });

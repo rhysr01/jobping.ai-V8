@@ -25,11 +25,11 @@ async function handleSendReEngagement(req: NextRequest) {
   }
 
   try {
-    console.log('🔄 Starting re-engagement email process...');
+    console.log(' Starting re-engagement email process...');
     
     const result = await sendReEngagementEmails();
     
-    console.log(`📊 Re-engagement complete: ${result.emailsSent} emails sent, ${result.errors.length} errors`);
+    console.log(` Re-engagement complete: ${result.emailsSent} emails sent, ${result.errors.length} errors`);
     
     return NextResponse.json({
       success: result.success,
@@ -39,7 +39,7 @@ async function handleSendReEngagement(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Re-engagement email process failed:', error);
+    console.error(' Re-engagement email process failed:', error);
     return NextResponse.json({
       error: 'Re-engagement email process failed',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -57,7 +57,7 @@ async function handleGetReEngagementStats(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Failed to get re-engagement stats:', error);
+    console.error(' Failed to get re-engagement stats:', error);
     return NextResponse.json({
       error: 'Failed to get re-engagement stats',
       details: error instanceof Error ? error.message : 'Unknown error'

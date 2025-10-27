@@ -168,7 +168,7 @@ export default function UpgradePage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-semibold">Monthly</p>
-                      <p className="text-sm text-zinc-400">‚Ç¨7 per month</p>
+                      <p className="text-sm text-zinc-400">Ç¨7 per month</p>
                     </div>
                     <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center">
                       {selectedPlan === 'monthly' && (
@@ -191,7 +191,7 @@ export default function UpgradePage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-semibold">Quarterly</p>
-                      <p className="text-sm text-zinc-400">‚Ç¨15 per quarter (save 29%)</p>
+                      <p className="text-sm text-zinc-400">Ç¨15 per quarter (save 29%)</p>
                     </div>
                     <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center">
                       {selectedPlan === 'quarterly' && (
@@ -217,7 +217,7 @@ export default function UpgradePage() {
                 className="w-full px-4 py-3 bg-zinc-900/50 border border-white/10 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
               />
               {promoCode.toLowerCase() === 'rhys' && (
-                <p className="mt-2 text-sm text-green-400">üéâ Premium for free!</p>
+                <p className="mt-2 text-sm text-green-400"> Premium for free!</p>
               )}
             </div>
 
@@ -250,7 +250,7 @@ export default function UpgradePage() {
                 <span className="w-2 h-2 bg-brand-500 rounded-full"></span>
                 Secure checkout
               </span>
-              <span>‚Ä¢</span>
+              <span>¢</span>
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
                 Cancel anytime
@@ -264,7 +264,7 @@ export default function UpgradePage() {
                 onClick={() => router.push('/')}
                 className="text-sm text-zinc-400 hover:text-white transition-colors"
               >
-                ‚Üê Back to home
+                Ü Back to home
               </button>
             </div>
           </form>
@@ -277,9 +277,9 @@ export default function UpgradePage() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mt-8 text-center text-sm text-zinc-400 space-y-1"
         >
-          <p>‚úì Five hand-picked roles on signup</p>
-          <p>‚úì Mon/Wed/Fri delivery (5 roles each)</p>
-          <p>‚úì Finer filters and priority support</p>
+          <p> Five hand-picked roles on signup</p>
+          <p> Mon/Wed/Fri delivery (5 roles each)</p>
+          <p> Finer filters and priority support</p>
         </motion.div>
       </div>
     </div>

@@ -90,7 +90,7 @@ async function suppressEmail(email: string, reason: string, eventData?: any): Pr
     throw error;
   }
   
-  console.log(`📧 Email suppressed: ${email} (reason: ${reason})`);
+  console.log(` Email suppressed: ${email} (reason: ${reason})`);
 }
 
 export async function POST(req: NextRequest) {
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
     
     const event: ResendWebhookEvent = JSON.parse(payload);
     
-    console.log(`📧 Resend webhook received: ${event.type} for ${event.data.to}`);
+    console.log(` Resend webhook received: ${event.type} for ${event.data.to}`);
     
     // Handle different event types
     switch (event.type) {
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
             }
           );
         } else {
-          console.log(`📧 Temporary bounce for ${event.data.to}, not suppressing`);
+          console.log(` Temporary bounce for ${event.data.to}, not suppressing`);
         }
         break;
         
@@ -150,11 +150,11 @@ export async function POST(req: NextRequest) {
       case 'email.opened':
       case 'email.clicked':
         // These are positive signals - we might want to track them but not suppress
-        console.log(`📧 Positive signal: ${event.type} for ${event.data.to}`);
+        console.log(` Positive signal: ${event.type} for ${event.data.to}`);
         break;
         
       default:
-        console.log(`📧 Unhandled webhook event type: ${event.type}`);
+        console.log(` Unhandled webhook event type: ${event.type}`);
     }
     
     return NextResponse.json({ success: true, processed: event.type });

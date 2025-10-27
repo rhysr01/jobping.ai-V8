@@ -16,7 +16,7 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Missing Supabase credentials');
+  console.error(' Missing Supabase credentials');
   process.exit(1);
 }
 
@@ -33,10 +33,10 @@ interface Job {
 
 async function cleanupJobs(): Promise<void> {
   try {
-    console.log('🧹 Starting job database cleanup...\n');
+    console.log(' Starting job database cleanup...\n');
 
     // Step 1: Check current state with pagination
-    console.log('📊 Checking current job data quality...');
+    console.log(' Checking current job data quality...');
     let allJobs: Job[] = [];
     let page = 0;
     const pageSize = 1000;
@@ -49,7 +49,7 @@ async function cleanupJobs(): Promise<void> {
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
       if (batchError) {
-        console.error('❌ Error fetching jobs batch:', batchError);
+        console.error(' Error fetching jobs batch:', batchError);
         return;
       }
 
@@ -63,7 +63,7 @@ async function cleanupJobs(): Promise<void> {
 
       // Safety check to prevent infinite loops
       if (page > 100) {
-        console.warn('⚠️  Stopping at 100 pages to prevent infinite loop');
+        console.warn('  Stopping at 100 pages to prevent infinite loop');
         break;
       }
     }
@@ -75,7 +75,7 @@ async function cleanupJobs(): Promise<void> {
       job.job_url && job.job_url.trim() !== ''
     ).length;
 
-    console.log(`📈 Before cleanup:`);
+    console.log(`� Before cleanup:`);
     console.log(`   Total jobs: ${totalJobs}`);
     console.log(`   Quality jobs: ${qualityJobs}`);
     console.log(`   Jobs to remove: ${totalJobs - qualityJobs}\n`);
@@ -87,7 +87,7 @@ async function cleanupJobs(): Promise<void> {
       !job.job_url || job.job_url.trim() === ''
     );
 
-    console.log(`🗑️  Deleting ${jobsToDelete.length} low-quality jobs...`);
+    console.log(`  Deleting ${jobsToDelete.length} low-quality jobs...`);
 
     // Step 3: Delete jobs in batches
     const batchSize = 100;
@@ -103,7 +103,7 @@ async function cleanupJobs(): Promise<void> {
         .in('id', ids);
 
       if (deleteError) {
-        console.error(`❌ Error deleting batch ${i / batchSize + 1}:`, deleteError);
+        console.error(` Error deleting batch ${i / batchSize + 1}:`, deleteError);
         continue;
       }
 
@@ -112,7 +112,7 @@ async function cleanupJobs(): Promise<void> {
     }
 
     // Step 4: Remove duplicates based on job_url with pagination
-    console.log('\n🔄 Removing duplicate jobs...');
+    console.log('\n Removing duplicate jobs...');
     
     let remainingJobs: (Job & { created_at: string })[] = [];
     let remainingPage = 0;
@@ -126,7 +126,7 @@ async function cleanupJobs(): Promise<void> {
         .range(remainingPage * pageSize, (remainingPage + 1) * pageSize - 1);
 
       if (remainingError) {
-        console.error('❌ Error fetching remaining jobs:', remainingError);
+        console.error(' Error fetching remaining jobs:', remainingError);
         return;
       }
 
@@ -140,7 +140,7 @@ async function cleanupJobs(): Promise<void> {
 
       // Safety check
       if (remainingPage > 100) {
-        console.warn('⚠️  Stopping remaining jobs fetch at 100 pages');
+        console.warn('  Stopping remaining jobs fetch at 100 pages');
         break;
       }
     }
@@ -172,14 +172,14 @@ async function cleanupJobs(): Promise<void> {
           .in('id', batch);
 
         if (deleteError) {
-          console.error(`❌ Error deleting duplicate batch:`, deleteError);
+          console.error(` Error deleting duplicate batch:`, deleteError);
           continue;
         }
       }
     }
 
     // Step 5: Final quality check with pagination
-    console.log('\n✅ Final quality check...');
+    console.log('\n Final quality check...');
     let finalStats: Job[] = [];
     let finalPage = 0;
     let finalHasMore = true;
@@ -191,7 +191,7 @@ async function cleanupJobs(): Promise<void> {
         .range(finalPage * pageSize, (finalPage + 1) * pageSize - 1);
 
       if (finalError) {
-        console.error('❌ Error fetching final stats:', finalError);
+        console.error(' Error fetching final stats:', finalError);
         return;
       }
 
@@ -205,7 +205,7 @@ async function cleanupJobs(): Promise<void> {
 
       // Safety check
       if (finalPage > 100) {
-        console.warn('⚠️  Stopping final stats fetch at 100 pages');
+        console.warn('  Stopping final stats fetch at 100 pages');
         break;
       }
     }
@@ -217,17 +217,17 @@ async function cleanupJobs(): Promise<void> {
       job.job_url && job.job_url.trim() !== ''
     ).length;
 
-    console.log(`📊 After cleanup:`);
+    console.log(` After cleanup:`);
     console.log(`   Total jobs: ${finalTotal}`);
     console.log(`   Quality jobs: ${finalQuality}`);
     console.log(`   Jobs removed: ${totalJobs - finalTotal}`);
     console.log(`   Quality improvement: ${((finalQuality / finalTotal) * 100).toFixed(1)}%`);
 
-    console.log('\n🎉 Database cleanup completed successfully!');
-    console.log('💡 All remaining jobs now have company, location, and URL data.');
+    console.log('\n Database cleanup completed successfully!');
+    console.log(' All remaining jobs now have company, location, and URL data.');
 
   } catch (error) {
-    console.error('❌ Cleanup failed:', error);
+    console.error(' Cleanup failed:', error);
     process.exit(1);
   }
 }

@@ -162,7 +162,7 @@ import { getProductionRateLimiter } from './Utils/productionRateLimiter';
 
 // Global teardown to close all connections
 afterAll(async () => {
-  console.log('🧹 Cleaning up test resources...');
+  console.log(' Cleaning up test resources...');
   
   try {
     // Teardown rate limiter
@@ -173,8 +173,8 @@ afterAll(async () => {
     
     // Cache teardown is handled by mocks
     
-    console.log('✅ Test cleanup completed');
+    console.log(' Test cleanup completed');
   } catch (error) {
-    console.error('❌ Error during test cleanup:', error);
+    console.error(' Error during test cleanup:', error);
   }
 });

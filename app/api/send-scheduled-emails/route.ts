@@ -34,14 +34,14 @@ async function handleSendScheduledEmails(req: NextRequest) {
   }
 
   try {
-    console.log('🚀 Starting scheduled email delivery...');
+    console.log(' Starting scheduled email delivery...');
     const supabase = getSupabaseClient();
 
     // Get all active users who are eligible for scheduled emails based on tier-based timing
     const testingMode = process.env.NODE_ENV === 'production' && process.env.JOBPING_PILOT_TESTING === '1';
     const now = new Date();
     
-    console.log('🔍 Querying users for scheduled emails with tier-based timing...');
+    console.log(' Querying users for scheduled emails with tier-based timing...');
     
     // Get all verified users with their email history and tracking fields
     const { data: allUsers, error: usersError } = await supabase
@@ -52,12 +52,12 @@ async function handleSendScheduledEmails(req: NextRequest) {
       .limit(1000);
 
     if (usersError) {
-      console.error('❌ Failed to fetch users:', usersError);
+      console.error(' Failed to fetch users:', usersError);
       return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
     }
 
     if (!allUsers || allUsers.length === 0) {
-      console.log('ℹ️ No users found');
+      console.log(' No users found');
       return NextResponse.json({ 
         success: true, 
         message: 'No users found',
@@ -81,7 +81,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
       const shouldReceiveEmail = await shouldSendEmailToUser(user.email);
       
       if (!shouldReceiveEmail) {
-        console.log(`⏸️ Skipping ${user.email} - delivery paused or not engaged`);
+        console.log(` Skipping ${user.email} - delivery paused or not engaged`);
         continue;
       }
 
@@ -125,15 +125,15 @@ async function handleSendScheduledEmails(req: NextRequest) {
       }
     }
 
-    console.log(`📧 Found ${eligibleUsers.length} eligible users out of ${allUsers.length} total users`);
-    console.log('🔍 Eligibility breakdown:', {
+    console.log(` Found ${eligibleUsers.length} eligible users out of ${allUsers.length} total users`);
+    console.log(' Eligibility breakdown:', {
       total: allUsers.length,
       eligible: eligibleUsers.length,
       testingMode: testingMode ? 'ENABLED' : 'DISABLED'
     });
 
     if (!eligibleUsers || eligibleUsers.length === 0) {
-      console.log('ℹ️ No users eligible for scheduled emails');
+      console.log(' No users eligible for scheduled emails');
       return NextResponse.json({ 
         success: true, 
         message: 'No users eligible for scheduled emails',
@@ -141,7 +141,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
       }, { status: 200 });
     }
 
-    console.log(`📧 Processing ${eligibleUsers.length} users for scheduled emails`);
+    console.log(` Processing ${eligibleUsers.length} users for scheduled emails`);
 
     // Get fresh jobs from the last 7 days
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -154,12 +154,12 @@ async function handleSendScheduledEmails(req: NextRequest) {
       .limit(10000); // Increased to fetch more jobs for better matching
 
     if (jobsError) {
-      console.error('❌ Failed to fetch jobs:', jobsError);
+      console.error(' Failed to fetch jobs:', jobsError);
       return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
     }
 
     if (!jobs || jobs.length === 0) {
-      console.log('ℹ️ No active jobs available for matching');
+      console.log(' No active jobs available for matching');
       return NextResponse.json({ 
         success: true, 
         message: 'No active jobs available',
@@ -167,16 +167,16 @@ async function handleSendScheduledEmails(req: NextRequest) {
       });
     }
 
-    console.log(`📋 Found ${jobs.length} active jobs for matching`);
+    console.log(` Found ${jobs.length} active jobs for matching`);
 
     const matcher = createConsolidatedMatcher(process.env.OPENAI_API_KEY);
 
     // ============================================
     // OPTIMIZATION: Batch fetch all user matches (fixes N+1 query bomb!)
-    // Before: 50 users × 10 batches = 500 queries total
+    // Before: 50 users � 10 batches = 500 queries total
     // After: 1 query for all users = instant!
     // ============================================
-    console.log('📊 Batch fetching all previous matches for all users...');
+    console.log(' Batch fetching all previous matches for all users...');
     const matchFetchStart = Date.now();
     
     const allUserEmails = eligibleUsers.map(u => u.email);
@@ -189,7 +189,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
       console.error('Failed to fetch previous matches:', allMatchError);
     }
     
-    // Build lookup map: email → Set<job_hash>
+    // Build lookup map: email � Set<job_hash>
     const matchesByUser = new Map<string, Set<string>>();
     (allPreviousMatches || []).forEach(match => {
       if (!matchesByUser.has(match.user_email)) {
@@ -198,25 +198,25 @@ async function handleSendScheduledEmails(req: NextRequest) {
       matchesByUser.get(match.user_email)!.add(match.job_hash);
     });
     
-    console.log(`✅ Loaded ${allPreviousMatches?.length || 0} matches for ${eligibleUsers.length} users in ${Date.now() - matchFetchStart}ms`);
+    console.log(` Loaded ${allPreviousMatches?.length || 0} matches for ${eligibleUsers.length} users in ${Date.now() - matchFetchStart}ms`);
     // ============================================
 
     // BATCH PROCESSING: Process users in batches of 10 to avoid timeouts
     const userResults = [];
     const BATCH_SIZE = 10;
     
-    console.log(`📦 Processing ${eligibleUsers.length} users in batches of ${BATCH_SIZE}...`);
+    console.log(`� Processing ${eligibleUsers.length} users in batches of ${BATCH_SIZE}...`);
     
     for (let i = 0; i < eligibleUsers.length; i += BATCH_SIZE) {
       const batch = eligibleUsers.slice(i, i + BATCH_SIZE);
       const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
       const totalBatches = Math.ceil(eligibleUsers.length / BATCH_SIZE);
       
-      console.log(`\n📦 Processing batch ${batchNumber}/${totalBatches} (${batch.length} users)...`);
+      console.log(`\n� Processing batch ${batchNumber}/${totalBatches} (${batch.length} users)...`);
       
       const batchPromises = batch.map(async (user) => {
         try {
-          console.log(`🎯 Processing user: ${user.email}`);
+          console.log(`� Processing user: ${user.email}`);
 
           // Use pre-loaded matches (NO QUERY!)
           const previousJobHashes = matchesByUser.get(user.email) || new Set<string>();
@@ -244,7 +244,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
           const aiDisabled = process.env.MATCH_USERS_DISABLE_AI === 'true';
 
           if (aiDisabled) {
-            console.log(`🧠 AI disabled, using rule-based fallback for ${user.email}`);
+            console.log(` AI disabled, using rule-based fallback for ${user.email}`);
             matchType = 'fallback';
             const fallbackResults = generateRobustFallbackMatches(unseenJobs as any[], userPreferences);
             matches = fallbackResults.map((result) => ({
@@ -260,7 +260,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
               const costCheck = await aiCostManager.canMakeAICall(user.email, estimatedCost);
               
               if (!costCheck.allowed) {
-                console.log(`💰 AI call blocked for ${user.email}: ${costCheck.reason}`);
+                console.log(` AI call blocked for ${user.email}: ${costCheck.reason}`);
                 matchType = 'fallback';
                 const fallbackResults = generateRobustFallbackMatches(unseenJobs as any[], userPreferences);
                 matches = fallbackResults.map((result) => ({
@@ -290,7 +290,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
                 }
               }
             } catch (aiError) {
-              console.error(`❌ AI matching failed for ${user.email}:`, aiError);
+              console.error(` AI matching failed for ${user.email}:`, aiError);
               matchType = 'ai_failed';
               const fallbackResults = generateRobustFallbackMatches(unseenJobs as any[], userPreferences);
               matches = fallbackResults.map((result) => ({
@@ -344,7 +344,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
               .insert(matchEntries);
 
             if (matchInsertError) {
-              console.error(`❌ Failed to save matches for ${user.email}:`, matchInsertError);
+              console.error(` Failed to save matches for ${user.email}:`, matchInsertError);
             }
 
             // Build personalized subject from user preferences and matches
@@ -392,20 +392,20 @@ async function handleSendScheduledEmails(req: NextRequest) {
               .update(updateData)
               .eq('email', user.email);
             if (updateError) {
-              console.error(`❌ Failed to update tracking fields for ${user.email}:`, updateError);
+              console.error(` Failed to update tracking fields for ${user.email}:`, updateError);
             }
 
             // Track email engagement (email sent)
             await updateUserEngagement(user.email, 'email_sent');
             
-            console.log(`✅ Email sent to ${user.email} with ${matches.length} matches (${userTier} tier, ${isOnboardingPhase ? 'onboarding' : 'regular'} phase)`);
+            console.log(` Email sent to ${user.email} with ${matches.length} matches (${userTier} tier, ${isOnboardingPhase ? 'onboarding' : 'regular'} phase)`);
             return { success: true, email: user.email };
           } else {
-            console.log(`⚠️ No matches found for ${user.email}`);
+            console.log(` No matches found for ${user.email}`);
             return { success: true, email: user.email, noMatches: true };
           }
         } catch (error) {
-          console.error(`❌ Failed to process user ${user.email}:`, error);
+          console.error(` Failed to process user ${user.email}:`, error);
           return { success: false, email: user.email, error };
         }
       });
@@ -414,7 +414,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
       const batchResults = await Promise.all(batchPromises);
       userResults.push(...batchResults);
       
-      console.log(`✅ Batch ${batchNumber}/${totalBatches} complete - ${batchResults.filter(r => r.success).length}/${batch.length} succeeded`);
+      console.log(` Batch ${batchNumber}/${totalBatches} complete - ${batchResults.filter(r => r.success).length}/${batch.length} succeeded`);
       
       // Small delay between batches to avoid rate limits (100ms)
       if (i + BATCH_SIZE < eligibleUsers.length) {
@@ -425,10 +425,10 @@ async function handleSendScheduledEmails(req: NextRequest) {
     const successCount = userResults.filter(r => r.success && !r.noMatches).length;
     const errorCount = userResults.filter(r => !r.success).length;
 
-    console.log(`📊 Scheduled email delivery completed:`);
-    console.log(`   ✅ Success: ${successCount}`);
-    console.log(`   ❌ Errors: ${errorCount}`);
-    console.log(`   📧 Total processed: ${eligibleUsers.length}`);
+    console.log(` Scheduled email delivery completed:`);
+    console.log(`    Success: ${successCount}`);
+    console.log(`    Errors: ${errorCount}`);
+    console.log(`    Total processed: ${eligibleUsers.length}`);
 
     return NextResponse.json({
       success: true,
@@ -439,7 +439,7 @@ async function handleSendScheduledEmails(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Scheduled email delivery failed:', error);
+    console.error(' Scheduled email delivery failed:', error);
     return NextResponse.json({
       error: 'Scheduled email delivery failed',
       details: error instanceof Error ? error.message : 'Unknown error'

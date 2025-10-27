@@ -15,7 +15,7 @@ const MAX_PROCESSING_TIME = parseInt(process.env.MAX_PROCESSING_TIME || '25000')
 const processEmailQueueHandler = asyncHandler(async (_request: NextRequest) => {
   const startTime = Date.now();
   
-  console.log('🚀 Starting cron email queue processing...');
+  console.log(' Starting cron email queue processing...');
   
   // Get pending email jobs
   const { data: jobs, error: fetchError } = await supabase
@@ -29,12 +29,12 @@ const processEmailQueueHandler = asyncHandler(async (_request: NextRequest) => {
     .limit(BATCH_SIZE);
 
   if (fetchError) {
-    console.error('❌ Error fetching email jobs:', fetchError);
+    console.error(' Error fetching email jobs:', fetchError);
     throw new AppError('Failed to fetch jobs', 500, 'DB_FETCH_ERROR', { details: fetchError.message });
   }
 
   if (!jobs || jobs.length === 0) {
-    console.log('✅ No pending email jobs to process');
+    console.log(' No pending email jobs to process');
     return NextResponse.json({ 
       message: 'No jobs to process',
       processed: 0,
@@ -42,7 +42,7 @@ const processEmailQueueHandler = asyncHandler(async (_request: NextRequest) => {
     });
   }
 
-  console.log(`📧 Processing ${jobs.length} email jobs...`);
+  console.log(` Processing ${jobs.length} email jobs...`);
   
   let processed = 0;
   let failed = 0;
@@ -51,7 +51,7 @@ const processEmailQueueHandler = asyncHandler(async (_request: NextRequest) => {
   for (const job of jobs) {
     // Check if we're running out of time
     if (Date.now() - startTime > MAX_PROCESSING_TIME) {
-      console.log('⏰ Time limit reached, stopping processing');
+      console.log(' Time limit reached, stopping processing');
       break;
     }
 
@@ -74,7 +74,7 @@ const processEmailQueueHandler = asyncHandler(async (_request: NextRequest) => {
         personalization: {
           role: 'Software Developer', // TODO: Get from user preferences
           location: 'Europe',
-          salaryRange: '€40k+'
+          salaryRange: '��40k+'
         }
       });
 
@@ -89,10 +89,10 @@ const processEmailQueueHandler = asyncHandler(async (_request: NextRequest) => {
         .eq('id', job.id);
 
       processed++;
-      console.log(`✅ Completed email job ${job.id} for ${userEmail}`);
+      console.log(` Completed email job ${job.id} for ${userEmail}`);
 
     } catch (error) {
-      console.error(`❌ Failed to process email job ${job.id}:`, error);
+      console.error(` Failed to process email job ${job.id}:`, error);
       
       // Handle failure with retry logic
       const newAttempts = (job.attempts || 0) + 1;
@@ -109,7 +109,7 @@ const processEmailQueueHandler = asyncHandler(async (_request: NextRequest) => {
           })
           .eq('id', job.id);
         
-        console.error(`❌ Job ${job.id} failed permanently after ${newAttempts} attempts`);
+        console.error(` Job ${job.id} failed permanently after ${newAttempts} attempts`);
       } else {
         // Retry with exponential backoff
         const retryDelay = Math.min(1000 * Math.pow(2, newAttempts), 300000); // Max 5 minutes
@@ -125,7 +125,7 @@ const processEmailQueueHandler = asyncHandler(async (_request: NextRequest) => {
           })
           .eq('id', job.id);
         
-        console.log(`🔄 Job ${job.id} will retry in ${retryDelay}ms (attempt ${newAttempts}/${maxAttempts})`);
+        console.log(` Job ${job.id} will retry in ${retryDelay}ms (attempt ${newAttempts}/${maxAttempts})`);
       }
       
       failed++;
@@ -133,7 +133,7 @@ const processEmailQueueHandler = asyncHandler(async (_request: NextRequest) => {
   }
 
   const duration = Date.now() - startTime;
-  console.log(`✅ Email queue processing complete: ${processed} processed, ${failed} failed in ${duration}ms`);
+  console.log(` Email queue processing complete: ${processed} processed, ${failed} failed in ${duration}ms`);
 
   return NextResponse.json({
     message: 'Email queue processing complete',

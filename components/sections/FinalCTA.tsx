@@ -36,7 +36,7 @@ export default function FinalCTA() {
   // Fallback jobs if API fails or is loading
   const displayJobs: FeaturedJob[] = jobs.length >= 2 ? jobs : [
     {
-      title: "Investment Banking Analyst Intern – Financial Sponsors Group",
+      title: "Investment Banking Analyst Intern  Financial Sponsors Group",
       company: "Guggenheim Partners",
       location: "London, England",
       job_url: "#", // Placeholder - will be replaced with real job URL from database
@@ -97,14 +97,14 @@ export default function FinalCTA() {
               {/* Greeting */}
               <div className="text-center mb-8 sm:mb-10">
                 <h3 className="text-2xl sm:text-3xl font-black text-white mb-3 sm:mb-4 leading-tight">5 perfect matches just dropped</h3>
-                <p className="text-zinc-400 text-sm sm:text-base">We found roles that actually match you—no generic spam, just quality.</p>
+                <p className="text-zinc-400 text-sm sm:text-base">We found roles that actually match youno generic spam, just quality.</p>
               </div>
 
               {/* Hot Match Job Card - DYNAMIC */}
               <div className="mb-6 sm:mb-7 p-5 sm:p-7 md:p-8 rounded-2xl border-2 border-purple-500/70 bg-gradient-to-br from-brand-500/12 to-purple-600/8 shadow-[0_12px_40px_rgba(99,102,241,0.35)]">
                 <div className="inline-flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-purple-600 to-brand-500 text-white text-[10px] sm:text-xs font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg mb-3 sm:mb-4 shadow-[0_4px_12px_rgba(139,92,246,0.4)]">
                   <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse"></span>
-                  Hot Match • {hotJob.match_score}% Match
+                  Hot Match � {hotJob.match_score}% Match
                 </div>
                 <div className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 leading-tight">{hotJob.title}</div>
                 <div className="text-zinc-300 font-semibold text-sm sm:text-base mb-1 sm:mb-2">{hotJob.company}</div>

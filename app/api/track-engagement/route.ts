@@ -21,7 +21,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   // Update user engagement
   await updateUserEngagement(email, type as 'email_opened' | 'email_clicked');
   
-  console.log(`✅ Tracked ${type} for ${email}`);
+  console.log(` Tracked ${type} for ${email}`);
   
   return NextResponse.json({ 
     success: true, 
@@ -46,7 +46,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   // Update user engagement
   await updateUserEngagement(email, type as 'email_opened' | 'email_clicked');
   
-  console.log(`✅ Tracked ${type} for ${email}`);
+  console.log(` Tracked ${type} for ${email}`);
   
   // For click tracking, redirect to the original URL
   if (type === 'email_clicked' && url) {

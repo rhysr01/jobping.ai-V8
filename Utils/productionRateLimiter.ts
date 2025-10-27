@@ -217,7 +217,7 @@ class ProductionRateLimiter {
         });
 
         this.redisClient.on('error', (err: any) => {
-          console.error('❌ Redis connection error:', err);
+          console.error('Redis connection error:', err);
           this.isRedisConnected = false;
         });
 
@@ -227,11 +227,11 @@ class ProductionRateLimiter {
 
         await this.redisClient.connect();
       } else {
-        console.warn('⚠️ No REDIS_URL found, using in-memory fallback');
+        console.warn('No REDIS_URL found, using in-memory fallback');
         this.isRedisConnected = false;
       }
     } catch (error) {
-      console.error('❌ Failed to initialize Redis:', error);
+      console.error('Failed to initialize Redis:', error);
       this.isRedisConnected = false;
     }
   }
@@ -245,7 +245,7 @@ class ProductionRateLimiter {
       try {
         await this.redisClient.quit();
       } catch (error) {
-        console.error('❌ Error disconnecting Redis:', error);
+        console.error('Error disconnecting Redis:', error);
       }
     }
     this.initialized = false;
@@ -298,7 +298,7 @@ class ProductionRateLimiter {
         return this.checkMemoryRateLimit(key, config, now);
       }
     } catch (error) {
-      console.error('❌ Rate limit check failed:', error);
+      console.error('Rate limit check failed:', error);
       // Fail closed for safety to prevent abuse
       return {
         allowed: false,
@@ -430,7 +430,7 @@ class ProductionRateLimiter {
     const result = await this.checkRateLimit(endpoint, identifier, customConfig);
 
     if (!result.allowed) {
-      console.warn(`🚨 Rate limit exceeded for ${endpoint} from ${identifier}`);
+      console.warn(`Rate limit exceeded for ${endpoint} from ${identifier}`);
       
       return NextResponse.json(
         {
@@ -478,7 +478,7 @@ class ProductionRateLimiter {
         this.fallbackMap.delete(key);
       }
     } catch (error) {
-      console.error('❌ Failed to reset rate limit:', error);
+      console.error('Failed to reset rate limit:', error);
     }
   }
 
@@ -504,7 +504,7 @@ class ProductionRateLimiter {
         memoryKeys: this.fallbackMap.size
       };
     } catch (error) {
-      console.error('❌ Failed to get rate limit stats:', error);
+      console.error('Failed to get rate limit stats:', error);
       return {
         totalKeys: 0,
         redisConnected: false,
@@ -536,7 +536,7 @@ class ProductionRateLimiter {
 
     // Check if we're exceeding hourly limit
     if (recentRequests.length >= config.requestsPerHour) {
-      console.warn(`⚠️ ${platform}: Approaching hourly limit (${recentRequests.length}/${config.requestsPerHour})`);
+      console.warn(`${platform}: Approaching hourly limit (${recentRequests.length}/${config.requestsPerHour})`);
       return config.maxDelayMs;
     }
 
@@ -547,7 +547,7 @@ class ProductionRateLimiter {
       // Increase throttle level on block
       currentThrottleLevel = Math.min(currentThrottleLevel + 1, 5);
       this.scraperThrottleLevel.set(platformKey, currentThrottleLevel);
-      console.warn(`🚨 ${platform}: Block detected! Throttle level: ${currentThrottleLevel}`);
+      console.warn(`${platform}: Block detected! Throttle level: ${currentThrottleLevel}`);
     } else if (currentThrottleLevel > 0) {
       // Gradually reduce throttle level on success
       currentThrottleLevel = Math.max(currentThrottleLevel - 0.1, 0);
@@ -622,7 +622,7 @@ class ProductionRateLimiter {
       this.scraperRequestTimes.clear();
       this.scraperThrottleLevel.clear();
     } catch (error) {
-      console.error('❌ Error closing rate limiter:', error);
+      console.error('Error closing rate limiter:', error);
     }
   }
 }

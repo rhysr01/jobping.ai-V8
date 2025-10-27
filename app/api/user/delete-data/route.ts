@@ -11,7 +11,7 @@ export const POST = asyncHandler(async (request: NextRequest) => {
 
   const supabase = getSupabaseClient();
 
-  console.log(`🗑️  Processing data deletion request for: ${email}`);
+  console.log(`  Processing data deletion request for: ${email}`);
 
   // Delete user data from all relevant tables
   const deletions = await Promise.allSettled([
@@ -74,10 +74,10 @@ export const POST = asyncHandler(async (request: NextRequest) => {
     
     if (result.status === 'fulfilled') {
       const count = (result.value.data as any)?.length || 0;
-      console.log(`✅ Deleted from ${tableNames[index]}: ${count} records`);
+      console.log(` Deleted from ${tableNames[index]}: ${count} records`);
       return { table: tableNames[index], success: true, count: count };
     } else {
-      console.error(`❌ Failed to delete from ${tableNames[index]}:`, result.reason);
+      console.error(` Failed to delete from ${tableNames[index]}:`, result.reason);
       return { table: tableNames[index], success: false, error: result.reason };
     }
   });
@@ -85,10 +85,10 @@ export const POST = asyncHandler(async (request: NextRequest) => {
   const successfulDeletions = results.filter(r => r.success);
   const failedDeletions = results.filter(r => !r.success);
 
-  console.log(`📊 Data deletion summary: ${successfulDeletions.length} successful, ${failedDeletions.length} failed`);
+  console.log(` Data deletion summary: ${successfulDeletions.length} successful, ${failedDeletions.length} failed`);
 
   if (failedDeletions.length > 0) {
-    console.warn('⚠️  Some deletions failed:', failedDeletions);
+    console.warn('  Some deletions failed:', failedDeletions);
   }
 
   // Return success even if some deletions failed (partial success is acceptable)

@@ -114,15 +114,15 @@ graph TB
 **API Routes:**
 ```
 /api/
-├── health/                 # System health check
-├── match-users/           # Core matching endpoint
-├── send-scheduled-emails/ # Email automation
-├── webhook-tally/         # User registration
-├── dashboard/             # Analytics dashboard
-├── user-matches/          # User match retrieval
-├── create-checkout-session/ # Payment processing
-├── webhooks/stripe/       # Payment webhooks
-└── scrape/               # Job scraping endpoints
+ health/                 # System health check
+ match-users/           # Core matching endpoint
+ send-scheduled-emails/ # Email automation
+ webhook-tally/         # User registration
+ dashboard/             # Analytics dashboard
+ user-matches/          # User match retrieval
+ create-checkout-session/ # Payment processing
+ webhooks/stripe/       # Payment webhooks
+ scrape/               # Job scraping endpoints
 ```
 
 ### 3. **Job Matching Engine**

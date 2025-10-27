@@ -1,4 +1,4 @@
-// 🔧 EMAIL CLIENTS - RESEND & SUPABASE MANAGEMENT
+// EMAIL CLIENTS - RESEND & SUPABASE MANAGEMENT
 
 import { Resend } from 'resend';
 

@@ -1,33 +1,33 @@
 
 
-# ğŸ¯ JobPing Matching Improvements Guide
+# ¯ JobPing Matching Improvements Guide
 
 ## Current Issues Found
 
 | Category | Issue | Impact | Severity |
 |----------|-------|--------|----------|
-| **User Data** | 0% have languages filled | Can't filter by language | ğŸ”´ Critical |
-| **User Data** | Empty visa_status & career_path | Missing matching signals | ğŸŸ¡ Medium |
-| **Jobs Data** | No industry tags | Can't match by industry | ğŸŸ¡ Medium |
-| **Jobs Data** | No skills extracted | Can't match by skills | ğŸŸ¡ Medium |
-| **Matching Logic** | No deduplication tracking | Users see same jobs twice | ğŸŸ¡ Medium |
-| **Feedback Loop** | Only 2 feedback entries | Can't improve with data | ğŸ”´ Critical |
+| **User Data** | 0% have languages filled | Can't filter by language | ´ Critical |
+| **User Data** | Empty visa_status & career_path | Missing matching signals |  Medium |
+| **Jobs Data** | No industry tags | Can't match by industry |  Medium |
+| **Jobs Data** | No skills extracted | Can't match by skills |  Medium |
+| **Matching Logic** | No deduplication tracking | Users see same jobs twice |  Medium |
+| **Feedback Loop** | Only 2 feedback entries | Can't improve with data | ´ Critical |
 
 ---
 
-## ğŸš€ 10 High-Impact Improvements
+##  10 High-Impact Improvements
 
-### 1ï¸âƒ£ **Infer Missing User Data** âœ… (Easiest - Do Now!)
+### 1ƒ£ **Infer Missing User Data**  (Easiest - Do Now!)
 
 **Problem:** 0% of users have languages filled, but all have target cities  
 **Solution:** Auto-infer languages from target cities
 
 ```sql
 -- Automatically done by user-matching-improvements.sql
--- London â†’ English
--- Berlin â†’ German  
--- Paris â†’ French
--- Milan â†’ Italian
+-- London † English
+-- Berlin † German  
+-- Paris † French
+-- Milan † Italian
 ```
 
 **Impact:** Immediate 100% language coverage  
@@ -35,7 +35,7 @@
 
 ---
 
-### 2ï¸âƒ£ **Add Industry & Company Size Preferences** (High Value)
+### 2ƒ£ **Add Industry & Company Size Preferences** (High Value)
 
 **Problem:** Can't match "I want finance in startups" vs "tech in enterprise"  
 **Solution:** Add to Tally onboarding form
@@ -59,16 +59,16 @@ skills: string[] // ['Python', 'Excel', 'SQL']
 
 ---
 
-### 3ï¸âƒ£ **Extract Industries from Job Descriptions** âœ… (Automated)
+### 3ƒ£ **Extract Industries from Job Descriptions**  (Automated)
 
 **Problem:** No way to know if a job is in Finance vs Tech  
 **Solution:** Auto-detect from title + description keywords
 
 ```sql
 -- Automatically done by user-matching-improvements.sql
--- Keywords: 'banking|investment' â†’ Finance
--- Keywords: 'software|developer' â†’ Technology
--- Keywords: 'strategy|advisory' â†’ Consulting
+-- Keywords: 'banking|investment' † Finance
+-- Keywords: 'software|developer' † Technology
+-- Keywords: 'strategy|advisory' † Consulting
 ```
 
 **Impact:** Can filter jobs by industry  
@@ -76,15 +76,15 @@ skills: string[] // ['Python', 'Excel', 'SQL']
 
 ---
 
-### 4ï¸âƒ£ **Visa Sponsorship Detection** âœ… (Critical for International Students)
+### 4ƒ£ **Visa Sponsorship Detection**  (Critical for International Students)
 
 **Problem:** Users waste time on jobs they can't apply to  
 **Solution:** Extract from description
 
 ```sql
 -- Automatically done by user-matching-improvements.sql
-description LIKE '%visa sponsor%' â†’ visa_sponsorship = true
-description LIKE '%right to work required%' â†’ visa_sponsorship = false
+description LIKE '%visa sponsor%' † visa_sponsorship = true
+description LIKE '%right to work required%' † visa_sponsorship = false
 ```
 
 **Then match:**
@@ -98,7 +98,7 @@ WHERE (u.visa_status = 'needs_sponsorship' AND j.visa_sponsorship = true)
 
 ---
 
-### 5ï¸âƒ£ **Track Jobs Already Sent** ğŸ”´ (Critical - Avoid Duplicates!)
+### 5ƒ£ **Track Jobs Already Sent** ´ (Critical - Avoid Duplicates!)
 
 **Problem:** Users might see same jobs multiple times  
 **Solution:** Track sent jobs per user
@@ -120,7 +120,7 @@ WHERE job_hash NOT IN (SELECT UNNEST(seen_job_hashes) FROM users WHERE email = ?
 
 ---
 
-### 6ï¸âƒ£ **Skill Extraction from Job Descriptions** (Medium Priority)
+### 6ƒ£ **Skill Extraction from Job Descriptions** (Medium Priority)
 
 **Problem:** Can't match "Python skills" user to "Python required" job  
 **Solution:** Extract skills with regex
@@ -148,7 +148,7 @@ boost = array_overlap(user.skills, job.required_skills) ? 0.1 : 0
 
 ---
 
-### 7ï¸âƒ£ **Company Size Classification** (Nice to Have)
+### 7ƒ£ **Company Size Classification** (Nice to Have)
 
 **Problem:** Startup people don't want enterprise, vice versa  
 **Solution:** Classify by known lists or description
@@ -167,7 +167,7 @@ END
 
 ---
 
-### 8ï¸âƒ£ **User Feedback Loop** ğŸ”´ (Critical for Learning)
+### 8ƒ£ **User Feedback Loop** ´ (Critical for Learning)
 
 **Problem:** Only 2 feedback entries - can't improve algorithm  
 **Solution:** Make feedback dead simple
@@ -175,7 +175,7 @@ END
 **Add to emails:**
 ```html
 Rate this match:
-ğŸ‘ Great match | ğŸ˜ OK | ğŸ‘ Bad match
+ Great match | ˜ OK |  Bad match
 
 (One-click buttons, no login required)
 ```
@@ -206,7 +206,7 @@ GROUP BY verdict;
 
 ---
 
-### 9ï¸âƒ£ **Match Score Personalization** (Advanced)
+### 9ƒ£ **Match Score Personalization** (Advanced)
 
 **Problem:** Same algorithm for everyone - some want only 95%+ matches, others want variety  
 **Solution:** Let users set minimum match threshold
@@ -231,7 +231,7 @@ LIMIT 5;
 
 ---
 
-### ğŸ”Ÿ **Freshness Boosting** âœ… (Already Available!)
+###  **Freshness Boosting**  (Already Available!)
 
 **Problem:** Old jobs rank same as fresh jobs  
 **Solution:** Boost newer jobs in ranking
@@ -255,24 +255,24 @@ ORDER BY boosted_score DESC;
 
 ---
 
-## ğŸ“Š Implementation Priority
+##  Implementation Priority
 
 | Priority | Improvement | Impact | Effort | ROI |
 |----------|-------------|--------|--------|-----|
-| **ğŸ”´ Do Now** | Infer languages from cities | High | 5 min | â­â­â­â­â­ |
-| **ğŸ”´ Do Now** | Extract industries from jobs | High | 5 min | â­â­â­â­â­ |
-| **ğŸ”´ Do Now** | Detect visa sponsorship | High | 5 min | â­â­â­â­â­ |
-| **ğŸŸ¡ This Week** | Track seen/clicked jobs | High | 2 hrs | â­â­â­â­ |
-| **ğŸŸ¡ This Week** | Add feedback buttons | High | 3 hrs | â­â­â­â­ |
-| **ğŸŸ¢ This Month** | Add industry preferences | Med | 1 hr | â­â­â­ |
-| **ğŸŸ¢ This Month** | Extract skills from jobs | Med | 3 hrs | â­â­â­ |
-| **ğŸŸ¢ Later** | Company size classification | Med | 4 hrs | â­â­ |
-| **ğŸŸ¢ Later** | Match score personalization | Low | 1 hr | â­â­ |
-| **ğŸŸ¢ Later** | Freshness boosting | Low | 30 min | â­â­ |
+| **´ Do Now** | Infer languages from cities | High | 5 min | ­­­­­ |
+| **´ Do Now** | Extract industries from jobs | High | 5 min | ­­­­­ |
+| **´ Do Now** | Detect visa sponsorship | High | 5 min | ­­­­­ |
+| ** This Week** | Track seen/clicked jobs | High | 2 hrs | ­­­­ |
+| ** This Week** | Add feedback buttons | High | 3 hrs | ­­­­ |
+| **¢ This Month** | Add industry preferences | Med | 1 hr | ­­­ |
+| **¢ This Month** | Extract skills from jobs | Med | 3 hrs | ­­­ |
+| **¢ Later** | Company size classification | Med | 4 hrs | ­­ |
+| **¢ Later** | Match score personalization | Low | 1 hr | ­­ |
+| **¢ Later** | Freshness boosting | Low | 30 min | ­­ |
 
 ---
 
-## ğŸ¯ Quick Wins (Do Today!)
+## ¯ Quick Wins (Do Today!)
 
 ### Step 1: Run the improvements script
 ```bash
@@ -280,10 +280,10 @@ psql $DATABASE_URL -f scripts/user-matching-improvements.sql
 ```
 
 This gives you:
-- âœ… Languages inferred for all users (0% â†’ 100%)
-- âœ… Industries tagged on ~80% of jobs
-- âœ… Visa sponsorship detected where mentioned
-- âœ… New fields ready for future data
+-  Languages inferred for all users (0% † 100%)
+-  Industries tagged on ~80% of jobs
+-  Visa sponsorship detected where mentioned
+-  New fields ready for future data
 
 ### Step 2: Update Tally form (30 mins)
 Add these questions:
@@ -298,17 +298,17 @@ Update email template to include:
 <div style="text-align: center; margin: 20px 0;">
   <p>Was this a good match?</p>
   <a href="https://getjobping.com/api/feedback?email={{user_email}}&job={{job_hash}}&vote=up">
-    ğŸ‘ Yes
+     Yes
   </a>
   <a href="https://getjobping.com/api/feedback?email={{user_email}}&job={{job_hash}}&vote=down">
-    ğŸ‘ No
+     No
   </a>
 </div>
 ```
 
 ---
 
-## ğŸ§ª Testing Your Improvements
+##  Testing Your Improvements
 
 ### Test 1: Language Matching
 ```sql
@@ -346,7 +346,7 @@ WHERE job_hash NOT IN (
 
 ---
 
-## ğŸ“ˆ Expected Results
+## ˆ Expected Results
 
 ### Before Improvements:
 ```
@@ -378,7 +378,7 @@ Company Fit: Size & culture preferences
 
 ---
 
-## ğŸš¨ Critical Next Steps
+##  Critical Next Steps
 
 1. **Run `user-matching-improvements.sql` NOW** (5 mins)
 2. **Add feedback buttons to emails** (2 hours)
@@ -388,7 +388,7 @@ Company Fit: Size & culture preferences
 
 ---
 
-## ğŸ’¡ Advanced Ideas (Future)
+##  Advanced Ideas (Future)
 
 ### Machine Learning Matching
 Once you have 100+ feedback entries:

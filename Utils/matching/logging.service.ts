@@ -69,7 +69,7 @@ export async function logMatchSession(
     if (error) {
       console.error('Failed to log match session:', error);
     } else {
-      console.log(`📊 Logged match session: ${userEmail} - ${matchType} - ${matchesCount} matches`);
+      console.log(` Logged match session: ${userEmail} - ${matchType} - ${matchesCount} matches`);
     }
   } catch (error) {
     console.error('Error in logMatchSession:', error);
