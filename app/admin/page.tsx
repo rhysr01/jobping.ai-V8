@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useEffect, useState } from 'react';
 
 interface PilotMetrics {
@@ -32,7 +32,7 @@ export default function PilotAdminDashboard() {
 
   useEffect(() => {
     fetchMetrics();
-    const interval = setInterval(fetchMetrics, 30000); // Refresh every 30s
+    const interval = setInterval(fetchMetrics, 30000);
     return () => clearInterval(interval);
   }, []);
 

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import StructuredData from "@/components/StructuredData";
 import FAQSchema from "@/components/FAQSchema";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export const metadata: Metadata = {
   title: "JobPing · Five roles. Zero scrolling.",
@@ -25,12 +26,6 @@ export const metadata: Metadata = {
   authors: [{ name: "JobPing" }],
   creator: "JobPing",
   publisher: "JobPing",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-  },
   robots: { 
     index: true, 
     follow: true,
@@ -46,7 +41,7 @@ export const metadata: Metadata = {
     title: "JobPing · Five roles. Zero scrolling.",
     description:
       "Weekly job matches for early-career roles across Europe  delivered to your inbox. Hand-picked quality, zero noise.",
-    url: "https://www.getjobping.com",
+    url: "https://getjobping.com",
     siteName: "JobPing",
     locale: "en_US",
     type: "website",
@@ -57,10 +52,17 @@ export const metadata: Metadata = {
     description: "Weekly job matches for early-career roles across Europe.",
     creator: "@jobping",
   },
-  metadataBase: new URL("https://www.getjobping.com"),
+  metadataBase: new URL("https://getjobping.com"),
   alternates: {
-    canonical: "https://www.getjobping.com",
+    canonical: "https://getjobping.com",
   },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -69,6 +71,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <StructuredData />
         <FAQSchema />
+        <script
+          type="application/ld+json"
+          // Organization schema to complement SoftwareApplication
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "JobPing",
+              "url": "https://getjobping.com",
+              "logo": "https://getjobping.com/og-image.png",
+              "sameAs": [
+                "https://www.linkedin.com/company/jobping"
+              ]
+            })
+          }}
+        />
       </head>
       <body className="text-white premium-bg custom-scrollbar">
         <a
@@ -79,7 +97,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <div className="container-page h-14 flex items-center justify-center" aria-hidden />
-        <main id="main">{children}</main>
+        <main id="main">
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </main>
       </body>
     </html>
   );

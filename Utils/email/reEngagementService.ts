@@ -71,7 +71,7 @@ async function sendReEngagementEmail(user: {
   email: string;
   full_name: string | null;
 }): Promise<void> {
-  const unsubscribeUrl = `https://www.getjobping.com/api/unsubscribe/one-click?email=${encodeURIComponent(user.email)}`;
+  const unsubscribeUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.getjobping.com'}/api/unsubscribe/one-click?email=${encodeURIComponent(user.email)}`;
   
   const emailData = {
     to: user.email,

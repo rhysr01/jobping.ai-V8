@@ -43,7 +43,7 @@ function getBaseDomain(): string {
 
 function getEmailDomain(): string {
   // Use getjobping.com for all environments since it's verified in Resend
-  return process.env.EMAIL_DOMAIN || 'getjobping.com';
+  return (process.env.EMAIL_DOMAIN || 'getjobping.com').trim();
 }
 
 // Type safety for email senders
@@ -51,8 +51,22 @@ type GetJobPingSender = `JobPing <${string}@getjobping.com>`;
 
 // Email validation guard
 export const assertValidFrom = (from: string): void => {
-  if (!/@getjobping\.com>?$/.test(from)) {
-    throw new Error(`Invalid from: ${from} (expected *@getjobping.com)`);
+  // Expect display name and angle-bracket email
+  const match = from.match(/^(.+?)\s*<([^>]+)>$/);
+  if (!match) {
+    throw new Error(`Invalid 'from' format: ${from}`);
+  }
+
+  const email = match[2];
+  // Basic email shape
+  const basicEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!basicEmail.test(email)) {
+    throw new Error(`Malformed email address in 'from': ${from}`);
+  }
+
+  const [, domain] = email.split('@');
+  if (domain !== 'getjobping.com') {
+    throw new Error(`Invalid sender domain: ${domain}. Expected getjobping.com`);
   }
 };
 

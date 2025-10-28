@@ -39,6 +39,35 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // Protect /admin with Basic Auth
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    const basicUser = process.env.ADMIN_BASIC_USER;
+    const basicPass = process.env.ADMIN_BASIC_PASS;
+
+    // If creds not configured, deny by default
+    if (!basicUser || !basicPass) {
+      return new NextResponse('Admin access not configured', {
+        status: 403,
+        headers: { 'Content-Type': 'text/plain' },
+      });
+    }
+
+    const auth = request.headers.get('authorization');
+    if (!auth || !auth.startsWith('Basic ')) {
+      return new NextResponse('Authentication required', {
+        status: 401,
+        headers: { 'WWW-Authenticate': 'Basic realm="Admin"' },
+      });
+    }
+
+    const credentials = Buffer.from(auth.split(' ')[1] || '', 'base64').toString();
+    const [user, pass] = credentials.split(':');
+
+    if (user !== basicUser || pass !== basicPass) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+  }
+
   const response = NextResponse.next();
   
   // Add request tracking headers

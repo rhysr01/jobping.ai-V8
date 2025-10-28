@@ -58,7 +58,7 @@ export async function validateEmailDeliverability(): Promise<{
   const recommendations: string[] = [];
 
   // Check domain configuration
-  const domain = process.env.EMAIL_DOMAIN || 'www.getjobping.com';
+  const domain = process.env.EMAIL_DOMAIN || 'getjobping.com';
   
   // Validate SPF record
   const spfValid = await validateSPFRecord(domain);
@@ -78,7 +78,7 @@ export async function validateEmailDeliverability(): Promise<{
   const dmarcValid = await validateDMARCRecord(domain);
   if (!dmarcValid) {
     issues.push('DMARC policy not configured');
-    recommendations.push('Add DMARC record: v=DMARC1; p=quarantine; rua=mailto:dmarc@www.getjobping.com');
+    recommendations.push('Add DMARC record: v=DMARC1; p=quarantine; rua=mailto:dmarc@getjobping.com');
   }
 
   // Check bounce suppression list
@@ -431,7 +431,7 @@ export async function getEmailDeliverabilityMetrics(): Promise<EmailDeliverabili
  */
 export function generateListUnsubscribeHeader(): string {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.getjobping.com';
-  return `<${baseUrl}/api/email/unsubscribe?email={email}>, <mailto:unsubscribe@www.getjobping.com?subject=Unsubscribe>`;
+  return `<${baseUrl}/api/email/unsubscribe?email={email}>, <mailto:unsubscribe@getjobping.com?subject=Unsubscribe>`;
 }
 
 /**

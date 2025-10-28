@@ -36,7 +36,7 @@ test.describe('Critical User Flows', () => {
     // Check premium tier
     await expect(page.locator('text=Premium')).toBeVisible();
     await expect(page.locator('text=15 roles/week')).toBeVisible();
-    await expect(page.locator('text=��7/month')).toBeVisible();
+    await expect(page.locator('text=€7/month')).toBeVisible();
     
     // Check CTA buttons
     await expect(page.locator('text=Start Free')).toBeVisible();

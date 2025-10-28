@@ -55,10 +55,10 @@ test.describe('Real User Journey - Multiple Signups', () => {
     
     // Step 1: Land on homepage
     await expect(page.locator('h1:has-text("Five roles. Zero scrolling.")')).toBeVisible();
-    await expect(page.locator('text=Get My 10 Roles in 48 Hours')).toBeVisible();
+    await expect(page.locator('text=Get matches in 48 hours')).toBeVisible();
     
     // Step 2: Click signup CTA
-    await page.locator('text=Get My 10 Roles in 48 Hours').click();
+    await page.locator('text=Get matches in 48 hours').click();
     await expect(page).toHaveURL(/.*signup/);
     
     // Step 3: Fill out signup form
@@ -166,7 +166,7 @@ test.describe('Real User Journey - Multiple Signups', () => {
     await expect(page.locator('h1:has-text("Five roles. Zero scrolling.")')).toBeVisible();
     
     // Mobile signup flow
-    await page.locator('text=Get My 10 Roles in 48 Hours').click();
+    await page.locator('text=Get matches in 48 hours').click();
     await expect(page).toHaveURL(/.*signup/);
     
     // Mobile form interaction

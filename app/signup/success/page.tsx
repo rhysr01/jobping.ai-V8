@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -65,7 +65,7 @@ export default function SignupSuccess() {
                 </div>
                 <div>
                   <div className="font-semibold text-white mb-1">Ongoing Updates</div>
-                  <div className="text-zinc-400 text-sm">Free: 5 new roles every week � Premium: 5 roles every 48 hours</div>
+                   <div className="text-zinc-400 text-sm">Free: 5 new roles every week · Premium: 15 new roles every week (3× weekly)</div>
                 </div>
               </div>
             </div>

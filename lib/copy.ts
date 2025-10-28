@@ -47,7 +47,7 @@ export const PRICING_SUBTITLE = "5 hand-picked roles per email. No job-board bla
 export const FREE_PLAN_TITLE = "Free";
 export const FREE_PLAN_SUBTITLE = "Weekly digest";
 export const FREE_PLAN_FEATURES = [
-  "5 matches on signup",
+  "10 matches on signup",
   "1 email per week (5 roles)",
   "Same time each week",
   "Hand-picked quality",
@@ -56,10 +56,10 @@ export const FREE_PLAN_FEATURES = [
 
 // Premium plan
 export const PREMIUM_PLAN_TITLE = "Premium";
-export const PREMIUM_PLAN_SUBTITLE = "3� weekly";
-export const PREMIUM_PLAN_PRICE = "��7";
+export const PREMIUM_PLAN_SUBTITLE = "3× weekly";
+export const PREMIUM_PLAN_PRICE = "€7";
 export const PREMIUM_PLAN_PRICE_UNIT = "/mo";
-export const PREMIUM_PLAN_ANNUAL = "��20 for 3 months (save ��1)";
+export const PREMIUM_PLAN_ANNUAL = "€20 for 3 months (save €1)";
 export const PREMIUM_PLAN_FEATURES = [
   "10 matches on signup",
   "60+ jobs per month (3x per week)",

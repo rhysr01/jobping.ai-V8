@@ -98,7 +98,7 @@ export default function Hero() {
         >
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-500 text-white text-xs sm:text-sm font-bold px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-lg">
             <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-            {activeJobs} active early-career roles � Updated daily
+            {activeJobs} active early-career roles · Updated daily
           </div>
         </motion.div>
         
@@ -113,10 +113,10 @@ export default function Hero() {
             href="/signup"
             className="inline-block px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl font-bold text-white bg-gradient-to-r from-brand-500 to-purple-600 rounded-xl hover:scale-105 active:scale-95 transition-transform duration-200 shadow-lg hover:shadow-2xl hover:shadow-brand-500/30 touch-manipulation"
           >
-            Get My 10 Roles in 48 Hours
+            Get matches in 48 hours
           </a>
           <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-zinc-500">
-            No logins � No spam � Unsubscribe anytime
+            No logins · No spam · Unsubscribe anytime
           </p>
         </motion.div>
       </div>

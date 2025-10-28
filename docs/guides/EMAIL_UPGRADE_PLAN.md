@@ -1,5 +1,5 @@
 # EMAIL UPGRADE PLAN - Building on Existing Architecture
-## Goal: 5.2/10 � 8.0/10 (Email Client Compatible + Brand Aligned)
+## Goal: 5.2/10 → 8.0/10 (Email Client Compatible + Brand Aligned)
 
 ---
 
@@ -128,7 +128,7 @@ function createHeader(): string {
             letter-spacing: -1px;
             font-family: ${FONT_STACK};
             margin-bottom: 8px;
-          ">� JobPing</div>
+          ">JobPing</div>
           <div style="
             font-size: 11px;
             color: rgba(255, 255, 255, 0.95);
@@ -182,7 +182,7 @@ function createHotMatchBadge(matchScore: number): string {
         margin-right: 6px;
         vertical-align: middle;
       "></span>
-       Hot Match � ${matchScore}%
+       Hot Match · ${matchScore}%
     </div>
     
     <!--[if mso]>
@@ -403,7 +403,7 @@ async function testEmail() {
     }
     
     console.log(' All test emails sent successfully!');
-    console.log('� Check your inboxes in Gmail, Outlook, and Apple Mail');
+    console.log('Check your inboxes in Gmail, Outlook, and Apple Mail');
     
   } catch (error) {
     console.error(' Test failed:', error);
@@ -687,7 +687,7 @@ vercel logs --app jobping --since 1h
 
 ---
 
-## � FILES YOU'LL CREATE/EDIT
+## FILES YOU'LL CREATE/EDIT
 
 **NEW FILES**:
 - `/Utils/email/productionReadyTemplates.ts` (main template file)
@@ -741,7 +741,7 @@ vercel logs --app jobping --since 1h
 
 ---
 
-## � EXPECTED OUTCOME
+## EXPECTED OUTCOME
 
 **Rating Improvement**:
 - Current: 5.2/10

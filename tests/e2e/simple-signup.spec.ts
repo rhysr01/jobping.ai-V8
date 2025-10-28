@@ -14,7 +14,7 @@ test.describe('Simple Signup Tests', () => {
     
     // Check if homepage loads
     await expect(page.locator('h1:has-text("No logins. Zero scrolling. Jobs in your inbox.")')).toBeVisible();
-    await expect(page.locator('text=Get My 10 Roles in 48 Hours')).toBeVisible();
+    await expect(page.locator('text=Get matches in 48 hours')).toBeVisible();
     
     // Check navigation
     await expect(page.locator('[data-testid="logo"]')).toBeVisible();

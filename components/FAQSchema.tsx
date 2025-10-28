@@ -16,7 +16,7 @@ export default function FAQSchema() {
         "name": "Is JobPing free?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes! JobPing offers a free tier with 5 jobs per week. We also have a premium tier with more frequent updates and additional features."
+          "text": "Yes! JobPing offers a free tier with 10 jobs on signup + 5 jobs per week. We also have a premium tier with 10 jobs on signup + 15 jobs per week (3× weekly) and additional features."
         }
       },
       {

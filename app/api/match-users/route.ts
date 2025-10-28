@@ -276,9 +276,9 @@ function trackPerformance(): { startTime: number; getMetrics: () => PerformanceM
 
 /**
  * Smart location matching that handles variations like:
- * - "11�me Arrondissement, Paris" matches "Paris"
+ * - "11ème Arrondissement, Paris" matches "Paris"
  * - "Putney Heath, South West London" matches "London"
- * - "Paris, �le-de-France, France" matches "Paris"
+ * - "Paris, Île-de-France, France" matches "Paris"
  */
 function matchesLocation(jobLocation: string, targetCity: string): boolean {
   const jobLoc = jobLocation.toLowerCase();
@@ -291,7 +291,7 @@ function matchesLocation(jobLocation: string, targetCity: string): boolean {
   const locationVariations: Record<string, string[]> = {
     'london': ['london', 'greater london', 'central london', 'north london', 'south london', 'east london', 'west london', 'city of london'],
     'paris': ['paris', 'arrondissement', 'ile-de-france', 'île-de-france'],
-    'dublin': ['dublin', 'county dublin', 'baile �tha cliath'],
+   'dublin': ['dublin', 'county dublin', 'baile Átha Cliath'],
     'amsterdam': ['amsterdam', 'noord-holland', 'north holland'],
     'berlin': ['berlin', 'brandenburg'],
     'madrid': ['madrid', 'comunidad de madrid'],
@@ -300,7 +300,7 @@ function matchesLocation(jobLocation: string, targetCity: string): boolean {
     'rome': ['rome', 'roma', 'lazio'],
     'brussels': ['brussels', 'bruxelles', 'brussel', 'brussels-capital'],
     'lisbon': ['lisbon', 'lisboa'],
-    'copenhagen': ['copenhagen', 'k�benhavn', 'capital region'],
+   'copenhagen': ['copenhagen', 'københavn', 'capital region'],
     'stockholm': ['stockholm', 'stockholms län'],
     'oslo': ['oslo'],
     'helsinki': ['helsinki', 'uusimaa'],
@@ -352,7 +352,7 @@ async function preFilterJobsByUserPreferencesEnhanced(jobs: (ScrapersJob & { fre
       });
       
       if (feedbackBoosts.size > 0) {
-        console.log(`� Feedback boosts for ${user.email}:`, Object.fromEntries(feedbackBoosts));
+        console.log(`Feedback boosts for ${user.email}:`, Object.fromEntries(feedbackBoosts));
       }
     }
   } catch (error) {
@@ -377,7 +377,7 @@ async function preFilterJobsByUserPreferencesEnhanced(jobs: (ScrapersJob & { fre
         return targetCities.some(city => city && matchesLocation(job.location, city));
       });
       
-      console.log(`Location filter: ${jobs.length} � ${filteredJobs.length} jobs (cities: ${targetCities.join(', ')})`);
+      console.log(`Location filter: ${jobs.length} -> ${filteredJobs.length} jobs (cities: ${targetCities.join(', ')})`);
     }
   }
   
@@ -450,7 +450,7 @@ async function preFilterJobsByUserPreferencesEnhanced(jobs: (ScrapersJob & { fre
       }
       if (type === 'type' && (jobTitle.includes(value) || jobDesc.includes(value))) {
         score += boost;
-        console.log(`  � Boosted "${job.title}" by +${boost} (company type: ${value})`);
+        console.log(`  Boosted "${job.title}" by +${boost} (company type: ${value})`);
       }
       if (type === 'env' && jobLocation.includes(value)) {
         score += boost;
@@ -763,8 +763,8 @@ const matchUsersHandler = async (req: NextRequest) => {
       ).length;
       
       console.log(` Job Filtering Results:`);
-      console.log(`   � EU-based jobs: ${euJobs}/${jobs.length} (${Math.round(euJobs/jobs.length*100)}%)`);
-      console.log(`   � Early career jobs: ${earlyCareerJobs}/${jobs.length} (${Math.round(earlyCareerJobs/jobs.length*100)}%)`);
+       console.log(`   EU-based jobs: ${euJobs}/${jobs.length} (${Math.round(euJobs/jobs.length*100)}%)`);
+       console.log(`   Early career jobs: ${earlyCareerJobs}/${jobs.length} (${Math.round(earlyCareerJobs/jobs.length*100)}%)`);
     }
 
     // Skip in-memory job reservations; Redis global lock already protects this run
@@ -808,7 +808,7 @@ const matchUsersHandler = async (req: NextRequest) => {
         // This reduces token cost by 50% while maintaining match quality
         // Top 50 contains all perfect/great matches from pre-filtering
         const considered = preFilteredJobs.slice(0, 50);
-        console.log(` Pre-filter results for ${user.email}: ${preFilteredJobs.length} jobs � sending top 50 to AI`);
+        console.log(` Pre-filter results for ${user.email}: ${preFilteredJobs.length} jobs -> sending top 50 to AI`);
         
         // Log score distribution to validate we're keeping the best jobs
         if (preFilteredJobs.length >= 50) {

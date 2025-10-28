@@ -615,7 +615,7 @@ Requirements:
    */
   private calculateEarlyCareerScore(jobText: string, title: string, job?: any, userPrefs?: UserPreferences): { points: number; reason: string } {
     // CRITICAL: Distinguish between internship, graduate, and junior roles!
-    const internshipTerms = ['intern', 'internship', 'stage', 'praktikum', 'pr�cticas', 'tirocinio', 'stagiar'];
+    const internshipTerms = ['intern', 'internship', 'stage', 'praktikum', 'prácticas', 'tirocinio', 'stagiar'];
     const graduateTerms = ['graduate', 'new grad', 'grad scheme', 'grad program', 'graduate programme', 'trainee program', 'grad trainee'];
     const juniorTerms = ['junior', 'entry level', 'associate', 'assistant', 'junior analyst', 'junior consultant'];
     const programmeTerms = ['programme', 'program', 'scheme', 'rotation', 'campus'];

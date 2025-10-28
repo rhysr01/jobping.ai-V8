@@ -256,7 +256,7 @@ function SignupForm() {
               animate={{ opacity: 1, scale: 1 }}
               className="inline-block bg-gradient-to-r from-brand-500 to-purple-600 text-white px-6 py-2 rounded-full font-bold text-sm mb-2 shadow-[0_0_20px_rgba(99,102,241,0.6)]"
             >
-               Premium Plan Selected - 10 roles on signup + 15 roles per week
+               Premium Plan Selected - 10 roles on signup + 15 roles per week (3× weekly)
             </motion.div>
           )}
           <motion.div

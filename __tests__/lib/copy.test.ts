@@ -55,7 +55,7 @@ describe('Copy Strings', () => {
     });
 
     it('should have premium plan price in euros', () => {
-      expect(Copy.PREMIUM_PLAN_PRICE).toContain('‚¬');
+      expect(Copy.PREMIUM_PLAN_PRICE).toContain('â‚¬');
     });
   });
 
