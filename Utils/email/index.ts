@@ -17,12 +17,11 @@ export {
 //   createJobMatchesEmailOptimized as createJobMatchesEmail
 // } from './textGenerator';
 
-// Keep original templates available
+// Production-ready templates (brand aligned + VML fallbacks)
 export { 
-  createWelcomeEmail as createWelcomeEmailOriginal,
-  createJobMatchesEmail as createJobMatchesEmailOriginal,
-  EMAIL_OPTIMIZATION_METRICS 
-} from './optimizedTemplates';
+  createWelcomeEmail, 
+  createJobMatchesEmail 
+} from './productionReadyTemplates';
 
 // Clients (if needed externally)
 export { getResendClient, getSupabaseClient, EMAIL_CONFIG } from './clients';

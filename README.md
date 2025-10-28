@@ -1,4 +1,4 @@
-# ¯ JobPing
+# JobPing
 
 > AI-powered job matching for early-career roles across Europe. 5 perfect matches, weekly.
 
@@ -20,7 +20,7 @@ Weekly AI-matched job recommendations for internships, graduate schemes, and jun
 - **Auth**: Custom email verification system
 - **Payments**: Stripe subscriptions
 - **Email**: Resend with custom templates
-- **AI**: OpenAI GPT-3.5/GPT-4 for job matching
+- **AI**: OpenAI for job matching
 - **Job Sources**: Adzuna, Reed, JobSpy (LinkedIn, Indeed, Glassdoor)
 - **Hosting**: Vercel Edge Network
 - **Monitoring**: Sentry + structured logging
@@ -40,252 +40,101 @@ Weekly AI-matched job recommendations for internships, graduate schemes, and jun
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/jobping.git
-cd jobping
-
-# Install dependencies
 npm install
 
-# Set up environment variables
+# Environment
 cp .env.example .env
-# Add your API keys to .env
+# Fill in required keys
 
-# Start development server
+# Start
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000)
+Visit http://localhost:3000
 
 ## Environment Variables
 
-See `.env.example` for required variables:
-
-```bash
-# Database
-DATABASE_URL=postgresql://...
-SUPABASE_SERVICE_ROLE_KEY=...
-
-# Email
-RESEND_API_KEY=re_...
-
-# AI
-OPENAI_API_KEY=sk-...
-
-# Payments
-STRIPE_SECRET_KEY=sk_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-
-# System
-SYSTEM_API_KEY=... # Generate: openssl rand -hex 32
-NEXT_PUBLIC_URL=https://getjobping.com
-```
+See `.env.example` for required variables (DB, Email, AI, Stripe, System).
 
 ## Key Features
 
-### ¤– AI-Powered Matching
-- GPT-3.5 for fast matching (90% of requests)
-- GPT-4 for complex profiles (10% threshold)
-- 48-hour shared cache for cost optimization
-- Per-user duplicate prevention
+### AI-Powered Matching
+- GPT for job scoring with caching and cost controls
+- Pre-filtering by location/experience/visa
+- Duplicate prevention per user
 
-###  Smart Email Delivery
-- Purple-branded emails matching website design
-- Hot match highlighting (90%+ scores)
-- Feedback system for AI learning
-- Engagement tracking
+### Smart Email Delivery
+- Production-ready templates at `Utils/email/productionReadyTemplates.ts`
+- Purple brand alignment, hot-match styling, VML buttons for Outlook
+- Feedback endpoints wired into emails
 
-###  Security
-- Row-level security on all tables
-- Rate limiting per endpoint
-- Input validation with Zod
-- CSRF protection
-- API key authentication
+### Security
+- RLS enabled
+- Rate limiting & input validation
+- Admin protected via middleware Basic Auth (see Admin Security below)
 
-###  Job Scraping
-- Multi-source aggregation (Adzuna, Reed, JobSpy)
-- Automatic deduplication
-- Quality filtering
-- Daily automated runs via GitHub Actions
-
-### ³ Subscriptions
-- Free tier: 5 jobs/week
-- Premium tier: 15 jobs/week (Mon/Wed/Fri)
-- Stripe integration
-- Promo code system
+### Subscriptions
+- Free: 5 jobs/week
+- Premium: 15 jobs/week (Mon/Wed/Fri)
 
 ## Project Structure
 
 ```
-jobping/
- app/                      # Next.js app directory
-‚    api/                 # API routes
-‚   ‚    subscribe/       # User signup
-‚   ‚    match-users/     # AI matching
-‚   ‚    webhook-tally/   # Form integration
-‚   ‚    webhooks/stripe/ # Payment webhooks
-‚    components/          # React components
-‚    (marketing)/         # Marketing pages
- components/              # Shared UI components
-‚    sections/           # Landing page sections
- lib/                     # Core utilities
-‚    auth.ts            # Authentication
-‚    monitoring.ts      # Logging & metrics
-‚    errors.ts          # Error handling
- Utils/                   # Business logic
-‚    email/             # Email templates & sending
-‚    matching/          # AI matching engine
-‚    supabase.ts        # Database client
- scripts/                 # Automation scripts
-‚    jobspy-save.cjs    # JobSpy scraper
-‚    adzuna-categories-scraper.cjs
- .github/workflows/       # CI/CD automation
-     scrape-jobs.yml    # Automated scraping
+app/           # Next.js app
+components/    # Shared UI
+Utils/         # Email + matching + supabase
+scripts/       # Automation & SQL
+docs/          # API/architecture/deployment
 ```
+
+## Email Templates (Production-Ready)
+
+- Source: `Utils/email/productionReadyTemplates.ts`
+- Exports: `createWelcomeEmail`, `createJobMatchesEmail`
+- Brand: Purple gradients; hot match highlighting; table layout for clients
+- Outlook: VML fallback buttons for CTAs
+- Feedback: Buttons calling `/api/feedback/email` with sentiment/score
+
+## Send Plan (Operational)
+
+- Free: 5 on signup, then 5 weekly (Thu)
+- Premium: 10 on signup, then 5 on Mon/Wed/Fri
+- See logic in `Utils/sendConfiguration.ts` and scheduled sender route
+
+## Admin Security
+
+- `/admin` requires Basic Auth via env `ADMIN_BASIC_USER` and `ADMIN_BASIC_PASS`
+- Upgrade path: move to session-based admin users and audit logging
+
+## Troubleshooting
+
+- Health: `/api/health` (database, email, queue, external APIs)
+- Sentry: configure DSN to enable error reporting
+- Email: verify `RESEND_API_KEY` and domain (SPF/DKIM/DMARC)
+- Stripe: set API version to a valid stable string
 
 ## Development
 
-### Available Scripts
+### Scripts
 
 ```bash
-# Development
-npm run dev              # Start dev server (localhost:3000)
-npm run build            # Production build
-npm run start            # Start production server
-
-# Testing
-npm test                 # Run unit tests
-npm run test:coverage    # Generate coverage report
-npm run test:e2e         # Run Playwright E2E tests
-
-# Quality
-npm run lint             # ESLint
-npm run type-check       # TypeScript validation
-
-# Database
-npm run cleanup:jobs     # Clean low-quality jobs
-```
-
-### Testing
-
-```bash
-# Run all tests
+npm run dev
+npm run build
+npm run start
 npm test
-
-# Watch mode
-npm run test:watch
-
-# E2E tests
-npm run test:e2e
-
-# Coverage report
-npm run test:coverage
-open coverage/lcov-report/index.html
+npm run type-check
 ```
-
-## Architecture Highlights
-
-### Job Matching Flow
-
-```
-1. User signs up via Tally form
-   †
-2. Webhook triggers instant matching
-   †
-3. AI analyzes job pool (pre-filtered by location/experience)
-   †
-4. Top 5 matches saved to database
-   †
-5. Welcome email sent with matched jobs
-   †
-6. Weekly emails continue (Thursday for free, Mon/Wed/Fri for premium)
-```
-
-### AI Matching Strategy
-
-- **Pre-filtering**: Location, experience level, visa status (reduces pool by 90%)
-- **AI scoring**: GPT analyzes top 50 pre-filtered jobs
-- **Diversity**: Ensures jobs from multiple sources and cities
-- **Caching**: 48-hour cache for identical user profiles (85-90% cost savings)
-- **Duplicate prevention**: Per-user match tracking
-
-### Cost Optimizations
-
--  Shared cache across API instances (singleton pattern)
--  Smart GPT-4 routing (only 10% of requests)
--  No description snippets in prompts (31% token reduction)
--  City clustering in cache keys
--  **Result**: $0.50/user/month † $0.05/user/month (90% reduction)
-
-## Monitoring
-
-### Health Check
-
-```bash
-curl https://getjobping.com/api/health
-```
-
-### Logs
-
-```bash
-# Vercel logs
-vercel logs --follow
-
-# Local logs
-npm run dev # Structured JSON logging
-```
-
-### Metrics
-
-- User signups
-- Jobs scraped
-- Matches created
-- Emails sent
-- AI cache hit rate
-- API response times
 
 ## Deployment
 
-Automatic deployment via Vercel:
-
-- **Production**: Push to `main` † https://getjobping.com
-- **Preview**: Pull requests get preview URLs
-
-Manual deployment:
-
-```bash
-vercel --prod
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests (`npm test`)
-5. Commit (`git commit -m 'Add amazing feature'`)
-6. Push (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
+- Vercel auto-deploy on push to `main`
+- Preview URLs for PRs
 
 ## License
 
-MIT License - see [LICENSE](./LICENSE)
+MIT
 
 ## Support
 
-- **Website**: [getjobping.com](https://getjobping.com)
-- **Email**: support@getjobping.com
-- **Status**: All systems operational
-
-## Acknowledgments
-
-Built with ¤ using:
-- [Next.js](https://nextjs.org/)
-- [Supabase](https://supabase.com/)
-- [OpenAI](https://openai.com/)
-- [Vercel](https://vercel.com/)
-- [Resend](https://resend.com/)
-- [Stripe](https://stripe.com/)
-
----
-
-**Made by [Rhys Rowlands](https://github.com/rhysr01)** ˜•
+- Website: https://getjobping.com
+- Email: support@getjobping.com
