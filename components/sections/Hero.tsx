@@ -32,10 +32,12 @@ export default function Hero() {
 
   return (
     <section data-testid="hero-section" className="relative isolate text-center section-padding-hero overflow-hidden">
-      {/* Parallax background elements */}
-      <div className="absolute inset-0 -z-20">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+      {/* Soft gradient field background */}
+      <div className="absolute inset-0 -z-20 bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
+        {/* Focal depth highlight behind logo/hero */}
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-radial from-brand-500/5 via-transparent to-transparent rounded-full blur-3xl" />
+        {/* Subtle vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
       </div>
       
       <div className="container-page container-rhythm relative z-10">
@@ -80,8 +82,8 @@ export default function Hero() {
             <path d="M6 12v4c0 1.6 3 3.2 6 3.2s6-1.6 6-3.2v-4" />
           </svg>
           
-          {/* Large JobPing Text - MASSIVE WITH GLOW */}
-          <div className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] font-black tracking-tighter leading-none">
+          {/* JobPing Text - 20% smaller to let value prop dominate */}
+          <div className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none">
             <span className="bg-gradient-to-b from-white via-purple-50 to-purple-200 bg-clip-text text-transparent drop-shadow-[0_0_60px_rgba(139,92,246,0.8)]" style={{
               filter: 'drop-shadow(0 0 40px rgba(139,92,246,0.6))'
             }}>
@@ -90,11 +92,16 @@ export default function Hero() {
           </div>
         </motion.div>
         
-        <h1 className="mt-8 text-display text-white text-balance max-w-[20ch] mx-auto relative">
-          <span className="relative z-10">Land your first job faster — without endless applications.</span>
+        <motion.h1 
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
+          className="mt-8 text-display text-white text-balance max-w-[20ch] mx-auto relative"
+        >
+          <span className="relative z-10">Land your first job faster without endless applications.</span>
           {/* Subtle radial highlight behind CTA */}
           <div className="absolute -inset-8 bg-gradient-to-r from-brand-500/20 via-purple-600/20 to-brand-500/20 rounded-full blur-3xl opacity-60 -z-10" />
-        </h1>
+        </motion.h1>
         <div className="mt-7 sm:mt-9 px-4">
           <div className="inline-flex items-center gap-2 surface-raised rounded-full px-4 py-2 shadow-[0_0_24px_rgba(139,92,246,0.25)]">
             <svg className="w-4 h-4 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -105,48 +112,49 @@ export default function Hero() {
             </span>
           </div>
         </div>
-        <p className="mt-6 text-body text-neutral-400 max-w-[58ch] mx-auto">
+        <p className="mt-8 text-body text-neutral-400 max-w-[58ch] mx-auto leading-relaxed">
           We match you to real roles that fit your skills, degree, and goals. No spam. No dead ends.
         </p>
         
-        {/* Signup bonus urgency banner */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="mt-6 sm:mt-8"
-        >
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-500 text-white text-xs sm:text-sm font-bold px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-lg">
-            <span className="w-2 h-2 bg-white rounded-full animate-pulse" aria-hidden="true"></span>
-            {isLoading ? (
-              <Skeleton className="h-4 w-32" />
-            ) : (
-              `${activeJobs} active early-career roles · Updated daily`
-            )}
-          </div>
-        </motion.div>
-        
-        {/* CTA Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-          className="mt-6 sm:mt-8 px-4"
-        >
-          <Button
-            href="/signup"
-            variant="primary"
-            size="lg"
-            className="text-heading font-bold relative overflow-hidden group"
-            aria-label="Find my matches"
+        {/* Centered bottom section */}
+        <div className="mt-10 sm:mt-12 flex flex-col items-center space-y-6">
+          {/* Signup bonus urgency banner */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
           >
-            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <span className="relative">Find my matches</span>
-          </Button>
-          <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-zinc-500">
-            No logins · No spam · Unsubscribe anytime
-          </p>
-        </motion.div>
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-500 text-white text-xs sm:text-sm font-bold px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-lg">
+              <span className="w-2 h-2 bg-white rounded-full animate-pulse" aria-hidden="true"></span>
+              {isLoading ? (
+                <Skeleton className="h-4 w-32" />
+              ) : (
+                `${activeJobs} active early-career roles · Updated daily`
+              )}
+            </div>
+          </motion.div>
+          
+          {/* CTA Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            <Button
+              href="/signup"
+              variant="primary"
+              size="lg"
+              className="text-heading font-bold relative overflow-hidden group bg-gradient-to-r from-[#9A6AFF] to-[#6B4EFF] shadow-[0_2px_10px_rgba(154,106,255,0.4)] hover:shadow-[0_4px_20px_rgba(154,106,255,0.6)] hover:outline hover:outline-1 hover:outline-white/20 transition-all duration-200"
+              aria-label="Find my matches"
+            >
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <span className="relative">Find my matches</span>
+            </Button>
+            <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-zinc-500 text-center">
+              No logins · No spam · Unsubscribe anytime
+            </p>
+          </motion.div>
+        </div>
       </div>
 
       {/* Big background orbs  dramatic motion */}

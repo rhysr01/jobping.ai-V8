@@ -126,12 +126,13 @@ export default {
         '200': '200ms',
         '300': '300ms',
       },
-      // Glass morphism utilities
-      backgroundImage: {
-        'glass-subtle': 'linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
-        'glass-default': 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
-        'glass-elevated': 'linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.06) 100%)',
-      }
+             // Glass morphism utilities
+             backgroundImage: {
+               'glass-subtle': 'linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
+               'glass-default': 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
+               'glass-elevated': 'linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.06) 100%)',
+               'gradient-radial': 'radial-gradient(circle, var(--tw-gradient-stops))',
+             }
     },
   },
   plugins: [],

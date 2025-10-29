@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import GlassCard from '@/components/ui/GlassCard';
@@ -21,8 +24,14 @@ export default function Pricing() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {/* Free Plan */}
-          <div className="relative rounded-2xl p-[1px] bg-gradient-to-b from-white/15 to-transparent">
-            <div className="bg-white/[0.04] rounded-2xl border border-white/10 p-6 md:p-8 flex flex-col h-full hover:border-white/20 transition-colors">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.98 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
+            viewport={{ once: true }}
+            className="relative rounded-2xl p-[1px] bg-gradient-to-b from-white/15 to-transparent"
+          >
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 flex flex-col h-full hover:border-white/20 transition-colors shadow-[0_1px_2px_0_rgb(255_255_255/0.05)]">
               <div className="mb-5">
                 <div className="inline-flex items-center gap-2 text-sm uppercase tracking-wider text-zinc-400 font-semibold">
                   <span className="inline-block w-2 h-2 rounded-full bg-zinc-400" /> Free
@@ -50,14 +59,20 @@ export default function Pricing() {
                 <p className="mt-2 text-[11px] text-zinc-500 text-center">Cancel anytime no commitment</p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Premium Plan */}
-          <div className="relative rounded-2xl p-[1px] bg-gradient-to-b from-brand-500/60 to-purple-600/40 shadow-[0_0_40px_rgba(139,92,246,0.25)] hover:shadow-[0_0_60px_rgba(139,92,246,0.35)] transition-shadow">
-            <div className="absolute -top-4 left-6 px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-brand-500 to-purple-600 text-white shadow-[0_0_18px_rgba(139,92,246,0.6)]">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.98 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            viewport={{ once: true }}
+            className="relative rounded-2xl p-[1px] bg-gradient-to-b from-brand-500/60 to-purple-600/40 shadow-[0_0_40px_rgba(139,92,246,0.25)] hover:shadow-[0_0_60px_rgba(139,92,246,0.35)] transition-shadow"
+          >
+            <div className="absolute -top-4 left-6 px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-brand-500 to-purple-600 text-white shadow-[0_0_18px_rgba(139,92,246,0.6)] ring-2 ring-white/20">
               Best Value
             </div>
-            <div className="relative bg-gradient-to-b from-white/10 to-white/[0.06] rounded-2xl border border-white/15 p-6 md:p-8 flex flex-col h-full overflow-hidden">
+            <div className="relative bg-gradient-to-b from-white/10 to-white/5 border border-white/20 rounded-2xl p-6 md:p-8 flex flex-col h-full overflow-hidden shadow-[0_4px_6px_-1px_rgb(0_0_0/0.1)]">
               <div className="absolute -top-12 -right-10 h-40 w-40 rounded-full bg-brand-500/20 blur-3xl" aria-hidden />
               <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-purple-500/10 blur-2xl" aria-hidden />
 
@@ -89,7 +104,7 @@ export default function Pricing() {
                 <p className="mt-2 text-[11px] text-zinc-500 text-center">Cancel anytime no commitment</p>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         <p className="text-center text-xs text-zinc-500 mt-6">
