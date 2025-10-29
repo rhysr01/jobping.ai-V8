@@ -244,6 +244,7 @@ export class ConsolidatedMatchingEngine {
     const cacheKey = this.generateCacheKey(jobs, userPrefs);
     const cached = this.matchCache.get(cacheKey);
     if (cached) {
+      trackAPICall('matching', 'cache_hit', Date.now() - startTime, 200);
       return {
         matches: cached,
         method: 'ai_success',
@@ -252,9 +253,10 @@ export class ConsolidatedMatchingEngine {
       };
     }
 
-    // Skip AI if explicitly disabled or no client available
-    if (forceRulesBased || !this.openai) {
+    // Skip AI if explicitly disabled, no client, or circuit breaker open
+    if (forceRulesBased || !this.openai || !this.circuitBreaker.canExecute()) {
       const ruleMatches = this.performRuleBasedMatching(jobs, userPrefs);
+      trackAPICall('matching', 'rule_based', Date.now() - startTime, 200);
       return {
         matches: ruleMatches,
         method: 'rule_based',
@@ -263,13 +265,15 @@ export class ConsolidatedMatchingEngine {
       };
     }
 
-    // Try AI matching with timeout
+    // Try AI matching with timeout and retry
     try {
-      const aiMatches = await this.performAIMatchingWithTimeout(jobs, userPrefs);
+      const aiMatches = await this.performAIMatchingWithRetry(jobs, userPrefs);
       if (aiMatches && aiMatches.length > 0) {
         // Cache successful AI matches
         this.matchCache.set(cacheKey, aiMatches);
+        this.circuitBreaker.recordSuccess();
         
+        trackAPICall('matching', 'ai_success', Date.now() - startTime, 200);
         return {
           matches: aiMatches,
           method: 'ai_success',
@@ -278,17 +282,46 @@ export class ConsolidatedMatchingEngine {
         };
       }
     } catch (error) {
+      this.circuitBreaker.recordFailure();
       console.warn('AI matching failed, falling back to rules:', error instanceof Error ? error.message : 'Unknown error');
     }
 
     // Fallback to rule-based matching
     const ruleMatches = this.performRuleBasedMatching(jobs, userPrefs);
+    trackAPICall('matching', 'ai_failed', Date.now() - startTime, 200);
     return {
       matches: ruleMatches,
       method: 'ai_failed',
       processingTime: Date.now() - startTime,
       confidence: 0.7
     };
+  }
+
+  /**
+   * AI matching with retry logic and circuit breaker
+   */
+  private async performAIMatchingWithRetry(
+    jobs: Job[],
+    userPrefs: UserPreferences
+  ): Promise<JobMatch[]> {
+    const maxRetries = MATCHING_CONFIG.AI_MAX_RETRIES;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await this.performAIMatchingWithTimeout(jobs, userPrefs);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        if (attempt < maxRetries) {
+          // Exponential backoff
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    throw lastError || new Error('AI matching failed after all retries');
   }
 
   /**

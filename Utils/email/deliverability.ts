@@ -104,13 +104,20 @@ export async function validateEmailDeliverability(): Promise<{
 }
 
 /**
- * Validate SPF record
+ * Validate SPF record using DNS lookup
  */
-async function validateSPFRecord(_domain: string): Promise<boolean> {
+async function validateSPFRecord(domain: string): Promise<boolean> {
   try {
-    // This would typically use a DNS lookup library
-    // For now, we'll assume it's configured if the environment variable is set
-    return !!process.env.SPF_RECORD_VALIDATED;
+    const dns = require('dns').promises;
+    const spfRecord = await dns.resolveTxt(`_spf.${domain}`);
+    
+    if (!spfRecord || spfRecord.length === 0) {
+      return false;
+    }
+    
+    // Check if any SPF record contains the expected Resend include
+    const spfText = spfRecord.flat().join(' ');
+    return spfText.includes('include:_spf.resend.com') || spfText.includes('include:resend.com');
   } catch (error) {
     console.error('Error validating SPF record:', error);
     return false;
@@ -118,13 +125,30 @@ async function validateSPFRecord(_domain: string): Promise<boolean> {
 }
 
 /**
- * Validate DKIM record
+ * Validate DKIM record using DNS lookup
  */
-async function validateDKIMRecord(_domain: string): Promise<boolean> {
+async function validateDKIMRecord(domain: string): Promise<boolean> {
   try {
-    // This would typically use a DNS lookup library
-    // For now, we'll assume it's configured if the environment variable is set
-    return !!process.env.DKIM_RECORD_VALIDATED;
+    const dns = require('dns').promises;
+    // Check for common DKIM selectors
+    const selectors = ['default', 'resend', 'k1', 'selector1', 'selector2'];
+    
+    for (const selector of selectors) {
+      try {
+        const dkimRecord = await dns.resolveTxt(`${selector}._domainkey.${domain}`);
+        if (dkimRecord && dkimRecord.length > 0) {
+          const dkimText = dkimRecord.flat().join(' ');
+          if (dkimText.includes('v=DKIM1') && dkimText.includes('k=rsa')) {
+            return true;
+          }
+        }
+      } catch (selectorError) {
+        // Continue to next selector
+        continue;
+      }
+    }
+    
+    return false;
   } catch (error) {
     console.error('Error validating DKIM record:', error);
     return false;
@@ -132,13 +156,21 @@ async function validateDKIMRecord(_domain: string): Promise<boolean> {
 }
 
 /**
- * Validate DMARC record
+ * Validate DMARC record using DNS lookup
  */
-async function validateDMARCRecord(_domain: string): Promise<boolean> {
+async function validateDMARCRecord(domain: string): Promise<boolean> {
   try {
-    // This would typically use a DNS lookup library
-    // For now, we'll assume it's configured if the environment variable is set
-    return !!process.env.DMARC_RECORD_VALIDATED;
+    const dns = require('dns').promises;
+    const dmarcRecord = await dns.resolveTxt(`_dmarc.${domain}`);
+    
+    if (!dmarcRecord || dmarcRecord.length === 0) {
+      return false;
+    }
+    
+    // Check if DMARC record is properly configured
+    const dmarcText = dmarcRecord.flat().join(' ');
+    return dmarcText.includes('v=DMARC1') && 
+           (dmarcText.includes('p=quarantine') || dmarcText.includes('p=reject'));
   } catch (error) {
     console.error('Error validating DMARC record:', error);
     return false;

@@ -2,6 +2,7 @@
 // Safe for major clients: Gmail, Outlook, Apple Mail
 
 import { EmailJobCard } from './types';
+import { getBaseUrl } from '../url-helpers';
 
 const COLORS = {
   bg: '#0a0a0a',
@@ -93,7 +94,7 @@ function wrapEmail(title: string, body: string): string {
           <tr>
             <td class="footer">
               <div class="footer-logo">JobPing</div>
-              <div class="footer-text"><a class="footer-link" href="https://getjobping.com/legal/unsubscribe">Unsubscribe</a></div>
+              <div class="footer-text"><a class="footer-link" href="${getBaseUrl()}/legal/unsubscribe">Unsubscribe</a></div>
             </td>
           </tr>
         </table>
@@ -114,7 +115,7 @@ export function createWelcomeEmail(userName?: string, matchCount: number = 5): s
       <h1 class="title">Welcome${name}</h1>
       <p class="text">We’ll send you roles you can actually get — not a job board dump.</p>
       <p class="text">Look out for your first set within 48 hours. Then we keep them coming weekly.</p>
-      ${vmlButton('https://getjobping.com', 'Show me my matches', COLORS.indigo, COLORS.purple)}
+      ${vmlButton(getBaseUrl(), 'Show me my matches', COLORS.indigo, COLORS.purple)}
       <p class="text" style="color:${COLORS.gray500}; font-size:12px; margin-top:12px;">Changed your mind? Update preferences anytime from any email.</p>
     </td>
   </tr>`;
@@ -163,15 +164,15 @@ export function createJobMatchesEmail(
       <p class="text" style="margin-bottom:10px;">How useful were these matches?</p>
       <table role="presentation" cellpadding="0" cellspacing="6">
         <tr>
-          <td>${vmlButton(`https://getjobping.com/api/feedback/email?action=positive&score=5&email=${encodeURIComponent(userEmail)}`, 'Loved it', COLORS.purple, COLORS.indigo)}</td>
-          <td>${vmlButton(`https://getjobping.com/api/feedback/email?action=positive&score=4&email=${encodeURIComponent(userEmail)}`, 'Good', COLORS.purple, COLORS.indigo)}</td>
+          <td>${vmlButton(`${getBaseUrl()}/api/feedback/email?action=positive&score=5&email=${encodeURIComponent(userEmail)}`, 'Loved it', COLORS.purple, COLORS.indigo)}</td>
+          <td>${vmlButton(`${getBaseUrl()}/api/feedback/email?action=positive&score=4&email=${encodeURIComponent(userEmail)}`, 'Good', COLORS.purple, COLORS.indigo)}</td>
         </tr>
         <tr>
-          <td>${vmlButton(`https://getjobping.com/api/feedback/email?action=neutral&score=3&email=${encodeURIComponent(userEmail)}`, 'It’s fine', COLORS.indigo, COLORS.purple)}</td>
-          <td>${vmlButton(`https://getjobping.com/api/feedback/email?action=negative&score=2&email=${encodeURIComponent(userEmail)}`, 'Not great', COLORS.indigo, COLORS.purple)}</td>
+          <td>${vmlButton(`${getBaseUrl()}/api/feedback/email?action=neutral&score=3&email=${encodeURIComponent(userEmail)}`, 'It\'s fine', COLORS.indigo, COLORS.purple)}</td>
+          <td>${vmlButton(`${getBaseUrl()}/api/feedback/email?action=negative&score=2&email=${encodeURIComponent(userEmail)}`, 'Not great', COLORS.indigo, COLORS.purple)}</td>
         </tr>
         <tr>
-          <td colspan="2" align="center">${vmlButton(`https://getjobping.com/api/feedback/email?action=negative&score=1&email=${encodeURIComponent(userEmail)}`, 'Not relevant', COLORS.indigo, COLORS.purple)}</td>
+          <td colspan="2" align="center">${vmlButton(`${getBaseUrl()}/api/feedback/email?action=negative&score=1&email=${encodeURIComponent(userEmail)}`, 'Not relevant', COLORS.indigo, COLORS.purple)}</td>
         </tr>
       </table>
     </td>

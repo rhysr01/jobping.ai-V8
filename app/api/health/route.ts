@@ -1,28 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUnifiedHandler, RATE_LIMITS } from '@/Utils/api/unified-api-handler';
-import { getSupabaseClient } from '@/Utils/supabase';
+import { getEnhancedMonitoringManager } from '@/Utils/monitoring/enhanced-monitoring';
 
 export const GET = createUnifiedHandler(async (_req: NextRequest) => {
   const start = Date.now();
+  const monitor = getEnhancedMonitoringManager();
   
-  // Simple health checks using existing patterns
-  const checks = {
-    database: await checkDatabase(),
-    environment: checkEnvironment(),
-    uptime: process.uptime()
-  };
+  // Run comprehensive health checks
+  const healthChecks = await monitor.runHealthChecks();
+  const healthStatus = monitor.getHealthStatus();
+  const dashboard = monitor.getDashboardData();
 
   const duration = Date.now() - start;
-  const healthy = Object.values(checks).every(check => 
-    typeof check === 'number' ? true : 
-    typeof check === 'boolean' ? check : 
-    check.status === 'healthy'
-  );
+  const healthy = healthStatus.status === 'healthy';
+
+  // Record health check metrics
+  monitor.recordHistogram('health.check.duration', duration);
+  monitor.incrementCounter('health.check.total', 1, { status: healthStatus.status });
 
   return NextResponse.json({ 
     ok: healthy,
-    status: healthy ? 'healthy' : 'degraded',
-    checks,
+    status: healthStatus.status,
+    checks: healthChecks,
+    summary: healthStatus.summary,
+    dashboard,
     responseTime: duration,
     timestamp: new Date().toISOString()
   }, { 
@@ -32,35 +33,3 @@ export const GET = createUnifiedHandler(async (_req: NextRequest) => {
   rateLimit: RATE_LIMITS.GENERAL,
   allowedMethods: ['GET']
 });
-
-async function checkDatabase(): Promise<{ status: string; message: string }> {
-  try {
-    const supabase = getSupabaseClient();
-    const { error } = await supabase.from('users').select('count').limit(1);
-    
-    if (error) {
-      return { status: 'unhealthy', message: 'Database connection failed' };
-    }
-    
-    return { status: 'healthy', message: 'Database connection OK' };
-  } catch (error) {
-    return { 
-      status: 'unhealthy', 
-      message: error instanceof Error ? error.message : 'Unknown database error' 
-    };
-  }
-}
-
-function checkEnvironment(): { status: string; message: string } {
-  const requiredVars = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'OPEN_API_KEY', 'RESEND_API_KEY'];
-  const missing = requiredVars.filter(varName => !process.env[varName]);
-  
-  if (missing.length > 0) {
-    return { 
-      status: 'unhealthy', 
-      message: `Missing environment variables: ${missing.join(', ')}` 
-    };
-  }
-  
-  return { status: 'healthy', message: 'All required environment variables present' };
-}
