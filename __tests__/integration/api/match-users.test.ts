@@ -5,6 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { POST, GET } from '@/app/api/match-users/route';
+import { hmacSign } from '@/Utils/security/hmac';
 
 // Mock the consolidated matcher
 jest.mock('@/Utils/consolidatedMatching', () => ({
@@ -69,19 +70,39 @@ jest.mock('@/Utils/databasePool', () => ({
   }))
 }));
 
-// Mock Redis client
-jest.mock('@/Utils/redis', () => ({
-  getRedisClient: jest.fn(() => ({
-    acquire: jest.fn().mockResolvedValue(true),
-    release: jest.fn().mockResolvedValue(undefined)
-  }))
-}));
+// Redis functionality is handled internally by the rate limiter
+// No direct Redis import to mock
+
+// Helper function to create authenticated requests
+function createAuthenticatedRequest(body: any, method: string = 'POST'): NextRequest {
+  const bodyString = JSON.stringify(body);
+  const timestamp = Date.now();
+  const signature = hmacSign(bodyString, process.env.INTERNAL_API_HMAC_SECRET!);
+  
+  return new NextRequest('http://localhost:3000/api/match-users', {
+    method,
+    body: bodyString,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-jobping-signature': signature,
+      'x-jobping-timestamp': timestamp.toString()
+    }
+  });
+}
 
 // Mock Sentry
 jest.mock('@sentry/nextjs', () => ({
   addBreadcrumb: jest.fn(),
   captureMessage: jest.fn(),
-  setContext: jest.fn()
+  captureException: jest.fn(),
+  setContext: jest.fn(),
+  setTag: jest.fn(),
+  setUser: jest.fn(),
+  startTransaction: jest.fn(() => ({
+    setTag: jest.fn(),
+    setData: jest.fn(),
+    finish: jest.fn()
+  }))
 }));
 
 // Integration tests require full environment (DB, Redis, OpenAI)
@@ -214,21 +235,15 @@ describe('/api/match-users Integration Tests', () => {
     // Set timeout for all tests in this suite
     jest.setTimeout(30000); // 30 seconds for integration tests
     it('should process users successfully with valid request', async () => {
-      const request = new NextRequest('http://localhost:3000/api/match-users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-forwarded-for': '127.0.0.1',
-        },
-        body: JSON.stringify({
-          userLimit: 10,
-          jobLimit: 10000,
-          forceRun: false,
-          dryRun: false,
-          signature: "test",
-          timestamp: 1
-        }),
-      });
+      const requestBody = {
+        userLimit: 10,
+        jobLimit: 10000,
+        forceRun: false,
+        dryRun: false
+      };
+
+      const request = createAuthenticatedRequest(requestBody);
+      request.headers.set('x-forwarded-for', '127.0.0.1');
 
       const response = await POST(request);
       const data = await response.json();

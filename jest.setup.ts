@@ -20,6 +20,9 @@ if (typeof setImmediate === 'undefined') {
 // Set test environment
 (process.env as any).NODE_ENV = 'test';
 
+// Set HMAC secret for API testing
+(process.env as any).INTERNAL_API_HMAC_SECRET = 'test-hmac-secret-key-for-testing-only';
+
 // Test-specific environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';

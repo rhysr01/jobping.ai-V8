@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -45,14 +45,14 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, onConfirmWith
     }
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     if (!isLoading) {
       setEmail('');
       setError('');
       setEmailError('');
       onClose();
     }
-  };
+  }, [isLoading, onClose]);
 
   // Focus management and body scroll prevention
   useEffect(() => {
@@ -98,7 +98,7 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, onConfirmWith
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, isLoading]);
+  }, [isOpen, isLoading, handleClose]);
 
   // Focus trap
   useEffect(() => {
