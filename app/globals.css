@@ -190,6 +190,37 @@ body {
   }
 }
 
+/* Surface token utilities for consistent glass morphism */
+@layer utilities {
+  .surface-subtle {
+    @apply bg-white/3 border border-white/8;
+  }
+  
+  .surface-default {
+    @apply bg-white/5 border border-white/10;
+  }
+  
+  .surface-elevated {
+    @apply bg-white/10 border border-white/15;
+  }
+  
+  .surface-glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  }
+  
+  .chip-default {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full border transition-colors;
+  }
+  
+  .chip-subtle {
+    @apply chip-default bg-white/5 border-white/10 text-zinc-300;
+  }
+  
+  .chip-brand {
+    @apply chip-default bg-brand-500/10 border-brand-500/20 text-brand-300;
+  }
+}
+
 /* Number chip - REFINED & CLEAN */
 .number-chip {
   width: 72px; height: 72px;

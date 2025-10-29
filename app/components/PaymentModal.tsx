@@ -63,8 +63,11 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, onConfirmWith
       // Prevent body scroll
       document.body.style.overflow = 'hidden';
       
-      // Focus the modal
-      if (modalRef.current) {
+      // Focus the email input for better UX
+      const emailInput = document.getElementById('email') as HTMLInputElement;
+      if (emailInput) {
+        emailInput.focus();
+      } else if (modalRef.current) {
         modalRef.current.focus();
       }
     } else {
@@ -148,7 +151,7 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, onConfirmWith
         aria-modal="true"
         aria-labelledby="payment-modal-title"
         tabIndex={-1}
-        className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl focus:outline-none"
+        className="relative surface-glass rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl focus:outline-none"
       >
         <div className="flex items-center justify-between mb-6">
           <h2 id="payment-modal-title" className="text-2xl font-semibold text-white">
@@ -181,15 +184,15 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, onConfirmWith
               disabled={isLoading}
               aria-invalid={emailError ? 'true' : 'false'}
               aria-describedby={emailError ? 'email-error' : undefined}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-zinc-400 focus:border-white/30 focus:ring-2 focus:ring-white/20 transition-colors disabled:opacity-50"
+              className="w-full px-4 py-3 surface-default rounded-xl text-white placeholder-zinc-400 focus:border-white/30 focus:ring-2 focus:ring-white/20 transition-colors disabled:opacity-50"
             />
             {emailError && (
-              <p id="email-error" className="mt-2 text-sm text-red-400" role="alert">
+              <p id="email-error" className="mt-2 text-sm text-red-400" role="status" aria-live="polite">
                 {emailError}
               </p>
             )}
             {error && (
-              <p className="mt-2 text-sm text-red-400" role="alert">
+              <p className="mt-2 text-sm text-red-400" role="status" aria-live="polite">
                 {error}
               </p>
             )}
@@ -217,25 +220,10 @@ export default function PaymentModal({ isOpen, onClose, onConfirm, onConfirmWith
                   onChange={(e) => setPromoCode(e.target.value)}
                   placeholder="Enter code e.g. rhys"
                   disabled={isLoading}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:border-white/20 focus:ring-2 focus:ring-white/10 transition-colors disabled:opacity-50 text-sm"
+                  className="w-full px-3 py-2 surface-default rounded-lg text-white placeholder-zinc-500 focus:border-white/20 focus:ring-2 focus:ring-white/10 transition-colors disabled:opacity-50 text-sm"
                 />
               </div>
             )}
-          </div>
-
-          <div>
-            <label htmlFor="promo" className="block text-sm font-medium text-zinc-300 mb-2">
-              Promo Code (optional)
-            </label>
-            <input
-              type="text"
-              id="promo"
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-              placeholder="Enter code e.g. rhys"
-              disabled={isLoading}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-zinc-400 focus:border-white/30 focus:ring-2 focus:ring-white/20 transition-colors disabled:opacity-50"
-            />
           </div>
 
           <div className="bg-zinc-800/50 rounded-xl p-4">

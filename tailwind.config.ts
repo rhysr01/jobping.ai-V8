@@ -40,6 +40,10 @@ export default {
         shimmer: "shimmer 2s linear infinite",
         pulseRing: "pulseRing 2.4s ease-out infinite",
       },
+      scale: {
+        '102': '1.02',
+        '98': '0.98',
+      },
       boxShadow: {
         'elev-1': "0 10px 30px -10px rgba(99,102,241,0.25)",
         'elev-2': "0 20px 60px -18px rgba(99,102,241,0.35)",
