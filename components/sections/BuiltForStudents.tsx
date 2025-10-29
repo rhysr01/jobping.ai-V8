@@ -2,9 +2,9 @@ export default function BuiltForStudents() {
   const features = [
     { 
       num: 1, 
-      title: "Your profile drives everything", 
+      title: "Learns what you love, filters what you don't", 
       body: "Matches based on your location, visa status, and interests. Zero generic spam.",
-      stats: "Smart matching = Zero wasted time"
+      stats: "Real matching = Zero wasted time"
     },
     { 
       num: 2, 
@@ -14,16 +14,16 @@ export default function BuiltForStudents() {
     },
     { 
       num: 3, 
-      title: "AI that learns from you", 
-      body: "Rate each job match. Our AI gets smarter with every click, delivering better matches over time.",
-      stats: "Smarter matches with each feedback"
+      title: "Gets better with every click", 
+      body: "Rate each job match. We learn your preferences and deliver better matches over time.",
+      stats: "Better matches with each feedback"
     },
   ];
 
   return (
     <section className="section-padding">
       <div className="container-page container-rhythm">
-        <h2 className="text-heading text-center text-white text-balance">We search 1,000+ companies daily. You get hand-picked matches weekly.</h2>
+        <h2 className="text-heading text-center text-white text-balance">Understands your degree, experience, and goals — instantly.</h2>
 
         <div className="mt-10 sm:mt-12 grid gap-8 sm:gap-10 md:grid-cols-3 md:gap-14">
           {features.filter(feature => feature && feature.title).map((feature) => (

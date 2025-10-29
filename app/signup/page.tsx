@@ -247,10 +247,10 @@ function SignupForm() {
           </motion.div>
           
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text_white mb-4 tracking-tight leading-tight">
-            Join 1,000+ Students Getting Their Dream Roles
+            Land your first job faster — without endless applications
           </h1>
           <p className="text-zinc-300 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-4">
-            Fill out once. Get your first matches in 48 hours. Zero spam.
+            We match you to real roles that fit your skills, degree, and goals. No spam. No dead ends.
           </p>
           {tier === 'premium' && (
             <motion.div
@@ -1015,7 +1015,7 @@ function SignupForm() {
                     ) : (
                       <>
                         <span></span>
-                        <span>Get My 10 Roles</span>
+                        <span>Find my matches</span>
                         <motion.span
                           animate={{ x: [0, 4, 0] }}
                           transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}

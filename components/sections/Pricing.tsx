@@ -12,7 +12,7 @@ export default function Pricing() {
             Simple pricing • Cancel anytime
           </Badge>
           <h2 className="text-heading text-white text-balance">
-            Free or Premium — both are blazing fast
+            From student to hired: discover roles made for you
           </h2>
           <p className="text-body text-neutral-400 mt-6">
             Get curated roles in your inbox. Zero scrolling, just apply.

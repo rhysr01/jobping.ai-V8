@@ -91,7 +91,7 @@ export default function Hero() {
         </motion.div>
         
         <h1 className="mt-8 text-display text-white text-balance max-w-[20ch] mx-auto relative">
-          <span className="relative z-10">No logins. Zero scrolling. Jobs in your inbox.</span>
+          <span className="relative z-10">Land your first job faster — without endless applications.</span>
           {/* Subtle radial highlight behind CTA */}
           <div className="absolute -inset-8 bg-gradient-to-r from-brand-500/20 via-purple-600/20 to-brand-500/20 rounded-full blur-3xl opacity-60 -z-10" />
         </h1>
@@ -106,7 +106,7 @@ export default function Hero() {
           </div>
         </div>
         <p className="mt-6 text-body text-neutral-400 max-w-[58ch] mx-auto">
-          Stop searching. Start applying.
+          We match you to real roles that fit your skills, degree, and goals. No spam. No dead ends.
         </p>
         
         {/* Signup bonus urgency banner */}
@@ -138,10 +138,10 @@ export default function Hero() {
             variant="primary"
             size="lg"
             className="text-heading font-bold relative overflow-hidden group"
-            aria-label="Get my matches in 48 hours"
+            aria-label="Find my matches"
           >
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <span className="relative">Get my matches in 48 hours</span>
+            <span className="relative">Find my matches</span>
           </Button>
           <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-zinc-500">
             No logins · No spam · Unsubscribe anytime
