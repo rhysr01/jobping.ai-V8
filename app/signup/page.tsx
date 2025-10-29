@@ -246,7 +246,7 @@ function SignupForm() {
             </div>
           </motion.div>
           
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text_white mb-4 tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
             Land your first job faster — without endless applications
           </h1>
           <p className="text-zinc-300 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-4">
@@ -463,7 +463,7 @@ function SignupForm() {
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => setFormData({...formData, startDate: e.target.value})}
-                    className="w-full px-5 py-4 bg-black/40 border-2 border-zinc-700 rounded-xl text_white focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 transition-all text-lg"
+                    className="w-full px-5 py-4 bg-black/40 border-2 border-zinc-700 rounded-xl text-white focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 transition-all text-lg"
                   />
                 </div>
 
@@ -568,7 +568,7 @@ function SignupForm() {
                 </div>
 
                 <div>
-                  <label className="block text-base font-bold text_white mb-3">Target Companies</label>
+                  <label className="block text-base font-bold text-white mb-3">Target Companies</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {COMPANIES.map(company => (
                       <motion.button

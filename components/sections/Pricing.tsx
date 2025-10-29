@@ -31,13 +31,13 @@ export default function Pricing() {
             viewport={{ once: true }}
             className="relative rounded-2xl p-[1px] bg-gradient-to-b from-white/15 to-transparent"
           >
-            <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 md:p-8 flex flex-col h-full hover:border-white/20 transition-colors shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+            <div className="bg-white/[0.035] border border-white/[0.08] rounded-2xl p-6 md:p-8 flex flex-col h-full hover:border-white/20 transition-colors shadow-[0_1px_2px_rgb(255_255_255/0.05)]">
               <div className="mb-5">
                 <div className="inline-flex items-center gap-2 text-sm uppercase tracking-wider text-zinc-400 font-semibold">
                   <span className="inline-block w-2 h-2 rounded-full bg-zinc-400" /> Free
                 </div>
                 <div className="mt-2 text-2xl sm:text-3xl font-black text-white">5 roles on signup</div>
-                <div className="text-zinc-400 text-sm">= 25 jobs/month</div>
+                <div className="text-sm font-bold text-brand-400 mt-1">= 25 jobs/month</div>
               </div>
 
               <ul className="text-sm text-zinc-300 space-y-2.5 mb-6">
@@ -69,10 +69,10 @@ export default function Pricing() {
             viewport={{ once: true }}
             className="relative rounded-2xl p-[1px] bg-gradient-to-b from-brand-500/60 to-purple-600/40 shadow-[0_0_40px_rgba(139,92,246,0.25)] hover:shadow-[0_0_60px_rgba(139,92,246,0.35)] transition-shadow"
           >
-            <div className="absolute -top-2 left-6 w-[70%] px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-purple-500/20 to-purple-400/20 border border-purple-400/30 text-purple-300">
+            <div className="absolute -top-3 left-5 px-2 py-0.5 text-[11px] font-bold rounded-full bg-brand-500/20 border border-brand-500/30 text-brand-200 shadow-none">
               Best Value
             </div>
-            <div className="relative bg-gradient-to-b from-[#9F6BFF]/10 to-[#6B4EFF]/5 border border-white/20 rounded-2xl p-6 md:p-8 flex flex-col h-full overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+            <div className="relative bg-white/[0.035] border border-white/[0.08] rounded-2xl p-6 md:p-8 flex flex-col h-full overflow-hidden shadow-[0_1px_2px_rgb(255_255_255/0.05)]">
               <div className="absolute -top-12 -right-10 h-40 w-40 rounded-full bg-brand-500/20 blur-3xl" aria-hidden />
               <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-purple-500/10 blur-2xl" aria-hidden />
 
