@@ -1,6 +1,5 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
 import StructuredData from "@/components/StructuredData";
 import FAQSchema from "@/components/FAQSchema";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -68,7 +67,7 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={GeistSans.variable}>
+    <html lang="en">
       <head>
         <link
           href="https://api.fontshare.com/v2/css?f[]=satoshi@1,900,700,500,400&display=swap"
