@@ -539,7 +539,7 @@ async function preFilterJobsByUserPreferencesEnhanced(jobs: (ScrapersJob & { fre
   // Ensure source diversity in top 100 jobs sent to AI
   const diverseJobs: typeof sortedJobs[0][] = [];
   const sourceCount: Record<string, number> = {};
-  const maxPerSource = parseInt(process.env.MAX_PER_SOURCE || '40', 10); // Max jobs from any single source in top results
+  const maxPerSource = MATCH_RULES.maxPerSource; // Max jobs from any single source in top results
   
   for (const item of sortedJobs) {
     const source = (item.job as any).source || 'unknown';
@@ -707,7 +707,7 @@ const matchUsersHandler = async (req: NextRequest) => {
   // Use Redis lock to prevent concurrent processing
   const lockKey = LOCK_KEY('global');
   const result = await withRedisLock(lockKey, 30, async () => {
-    console.log(`Processing match-users request from IP: ${ip}`);
+    if (IS_DEBUG) console.log(`Processing match-users request from IP: ${ip}`);
     
     // Use validated Zod schema values from the first parsing
     const userCap = IS_TEST ? Math.min(userLimit, USER_LIMIT) : userLimit;
@@ -752,7 +752,7 @@ const matchUsersHandler = async (req: NextRequest) => {
     }
 
     if (!users || users.length === 0) {
-      console.log('No users found');
+      if (IS_DEBUG) console.log('No users found');
       return NextResponse.json({ message: 'No users found' });
     }
 
