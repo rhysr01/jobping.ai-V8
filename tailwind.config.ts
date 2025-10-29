@@ -29,13 +29,13 @@ export default {
         '80': '20rem',     // 320px
         '96': '24rem',     // 384px
       },
-      colors: {
-        brand: {
-          300: "#A5B4FC",
-          400: "#818CF8",
-          500: "#6366F1", // primary
-          600: "#4F46E5", // hover/pressed
-        },
+             colors: {
+               brand: {
+                 300: "#C2A8FF",
+                 400: "#B491FF",
+                 500: "#9A6AFF",
+                 600: "#6B4EFF",
+               },
         // Semantic color system
         success: {
           50: "#f0fdf4",

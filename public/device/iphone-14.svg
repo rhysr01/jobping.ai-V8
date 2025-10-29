@@ -1,0 +1,13 @@
+<svg width="390" height="844" viewBox="0 0 390 844" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- iPhone 14 frame -->
+  <rect x="0" y="0" width="390" height="844" rx="60" ry="60" fill="#1C1C1E" stroke="#2C2C2E" stroke-width="2"/>
+  
+  <!-- Screen area -->
+  <rect x="12" y="12" width="366" height="820" rx="44" ry="44" fill="#000000"/>
+  
+  <!-- Dynamic Island -->
+  <rect x="150" y="12" width="90" height="30" rx="15" ry="15" fill="#000000"/>
+  
+  <!-- Home indicator -->
+  <rect x="150" y="800" width="90" height="4" rx="2" ry="2" fill="#FFFFFF" opacity="0.3"/>
+</svg>
