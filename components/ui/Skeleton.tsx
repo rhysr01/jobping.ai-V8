@@ -7,7 +7,8 @@ interface SkeletonProps {
 
 export default function Skeleton({ className = '', children }: SkeletonProps) {
   return (
-    <div className={`animate-pulse bg-white/10 rounded ${className}`}>
+    <div className={`animate-pulse bg-white/10 rounded relative overflow-hidden ${className}`}>
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       {children}
     </div>
   );

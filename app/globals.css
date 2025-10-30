@@ -359,9 +359,47 @@ body {
 /* Scrollbar polish */
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 9999px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #52525b; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 
-/* Focus ring for keyboard users */
+/* Premium link styling */
+a:not([class*="btn"]):not([class*="underline"]) {
+  transition: color 0.2s ease;
+}
+
+a:not([class*="btn"]):not([class*="underline"]):hover {
+  color: #a78bfa;
+}
+
+/* Animated underline for links */
+a.underline {
+  position: relative;
+  text-decoration: none;
+  background-image: linear-gradient(to right, currentColor, currentColor);
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  transition: background-size 0.3s ease, color 0.2s ease;
+}
+
+a.underline:hover {
+  background-size: 100% 1px;
+}
+
+/* Focus ring for keyboard users - refined */
 :focus-visible {
-  outline: 2px solid rgba(129,140,248,0.6);
+  outline: 2px solid rgba(139,92,246,0.6);
   outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }

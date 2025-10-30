@@ -24,7 +24,11 @@ export default function Pricing() {
             viewport={{ once: true }}
             className="relative rounded-2xl p-[1px] bg-gradient-to-b from-white/15 to-transparent"
           >
-            <div className="bg-glass-subtle border border-border-subtle rounded-2xl p-6 md:p-8 flex flex-col h-full hover:border-border-default transition-all duration-300 shadow-base backdrop-blur-sm hover:shadow-[0_4px_12px_rgba(255,255,255,0.04)]">
+            <motion.div 
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.3 }}
+              className="bg-glass-subtle border border-border-subtle rounded-2xl p-6 md:p-8 flex flex-col h-full hover:border-border-default transition-all duration-300 shadow-base backdrop-blur-sm hover:shadow-[0_4px_12px_rgba(255,255,255,0.04)]"
+            >
               <div className="mb-5">
                 <div className="inline-flex items-center gap-2 text-small uppercase tracking-wider text-zinc-400 font-semibold">
                   <span className="inline-block w-2 h-2 rounded-full bg-zinc-400" aria-hidden="true" /> Free
@@ -51,7 +55,7 @@ export default function Pricing() {
                 </Link>
                 <p className="mt-2 text-[11px] text-zinc-500 text-center">Cancel anytime no commitment</p>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* Premium Plan */}
@@ -65,7 +69,11 @@ export default function Pricing() {
             <div className="absolute -top-3 left-5 px-2.5 py-1 text-[11px] font-bold rounded-full bg-brand-500/20 border border-brand-500/30 text-brand-200 shadow-[0_2px_8px_rgba(154,106,255,0.15)] backdrop-blur-sm">
               Best Value
             </div>
-            <div className="relative bg-glass-subtle border border-border-subtle rounded-2xl p-6 md:p-8 flex flex-col h-full overflow-hidden shadow-base backdrop-blur-sm hover:shadow-[0_4px_12px_rgba(255,255,255,0.04)] transition-all duration-300">
+            <motion.div 
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.3 }}
+              className="relative bg-glass-subtle border border-border-subtle rounded-2xl p-6 md:p-8 flex flex-col h-full overflow-hidden shadow-base backdrop-blur-sm hover:shadow-[0_4px_12px_rgba(255,255,255,0.04)] transition-all duration-300"
+            >
 
               <div className="mb-5">
                 <div className="inline-flex items-center gap-2 text-small uppercase tracking-wider text-brand-300 font-semibold">
@@ -94,7 +102,7 @@ export default function Pricing() {
                 </Link>
                 <p className="mt-2 text-[11px] text-zinc-500 text-center">Cancel anytime no commitment</p>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         </div>
 

@@ -67,17 +67,17 @@ export default function EmailPhoneShowcase() {
           <div className="bg-glass-subtle border border-border-subtle rounded-xl p-6 shadow-base backdrop-blur-sm hover:shadow-[0_4px_12px_rgba(255,255,255,0.04)] transition-all duration-300">
             <div className="text-2xl mb-2" aria-hidden="true">📧</div>
             <h3 className="text-white font-semibold mb-2">Weekly emails</h3>
-            <p className="text-small text-neutral-400">5 hand-picked roles every week</p>
+            <p className="text-base text-neutral-300 font-medium">5 hand-picked roles every week</p>
           </div>
           <div className="bg-glass-subtle border border-border-subtle rounded-xl p-6 shadow-base backdrop-blur-sm hover:shadow-[0_4px_12px_rgba(255,255,255,0.04)] transition-all duration-300">
             <div className="text-2xl mb-2" aria-hidden="true">⚡</div>
             <h3 className="text-white font-semibold mb-2">60-second read</h3>
-            <p className="text-small text-neutral-400">Everything you need in one email</p>
+            <p className="text-base text-neutral-300 font-medium">Everything you need in one email</p>
           </div>
           <div className="bg-glass-subtle border border-border-subtle rounded-xl p-6 shadow-base backdrop-blur-sm hover:shadow-[0_4px_12px_rgba(255,255,255,0.04)] transition-all duration-300">
             <div className="text-2xl mb-2" aria-hidden="true">🎯</div>
             <h3 className="text-white font-semibold mb-2">Perfect matches</h3>
-            <p className="text-small text-neutral-400">AI-filtered for your profile</p>
+            <p className="text-base text-neutral-300 font-medium">AI-filtered for your profile</p>
           </div>
         </motion.div>
       </div>

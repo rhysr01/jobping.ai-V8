@@ -86,7 +86,7 @@ export default function Hero() {
         >
           Land your first job faster without endless scrolling.
         </motion.h1>
-        <p className="text-neutral-400 leading-relaxed max-w-2xl mx-auto text-lg">
+        <p className="text-neutral-300 leading-relaxed max-w-2xl mx-auto text-xl font-medium">
           We match you to real roles that fit your skills, degree, and goals. No spam. No dead ends.
         </p>
         

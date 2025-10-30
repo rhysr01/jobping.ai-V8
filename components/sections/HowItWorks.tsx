@@ -42,7 +42,7 @@ export default function HowItWorks() {
                 {x.num}
               </motion.div>
               <h3 className="mt-6 text-heading text-white">{x.title}</h3>
-              <p className="mt-3 text-body text-neutral-400 leading-relaxed">{x.body}</p>
+              <p className="mt-3 text-lg text-neutral-300 leading-relaxed font-medium">{x.body}</p>
             </motion.div>
           ))}
         </div>

@@ -21,7 +21,7 @@ export default function DeviceFrame({ children, className }: Props) {
         {/* Device SVG as background */}
         <Image
           src="/device/iphone-14.svg"
-          alt=""
+          alt="iPhone displaying JobPing email preview"
           priority
           fill
           sizes="390px"
@@ -30,15 +30,15 @@ export default function DeviceFrame({ children, className }: Props) {
         {/* Screen content: align to the inner screen rect (x:12,y:12,w:366,h:820) */}
         <div
           className="absolute left-[12px] top-[12px] w-[366px] h-[820px] overflow-hidden rounded-[44px] bg-black relative z-10 shadow-2xl"
-          aria-hidden={false}
+          aria-label="Email preview content"
         >
           {/* Status bar */}
-          <div className="relative z-10 px-4 pt-2">
-            <Image src="/device/statusbar-dark.svg" alt="" width={366} height={20} />
+          <div className="relative z-10 px-4 pt-3">
+            <Image src="/device/statusbar-dark.svg" alt="" width={366} height={20} aria-hidden="true" />
           </div>
           {/* Scrollable email body */}
           <motion.div 
-            className="relative z-10 h-[792px] overflow-y-auto pb-8"
+            className="relative z-10 h-[792px] overflow-y-auto pb-6 px-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.6 }}

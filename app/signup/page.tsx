@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useReducedMotion } from '@/components/ui/useReducedMotion';
 
 function SignupForm() {
   const router = useRouter();
@@ -14,6 +15,7 @@ function SignupForm() {
   const [activeJobs, setActiveJobs] = useState('9,769');
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [tier] = useState<'free' | 'premium'>(tierParam === 'premium' ? 'premium' : 'free');
+  const prefersReduced = useReducedMotion();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -189,14 +191,14 @@ function SignupForm() {
       <div className="absolute inset-0 enhanced-grid opacity-30" aria-hidden="true" />
       <motion.div
         className="absolute top-20 right-10 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"
-        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 8, repeat: Infinity }}
+        animate={prefersReduced ? { scale: 1, opacity: 0.3 } : { scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+        transition={{ duration: 8, repeat: prefersReduced ? 0 : Infinity }}
         aria-hidden="true"
       />
       <motion.div
         className="absolute bottom-20 left-10 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl"
-        animate={{ scale: [1.2, 1, 1.2], opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 10, repeat: Infinity }}
+        animate={prefersReduced ? { scale: 1, opacity: 0.3 } : { scale: [1.2, 1, 1.2], opacity: [0.3, 0.5, 0.3] }}
+        transition={{ duration: 10, repeat: prefersReduced ? 0 : Infinity }}
         aria-hidden="true"
       />
 
@@ -215,13 +217,18 @@ function SignupForm() {
           {/* Large JobPing with graduation cap */}
           <motion.div 
             className="inline-flex items-center justify-center gap-4 sm:gap-5 mb-6"
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ 
-              scale: [1, 1.05, 1],
-              y: [0, -8, 0]
+              opacity: 1, 
+              scale: 1,
+              ...(prefersReduced ? {} : {
+                    scale: [1, 1.05, 1],
+                    y: [0, -8, 0]
+                  })
             }}
             transition={{ 
               duration: 0.6,
-              repeat: Infinity,
+              repeat: prefersReduced ? 0 : Infinity,
               repeatDelay: 3,
               ease: [0.34, 1.56, 0.64, 1]
             }}

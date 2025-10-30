@@ -46,13 +46,14 @@ export default function BuiltForStudents() {
               }}
               whileHover={{ 
                 scale: 1.02,
+                y: -4,
                 transition: { duration: 0.3 }
               }}
-              className="bg-glass-subtle border border-border-subtle rounded-2xl p-8 sm:p-10 md:p-12 relative overflow-hidden shadow-base backdrop-blur-sm hover:shadow-[0_4px_12px_rgba(255,255,255,0.04)] transition-all duration-300"
+              className="bg-glass-subtle border border-border-subtle rounded-2xl p-8 sm:p-10 md:p-12 relative overflow-hidden shadow-base backdrop-blur-sm hover:shadow-[0_8px_24px_rgba(255,255,255,0.06)] transition-all duration-300"
             >
               <div className="number-chip">{feature.num}</div>
               <h3 className="mt-6 text-heading text-white">{feature.title}</h3>
-              <p className="mt-3 text-body text-neutral-400 leading-relaxed">{feature.body}</p>
+              <p className="mt-3 text-lg text-neutral-300 leading-relaxed font-medium">{feature.body}</p>
               <div className="mt-6 pt-5 border-t border-zinc-700/50">
                 <p className="text-small font-bold text-brand-400">{feature.stats}</p>
               </div>
