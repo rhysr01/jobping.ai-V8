@@ -20,7 +20,7 @@ test.describe('Critical User Flows', () => {
     await expect(page.locator('[data-testid="pricing"]')).toBeVisible();
     
     // Check for key messaging
-    await expect(page.locator('h1:has-text("No logins. Zero scrolling. Jobs in your inbox.")')).toBeVisible();
+    await expect(page.locator('h1:has-text("Land your first job faster")')).toBeVisible();
     await expect(page.locator('text=Weekly job matches')).toBeVisible();
   });
 

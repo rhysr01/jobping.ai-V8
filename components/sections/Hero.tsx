@@ -3,25 +3,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import Skeleton from "@/components/ui/Skeleton";
 import Button from "@/components/ui/Button";
-
-// Reduced motion guard
-const useReducedMotion = () => {
-  const [prefersReduced, setPrefersReduced] = useState(false);
-  
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-      setPrefersReduced(mediaQuery.matches);
-      
-      const handleChange = (e: MediaQueryListEvent) => setPrefersReduced(e.matches);
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-    return undefined;
-  }, []);
-  
-  return prefersReduced;
-};
+import { useReducedMotion } from "@/components/ui/useReducedMotion";
 
 export default function Hero() {
   const [activeJobs, setActiveJobs] = useState("12,748");
@@ -58,34 +40,23 @@ export default function Hero() {
       </div>
       
       <div className="container-page container-rhythm relative z-10">
-        {/* Large JobPing branding with graduation cap - LOUD & BOUNCY */}
+        {/* Large JobPing branding with graduation cap - Calm motion */}
         <motion.div 
           className="inline-flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5 md:gap-6 mb-8 sm:mb-10"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ 
             opacity: 1, 
-            scale: [1, 1.08, 1],
-            y: [0, -16, 0]
+            scale: 1
           }}
           transition={{ 
             opacity: { duration: 0.6 },
-            scale: { 
-              duration: 0.6,
-              repeat: Infinity,
-              repeatDelay: 2.5,
-              ease: [0.34, 1.56, 0.64, 1]
-            },
-            y: {
-              duration: 0.6,
-              repeat: Infinity,
-              repeatDelay: 2.5,
-              ease: [0.34, 1.56, 0.64, 1]
-            }
+            scale: { duration: 0.6 }
           }}
+          whileHover={prefersReduced ? {} : { scale: 1.02 }}
         >
-          {/* Graduation Cap Icon - ANIMATED */}
+          {/* Graduation Cap Icon */}
           <svg
-            className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 text-white flex-shrink-0"
+            className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 text-white flex-shrink-0"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -99,11 +70,9 @@ export default function Hero() {
             <path d="M6 12v4c0 1.6 3 3.2 6 3.2s6-1.6 6-3.2v-4" />
           </svg>
           
-          {/* JobPing Text - 20% smaller to let value prop dominate */}
-          <div className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none">
-            <span className="bg-gradient-to-b from-white via-purple-50 to-purple-200 bg-clip-text text-transparent drop-shadow-[0_0_60px_rgba(139,92,246,0.8)]" style={{
-              filter: 'drop-shadow(0 0 40px rgba(139,92,246,0.6))'
-            }}>
+          {/* JobPing Text - Smaller to let headline dominate */}
+          <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter leading-none">
+            <span className="bg-gradient-to-b from-white via-purple-50/90 to-purple-200/80 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(154,106,255,0.3)]">
               JobPing
             </span>
           </div>
@@ -113,23 +82,23 @@ export default function Hero() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
-          className="mt-8 text-white text-5xl font-bold mb-4"
+          className="mt-8 text-white text-display mb-4 text-balance"
         >
           Land your first job faster without endless scrolling.
         </motion.h1>
-        <p className="text-zinc-400 max-w-xl mx-auto leading-relaxed">
+        <p className="text-neutral-400 leading-relaxed max-w-2xl mx-auto text-lg">
           We match you to real roles that fit your skills, degree, and goals. No spam. No dead ends.
         </p>
         
         {/* Centered bottom section */}
         <div className="mt-10 sm:mt-12 flex flex-col items-center space-y-6">
-          {/* Signup bonus urgency banner */}
+          {/* Stats pill - tag style, not CTA */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/10 px-4 py-1 text-sm text-purple-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/10 backdrop-blur-sm px-4 py-1.5 text-small text-brand-300 shadow-[0_1px_2px_rgba(154,106,255,0.08)]">
               {isLoading ? (
                 <Skeleton className="h-4 w-32" />
               ) : (
@@ -144,13 +113,13 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-                   <Button
-                     href="/signup"
-                     variant="primary"
-                     size="lg"
-                     className="mt-5 rounded-lg bg-gradient-to-r from-[#9A6AFF] to-[#6B4EFF] px-8 py-3 text-lg font-semibold shadow-[0_4px_12px_rgba(106,75,255,0.4)] hover:from-[#A77FFF] hover:to-[#7B5DFF] focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                     aria-label="Find my matches"
-                   >
+            <Button
+              href="/signup"
+              variant="primary"
+              size="lg"
+              className="mt-5 rounded-xl shadow-[0_4px_12px_rgba(106,75,255,0.40)] hover:shadow-[0_6px_20px_rgba(106,75,255,0.50)] hover:brightness-105"
+              aria-label="Find my matches"
+            >
               <span className="relative">Find my matches</span>
             </Button>
             <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-zinc-500 text-center">
@@ -183,11 +152,11 @@ export default function Hero() {
       <motion.div
         aria-hidden
         animate={{ 
-          y: prefersReduced ? 0 : [0, -10, 0],
-          opacity: prefersReduced ? 0.3 : [0.3, 0.6, 0.3]
+          y: prefersReduced ? 0 : [0, -6, 0],
+          opacity: prefersReduced ? 0.25 : [0.25, 0.45, 0.25]
         }}
         transition={{ 
-          duration: 4,
+          duration: 8,
           repeat: prefersReduced ? 0 : Infinity,
           ease: "easeInOut"
         }}
@@ -196,11 +165,11 @@ export default function Hero() {
       <motion.div
         aria-hidden
         animate={{ 
-          y: prefersReduced ? 0 : [0, 15, 0],
-          opacity: prefersReduced ? 0.2 : [0.2, 0.5, 0.2]
+          y: prefersReduced ? 0 : [0, 6, 0],
+          opacity: prefersReduced ? 0.2 : [0.2, 0.4, 0.2]
         }}
         transition={{ 
-          duration: 5,
+          duration: 8,
           repeat: prefersReduced ? 0 : Infinity,
           ease: "easeInOut",
           delay: 1

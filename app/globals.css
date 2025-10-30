@@ -333,6 +333,11 @@ body {
   animation: rotate 4s linear infinite;
   opacity: 0.5;
 }
+@media (prefers-reduced-motion: reduce) {
+  .number-chip::before {
+    animation: none;
+  }
+}
 .number-chip::after {
   content: '';
   position: absolute;

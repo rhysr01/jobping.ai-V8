@@ -19,12 +19,12 @@ export default function Button({
   href,
   ...props 
 }: ButtonProps) {
-  const baseClasses = 'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variants = {
-    primary: 'bg-gradient-to-r from-brand-500 to-purple-600 text-white hover:scale-102 active:scale-98 shadow-lg hover:shadow-xl hover:shadow-brand-500/25',
-    secondary: 'bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20',
-    ghost: 'text-zinc-400 hover:text-white hover:bg-white/5',
+    primary: 'bg-gradient-to-r from-brand-500 to-purple-600 text-white hover:scale-102 active:scale-98 shadow-[0_4px_12px_rgba(106,75,255,0.40)] hover:shadow-[0_6px_20px_rgba(106,75,255,0.50)] hover:brightness-105',
+    secondary: 'bg-glass-subtle border border-border-subtle text-white hover:bg-glass-default hover:border-border-default backdrop-blur-sm',
+    ghost: 'text-zinc-400 hover:text-white hover:bg-glass-subtle',
     danger: 'bg-red-500/10 border border-red-500/20 text-red-300 hover:bg-red-500/20'
   };
 

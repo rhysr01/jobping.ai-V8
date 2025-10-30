@@ -60,8 +60,8 @@ function SignupForm() {
   
   const COMPANY_SIZES = [
     { value: 'startup', label: 'Startup (1-50)', emoji: '' },
-    { value: 'scaleup', label: 'Scale-up (50-500)', emoji: '�' },
-    { value: 'enterprise', label: 'Enterprise (500+)', emoji: '�' },
+    { value: 'scaleup', label: 'Scale-up (50-500)', emoji: '' },
+    { value: 'enterprise', label: 'Enterprise (500+)', emoji: '' },
     { value: 'any', label: 'Any Size', emoji: '' }
   ];
   
@@ -90,7 +90,7 @@ function SignupForm() {
     { 
       value: 'sales', 
       label: 'Sales & Client Success', 
-      emoji: '�', 
+      emoji: '', 
       roles: ['Sales Development Representative (SDR)', 'Business Development Representative (BDR)', 'Inside Sales Representative', 'Account Executive', 'Business Development Associate', 'Sales Trainee', 'Customer Success Associate', 'Revenue Operations Analyst', 'Sales Operations Analyst', 'Graduate Sales Programme', 'Business Development Intern', 'Channel Sales Associate', 'Account Development Representative', 'Junior Sales Executive', 'Client Success Manager']
     },
     { 
@@ -102,7 +102,7 @@ function SignupForm() {
     { 
       value: 'data', 
       label: 'Data & Analytics', 
-      emoji: '�', 
+      emoji: '', 
       roles: ['Data Analyst', 'Junior Data Analyst', 'Analytics Intern', 'Business Intelligence Intern', 'Data Analyst Trainee', 'Junior Data Scientist', 'Data Science Trainee', 'Junior Data Engineer', 'BI Engineer Intern', 'Analytics Associate', 'Data Analytics Graduate', 'Insights Analyst', 'Junior BI Developer', 'Data Assistant', 'Research & Analytics Intern']
     },
     { 
@@ -120,19 +120,19 @@ function SignupForm() {
     { 
       value: 'tech', 
       label: 'Tech & Engineering', 
-      emoji: '�', 
+      emoji: '', 
       roles: ['Software Engineer Intern', 'Cloud Engineer Intern', 'DevOps Engineer Intern', 'Data Engineer Intern', 'Systems Analyst', 'IT Support Analyst', 'Application Support Analyst', 'Technology Analyst', 'QA/Test Analyst', 'Platform Engineer Intern', 'Cybersecurity Analyst', 'IT Operations Trainee', 'Technical Consultant', 'Solutions Engineer Graduate', 'IT Business Analyst']
     },
     { 
       value: 'sustainability', 
       label: 'Sustainability & ESG', 
-      emoji: '�', 
+      emoji: '', 
       roles: ['ESG Intern', 'Sustainability Strategy Intern', 'Junior ESG Analyst', 'Sustainability Graduate Programme', 'ESG Data Analyst Intern', 'Corporate Responsibility Intern', 'Environmental Analyst', 'Sustainability Reporting Trainee', 'Climate Analyst', 'Sustainable Finance Analyst', 'ESG Assurance Intern', 'Sustainability Communications Intern', 'Junior Impact Analyst', 'Sustainability Operations Assistant', 'Green Finance Analyst']
     },
     { 
       value: 'unsure', 
       label: 'Not Sure Yet / General', 
-      emoji: '�', 
+      emoji: '', 
       roles: ['Graduate Trainee', 'Rotational Graduate Program', 'Management Trainee', 'Business Graduate Analyst', 'Entry Level Program Associate', 'Future Leaders Programme', 'General Analyst', 'Operations Graduate', 'Commercial Graduate', 'Early Careers Program', 'Project Coordinator', 'Business Operations Analyst', 'Emerging Leaders Associate', 'Corporate Graduate Programme', 'Generalist Trainee']
     },
   ];
@@ -265,14 +265,14 @@ function SignupForm() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-500 text-white text-xs sm:text-sm font-bold px-4 sm:px-6 py-2 rounded_full shadow-lg"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-500 text-white text-xs sm:text-sm font-bold px-4 sm:px-6 py-2 rounded-full shadow-lg"
           >
             <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
             {isLoadingStats ? (
               <span className="inline-block w-20 h-4 bg-white/20 rounded animate-pulse"></span>
             ) : (
               `${activeJobs} active roles`
-            )} � Updated daily
+            )} → Updated daily
           </motion.div>
         </motion.div>
 
@@ -418,7 +418,7 @@ function SignupForm() {
                   whileTap={{ scale: 0.98 }}
                   className="btn-primary w-full text-xl py-6 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
-                  Continue to Preferences �
+                  Continue to Preferences →
                 </motion.button>
               </motion.div>
             )}
@@ -611,7 +611,7 @@ function SignupForm() {
                   >
                     {(!formData.experience || !formData.visaStatus || formData.entryLevelPreferences.length === 0)
                       ? 'Complete Required Fields'
-                      : 'Continue to Career Path �'}
+                      : 'Continue to Career Path →'}
                   </motion.button>
                 </div>
               </motion.div>
@@ -823,13 +823,13 @@ function SignupForm() {
                         </>
                       ) : (
                         <>
-                          <span>�</span>
+                          <span>→</span>
                           <span>{formData.careerPath && formData.roles.length === 0 ? 'Select Roles to Finish' : 'Complete Signup'}</span>
                           <motion.span
                             animate={{ x: [0, 4, 0] }}
                             transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}
                           >
-                            �
+                            →
                           </motion.span>
                         </>
                       )}
@@ -856,7 +856,7 @@ function SignupForm() {
 
                 {/* Industry Preferences */}
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-white">� Industry Preferences</h3>
+                  <h3 className="text-xl font-bold text-white">Industry Preferences</h3>
                   <p className="text-sm text-zinc-400">Select industries you're interested in (optional)</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {INDUSTRIES.map((industry) => (
@@ -911,7 +911,7 @@ function SignupForm() {
 
                 {/* Career Keywords */}
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-white">� Career Keywords</h3>
+                  <h3 className="text-xl font-bold text-white">Career Keywords</h3>
                   <p className="text-sm text-zinc-400">Describe what you're looking for in your own words (optional)</p>
                   <p className="text-xs text-zinc-500">Examples: "customer-facing", "data-driven", "creative problem-solving", "client interaction", "analytical work"</p>
                   <textarea
@@ -927,7 +927,7 @@ function SignupForm() {
 
                 {/* Skills */}
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-white">� Skills & Technologies</h3>
+                  <h3 className="text-xl font-bold text-white">Skills & Technologies</h3>
                   <p className="text-sm text-zinc-400">Select skills you have or want to develop (optional)</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                     {COMMON_SKILLS.map((skill) => (
@@ -1014,13 +1014,13 @@ function SignupForm() {
                       </>
                     ) : (
                       <>
-                        <span></span>
+                        <span>→</span>
                         <span>Find my matches</span>
                         <motion.span
                           animate={{ x: [0, 4, 0] }}
                           transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}
                         >
-                          �
+                          →
                         </motion.span>
                       </>
                     )}
@@ -1047,7 +1047,7 @@ function SignupForm() {
                 `${activeJobs} active early-career roles`
               )}
             </span>
-            <span className="text-zinc-600">�</span>
+            <span className="text-zinc-600">·</span>
             <span className="text-sm text-zinc-400">Updated daily</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-zinc-500 px-4">
@@ -1057,21 +1057,21 @@ function SignupForm() {
               </svg>
               <span>No CV required</span>
             </div>
-            <span className="text-zinc-700">�</span>
+            <span className="text-zinc-700">·</span>
             <div className="flex items-center gap-1.5">
               <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <span>No spam</span>
             </div>
-            <span className="text-zinc-700">�</span>
+            <span className="text-zinc-700">·</span>
             <div className="flex items-center gap-1.5">
               <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <span>Cancel anytime</span>
             </div>
-            <span className="text-zinc-700">�</span>
+            <span className="text-zinc-700">·</span>
             <div className="flex items-center gap-1.5">
               <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />

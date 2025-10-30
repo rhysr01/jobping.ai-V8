@@ -20,7 +20,7 @@ export default function SampleInterviewEmail() {
       </div>
 
       {/* Email card container */}
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 shadow-[0_1px_2px_rgba(255,255,255,0.04)_inset,0_8px_24px_rgba(0,0,0,0.35)]">
+      <div className="rounded-xl border border-border-subtle bg-glass-subtle p-4 shadow-base">
         <p className="text-[14px] text-zinc-200">
           Hi <span className="font-medium">Alex</span>,<br />
           We found three roles that closely match your degree, skills, and location preferences.  
@@ -28,7 +28,7 @@ export default function SampleInterviewEmail() {
         </p>
 
         {/* Job 1 */}
-        <div className="mt-4 rounded-lg border border-white/10 bg-white/[0.04] p-3">
+        <div className="mt-4 rounded-lg border border-border-subtle bg-glass-subtle p-3">
           <div className="flex items-center justify-between">
             <div className="font-semibold">Product Analyst · Monzo</div>
             <span className="rounded-full bg-emerald-500/10 px-2 py-[2px] text-[12px] text-emerald-300 border border-emerald-400/20">London</span>
@@ -44,7 +44,7 @@ export default function SampleInterviewEmail() {
         </div>
 
         {/* Job 2 */}
-        <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.04] p-3">
+        <div className="mt-3 rounded-lg border border-border-subtle bg-glass-subtle p-3">
           <div className="flex items-center justify-between">
             <div className="font-semibold">Data Associate · N26</div>
             <span className="rounded-full bg-sky-500/10 px-2 py-[2px] text-[12px] text-sky-300 border border-sky-400/20">Berlin</span>
@@ -60,7 +60,7 @@ export default function SampleInterviewEmail() {
         </div>
 
         {/* Job 3 */}
-        <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.04] p-3">
+        <div className="mt-3 rounded-lg border border-border-subtle bg-glass-subtle p-3">
           <div className="flex items-center justify-between">
             <div className="font-semibold">Operations Intern · Revolut</div>
             <span className="rounded-full bg-fuchsia-500/10 px-2 py-[2px] text-[12px] text-fuchsia-300 border border-fuchsia-400/20">Dublin</span>
