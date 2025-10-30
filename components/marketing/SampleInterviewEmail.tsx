@@ -5,7 +5,7 @@ export default function SampleInterviewEmail() {
   return (
     <div className="mx-auto w-full max-w-[360px] px-2 text-[14px] leading-[1.5] text-zinc-100 font-sans">
       {/* From + Subject block */}
-      <div className="mt-4 mb-6">
+      <div className="mt-2 mb-6">
         <div className="flex items-center gap-2 mb-3">
           <Image src="/branding/jobping-logo.svg" alt="JobPing logo" width={24} height={24} className="rounded" />
           <div className="font-semibold text-white">JobPing</div>

@@ -34,11 +34,13 @@ export default function Pricing() {
                 <div className="inline-flex items-center gap-2 text-small uppercase tracking-wider text-zinc-400 font-semibold">
                   <span className="inline-block w-2 h-2 rounded-full bg-zinc-400" aria-hidden="true" /> Free
                 </div>
-                <div className="mt-2 text-2xl sm:text-3xl font-black text-white">5 roles on signup</div>
-                <div className="text-small font-bold text-brand-400 mt-1">= 25 jobs/month</div>
+                <div className="mt-2 text-heading font-black text-white">5 roles on signup</div>
+                <div className="text-small font-medium text-brand-400 mt-1">
+                  <span className="text-zinc-500">= </span>25 jobs/month
+                </div>
               </div>
 
-              <ul className="text-sm text-zinc-300 space-y-3 mb-6">
+              <ul className="text-body text-zinc-300 space-y-3 mb-6">
                 <Feature>Weekly email with 5 hand‑picked roles</Feature>
                 <Feature>Quality‑screened, early‑career friendly</Feature>
                 <Feature>No dashboards, zero spam</Feature>
@@ -80,12 +82,14 @@ export default function Pricing() {
                 <div className="inline-flex items-center gap-2 text-small uppercase tracking-wider text-brand-300 font-semibold">
                   <span className="inline-block w-2 h-2 rounded-full bg-brand-400" aria-hidden="true" /> Premium
                 </div>
-                <div className="mt-2 text-2xl sm:text-3xl font-black text-white">10 roles on signup</div>
-                <div className="text-small font-bold text-brand-400 mt-1">= 70+ jobs/month</div>
+                <div className="mt-2 text-heading font-black text-white">10 roles on signup</div>
+                <div className="text-small font-medium text-brand-400 mt-1">
+                  <span className="text-zinc-500">= </span>70+ jobs/month
+                </div>
                 <div className="text-zinc-400 text-xs mt-1">vs 25 on free tier</div>
               </div>
 
-              <ul className="text-sm text-zinc-200 space-y-3 mb-6">
+              <ul className="text-body text-zinc-200 space-y-3 mb-6">
                 <Feature strong>New matches every 48 hours (Mon/Wed/Fri)</Feature>
                 <Feature>24‑hour early access to fresh roles</Feature>
                 <Feature>Priority curation for your preferences</Feature>
@@ -107,7 +111,7 @@ export default function Pricing() {
           </motion.div>
         </div>
 
-        <p className="text-center text-xs text-zinc-500 mt-6">
+        <p className="text-center text-small text-zinc-500 mt-6">
           Cancel anytime → No hidden fees → GDPR compliant
         </p>
       </div>

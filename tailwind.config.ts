@@ -108,12 +108,13 @@ export default {
         '102': '1.02',
         '98': '0.98',
       },
-      // Typography system - 3 consistent sizes
+      // Typography system - Tight, cohesive scale
       fontSize: {
-        'display': ['4rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }], // 64px
-        'heading': ['2.25rem', { lineHeight: '1.2', letterSpacing: '-0.01em' }], // 36px
-        'body': ['1rem', { lineHeight: '1.6', letterSpacing: '0' }], // 16px
-        'small': ['0.875rem', { lineHeight: '1.5', letterSpacing: '0' }], // 14px
+        'display': ['3rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }], // 48px - Hero headlines
+        'heading': ['1.875rem', { lineHeight: '1.3', letterSpacing: '-0.01em' }], // 30px - Section headings
+        'large': ['1.125rem', { lineHeight: '1.6', letterSpacing: '0' }], // 18px - Emphasis text
+        'body': ['1rem', { lineHeight: '1.6', letterSpacing: '0' }], // 16px - Body text
+        'small': ['0.875rem', { lineHeight: '1.5', letterSpacing: '0' }], // 14px - Small text
       },
       // Depth system - 3 surface levels
       boxShadow: {

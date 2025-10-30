@@ -1,11 +1,32 @@
 "use client";
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { SuccessAnimation } from '@/components/ui/SuccessAnimation';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
-export default function SignupSuccess() {
+function SignupSuccessContent() {
+  const [showSuccess, setShowSuccess] = useState(true);
+  const searchParams = useSearchParams();
+  const tier = searchParams?.get('tier') === 'premium' ? 'premium' : 'free';
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSuccess(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center py-20">
+    <>
+      <AnimatePresence>
+        {showSuccess && (
+          <SuccessAnimation
+            message="Signup successful!"
+            onComplete={() => setShowSuccess(false)}
+          />
+        )}
+      </AnimatePresence>
+      <div className="min-h-screen bg-black text-white flex items-center justify-center py-20">
       <div className="container-page max-w-2xl text-center px-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -25,11 +46,11 @@ export default function SignupSuccess() {
           </h1>
 
           <p className="text-xl sm:text-2xl text-zinc-300 mb-4">
-            Check your inbox for your welcome email with initial matches
+            Your first matches are on their way!
           </p>
 
           <div className="inline-block bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-2xl font-bold text-lg mb-8 shadow-[0_8px_24px_rgba(16,185,129,0.4)]">
-            Welcome Email with Your First Matches
+            Check Your Inbox Now
           </div>
 
           <div className="glass-card rounded-2xl p-8 sm:p-10 mb-8 text-left">
@@ -42,9 +63,14 @@ export default function SignupSuccess() {
                 </div>
                 <div>
                   <div className="font-semibold text-white mb-1">Check Your Inbox Now</div>
-                  <div className="text-zinc-400 text-sm">Look for your welcome email with 5-10 hand-picked matches (depending on your plan)</div>
+                  <div className="text-zinc-400 text-sm">
+                    You should receive an email with your first matches within the next few minutes. 
+                    {tier === 'premium' 
+                      ? ' Premium users get up to 10 roles on signup.' 
+                      : ' Free users get up to 10 roles on signup.'}
+                  </div>
                   <div className="mt-2 text-xs text-yellow-400 font-semibold">
-                    Check your spam/junk folder if you don't see it!
+                    💡 Check your spam/junk folder if you don't see it within 5 minutes!
                   </div>
                 </div>
               </div>
@@ -81,6 +107,19 @@ export default function SignupSuccess() {
         </motion.div>
       </div>
     </div>
+    </>
+  );
+}
+
+export default function SignupSuccess() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    }>
+      <SignupSuccessContent />
+    </Suspense>
   );
 }
 

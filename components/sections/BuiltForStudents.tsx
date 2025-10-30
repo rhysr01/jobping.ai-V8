@@ -50,7 +50,7 @@ export default function BuiltForStudents() {
             >
               <div className="number-chip">{feature.num}</div>
               <h3 className="mt-6 text-heading text-white">{feature.title}</h3>
-              <p className="mt-3 text-lg text-neutral-300 leading-relaxed font-medium">{feature.body}</p>
+              <p className="mt-3 text-large text-neutral-300 leading-relaxed font-medium">{feature.body}</p>
               <div className="mt-6 pt-5 border-t border-zinc-700/50">
                 <p className="text-small font-bold text-brand-400">{feature.stats}</p>
               </div>

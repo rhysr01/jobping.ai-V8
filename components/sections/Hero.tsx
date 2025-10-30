@@ -71,9 +71,9 @@ export default function Hero() {
             <path d="M6 12v4c0 1.6 3 3.2 6 3.2s6-1.6 6-3.2v-4" />
           </svg>
           
-          {/* JobPing Text - Smaller to let headline dominate */}
+          {/* JobPing Text - Clean, no glow */}
           <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter leading-none">
-            <span className="bg-gradient-to-b from-white via-purple-50/90 to-purple-200/80 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(154,106,255,0.3)]">
+            <span className="bg-gradient-to-b from-white via-purple-50/90 to-purple-200/80 bg-clip-text text-transparent">
               JobPing
             </span>
           </div>
@@ -87,7 +87,7 @@ export default function Hero() {
         >
           {Copy.HERO_HEADLINE}
         </motion.h1>
-        <p className="text-neutral-300 leading-relaxed max-w-2xl mx-auto text-xl font-medium">
+        <p className="text-neutral-400 leading-relaxed max-w-2xl mx-auto text-xl font-medium mt-2">
           {Copy.HERO_SUBLINE}
         </p>
         
@@ -103,7 +103,7 @@ export default function Hero() {
               {isLoading ? (
                 <Skeleton className="h-4 w-32" />
               ) : (
-                <>→ {`${activeJobs} active early-career roles → Updated daily`}</>
+                <>{`${activeJobs} active early-career roles · Updated daily`}</>
               )}
             </div>
           </motion.div>
@@ -123,7 +123,7 @@ export default function Hero() {
             >
               <span className="relative">{Copy.HERO_CTA}</span>
             </Button>
-            <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-zinc-500 text-center">
+            <p className="mt-3 sm:mt-4 text-small text-zinc-500 text-center">
               No logins → No spam → Unsubscribe anytime
             </p>
           </motion.div>
@@ -161,7 +161,7 @@ export default function Hero() {
           repeat: prefersReduced ? 0 : Infinity,
           ease: "easeInOut"
         }}
-        className="pointer-events-none absolute top-10 sm:top-20 right-4 sm:right-20 w-20 sm:w-32 h-20 sm:h-32 bg-brand-500/20 rounded-full blur-xl"
+        className="pointer-events-none absolute top-10 sm:top-20 right-4 sm:right-20 w-20 sm:w-32 h-20 sm:h-32 bg-brand-500/15 rounded-full blur-xl"
       />
       <motion.div
         aria-hidden
@@ -175,7 +175,7 @@ export default function Hero() {
           ease: "easeInOut",
           delay: 1
         }}
-        className="pointer-events-none absolute bottom-10 sm:bottom-20 left-4 sm:left-20 w-16 sm:w-24 h-16 sm:h-24 bg-purple-500/20 rounded-full blur-lg"
+        className="pointer-events-none absolute bottom-10 sm:bottom-20 left-4 sm:left-20 w-16 sm:w-24 h-16 sm:h-24 bg-purple-500/12 rounded-full blur-lg"
       />
     </section>
   );

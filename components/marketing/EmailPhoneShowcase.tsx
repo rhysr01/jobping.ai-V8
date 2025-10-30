@@ -68,17 +68,17 @@ export default function EmailPhoneShowcase() {
           <GlassCard variant="subtle" hover="lift" className="rounded-xl p-6">
             <div className="text-2xl mb-2" aria-hidden="true">📧</div>
             <h3 className="text-white font-semibold mb-2">Weekly emails</h3>
-            <p className="text-base text-neutral-300 font-medium">5 hand-picked roles every week</p>
+            <p className="text-body text-neutral-300 font-medium">5 hand-picked roles every week</p>
           </GlassCard>
           <GlassCard variant="subtle" hover="lift" className="rounded-xl p-6">
             <div className="text-2xl mb-2" aria-hidden="true">⚡</div>
             <h3 className="text-white font-semibold mb-2">60-second read</h3>
-            <p className="text-base text-neutral-300 font-medium">Everything you need in one email</p>
+            <p className="text-body text-neutral-300 font-medium">Everything you need in one email</p>
           </GlassCard>
           <GlassCard variant="subtle" hover="lift" className="rounded-xl p-6">
             <div className="text-2xl mb-2" aria-hidden="true">🎯</div>
             <h3 className="text-white font-semibold mb-2">Perfect matches</h3>
-            <p className="text-base text-neutral-300 font-medium">AI-filtered for your profile</p>
+            <p className="text-body text-neutral-300 font-medium">AI-filtered for your profile</p>
           </GlassCard>
         </motion.div>
       </div>

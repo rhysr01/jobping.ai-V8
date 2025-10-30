@@ -29,9 +29,9 @@ export default function Button({
   };
 
   const sizes = {
-    sm: 'px-4 py-2 text-sm',
-    md: 'px-6 py-3 text-base',
-    lg: 'px-8 py-3 text-lg' // Reduced py-4 to py-3 (20% reduction)
+    sm: 'px-4 py-2 text-small',
+    md: 'px-6 py-3 text-body',
+    lg: 'px-8 py-3 text-large'
   };
 
   if (href) {

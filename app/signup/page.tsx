@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useReducedMotion } from '@/components/ui/useReducedMotion';
+import * as Copy from '@/lib/copy';
+import { FormFieldError, FormFieldSuccess, FormFieldHelper } from '@/components/ui/FormFieldFeedback';
+import { useAriaAnnounce } from '@/components/ui/AriaLiveRegion';
+import { useEmailValidation, useRequiredValidation } from '@/hooks/useFormValidation';
 
 function SignupForm() {
   const router = useRouter();
@@ -16,6 +20,11 @@ function SignupForm() {
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [tier] = useState<'free' | 'premium'>(tierParam === 'premium' ? 'premium' : 'free');
   const prefersReduced = useReducedMotion();
+  const { announce, Announcement } = useAriaAnnounce();
+  const formRefs = {
+    fullName: useRef<HTMLInputElement>(null),
+    email: useRef<HTMLInputElement>(null),
+  };
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -141,7 +150,27 @@ function SignupForm() {
 
   const COMPANIES = ['Global Consulting Firms', 'Startups / Scaleups', 'Tech Giants', 'Investment Firms / VCs', 'Multinationals', 'Public Sector / NGOs', 'B2B SaaS', 'Financial Services'];
 
-  const selectedCareer = CAREER_PATHS.find(c => c.value === formData.careerPath);
+  // Form validation hooks
+  const emailValidation = useEmailValidation(formData.email);
+  const nameValidation = useRequiredValidation(formData.fullName, 'Full name');
+  const citiesValidation = useRequiredValidation(formData.cities, 'Preferred cities');
+  const languagesValidation = useRequiredValidation(formData.languages, 'Languages');
+
+  // Focus management when step changes
+  useEffect(() => {
+    if (step === 1 && formRefs.fullName.current) {
+      formRefs.fullName.current.focus();
+    } else if (step === 1 && formRefs.email.current && formData.fullName) {
+      formRefs.email.current.focus();
+    }
+  }, [step]);
+
+  // Announce validation errors to screen readers
+  useEffect(() => {
+    if (emailValidation.error) {
+      announce(emailValidation.error, 'assertive');
+    }
+  }, [emailValidation.error, announce]);
 
 
   const toggleArray = (arr: string[], value: string) => {
@@ -173,7 +202,7 @@ function SignupForm() {
       const result = await response.json();
 
       if (response.ok) {
-        router.push('/signup/success');
+        router.push(`/signup/success?tier=${tier}`);
       } else {
         setError(result.error || 'Signup failed. Please try again.');
       }
@@ -246,18 +275,16 @@ function SignupForm() {
               <path d="M22 10v4" />
               <path d="M6 12v4c0 1.6 3 3.2 6 3.2s6-1.6 6-3.2v-4" />
             </svg>
-            <div className="text-6xl sm:text-7xl md:text-8xl font-black tracking-tighter bg-gradient-to-b from-white via-purple-50 to-purple-200 bg-clip-text text-transparent drop-shadow-[0_0_60px_rgba(139,92,246,0.8)]" style={{
-              filter: 'drop-shadow(0 0 40px rgba(139,92,246,0.6))'
-            }}>
+            <div className="text-6xl sm:text-7xl md:text-8xl font-black tracking-tighter bg-gradient-to-b from-white via-purple-50 to-purple-200 bg-clip-text text-transparent">
               JobPing
             </div>
           </motion.div>
           
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
-            Land your first job faster → without endless scrolling
+            {Copy.HERO_HEADLINE.replace('without endless scrolling', '→ without endless scrolling')}
           </h1>
           <p className="text-zinc-300 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-4">
-            We match you to real roles that fit your skills, degree, and goals. No spam. No dead ends.
+            {Copy.HERO_SUBLINE}
           </p>
           {tier === 'premium' && (
             <motion.div
@@ -290,7 +317,7 @@ function SignupForm() {
               <div key={i} className="flex items-center gap-2">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
                   i < step ? 'bg-green-500 text-white' :
-                  i === step ? 'bg-gradient-to-br from-brand-500 to-purple-600 text-white shadow-[0_0_24px_rgba(99,102,241,0.6)]' :
+                  i === step ? 'bg-gradient-to-br from-brand-500 to-purple-600 text-white' :
                   'bg-zinc-800 text-zinc-500'
                 }`}>
                   {i < step ? '' : i}
@@ -303,7 +330,7 @@ function SignupForm() {
           </div>
           <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
             <motion.div 
-              className="h-full bg-gradient-to-r from-brand-500 via-purple-600 to-purple-500 shadow-[0_0_12px_rgba(139,92,246,0.8)]"
+              className="h-full bg-gradient-to-r from-brand-500 via-purple-600 to-purple-500"
               initial={{ width: 0 }}
               animate={{ width: `${(step / 4) * 100}%` }}
               transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
@@ -319,11 +346,16 @@ function SignupForm() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className="mb-6 p-4 bg-red-500/10 border-2 border-red-500/50 rounded-xl text-red-400 text-center"
+              role="alert"
+              aria-live="assertive"
             >
               {error}
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ARIA Live Region for form validation */}
+        {Announcement}
 
         {/* Form Container */}
         <div className="glass-card rounded-3xl p-6 sm:p-8 md:p-12 shadow-[0_0_80px_rgba(99,102,241,0.3)]">
@@ -346,25 +378,69 @@ function SignupForm() {
                 <div>
                   <label htmlFor="fullName" className="block text-base font-bold text-white mb-3">Full Name *</label>
                   <input
+                    ref={formRefs.fullName}
                     id="fullName"
                     type="text"
                     value={formData.fullName}
                     onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                    className="w-full px-5 py-4 bg-black/40 border-2 border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 transition-all text-lg"
+                    onBlur={() => {
+                      if (!formData.fullName.trim() && formData.fullName.length > 0) {
+                        announce('Full name is required', 'polite');
+                      } else if (formData.fullName.trim().length > 0) {
+                        announce('Full name is valid', 'polite');
+                      }
+                    }}
+                    className={`w-full px-5 py-4 bg-black/40 border-2 rounded-xl text-white placeholder-zinc-500 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 transition-all text-lg ${
+                      formData.fullName ? (nameValidation.isValid ? 'border-green-500/50' : 'border-zinc-700') : 'border-zinc-700'
+                    }`}
                     placeholder="John Smith"
+                    autoComplete="name"
+                    aria-invalid={formData.fullName.length > 0 && !nameValidation.isValid}
+                    aria-describedby={formData.fullName.length > 0 ? 'fullName-error' : undefined}
                   />
+                  {formData.fullName.length > 0 && (
+                    <>
+                      {nameValidation.isValid ? (
+                        <FormFieldSuccess message="Looks good!" />
+                      ) : (
+                        <FormFieldError error={nameValidation.error} id="fullName-error" />
+                      )}
+                    </>
+                  )}
                 </div>
 
                 <div>
                   <label htmlFor="email" className="block text-base font-bold text-white mb-3">Email *</label>
                   <input
+                    ref={formRefs.email}
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-5 py-4 bg-black/40 border-2 border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 transition-all text-lg"
+                    onBlur={() => {
+                      if (emailValidation.error) {
+                        announce(emailValidation.error, 'assertive');
+                      } else if (emailValidation.isValid) {
+                        announce('Email address is valid', 'polite');
+                      }
+                    }}
+                    className={`w-full px-5 py-4 bg-black/40 border-2 rounded-xl text-white placeholder-zinc-500 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 transition-all text-lg ${
+                      formData.email ? (emailValidation.isValid ? 'border-green-500/50' : emailValidation.error ? 'border-red-500/50' : 'border-zinc-700') : 'border-zinc-700'
+                    }`}
                     placeholder="you@example.com"
+                    autoComplete="email"
+                    aria-invalid={formData.email.length > 0 && !emailValidation.isValid}
+                    aria-describedby={formData.email.length > 0 ? 'email-error' : undefined}
                   />
+                  {formData.email.length > 0 && (
+                    <>
+                      {emailValidation.isValid ? (
+                        <FormFieldSuccess message="Email looks good!" />
+                      ) : (
+                        <FormFieldError error={emailValidation.error} id="email-error" />
+                      )}
+                    </>
+                  )}
                 </div>
 
                 <div>
@@ -379,6 +455,9 @@ function SignupForm() {
                         onClick={() => {
                           if (formData.cities.length < 3 || formData.cities.includes(city)) {
                             setFormData({...formData, cities: toggleArray(formData.cities, city)});
+                            if (formData.cities.length === 0 && !formData.cities.includes(city)) {
+                              announce(`Selected ${city}. ${formData.cities.length + 1} of 3 cities selected.`, 'polite');
+                            }
                           }
                         }}
                         whileHover={{ scale: 1.03 }}
@@ -388,12 +467,21 @@ function SignupForm() {
                             ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
                             : 'border-zinc-700 bg-zinc-900/40 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-900/60'
                         }`}
+                        aria-pressed={formData.cities.includes(city)}
                       >
                         {city}
                       </motion.button>
                     ))}
                   </div>
-                  <p className="text-xs text-zinc-500 mt-2">{formData.cities.length}/3 selected</p>
+                  <div className="mt-2 flex items-center justify-between">
+                    <p className="text-xs text-zinc-500">{formData.cities.length}/3 selected</p>
+                    {formData.cities.length > 0 && citiesValidation.isValid && (
+                      <FormFieldSuccess message={`${formData.cities.length} city${formData.cities.length > 1 ? 'ies' : ''} selected`} />
+                    )}
+                  </div>
+                  {formData.cities.length === 0 && step === 1 && (
+                    <FormFieldError error="Please select at least one city" />
+                  )}
                 </div>
 
                 <div>
@@ -403,7 +491,12 @@ function SignupForm() {
                       <motion.button
                         key={lang}
                         type="button"
-                        onClick={() => setFormData({...formData, languages: toggleArray(formData.languages, lang)})}
+                        onClick={() => {
+                          setFormData({...formData, languages: toggleArray(formData.languages, lang)});
+                          if (formData.languages.length === 0) {
+                            announce(`Selected ${lang}. ${formData.languages.length + 1} language selected.`, 'polite');
+                          }
+                        }}
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.98 }}
                         className={`px-4 py-3.5 rounded-xl border-2 transition-all font-semibold text-sm ${
@@ -411,11 +504,18 @@ function SignupForm() {
                             ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
                             : 'border-zinc-700 bg-zinc-900/40 text-zinc-300 hover:border-zinc-600'
                         }`}
+                        aria-pressed={formData.languages.includes(lang)}
                       >
                         {lang}
                       </motion.button>
                     ))}
                   </div>
+                  {formData.languages.length > 0 && languagesValidation.isValid && (
+                    <FormFieldSuccess message={`${formData.languages.length} language${formData.languages.length > 1 ? 's' : ''} selected`} />
+                  )}
+                  {formData.languages.length === 0 && step === 1 && (
+                    <FormFieldError error="Please select at least one language" />
+                  )}
                 </div>
 
                 <motion.button
@@ -471,6 +571,7 @@ function SignupForm() {
                     value={formData.startDate}
                     onChange={(e) => setFormData({...formData, startDate: e.target.value})}
                     className="w-full px-5 py-4 bg-black/40 border-2 border-zinc-700 rounded-xl text-white focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 transition-all text-lg"
+                    autoComplete="off"
                   />
                 </div>
 
@@ -694,93 +795,89 @@ function SignupForm() {
                   </div>
                 </div>
 
-                {selectedCareer && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="border-2 border-brand-500/30 rounded-2xl p-6 bg-gradient-to-br from-brand-500/5 to-purple-600/5"
-                  >
-                    <label className="block text-lg font-black text-white mb-4">
-                      <span className="text-2xl mr-2">{selectedCareer.emoji}</span>
-                      {selectedCareer.label} Roles
-                      <span className="text-zinc-500 font-normal text-base ml-2">(Select at least one - required)</span>
-                    </label>
+                {(() => {
+                  const selectedCareer = CAREER_PATHS.find(c => c.value === formData.careerPath);
+                  if (!selectedCareer) return null;
+                  
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="border-2 border-brand-500/30 rounded-2xl p-6 bg-gradient-to-br from-brand-500/5 to-purple-600/5"
+                    >
+                      <label className="block text-lg font-black text-white mb-4">
+                        <span className="text-2xl mr-2">{selectedCareer.emoji}</span>
+                        {selectedCareer.label} Roles
+                        <span className="text-zinc-500 font-normal text-base ml-2">(Select at least one - required)</span>
+                      </label>
 
-                    {/* Select All / Clear All Controls */}
-                    <div className="flex gap-2 mb-4">
-                      <motion.button
-                        type="button"
-                        onClick={() => selectAllRoles(formData.careerPath)}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-[0_0_8px_rgba(99,102,241,0.3)] hover:shadow-[0_0_12px_rgba(99,102,241,0.5)]"
-                        title={`Select all ${selectedCareer.roles.length} roles in ${selectedCareer.label}`}
-                      >
-                         Select All {selectedCareer.roles.length} Roles
-                      </motion.button>
-                      <motion.button
-                        type="button"
-                        onClick={clearAllRoles}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-sm font-semibold rounded-lg transition-colors"
-                        title="Clear all selected roles"
-                      >
-                         Clear All
-                      </motion.button>
-                    </div>
-
-                    <div className="max-h-[350px] overflow-y-auto custom-scrollbar pr-2 -mr-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {selectedCareer.roles.map((role, idx) => (
-                          <motion.button
-                            key={role}
-                            type="button"
-                            onClick={() => setFormData({...formData, roles: toggleArray(formData.roles, role)})}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: idx * 0.02 }}
-                            whileHover={{ scale: 1.02, x: 2 }}
-                            whileTap={{ scale: 0.98 }}
-                            className={`px-4 py-3.5 rounded-xl border-2 transition-all font-semibold text-left text-sm relative overflow-hidden ${
-                              formData.roles.includes(role)
-                                ? 'border-brand-500 bg-gradient-to-r from-brand-500/20 to-purple-600/15 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
-                                : 'border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:border-brand-500/40 hover:bg-zinc-900/80'
-                            }`}
-                          >
-                            {formData.roles.includes(role) && (
-                              <motion.div
-                                layoutId="selected-role"
-                                className="absolute inset-0 bg-gradient-to-r from-brand-500/10 to-purple-600/10 -z-10"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                              />
-                            )}
-                            <span className="flex items-center justify-between">
-                              {role}
-                              {formData.roles.includes(role) && (
-                                <span className="text-brand-400 ml-2"></span>
-                              )}
-                            </span>
-                          </motion.button>
-                        ))}
+                      {/* Select All / Clear All Controls */}
+                      <div className="flex gap-2 mb-4">
+                        <motion.button
+                          type="button"
+                          onClick={() => selectAllRoles(formData.careerPath)}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-[0_0_8px_rgba(99,102,241,0.3)] hover:shadow-[0_0_12px_rgba(99,102,241,0.5)]"
+                          title={`Select all ${selectedCareer.roles.length} roles in ${selectedCareer.label}`}
+                        >
+                          Select All {selectedCareer.roles.length} Roles
+                        </motion.button>
+                        <motion.button
+                          type="button"
+                          onClick={clearAllRoles}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-sm font-semibold rounded-lg transition-colors"
+                          title="Clear all selected roles"
+                        >
+                          Clear All
+                        </motion.button>
                       </div>
-                    </div>
-                    {formData.roles.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-4 pt-4 border-t border-zinc-700"
-                      >
-                        <p className="text-sm text-zinc-400">
-                          <span className="font-bold text-brand-400">{formData.roles.length} role{formData.roles.length > 1 ? 's' : ''}</span> selected
-                        </p>
-                      </motion.div>
-                    )}
-                  </motion.div>
-                )}
+
+                      <div className="max-h-[350px] overflow-y-auto custom-scrollbar pr-2 -mr-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {selectedCareer.roles.map((role: string, idx: number) => (
+                            <motion.button
+                              key={role}
+                              type="button"
+                              onClick={() => setFormData({...formData, roles: toggleArray(formData.roles, role)})}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: idx * 0.02 }}
+                              whileHover={{ scale: 1.02, x: 2 }}
+                              whileTap={{ scale: 0.98 }}
+                              className={`px-4 py-3.5 rounded-xl border-2 transition-all font-semibold text-left text-sm relative overflow-hidden ${
+                                formData.roles.includes(role)
+                                  ? 'border-brand-500 bg-gradient-to-r from-brand-500/20 to-purple-600/15 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
+                                  : 'border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:border-brand-500/40 hover:bg-zinc-900/80'
+                              }`}
+                            >
+                              {formData.roles.includes(role) && (
+                                <motion.div
+                                  layoutId="selected-role"
+                                  className="absolute inset-0 bg-gradient-to-r from-brand-500/10 to-purple-600/10 -z-10"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  exit={{ opacity: 0 }}
+                                />
+                              )}
+                              <span className="flex items-center justify-between">
+                                {role}
+                                {formData.roles.includes(role) && (
+                                  <svg className="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </span>
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })()}
 
                 <div className="flex gap-4 pt-6">
                   <motion.button
@@ -929,7 +1026,10 @@ function SignupForm() {
                     rows={3}
                     maxLength={200}
                   />
-                  <p className="text-xs text-zinc-500">{formData.careerKeywords.length}/200 characters</p>
+                  <FormFieldHelper 
+                    characterCount={formData.careerKeywords.length}
+                    maxLength={200}
+                  />
                 </div>
 
                 {/* Skills */}

@@ -106,10 +106,7 @@ export default function TermsOfService() {
                 <strong className="text-white">Email:</strong> legal@getjobping.com
               </p>
               <p className="text-zinc-300 mb-2">
-                <strong className="text-white">Address:</strong> [Your Business Address]
-              </p>
-              <p className="text-sm text-zinc-500 mt-4">
-                Note: Please update the business address above with your actual business address.
+                <strong className="text-white">Address:</strong> Dublin, Ireland
               </p>
             </section>
           </div>

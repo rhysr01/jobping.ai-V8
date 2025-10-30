@@ -33,12 +33,12 @@ export default function DeviceFrame({ children, className }: Props) {
           aria-label="Email preview content"
         >
           {/* Status bar */}
-          <div className="relative z-10 px-4 pt-3">
+          <div className="relative z-10 px-4 pt-2 pb-1">
             <Image src="/device/statusbar-dark.svg" alt="" width={366} height={20} aria-hidden="true" />
           </div>
           {/* Scrollable email body */}
           <motion.div 
-            className="relative z-10 h-[792px] overflow-y-auto pb-6 px-4"
+            className="relative z-10 h-[788px] overflow-y-auto pb-6 px-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.6 }}
