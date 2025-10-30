@@ -27,7 +27,7 @@ function SignupForm() {
   };
   const [formData, setFormData] = useState({
     fullName: '',
-    email: '',
+    email: '',Inject a human line of empathy on signup (“We know job hunting is rough — we make it easier.”).
     cities: [] as string[],
     languages: [] as string[],
     startDate: '',
@@ -283,14 +283,17 @@ function SignupForm() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
             {Copy.HERO_HEADLINE.replace('without endless scrolling', '→ without endless scrolling')}
           </h1>
-          <p className="text-zinc-300 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-4">
+          <p className="text-zinc-300 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-2">
             {Copy.HERO_SUBLINE}
+          </p>
+          <p className="text-zinc-400 text-base max-w-2xl mx-auto leading-relaxed mb-4 italic">
+            We know job hunting is rough — we make it easier.
           </p>
           {tier === 'premium' && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="inline-block bg-gradient-to-r from-brand-500 to-purple-600 text-white px-6 py-2 rounded-full font-bold text-sm mb-2 shadow-[0_0_20px_rgba(99,102,241,0.6)]"
+              className="inline-block bg-gradient-to-r from-brand-500 to-purple-600 text-white px-6 py-2 rounded-full font-bold text-sm mb-2 shadow-glow-subtle"
             >
                Premium Plan Selected - 10 roles on signup + 15 roles per week (3× weekly)
             </motion.div>
@@ -358,7 +361,7 @@ function SignupForm() {
         {Announcement}
 
         {/* Form Container */}
-        <div className="glass-card rounded-3xl p-6 sm:p-8 md:p-12 shadow-[0_0_80px_rgba(99,102,241,0.3)]">
+        <div className="glass-card rounded-3xl p-6 sm:p-8 md:p-12 shadow-glow-strong">
           <AnimatePresence mode="wait">
             {/* Step 1: Basics */}
             {step === 1 && (
@@ -464,7 +467,7 @@ function SignupForm() {
                         whileTap={{ scale: 0.98 }}
                         className={`px-4 py-3.5 rounded-xl border-2 transition-all font-semibold text-sm ${
                           formData.cities.includes(city)
-                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
+                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-glow-subtle'
                             : 'border-zinc-700 bg-zinc-900/40 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-900/60'
                         }`}
                         aria-pressed={formData.cities.includes(city)}
@@ -501,7 +504,7 @@ function SignupForm() {
                         whileTap={{ scale: 0.98 }}
                         className={`px-4 py-3.5 rounded-xl border-2 transition-all font-semibold text-sm ${
                           formData.languages.includes(lang)
-                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
+                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-glow-subtle'
                             : 'border-zinc-700 bg-zinc-900/40 text-zinc-300 hover:border-zinc-600'
                         }`}
                         aria-pressed={formData.languages.includes(lang)}
@@ -587,7 +590,7 @@ function SignupForm() {
                         whileTap={{ scale: 0.98 }}
                         className={`px-4 py-3.5 rounded-xl border-2 transition-all font-semibold ${
                           formData.experience === exp
-                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
+                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-glow-subtle'
                             : 'border-zinc-700 bg-zinc-900/40 text-zinc-300 hover:border-zinc-600'
                         }`}
                       >
@@ -609,7 +612,7 @@ function SignupForm() {
                         whileTap={{ scale: 0.98 }}
                         className={`px-4 py-3.5 rounded-xl border-2 transition-all font-semibold ${
                           formData.workEnvironment.includes(env)
-                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
+                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-glow-subtle'
                             : 'border-zinc-700 bg-zinc-900/40 text-zinc-300 hover:border-zinc-600'
                         }`}
                       >
@@ -660,7 +663,7 @@ function SignupForm() {
                         whileTap={{ scale: 0.98 }}
                         className={`px-5 py-4 rounded-xl border-2 transition-all font-semibold ${
                           formData.entryLevelPreferences.includes(pref)
-                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
+                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-glow-subtle'
                             : 'border-zinc-700 bg-zinc-900/40 text-zinc-300 hover:border-zinc-600'
                         }`}
                       >
@@ -713,7 +716,7 @@ function SignupForm() {
                     className={`relative flex-1 py-6 sm:py-7 text-xl sm:text-2xl font-black uppercase tracking-wide rounded-2xl overflow-hidden transition-all ${
                       !formData.experience || !formData.visaStatus || formData.entryLevelPreferences.length === 0
                         ? 'opacity-40 cursor-not-allowed bg-zinc-700 text-zinc-500'
-                        : 'bg-gradient-to-r from-brand-500 to-purple-600 text-white shadow-[0_0_30px_rgba(99,102,241,0.6)] hover:shadow-[0_0_40px_rgba(99,102,241,0.8)] hover:scale-105'
+                        : 'bg-gradient-to-r from-brand-500 to-purple-600 text-white shadow-glow-signup hover:shadow-glow-medium hover:scale-105'
                     }`}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -774,7 +777,7 @@ function SignupForm() {
                         whileTap={{ scale: 0.98 }}
                         className={`px-5 py-5 rounded-xl border-2 transition-all text-left relative overflow-hidden ${
                           formData.careerPath === path.value
-                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/15 shadow-[0_0_30px_rgba(99,102,241,0.4)]'
+                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/15 shadow-glow-signup'
                             : 'border-zinc-700 bg-zinc-900/40 hover:border-zinc-600 hover:bg-zinc-900/60'
                         }`}
                       >
@@ -819,7 +822,7 @@ function SignupForm() {
                           onClick={() => selectAllRoles(formData.careerPath)}
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
-                          className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-[0_0_8px_rgba(99,102,241,0.3)] hover:shadow-[0_0_12px_rgba(99,102,241,0.5)]"
+                          className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-glow-subtle hover:shadow-glow-medium"
                           title={`Select all ${selectedCareer.roles.length} roles in ${selectedCareer.label}`}
                         >
                           Select All {selectedCareer.roles.length} Roles
@@ -1000,7 +1003,7 @@ function SignupForm() {
                         whileTap={{ scale: 0.98 }}
                         className={`px-4 py-4 rounded-xl border-2 transition-all font-semibold text-left ${
                           formData.companySizePreference === size.value
-                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
+                            ? 'border-brand-500 bg-gradient-to-br from-brand-500/20 to-purple-600/10 text-white shadow-glow-subtle'
                             : 'border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:border-brand-500/40 hover:bg-zinc-900/80'
                         }`}
                       >

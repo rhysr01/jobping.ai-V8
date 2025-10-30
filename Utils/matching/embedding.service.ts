@@ -86,40 +86,63 @@ export class EmbeddingService {
 
   /**
    * Get user embedding from cache/database or generate new one
-   * OPTIMIZED: Caches embeddings to avoid regeneration
+   * OPTIMIZED: Caches embeddings by hash(profile+skills) to skip duplicates
    */
   async getUserEmbeddingWithCache(
     userEmail: string,
     preferences: UserPreferences
   ): Promise<number[]> {
-    // Check database first
+    // Generate hash of user preferences for cache key
+    const prefsText = this.buildUserPreferencesText(preferences);
+    const prefsHash = this.hashString(prefsText);
+    
+    // Check database first - look for user with matching hash
     try {
       const { data: user } = await this.supabase
         .from('users')
-        .select('preference_embedding')
+        .select('preference_embedding, preference_hash')
         .eq('email', userEmail)
         .single();
 
+      // If embedding exists and hash matches, return cached embedding
       if (user?.preference_embedding && Array.isArray(user.preference_embedding)) {
-        return user.preference_embedding;
+        if (user.preference_hash === prefsHash) {
+          console.log(`Cache hit: User ${userEmail} embedding (hash: ${prefsHash.substring(0, 8)})`);
+          return user.preference_embedding;
+        } else {
+          console.log(`Cache miss: User ${userEmail} preferences changed (hash mismatch)`);
+        }
       }
     } catch (error) {
       // If not found or error, continue to generate
     }
 
-    // Generate and store if not found
+    // Generate and store if not found or hash changed
     const embedding = await this.generateUserEmbedding(preferences);
-    await this.storeUserEmbedding(userEmail, embedding);
+    await this.storeUserEmbedding(userEmail, embedding, prefsHash);
     
     return embedding;
   }
 
   /**
+   * Simple hash function for preference text
+   * Returns first 16 chars of SHA-256 hash
+   */
+  private hashString(text: string): string {
+    const crypto = require('crypto');
+    return crypto.createHash('sha256').update(text).digest('hex').substring(0, 16);
+  }
+
+  /**
    * Batch generate embeddings for multiple jobs
    * Returns map of job_hash -> embedding
+   * ENHANCED: Logs token count and cost per batch for monitoring
    */
   async batchGenerateJobEmbeddings(jobs: Job[]): Promise<Map<string, number[]>> {
     const embeddings = new Map<string, number[]>();
+    let totalTokens = 0;
+    let totalCost = 0;
+    const startTime = Date.now();
     
     // Process in batches
     for (let i = 0; i < jobs.length; i += this.BATCH_SIZE) {
@@ -136,10 +159,20 @@ export class EmbeddingService {
           input: texts.map(t => t.text),
         });
 
+        // Track token usage and cost
+        const batchTokens = response.usage?.total_tokens || 0;
+        totalTokens += batchTokens;
+        // text-embedding-3-small: $0.02 per 1M tokens
+        const batchCost = (batchTokens / 1_000_000) * 0.02;
+        totalCost += batchCost;
+
         // Map embeddings back to job hashes
         response.data.forEach((embedding, index) => {
           embeddings.set(texts[index].id, embedding.embedding);
         });
+
+        // Log batch metrics
+        console.log(`Embedding batch ${Math.floor(i / this.BATCH_SIZE) + 1}: ${batch.length} jobs, ${batchTokens} tokens, $${batchCost.toFixed(6)}`);
 
         // Rate limiting: OpenAI allows 3000 RPM for embeddings
         if (i + this.BATCH_SIZE < jobs.length) {
@@ -149,6 +182,26 @@ export class EmbeddingService {
         console.error(`Failed to generate embeddings for batch ${i}:`, error);
         // Continue with other batches
       }
+    }
+
+    // Log total metrics for this run
+    const duration = Date.now() - startTime;
+    console.log(`[EMBEDDING COST] ${embeddings.size} embeddings, ${totalTokens} total tokens, $${totalCost.toFixed(6)} total cost, ${duration}ms duration`);
+    
+    // Log to monitoring system (if available)
+    try {
+      const { BusinessMetrics } = await import('@/lib/monitoring');
+      if (BusinessMetrics) {
+        BusinessMetrics.recordAPICall(
+          '/api/generate-embeddings',
+          'POST',
+          200,
+          duration,
+          { tokens: totalTokens, cost: totalCost, embeddingsGenerated: embeddings.size }
+        );
+      }
+    } catch {
+      // Monitoring not available, continue
     }
 
     return embeddings;
@@ -196,18 +249,25 @@ export class EmbeddingService {
   }
 
   /**
-   * Store user preference embedding
+   * Store user preference embedding with hash for cache invalidation
    */
   async storeUserEmbedding(
     userEmail: string,
-    embedding: number[]
+    embedding: number[],
+    preferenceHash?: string
   ): Promise<void> {
     try {
+      const updateData: any = { 
+        preference_embedding: embedding // Pass as native array
+      };
+      
+      if (preferenceHash) {
+        updateData.preference_hash = preferenceHash;
+      }
+      
       await this.supabase
         .from('users')
-        .update({ 
-          preference_embedding: embedding // Pass as native array
-        })
+        .update(updateData)
         .eq('email', userEmail);
     } catch (error) {
       console.error(`Failed to store user embedding for ${userEmail}:`, error);

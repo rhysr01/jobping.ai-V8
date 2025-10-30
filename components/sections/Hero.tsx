@@ -158,7 +158,7 @@ export default function Hero() {
           repeat: prefersReduced ? 0 : Infinity,
           ease: "easeInOut"
         }}
-        className="pointer-events-none absolute top-10 sm:top-20 right-4 sm:right-20 w-20 sm:w-32 h-20 sm:h-32 bg-brand-500/15 rounded-full blur-xl"
+        className="pointer-events-none absolute top-10 sm:top-20 right-4 sm:right-20 w-20 sm:w-32 h-20 sm:h-32 bg-brand-500/10 rounded-full blur-xl"
       />
       <motion.div
         aria-hidden
@@ -172,7 +172,7 @@ export default function Hero() {
           ease: "easeInOut",
           delay: 1
         }}
-        className="pointer-events-none absolute bottom-10 sm:bottom-20 left-4 sm:left-20 w-16 sm:w-24 h-16 sm:h-24 bg-purple-500/12 rounded-full blur-lg"
+        className="pointer-events-none absolute bottom-10 sm:bottom-20 left-4 sm:left-20 w-16 sm:w-24 h-16 sm:h-24 bg-purple-500/10 rounded-full blur-lg"
       />
     </section>
   );

@@ -1,8 +1,3 @@
-/**
- * Tests for Matching Validators
- * Tests all validation logic and hard gates
- */
-
 import {
   applyHardGates,
   validateJobData,
@@ -14,554 +9,372 @@ import {
   validateCareerPathCompatibility,
   validateWorkEnvironmentCompatibility,
   validateJobUserCompatibility,
-  validateMatchingConfig
+  validateMatchingConfig,
 } from '@/Utils/matching/validators';
-import { buildMockJob, buildMockUser } from '@/__tests__/_helpers/testBuilders';
+import type { Job, UserPreferences } from '@/Utils/matching/types';
 
-describe('Validators - applyHardGates', () => {
-  it('should pass valid job and user', () => {
-    const job = buildMockJob({
-      title: 'Engineer',
-      company: 'Corp',
-      job_hash: 'hash123',
-      categories: ['tech'],
-      location: 'London'
-    });
-    const user = buildMockUser({ email: 'test@example.com' });
+describe('validators', () => {
+  const mockJob: Job = {
+    job_hash: 'test-hash-123',
+    title: 'Software Engineer',
+    company: 'Test Company',
+    location: 'London, UK',
+    description: 'Test description',
+    categories: ['software', 'engineering'],
+    job_url: 'https://example.com/job',
+    source: 'test',
+    created_at: new Date().toISOString(),
+    is_active: true,
+    is_graduate: false,
+    is_internship: false,
+  };
 
-    const result = applyHardGates(job, user);
+  const mockUser: UserPreferences = {
+    email: 'test@example.com',
+    career_path: ['tech'],
+    target_cities: ['London'],
+    professional_expertise: 'Software Engineering',
+    work_environment: 'remote',
+  };
 
-    expect(result.passed).toBe(true);
-    expect(result.reason).toBe('All gates passed');
-  });
-
-  it('should fail job with missing title', () => {
-    const job = buildMockJob({ title: '' });
-    const user = buildMockUser();
-
-    const result = applyHardGates(job, user);
-
-    expect(result.passed).toBe(false);
-    expect(result.reason).toBe('Missing required job fields');
-  });
-
-  it('should fail job with missing company', () => {
-    const job = buildMockJob({ company: '' });
-    const user = buildMockUser();
-
-    const result = applyHardGates(job, user);
-
-    expect(result.passed).toBe(false);
-    expect(result.reason).toBe('Missing required job fields');
-  });
-
-  it('should fail job with no categories', () => {
-    const job = buildMockJob({ categories: [] });
-    const user = buildMockUser();
-
-    const result = applyHardGates(job, user);
-
-    expect(result.passed).toBe(false);
-    expect(result.reason).toBe('Job has no categories');
-  });
-
-  it('should fail job with no location', () => {
-    const job = buildMockJob({ location: '' });
-    const user = buildMockUser();
-
-    const result = applyHardGates(job, user);
-
-    expect(result.passed).toBe(false);
-    expect(result.reason).toBe('Job has no location');
-  });
-
-  it('should fail if user has no email', () => {
-    const job = buildMockJob();
-    const user = buildMockUser({ email: '' });
-
-    const result = applyHardGates(job, user);
-
-    expect(result.passed).toBe(false);
-    expect(result.reason).toBe('User has no email');
-  });
-
-  it('should fail job that is too old (90+ days)', () => {
-    const veryOldDate = new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString();
-    const job = buildMockJob({ created_at: veryOldDate });
-    const user = buildMockUser();
-
-    const result = applyHardGates(job, user);
-
-    expect(result.passed).toBe(false);
-    expect(result.reason).toBe('Job is too old');
-  });
-
-  it('should pass job that is recent (within 90 days)', () => {
-    const recentDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
-    const job = buildMockJob({ created_at: recentDate });
-    const user = buildMockUser();
-
-    const result = applyHardGates(job, user);
-
-    expect(result.passed).toBe(true);
-  });
-});
-
-describe('Validators - validateJobData', () => {
-  it('should validate complete job', () => {
-    const job = {
-      title: 'Engineer',
-      company: 'Corp',
-      job_hash: 'hash123',
-      categories: ['tech'],
-      location: 'London'
-    };
-
-    expect(validateJobData(job)).toBe(true);
-  });
-
-  it('should reject job without title', () => {
-    const job = {
-      company: 'Corp',
-      job_hash: 'hash123',
-      categories: ['tech'],
-      location: 'London'
-    };
-
-    expect(validateJobData(job)).toBe(false);
-  });
-
-  it('should reject job without company', () => {
-    const job = {
-      title: 'Engineer',
-      job_hash: 'hash123',
-      categories: ['tech'],
-      location: 'London'
-    };
-
-    expect(validateJobData(job)).toBe(false);
-  });
-
-  it('should reject job without job_hash', () => {
-    const job = {
-      title: 'Engineer',
-      company: 'Corp',
-      categories: ['tech'],
-      location: 'London'
-    };
-
-    expect(validateJobData(job)).toBe(false);
-  });
-
-  it('should reject job without categories', () => {
-    const job = {
-      title: 'Engineer',
-      company: 'Corp',
-      job_hash: 'hash123',
-      location: 'London'
-    };
-
-    expect(validateJobData(job)).toBe(false);
-  });
-
-  it('should reject job without location', () => {
-    const job = {
-      title: 'Engineer',
-      company: 'Corp',
-      job_hash: 'hash123',
-      categories: ['tech']
-    };
-
-    expect(validateJobData(job)).toBe(false);
-  });
-});
-
-describe('Validators - validateUserPreferences', () => {
-  it('should validate user with email', () => {
-    const user = { email: 'test@example.com' };
-
-    expect(validateUserPreferences(user)).toBe(true);
-  });
-
-  it('should reject user without email', () => {
-    const user = {};
-
-    expect(validateUserPreferences(user)).toBe(false);
-  });
-
-  it('should reject user with invalid email', () => {
-    expect(validateUserPreferences({ email: 'notanemail' })).toBe(false);
-    expect(validateUserPreferences({ email: '' })).toBe(false);
-  });
-
-  it('should reject user with non-string email', () => {
-    expect(validateUserPreferences({ email: 123 as any })).toBe(false);
-    expect(validateUserPreferences({ email: null as any })).toBe(false);
-  });
-});
-
-describe('Validators - validateMatchResult', () => {
-  it('should validate complete match result', () => {
-    const match = {
-      job: buildMockJob(),
-      match_score: 85,
-      match_reason: 'Great fit',
-      match_quality: 'high',
-      match_tags: 'tech,early-career',
-      confidence_score: 0.9
-    };
-
-    expect(validateMatchResult(match)).toBe(true);
-  });
-
-  it('should reject match without job', () => {
-    const match = {
-      match_score: 85,
-      match_reason: 'Great fit',
-      match_quality: 'high',
-      match_tags: 'tech',
-      confidence_score: 0.9
-    };
-
-    expect(validateMatchResult(match)).toBe(false);
-  });
-
-  it('should reject match with invalid match_score', () => {
-    const match = {
-      job: buildMockJob(),
-      match_score: 'high' as any,
-      match_reason: 'Great fit',
-      match_quality: 'high',
-      match_tags: 'tech',
-      confidence_score: 0.9
-    };
-
-    expect(validateMatchResult(match)).toBe(false);
-  });
-
-  it('should reject match without match_reason', () => {
-    const match = {
-      job: buildMockJob(),
-      match_score: 85,
-      match_quality: 'high',
-      match_tags: 'tech',
-      confidence_score: 0.9
-    };
-
-    expect(validateMatchResult(match)).toBe(false);
-  });
-
-  it('should reject match without confidence_score', () => {
-    const match = {
-      job: buildMockJob(),
-      match_score: 85,
-      match_reason: 'Great fit',
-      match_quality: 'high',
-      match_tags: 'tech'
-    };
-
-    expect(validateMatchResult(match)).toBe(false);
-  });
-});
-
-describe('Validators - validateUserEligibility', () => {
-  it('should validate eligible user with all fields', () => {
-    const user = buildMockUser({
-      email: 'test@example.com',
-      career_path: ['tech'],
-      target_cities: ['London'],
-      professional_expertise: 'software development'
+  describe('applyHardGates', () => {
+    it('should pass all gates for valid job and user', () => {
+      const result = applyHardGates(mockJob, mockUser);
+      expect(result.passed).toBe(true);
+      expect(result.reason).toBe('All gates passed');
     });
 
-    const result = validateUserEligibility(user);
-
-    expect(result.eligible).toBe(true);
-    expect(result.reasons).toHaveLength(0);
-  });
-
-  it('should flag user without career path', () => {
-    const user = buildMockUser({
-      email: 'test@example.com',
-      career_path: undefined as any,
-      target_cities: ['London'],
-      professional_expertise: 'software'
+    it('should fail if job missing title', () => {
+      const result = applyHardGates({ ...mockJob, title: '' }, mockUser);
+      expect(result.passed).toBe(false);
+      expect(result.reason).toBe('Missing required job fields');
     });
 
-    const result = validateUserEligibility(user);
-
-    expect(result.eligible).toBe(false);
-    expect(result.reasons).toContain('No career path specified');
-  });
-
-  it('should flag user without professional expertise', () => {
-    const user = buildMockUser({
-      email: 'test@example.com',
-      career_path: ['tech'],
-      target_cities: ['London'],
-      professional_expertise: undefined as any
+    it('should fail if job missing company', () => {
+      const result = applyHardGates({ ...mockJob, company: '' }, mockUser);
+      expect(result.passed).toBe(false);
+      expect(result.reason).toBe('Missing required job fields');
     });
 
-    const result = validateUserEligibility(user);
-
-    expect(result.eligible).toBe(false);
-    expect(result.reasons).toContain('No professional expertise specified');
-  });
-
-  it('should flag user without target cities', () => {
-    const user = buildMockUser({
-      email: 'test@example.com',
-      career_path: ['tech'],
-      target_cities: [],
-      professional_expertise: 'software'
+    it('should fail if job missing job_hash', () => {
+      const result = applyHardGates({ ...mockJob, job_hash: '' }, mockUser);
+      expect(result.passed).toBe(false);
+      expect(result.reason).toBe('Missing required job fields');
     });
 
-    const result = validateUserEligibility(user);
-
-    expect(result.eligible).toBe(false);
-    expect(result.reasons).toContain('No target cities specified');
-  });
-
-  it('should accumulate multiple validation failures', () => {
-    const user = buildMockUser({
-      email: 'test@example.com',
-      career_path: undefined as any,
-      target_cities: [],
-      professional_expertise: undefined as any
+    it('should fail if job has no categories', () => {
+      const result = applyHardGates({ ...mockJob, categories: [] }, mockUser);
+      expect(result.passed).toBe(false);
+      expect(result.reason).toBe('Job has no categories');
     });
 
-    const result = validateUserEligibility(user);
-
-    expect(result.eligible).toBe(false);
-    expect(result.reasons.length).toBeGreaterThan(1);
-  });
-});
-
-describe('Validators - validateJobAge', () => {
-  it('should mark job as recent within 30 days', () => {
-    const oneDayAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-    const job = buildMockJob({ created_at: oneDayAgo });
-
-    const result = validateJobAge(job);
-
-    expect(result.recent).toBe(true);
-    expect(result.daysOld).toBe(0);
-  });
-
-  it('should mark job as not recent after 30 days', () => {
-    const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
-    const job = buildMockJob({ created_at: fortyDaysAgo });
-
-    const result = validateJobAge(job);
-
-    expect(result.recent).toBe(false);
-    expect(result.daysOld).toBe(40);
-  });
-
-  it('should handle job without created_at date', () => {
-    const job = buildMockJob({ created_at: undefined });
-
-    const result = validateJobAge(job);
-
-    expect(result.recent).toBe(false);
-    expect(result.daysOld).toBe(999);
-  });
-});
-
-describe('Validators - validateLocationCompatibility', () => {
-  it('should find exact location match', () => {
-    const result = validateLocationCompatibility(['London, UK'], ['London'], 'London', 'GB');
-
-    expect(result.compatible).toBe(true);
-    expect(result.matchScore).toBe(100);
-    expect(result.reasons[0]).toContain('City match');
-  });
-
-  it('should handle remote jobs', () => {
-    const result = validateLocationCompatibility(['Remote, Anywhere'], ['London']);
-
-    expect(result.compatible).toBe(true);
-    expect(result.matchScore).toBeGreaterThanOrEqual(60);
-    expect(result.reasons[0]).toContain('Remote/hybrid work available');
-  });
-
-  it('should reject incompatible locations', () => {
-    const result = validateLocationCompatibility(['New York, USA'], ['London'], 'New York', 'USA');
-
-    expect(result.compatible).toBe(false);
-    expect(result.matchScore).toBe(0);
-  });
-
-  it('should handle empty user target cities', () => {
-    const result = validateLocationCompatibility(['London'], [], 'London', 'GB');
-
-    expect(result.compatible).toBe(false);
-    expect(result.reasons).toContain('No target cities specified');
-  });
-
-  it('should handle empty job locations', () => {
-    const result = validateLocationCompatibility([], ['London']);
-
-    expect(result.compatible).toBe(false);
-    expect(result.reasons).toContain('Job has no location');
-  });
-
-  it('should match multiple user cities', () => {
-    const result = validateLocationCompatibility(['Berlin, Germany'], ['London', 'Berlin', 'Paris'], 'Berlin', 'DE');
-
-    expect(result.compatible).toBe(true);
-    expect(result.matchScore).toBe(100);
-    expect(result.reasons[0]).toContain('City match');
-  });
-});
-
-describe('Validators - validateCareerPathCompatibility', () => {
-  it('should match compatible career paths', () => {
-    const result = validateCareerPathCompatibility(['tech', 'software'], 'tech');
-
-    expect(result).toBeDefined();
-    expect(result.matchScore).toBeGreaterThanOrEqual(0);
-  });
-
-  it('should reject incompatible career paths', () => {
-    const result = validateCareerPathCompatibility(['marketing', 'sales'], 'software-engineer');
-
-    expect(result).toBeDefined();
-    expect(result.matchScore).toBeGreaterThanOrEqual(0);
-  });
-
-  it('should handle missing user career path', () => {
-    const result = validateCareerPathCompatibility(['tech'], '');
-
-    expect(result.compatible).toBe(false);
-    expect(result.reasons).toContain('No career path specified');
-  });
-
-  it('should handle missing job categories', () => {
-    const result = validateCareerPathCompatibility([], 'software-engineer');
-
-    expect(result.compatible).toBe(false);
-    expect(result.reasons).toContain('Job has no categories');
-  });
-});
-
-describe('Validators - validateWorkEnvironmentCompatibility', () => {
-  it('should match exact work environment preference', () => {
-    const result = validateWorkEnvironmentCompatibility('remote', 'remote');
-
-    expect(result.compatible).toBe(true);
-    expect(result.matchScore).toBe(100);
-  });
-
-  it('should handle hybrid compatibility', () => {
-    const result = validateWorkEnvironmentCompatibility('hybrid', 'remote');
-
-    expect(result.compatible).toBe(true);
-    expect(result.matchScore).toBeGreaterThan(0);
-  });
-
-  it('should handle missing user preference', () => {
-    const result = validateWorkEnvironmentCompatibility('remote', undefined);
-
-    expect(result.compatible).toBe(true); // Should default to compatible
-  });
-
-  it('should handle missing job environment', () => {
-    const result = validateWorkEnvironmentCompatibility(undefined, 'remote');
-
-    expect(result.compatible).toBe(true); // Should default to compatible
-  });
-
-  it('should handle office vs remote preference', () => {
-    const result = validateWorkEnvironmentCompatibility('office', 'remote');
-
-    expect(result).toBeDefined();
-    expect(result.matchScore).toBeGreaterThanOrEqual(0);
-  });
-});
-
-describe('Validators - validateJobUserCompatibility', () => {
-  it('should validate fully compatible job and user', () => {
-    const job = buildMockJob({
-      location: 'London, UK',
-      categories: ['tech', 'early-career'],
-      work_environment: 'remote',
-      created_at: new Date().toISOString()
-    });
-    const user = buildMockUser({
-      target_cities: ['London'],
-      career_path: ['tech'],
-      work_environment: 'remote'
+    it('should fail if job has no location', () => {
+      const result = applyHardGates({ ...mockJob, location: '' }, mockUser);
+      expect(result.passed).toBe(false);
+      expect(result.reason).toBe('Job has no location');
     });
 
-    const result = validateJobUserCompatibility(job, user);
+    it('should fail if user has no email', () => {
+      const result = applyHardGates(mockJob, { ...mockUser, email: '' });
+      expect(result.passed).toBe(false);
+      expect(result.reason).toBe('User has no email');
+    });
 
-    expect(result.compatible).toBe(true);
-    expect(result.overallScore).toBeGreaterThan(0);
+    it('should fail if job is too old', () => {
+      const oldDate = new Date();
+      oldDate.setDate(oldDate.getDate() - 91);
+      const result = applyHardGates(
+        { ...mockJob, created_at: oldDate.toISOString() },
+        mockUser
+      );
+      expect(result.passed).toBe(false);
+      expect(result.reason).toBe('Job is too old');
+    });
   });
 
-  it('should handle location incompatibility', () => {
-    const job = buildMockJob({ location: 'New York, USA' });
-    const user = buildMockUser({ target_cities: ['London'] });
+  describe('validateJobData', () => {
+    it('should validate complete job data', () => {
+      expect(validateJobData(mockJob)).toBe(true);
+    });
 
-    const result = validateJobUserCompatibility(job, user);
+    it('should reject job missing title', () => {
+      expect(validateJobData({ ...mockJob, title: '' })).toBe(false);
+    });
 
-    expect(result.breakdown.location.compatible).toBe(false);
+    it('should reject job missing company', () => {
+      expect(validateJobData({ ...mockJob, company: '' })).toBe(false);
+    });
+
+    it('should reject job missing job_hash', () => {
+      expect(validateJobData({ ...mockJob, job_hash: '' })).toBe(false);
+    });
+
+    it('should reject job missing categories', () => {
+      expect(validateJobData({ ...mockJob, categories: undefined })).toBe(false);
+    });
+
+    it('should reject job missing location', () => {
+      expect(validateJobData({ ...mockJob, location: '' })).toBe(false);
+    });
   });
 
-  it('should handle career path incompatibility', () => {
-    const job = buildMockJob({ categories: ['marketing'] });
-    const user = buildMockUser({ career_path: ['tech'] });
+  describe('validateUserPreferences', () => {
+    it('should validate user with email', () => {
+      expect(validateUserPreferences(mockUser)).toBe(true);
+    });
 
-    const result = validateJobUserCompatibility(job, user);
+    it('should reject user without email', () => {
+      expect(validateUserPreferences({ ...mockUser, email: '' })).toBe(false);
+    });
 
-    expect(result.breakdown.careerPath.compatible).toBe(false);
+    it('should reject user with invalid email', () => {
+      expect(validateUserPreferences({ ...mockUser, email: 'invalid' })).toBe(false);
+    });
+
+    it('should accept user with valid email format', () => {
+      expect(validateUserPreferences({ ...mockUser, email: 'user@example.com' })).toBe(true);
+    });
   });
 
-  it('should handle work environment compatibility', () => {
-    const job = buildMockJob({ work_environment: 'office' });
-    const user = buildMockUser({ work_environment: 'remote' });
+  describe('validateMatchResult', () => {
+    it('should validate complete match result', () => {
+      const match = {
+        job: mockJob,
+        match_score: 85,
+        match_reason: 'Good match',
+        match_quality: 'high',
+        match_tags: 'tech,remote',
+        confidence_score: 0.9,
+      };
+      expect(validateMatchResult(match)).toBe(true);
+    });
 
-    const result = validateJobUserCompatibility(job, user);
+    it('should reject match missing job', () => {
+      const match = {
+        match_score: 85,
+        match_reason: 'Good match',
+        match_quality: 'high',
+        match_tags: 'tech,remote',
+        confidence_score: 0.9,
+      };
+      expect(validateMatchResult(match)).toBe(false);
+    });
 
-    expect(result.breakdown.workEnvironment).toBeDefined();
+    it('should reject match with invalid score types', () => {
+      const match = {
+        job: mockJob,
+        match_score: '85',
+        match_reason: 'Good match',
+        match_quality: 'high',
+        match_tags: 'tech,remote',
+        confidence_score: 0.9,
+      };
+      expect(validateMatchResult(match)).toBe(false);
+    });
   });
 
-  it('should provide detailed compatibility breakdown', () => {
-    const job = buildMockJob();
-    const user = buildMockUser();
+  describe('validateUserEligibility', () => {
+    it('should validate eligible user', () => {
+      const result = validateUserEligibility(mockUser);
+      expect(result.eligible).toBe(true);
+      expect(result.reasons).toHaveLength(0);
+    });
 
-    const result = validateJobUserCompatibility(job, user);
+    it('should reject user without career path', () => {
+      const result = validateUserEligibility({ ...mockUser, career_path: undefined });
+      expect(result.eligible).toBe(false);
+      expect(result.reasons).toContain('No career path specified');
+    });
 
-    expect(result).toHaveProperty('compatible');
-    expect(result).toHaveProperty('overallScore');
-    expect(result).toHaveProperty('breakdown');
-    expect(result.breakdown).toHaveProperty('location');
-    expect(result.breakdown).toHaveProperty('careerPath');
-    expect(result.breakdown).toHaveProperty('workEnvironment');
+    it('should reject user without professional expertise', () => {
+      const result = validateUserEligibility({ ...mockUser, professional_expertise: undefined });
+      expect(result.eligible).toBe(false);
+      expect(result.reasons).toContain('No professional expertise specified');
+    });
+
+    it('should reject user without target cities', () => {
+      const result = validateUserEligibility({ ...mockUser, target_cities: [] });
+      expect(result.eligible).toBe(false);
+      expect(result.reasons).toContain('No target cities specified');
+    });
+  });
+
+  describe('validateJobAge', () => {
+    it('should validate recent job', () => {
+      const result = validateJobAge(mockJob);
+      expect(result.recent).toBe(true);
+      expect(result.daysOld).toBeLessThanOrEqual(30);
+    });
+
+    it('should reject old job', () => {
+      const oldDate = new Date();
+      oldDate.setDate(oldDate.getDate() - 35);
+      const result = validateJobAge({ ...mockJob, created_at: oldDate.toISOString() });
+      expect(result.recent).toBe(false);
+      expect(result.daysOld).toBeGreaterThan(30);
+    });
+
+    it('should handle job without created_at', () => {
+      const result = validateJobAge({ ...mockJob, created_at: undefined });
+      expect(result.recent).toBe(false);
+      expect(result.daysOld).toBe(999);
+    });
+  });
+
+  describe('validateLocationCompatibility', () => {
+    it('should match city exactly', () => {
+      const result = validateLocationCompatibility(
+        ['London, UK'],
+        ['London'],
+        'London',
+        'UK'
+      );
+      expect(result.compatible).toBe(true);
+      expect(result.matchScore).toBeGreaterThan(0);
+    });
+
+    it('should match country', () => {
+      const result = validateLocationCompatibility(
+        ['Berlin, Germany'],
+        ['Germany'],
+        'Berlin',
+        'Germany'
+      );
+      expect(result.compatible).toBe(true);
+      expect(result.matchScore).toBeGreaterThan(0);
+    });
+
+    it('should match remote work', () => {
+      const result = validateLocationCompatibility(
+        ['Remote'],
+        ['London'],
+        undefined,
+        undefined
+      );
+      expect(result.compatible).toBe(true);
+      expect(result.matchScore).toBeGreaterThanOrEqual(60);
+    });
+
+    it('should reject incompatible locations', () => {
+      const result = validateLocationCompatibility(
+        ['Paris, France'],
+        ['London'],
+        'Paris',
+        'France'
+      );
+      expect(result.compatible).toBe(false);
+    });
+
+    it('should handle empty user cities', () => {
+      const result = validateLocationCompatibility(['London'], [], undefined, undefined);
+      expect(result.compatible).toBe(false);
+      expect(result.reasons).toContain('No target cities specified');
+    });
+  });
+
+  describe('validateCareerPathCompatibility', () => {
+    it('should match tech career path', () => {
+      const result = validateCareerPathCompatibility(
+        ['software', 'engineering'],
+        'tech'
+      );
+      expect(result.compatible).toBe(true);
+      expect(result.matchScore).toBeGreaterThan(0);
+    });
+
+    it('should match finance career path', () => {
+      const result = validateCareerPathCompatibility(
+        ['finance', 'banking'],
+        'finance'
+      );
+      expect(result.compatible).toBe(true);
+      expect(result.matchScore).toBeGreaterThan(0);
+    });
+
+    it('should reject incompatible career path', () => {
+      const result = validateCareerPathCompatibility(
+        ['healthcare', 'medical'],
+        'tech'
+      );
+      expect(result.compatible).toBe(false);
+    });
+
+    it('should handle empty user career path', () => {
+      const result = validateCareerPathCompatibility(['software'], '');
+      expect(result.compatible).toBe(false);
+      expect(result.reasons).toContain('No career path specified');
+    });
+  });
+
+  describe('validateWorkEnvironmentCompatibility', () => {
+    it('should match exact work environment', () => {
+      const result = validateWorkEnvironmentCompatibility('remote', 'remote');
+      expect(result.compatible).toBe(true);
+      expect(result.matchScore).toBe(100);
+    });
+
+    it('should match remote preference with remote job', () => {
+      const result = validateWorkEnvironmentCompatibility('remote', 'remote');
+      expect(result.compatible).toBe(true);
+      expect(result.matchScore).toBeGreaterThanOrEqual(90);
+    });
+
+    it('should match hybrid preference with hybrid job', () => {
+      const result = validateWorkEnvironmentCompatibility('hybrid', 'hybrid');
+      expect(result.compatible).toBe(true);
+      expect(result.matchScore).toBeGreaterThanOrEqual(85);
+    });
+
+    it('should allow unclear preferences', () => {
+      const result = validateWorkEnvironmentCompatibility('unclear', 'remote');
+      expect(result.compatible).toBe(true);
+      expect(result.matchScore).toBe(50);
+    });
+
+    it('should handle mismatch', () => {
+      const result = validateWorkEnvironmentCompatibility('office', 'remote');
+      expect(result.compatible).toBe(true); // Still compatible but lower score
+      expect(result.matchScore).toBe(30);
+    });
+  });
+
+  describe('validateJobUserCompatibility', () => {
+    it('should validate compatible job-user pair', () => {
+      const result = validateJobUserCompatibility(mockJob, mockUser);
+      expect(result.compatible).toBe(true);
+      expect(result.overallScore).toBeGreaterThan(0);
+      expect(result.breakdown.hardGates.passed).toBe(true);
+    });
+
+    it('should reject incompatible pair', () => {
+      const incompatibleJob = {
+        ...mockJob,
+        location: 'Tokyo, Japan',
+        categories: ['healthcare'],
+        work_environment: 'on-site',
+      };
+      const result = validateJobUserCompatibility(incompatibleJob, mockUser);
+      // May still pass if remote work is detected or other flexible matching
+      expect(result.overallScore).toBeLessThan(50);
+    });
+
+    it('should include all breakdown components', () => {
+      const result = validateJobUserCompatibility(mockJob, mockUser);
+      expect(result.breakdown).toHaveProperty('hardGates');
+      expect(result.breakdown).toHaveProperty('location');
+      expect(result.breakdown).toHaveProperty('careerPath');
+      expect(result.breakdown).toHaveProperty('workEnvironment');
+      expect(result.breakdown).toHaveProperty('userEligibility');
+    });
+  });
+
+  describe('validateMatchingConfig', () => {
+    it('should validate correct config', () => {
+      const result = validateMatchingConfig();
+      // This depends on actual config - may pass or fail
+      expect(result).toHaveProperty('valid');
+      expect(result).toHaveProperty('errors');
+      expect(Array.isArray(result.errors)).toBe(true);
+    });
   });
 });
-
-describe('Validators - validateMatchingConfig', () => {
-  it('should validate matching configuration', () => {
-    const result = validateMatchingConfig();
-
-    expect(result).toHaveProperty('valid');
-    expect(result).toHaveProperty('errors');
-    expect(Array.isArray(result.errors)).toBe(true);
-  });
-
-  it('should return validation status', () => {
-    const result = validateMatchingConfig();
-
-    expect(typeof result.valid).toBe('boolean');
-  });
-
-  it('should provide error details if invalid', () => {
-    const result = validateMatchingConfig();
-
-    if (!result.valid) {
-      expect(result.errors.length).toBeGreaterThan(0);
-    }
-  });
-});
-

@@ -74,6 +74,22 @@ export function middleware(request: NextRequest) {
   response.headers.set('X-Request-ID', requestId);
   response.headers.set('X-Response-Time', (Date.now() - startTime).toString());
   
+  // Cookie security: Set SameSite=Lax and Secure for all cookies
+  // This prevents CSRF attacks and ensures cookies are only sent over HTTPS
+  response.headers.set('Set-Cookie', response.headers.get('Set-Cookie') 
+    ? response.headers.get('Set-Cookie')!.split(',').map(cookie => {
+        // Ensure all cookies have SameSite=Lax and Secure flags
+        if (!cookie.includes('SameSite')) {
+          cookie += '; SameSite=Lax';
+        }
+        if (process.env.NODE_ENV === 'production' && !cookie.includes('Secure')) {
+          cookie += '; Secure';
+        }
+        return cookie;
+      }).join(',')
+    : ''
+  );
+  
   // Enhanced security headers
   response.headers.set(
     'Content-Security-Policy',

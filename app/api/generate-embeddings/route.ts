@@ -10,7 +10,7 @@ import { verifyHMAC } from '@/Utils/auth/hmac';
 
 export async function POST(req: NextRequest) {
   try {
-    // Verify HMAC authentication
+    // Verify HMAC signature
     const signature = req.headers.get('x-jobping-signature');
     const timestamp = req.headers.get('x-jobping-timestamp');
     
@@ -21,7 +21,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
+    const bodyText = await req.text();
+    const hmacResult = verifyHMAC(
+      bodyText,
+      signature,
+      parseInt(timestamp)
+    );
+    
+    if (!hmacResult.isValid) {
+      return NextResponse.json(
+        { error: 'Invalid HMAC signature' },
+        { status: 401 }
+      );
+    }
+
+    const body = JSON.parse(bodyText);
     const { batchSize = 100, jobLimit = 1000 } = body;
 
     const supabase = getDatabaseClient();
@@ -50,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`Generating embeddings for ${jobs.length} jobs`);
 
-    // Generate embeddings in batches
+    // Generate embeddings in batches (logs token count and cost)
     const embeddings = await embeddingService.batchGenerateJobEmbeddings(
       jobs as any[]
     );
@@ -67,6 +81,7 @@ export async function POST(req: NextRequest) {
       totalJobs: coverage.total,
       withEmbeddings: coverage.withEmbeddings,
       coverage: `${(coverage.coverage * 100).toFixed(1)}%`
+      // Token count and cost logged by embeddingService.batchGenerateJobEmbeddings
     });
   } catch (error) {
     console.error('Embedding generation error:', error);

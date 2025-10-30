@@ -123,6 +123,11 @@ export default {
         'overlay': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
         'elev-1': "0 10px 30px -10px rgba(99,102,241,0.25)",
         'elev-2': "0 20px 60px -18px rgba(99,102,241,0.35)",
+        'glow-subtle': "0 0 20px rgba(99,102,241,0.3)",
+        'glow-medium': "0 0 40px rgba(99,102,241,0.4)",
+        'glow-strong': "0 0 80px rgba(99,102,241,0.3)",
+        'glow-signup': "0 0 30px rgba(99,102,241,0.4)",
+        'glow-signup-strong': "0 0 60px rgba(99,102,241,0.5)",
       },
       // Micro-interaction timing
       transitionDuration: {
