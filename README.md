@@ -62,6 +62,7 @@ See `.env.example` for required variables (DB, Email, AI, Stripe, System).
 - GPT for job scoring with caching and cost controls
 - Pre-filtering by location/experience/visa
 - Duplicate prevention per user
+- Vector embeddings for semantic matching (see [Vector Embeddings Guide](docs/vector-embeddings-batch-processing.md))
 
 ### Smart Email Delivery
 - Production-ready templates at `Utils/email/productionReadyTemplates.ts`

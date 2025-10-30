@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabaseClient } from '@/Utils/databasePool';
 
+const HEALTH_SLO_MS = 100; // SLO: health checks should respond in <100ms
+
 export async function GET(req: NextRequest) {
   const start = Date.now();
   
@@ -13,6 +15,12 @@ export async function GET(req: NextRequest) {
     };
 
     const duration = Date.now() - start;
+    
+    // SLO check: warn if health check exceeds target
+    if (duration > HEALTH_SLO_MS) {
+      console.warn(`Health check SLO violation: ${duration}ms > ${HEALTH_SLO_MS}ms target`);
+    }
+    
     const healthy = Object.values(checks).every(check => 
       typeof check === 'number' ? true : 
       typeof check === 'boolean' ? check : 
@@ -25,17 +33,29 @@ export async function GET(req: NextRequest) {
       checks,
       responseTime: duration,
       duration: duration, // Add duration for test compatibility
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      slo: {
+        target: HEALTH_SLO_MS,
+        actual: duration,
+        met: duration <= HEALTH_SLO_MS
+      }
     }, { 
       status: healthy ? 200 : 503 
     });
   } catch (error) {
     console.error('Health check failed:', error);
+    const duration = Date.now() - start;
     return NextResponse.json({ 
       ok: false,
       status: 'unhealthy',
       error: 'Health check failed',
-      responseTime: Date.now() - start
+      responseTime: duration,
+      duration: duration,
+      slo: {
+        target: HEALTH_SLO_MS,
+        actual: duration,
+        met: duration <= HEALTH_SLO_MS
+      }
     }, { status: 503 });
   }
 }

@@ -50,6 +50,9 @@ import { Database } from '@/lib/database.types';
 
 type User = Database['public']['Tables']['users']['Row'];
 
+const HEALTH_SLO_MS = 100; // SLO: health checks should respond in <100ms
+const MATCH_SLO_MS = 2000; // SLO: match-users endpoint should respond in <2s
+
 // Environment flags and limits
 const IS_TEST = process.env.NODE_ENV === 'test';
 const IS_DEBUG = process.env.DEBUG_MATCHING === 'true' || IS_TEST;
@@ -1132,6 +1135,20 @@ const matchUsersHandler = async (req: NextRequest) => {
     const totalProcessingTime = Date.now() - performanceTracker.startTime;
     const performanceMetrics = performanceTracker.getMetrics();
 
+    // SLO check: warn if match-users exceeds target (<2s)
+    if (totalProcessingTime > MATCH_SLO_MS) {
+      console.warn(`Match-users SLO violation: ${totalProcessingTime}ms > ${MATCH_SLO_MS}ms target`);
+      Sentry.addBreadcrumb({
+        message: 'Match-users SLO violation',
+        level: 'warning',
+        data: {
+          duration: totalProcessingTime,
+          target: MATCH_SLO_MS,
+          processed: users.length
+        }
+      });
+    }
+
     // Track production metrics for Datadog monitoring
     const requestDuration = Date.now() - requestStartTime;
 
@@ -1170,7 +1187,12 @@ const matchUsersHandler = async (req: NextRequest) => {
       processed: users.length,
       matched: results.filter(r => r.success).length,
       failed: results.filter(r => !r.success).length,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
+      slo: {
+        target: MATCH_SLO_MS,
+        actual: Date.now() - startTime,
+        met: (Date.now() - startTime) <= MATCH_SLO_MS
+      }
     });
   });
 

@@ -9,7 +9,7 @@ import { BrandIcons } from '@/components/ui/BrandIcons';
 
 export default function Pricing() {
   return (
-    <section className="section-padding bg-black relative overflow-hidden">
+    <section data-testid="pricing" className="section-padding bg-black relative overflow-hidden">
       {/* Background gradient for depth */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand-500/5 to-transparent pointer-events-none" />
       
@@ -28,6 +28,7 @@ export default function Pricing() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
           {/* Free Plan */}
           <motion.div 
+            data-testid="free-plan"
             initial={{ opacity: 0, y: 30, scale: 0.96 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.1, duration: 0.5 }}
@@ -87,6 +88,7 @@ export default function Pricing() {
 
           {/* Premium Plan */}
           <motion.div 
+            data-testid="premium-plan"
             initial={{ opacity: 0, y: 30, scale: 0.96 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
