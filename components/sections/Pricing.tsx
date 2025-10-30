@@ -148,7 +148,7 @@ export default function Pricing() {
                 <div className="mt-auto relative z-10">
                   <Link 
                     href="/billing" 
-                    className="btn-primary inline-block w-full text-center rounded-xl shadow-[0_4px_20px_rgba(106,75,255,0.5)] hover:shadow-[0_8px_30px_rgba(106,75,255,0.6)] hover:brightness-110 relative overflow-hidden group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-all duration-300 text-base font-bold py-4"
+                    className="btn-primary inline-block w-full text-center relative overflow-hidden group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-all duration-300 text-base font-bold py-4"
                     role="button"
                     aria-label="Go Premium - navigate to billing"
                   >

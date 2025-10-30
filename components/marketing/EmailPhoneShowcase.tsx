@@ -7,6 +7,7 @@ import SectionHeader from "@/components/ui/SectionHeader";
 import GlassCard from "@/components/ui/GlassCard";
 import { useReducedMotion } from "@/components/ui/useReducedMotion";
 import { BrandIcons } from "@/components/ui/BrandIcons";
+import { IconBadge } from "@/components/ui/IconBadge";
 
 export default function EmailPhoneShowcase() {
   const prefersReduced = useReducedMotion();
@@ -64,34 +65,28 @@ export default function EmailPhoneShowcase() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-center"
+          className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-center"
         >
-          <GlassCard variant="subtle" hover="lift" className="rounded-xl p-6">
-            <div className="flex justify-center mb-3">
-              <div className="p-3 rounded-xl bg-brand-500/10 border border-brand-500/20">
-                <BrandIcons.Mail className="w-6 h-6 text-brand-400" />
-              </div>
-            </div>
+          <GlassCard variant="subtle" hover="lift" className="p-8">
+            <IconBadge className="mb-4">
+              <BrandIcons.Mail className="w-6 h-6 text-brand-400" />
+            </IconBadge>
             <h3 className="text-white font-semibold mb-2">Weekly emails</h3>
-            <p className="text-body text-neutral-300 font-medium">5 hand-picked roles every week</p>
+            <p className="text-body text-neutral-200 font-medium">5 hand-picked roles every week</p>
           </GlassCard>
-          <GlassCard variant="subtle" hover="lift" className="rounded-xl p-6">
-            <div className="flex justify-center mb-3">
-              <div className="p-3 rounded-xl bg-brand-500/10 border border-brand-500/20">
-                <BrandIcons.Zap className="w-6 h-6 text-brand-400" />
-              </div>
-            </div>
+          <GlassCard variant="subtle" hover="lift" className="p-8">
+            <IconBadge className="mb-4">
+              <BrandIcons.Zap className="w-6 h-6 text-brand-400" />
+            </IconBadge>
             <h3 className="text-white font-semibold mb-2">60-second read</h3>
-            <p className="text-body text-neutral-300 font-medium">Everything you need in one email</p>
+            <p className="text-body text-neutral-200 font-medium">Everything you need in one email</p>
           </GlassCard>
-          <GlassCard variant="subtle" hover="lift" className="rounded-xl p-6">
-            <div className="flex justify-center mb-3">
-              <div className="p-3 rounded-xl bg-brand-500/10 border border-brand-500/20">
-                <BrandIcons.Target className="w-6 h-6 text-brand-400" />
-              </div>
-            </div>
+          <GlassCard variant="subtle" hover="lift" className="p-8">
+            <IconBadge className="mb-4">
+              <BrandIcons.Target className="w-6 h-6 text-brand-400" />
+            </IconBadge>
             <h3 className="text-white font-semibold mb-2">Perfect matches</h3>
-            <p className="text-body text-neutral-300 font-medium">AI-filtered for your profile</p>
+            <p className="text-body text-neutral-200 font-medium">AI-filtered for your profile</p>
           </GlassCard>
         </motion.div>
       </div>

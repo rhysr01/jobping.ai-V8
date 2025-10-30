@@ -112,7 +112,7 @@ export default function Hero() {
               href="/signup"
               variant="primary"
               size="lg"
-              className="mt-5 rounded-xl shadow-[0_4px_12px_rgba(106,75,255,0.40)] hover:shadow-[0_6px_20px_rgba(106,75,255,0.50)] hover:brightness-105"
+              className="mt-5"
               aria-label={Copy.HERO_CTA}
             >
               <span className="relative flex items-center gap-2">

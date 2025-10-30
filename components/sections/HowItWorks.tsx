@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import SectionHeader from "@/components/ui/SectionHeader";
 import { BrandIcons } from "@/components/ui/BrandIcons";
+import { IconBadge } from "@/components/ui/IconBadge";
 
 export default function HowItWorks() {
   const items = [
@@ -61,9 +62,9 @@ export default function HowItWorks() {
                   <div className="absolute inset-0 bg-brand-500/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
                 </motion.div>
                 <div className="flex justify-center mb-4">
-                  <div className="p-3 rounded-xl bg-brand-500/10 border border-brand-500/20">
+                  <IconBadge>
                     <Icon className="w-6 h-6 text-brand-400" />
-                  </div>
+                  </IconBadge>
                 </div>
                 <h3 className="mt-4 text-heading text-white font-black leading-tight">{x.title}</h3>
                 <p className="mt-4 text-large text-neutral-200 leading-relaxed font-medium max-w-sm mx-auto">{x.body}</p>
