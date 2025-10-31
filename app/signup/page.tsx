@@ -163,7 +163,7 @@ function SignupForm() {
     } else if (step === 1 && formRefs.email.current && formData.fullName) {
       formRefs.email.current.focus();
     }
-  }, [step]);
+  }, [step, formData.fullName]);
 
   // Announce validation errors to screen readers
   useEffect(() => {

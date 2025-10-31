@@ -40,7 +40,7 @@ export async function sendWelcomeEmail(args: { to: string; userName?: string; ma
     trackEmailSend(true, Date.now() - startTime);
     apiLogger.info('Welcome email sent successfully', { 
       to: args.to, 
-      emailId: result?.id,
+      emailId: result?.data?.id,
       duration: Date.now() - startTime 
     });
     return result;
@@ -131,7 +131,7 @@ export async function sendMatchedJobsEmail(args: {
     trackEmailSend(true, Date.now() - startTime);
     apiLogger.info('Matched jobs email sent successfully', { 
       to: args.to, 
-      emailId: result?.id,
+      emailId: result?.data?.id,
       jobsCount: args.jobs.length,
       duration: Date.now() - startTime 
     });
