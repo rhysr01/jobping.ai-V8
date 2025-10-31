@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getResendClient, EMAIL_CONFIG, assertValidFrom } from '@/Utils/email/clients';
+import { apiLogger } from '@/lib/api-logger';
 
 export const GET = async (req: NextRequest) => {
-  console.log('=== RESEND TEST START ===');
-  
-  const resend = getResendClient();
-  const url = new URL(req.url);
-  const testRecipient = url.searchParams.get('to') || 'delivered@resend.dev';
+  try {
+    apiLogger.info('=== RESEND TEST START ===');
+    
+    // Check API key first
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json({
+        error: 'RESEND_API_KEY not configured',
+        message: 'Please add RESEND_API_KEY to your .env.local file',
+        timestamp: new Date().toISOString()
+      }, { status: 500 });
+    }
+    
+    const resend = getResendClient();
+    const url = new URL(req.url);
+    const testRecipient = url.searchParams.get('to') || 'delivered@resend.dev';
   
   // Test 1: Basic API key validation
   let apiKeyTest = {
@@ -16,11 +27,16 @@ export const GET = async (req: NextRequest) => {
   };
   
   try {
-    // Try to get domains to test API key
-    const domains = await resend.domains.list();
+    // Try to get domains to test API key (with timeout)
+    const domainsPromise = resend.domains.list();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('API call timeout after 10 seconds')), 10000)
+    );
+    
+    const domains = await Promise.race([domainsPromise, timeoutPromise]) as any;
     apiKeyTest.success = true;
     apiKeyTest.details = `Found ${Array.isArray(domains.data) ? domains.data.length : 0} domains`;
-    console.log('✅ API Key valid, domains:', domains.data);
+    apiLogger.debug('API Key valid', { domainCount: Array.isArray(domains.data) ? domains.data.length : 0 });
     
     // Check if getjobping.com is verified
     const domainsList = Array.isArray(domains.data) ? domains.data : [];
@@ -33,7 +49,7 @@ export const GET = async (req: NextRequest) => {
   } catch (error: any) {
     apiKeyTest.success = false;
     apiKeyTest.error = error.message;
-    console.error('❌ API Key test failed:', error);
+      apiLogger.error('API Key test failed', error as Error);
   }
   
   // Test 2: Send actual email
@@ -45,8 +61,7 @@ export const GET = async (req: NextRequest) => {
   };
   
   try {
-    console.log('Testing email send with config:', EMAIL_CONFIG);
-    console.log('Test recipient:', testRecipient);
+    apiLogger.debug('Testing email send', { config: EMAIL_CONFIG, recipient: testRecipient });
     
     // Validate from address before sending
     assertValidFrom(EMAIL_CONFIG.from);
@@ -70,25 +85,36 @@ export const GET = async (req: NextRequest) => {
       `,
     };
     
-    const { data, error } = await resend.emails.send(payload);
+    // Add timeout to email send
+    const sendPromise = resend.emails.send(payload);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Email send timeout after 15 seconds')), 15000)
+    );
+    
+    const { data, error } = await Promise.race([sendPromise, timeoutPromise]) as any;
     
     if (error) {
       emailTest.error = error;
-      console.error('❌ Email send failed:', error);
+      apiLogger.error('Email send failed', error as Error, { 
+        status: error?.status ?? 'unknown',
+        requestId: error?.response?.headers?.get?.('x-resend-request-id') ?? 'n/a',
+        from: EMAIL_CONFIG.from
+      });
     } else {
       emailTest.success = true;
       emailTest.emailId = data?.id || null;
       emailTest.details = `Email sent successfully to ${testRecipient}`;
-      console.log('✅ Email sent successfully:', data);
+      apiLogger.info('Email sent successfully', { emailId: data?.id, recipient: testRecipient });
     }
   } catch (error: any) {
     const status = error?.status ?? 'unknown';
     const rid = error?.response?.headers?.get?.('x-resend-request-id') ?? 'n/a';
     const body = await error?.response?.json?.().catch(() => error?.message);
-    console.error('[RESEND_ERROR]', { status, requestId: rid, body, payloadFrom: EMAIL_CONFIG.from });
-    
-    emailTest.error = error.message;
-    console.error('❌ Email send exception:', error);
+    apiLogger.error('Email send exception', error as Error, {
+      status: error?.status ?? 'unknown',
+      requestId: rid,
+      from: EMAIL_CONFIG.from
+    });
   }
   
   // Test 3: Environment variables
@@ -103,7 +129,7 @@ export const GET = async (req: NextRequest) => {
     allResendVars: Object.keys(process.env).filter(k => k.includes('RESEND'))
   };
   
-  console.log('=== RESEND TEST END ===');
+  apiLogger.info('=== RESEND TEST END ===');
   
   return NextResponse.json({
     timestamp: new Date().toISOString(),
@@ -120,4 +146,12 @@ export const GET = async (req: NextRequest) => {
       overallStatus: apiKeyTest.success && emailTest.success ? 'SUCCESS' : 'FAILED'
     }
   });
+  } catch (error: any) {
+    apiLogger.error('Test endpoint error', error as Error);
+    return NextResponse.json({
+      error: 'Test endpoint failed',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
 };

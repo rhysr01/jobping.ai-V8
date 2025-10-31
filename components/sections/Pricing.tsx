@@ -45,13 +45,13 @@ export default function Pricing() {
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/50 border border-zinc-700/50 text-small uppercase tracking-wider text-zinc-400 font-bold mb-4">
                     <BrandIcons.Star className="w-3.5 h-3.5 text-zinc-500" />
                     Free Plan
-                  </div>
+                </div>
                   <div className="mt-2 text-3xl md:text-4xl font-black text-white leading-tight">5 roles on signup</div>
                   <div className="text-base font-semibold text-brand-400 mt-3 flex items-center gap-2">
                     <span className="text-zinc-500 font-normal">= </span>
                     <span className="text-xl">25 jobs/month</span>
                   </div>
-                </div>
+              </div>
 
                 <ul className="text-body text-zinc-300 space-y-4 mb-8 flex-1">
                   <Feature>
@@ -66,21 +66,21 @@ export default function Pricing() {
                     <BrandIcons.CheckCircle className="w-5 h-5 text-brand-400 flex-shrink-0" />
                     No dashboards, zero spam
                   </Feature>
-                </ul>
+              </ul>
 
-                <div className="mt-auto">
-                  <Link 
-                    href="/signup?tier=free" 
+              <div className="mt-auto">
+                <Link 
+                  href="/signup?tier=free" 
                     className="btn-secondary inline-block w-full text-center relative overflow-hidden group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black text-base font-semibold py-4"
-                    role="button"
-                    aria-label="Start free plan - navigate to signup"
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  role="button"
+                  aria-label="Start free plan - navigate to signup"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <span className="relative flex items-center justify-center gap-2">
                       Start free
                       <BrandIcons.ArrowRight className="w-5 h-5" />
                     </span>
-                  </Link>
+                </Link>
                 </div>
               </div>
             </motion.div>
@@ -120,7 +120,7 @@ export default function Pricing() {
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-500/20 border border-brand-500/40 text-small uppercase tracking-wider text-brand-300 font-bold mb-4">
                     <BrandIcons.Star className="w-3.5 h-3.5 text-brand-400 fill-current" />
                     Premium Plan
-                  </div>
+                </div>
                   <div className="mt-2 text-3xl md:text-4xl font-black text-white leading-tight">10 roles on signup</div>
                   <div className="text-base font-semibold text-brand-400 mt-3 flex items-center gap-2">
                     <span className="text-zinc-500 font-normal">= </span>
@@ -130,7 +130,7 @@ export default function Pricing() {
                     <BrandIcons.TrendingUp className="w-3.5 h-3.5" />
                     2.8× more than free
                   </div>
-                </div>
+              </div>
 
                 <ul className="text-body text-zinc-200 space-y-4 mb-8 flex-1 relative z-10">
                   <Feature strong>
@@ -145,21 +145,21 @@ export default function Pricing() {
                     <BrandIcons.Target className="w-5 h-5 text-brand-300 flex-shrink-0" />
                     Priority curation for your preferences
                   </Feature>
-                </ul>
+              </ul>
 
                 <div className="mt-auto relative z-10">
-                  <Link 
-                    href="/billing" 
+                <Link 
+                  href="/billing" 
                     className="btn-primary inline-block w-full text-center relative overflow-hidden group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-all duration-300 text-base font-bold py-4"
-                    role="button"
-                    aria-label="Go Premium - navigate to billing"
-                  >
+                  role="button"
+                  aria-label="Go Premium - navigate to billing"
+                >
                     <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <span className="relative flex items-center justify-center gap-2">
                       Go Premium
                       <BrandIcons.ArrowRight className="w-5 h-5" />
                     </span>
-                  </Link>
+                </Link>
                 </div>
               </div>
             </motion.div>
@@ -187,7 +187,7 @@ function Feature({ children, strong }: { children: React.ReactNode; strong?: boo
       {typeof children === 'string' ? (
         <>
           <BrandIcons.CheckCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${strong ? 'text-brand-300' : 'text-brand-400'}`} />
-          <span className={strong ? 'font-semibold text-zinc-100' : 'text-zinc-300'}>{children}</span>
+      <span className={strong ? 'font-semibold text-zinc-100' : 'text-zinc-300'}>{children}</span>
         </>
       ) : (
         <span className={`flex items-start gap-3 ${strong ? 'font-semibold text-zinc-100' : 'text-zinc-300'}`}>

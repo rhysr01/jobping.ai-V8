@@ -35,29 +35,29 @@ export default function HowItWorks() {
           {items.filter(x => x && x.title).map((x, index) => {
             const Icon = x.icon;
             return (
+            <motion.div 
+              key={x.num} 
+              className="relative px-4 py-2"
+              initial={{ opacity: 0, y: 30, scale: 0.98 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ 
+                duration: 0.6, 
+                delay: index * 0.15,
+                ease: [0.23, 1, 0.32, 1]
+              }}
+              whileHover={{ 
+                scale: 1.02,
+                transition: { duration: 0.3 }
+              }}
+            >
               <motion.div 
-                key={x.num} 
-                className="relative px-4 py-2"
-                initial={{ opacity: 0, y: 30, scale: 0.98 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ 
-                  duration: 0.6, 
-                  delay: index * 0.15,
-                  ease: [0.23, 1, 0.32, 1]
-                }}
+                  className="number-chip mx-auto mb-4 relative"
                 whileHover={{ 
-                  scale: 1.02,
+                    scale: 1.05,
                   transition: { duration: 0.3 }
                 }}
               >
-                <motion.div 
-                  className="number-chip mx-auto mb-4 relative"
-                  whileHover={{ 
-                    scale: 1.05,
-                    transition: { duration: 0.3 }
-                  }}
-                >
                   <span className="relative z-10">{x.num}</span>
                   <div className="absolute inset-0 bg-brand-500/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
                 </motion.div>

@@ -1,5 +1,6 @@
 //  EMAIL SENDER - PRODUCTION READY
 
+import { apiLogger } from '@/lib/api-logger';
 import { getResendClient, EMAIL_CONFIG, assertValidFrom } from './clients';
 import { createWelcomeEmail, createJobMatchesEmail } from './productionReadyTemplates';
 import { EmailJobCard } from './types';
@@ -139,7 +140,7 @@ async function withRetry<T>(
         RETRY_CONFIG.maxDelay
       );
       
-      console.warn(`Email send attempt ${attempt + 1} failed, retrying in ${delay}ms:`, error);
+      apiLogger.warn(`Email send attempt ${attempt + 1} failed, retrying in ${delay}ms`, error as Error);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }

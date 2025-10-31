@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabaseClient } from '@/Utils/databasePool';
 import { createConsolidatedMatcher } from '@/Utils/consolidatedMatching';
 import { sendWelcomeEmail, sendMatchedJobsEmail } from '@/Utils/email/sender';
+import { apiLogger } from '@/lib/api-logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -57,11 +58,11 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (userError) {
-      console.error('Failed to create user:', userError);
+      apiLogger.error('Failed to create user', userError as Error, { email: data.email });
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
     }
 
-    console.log(` User created: ${data.email}`);
+    apiLogger.info(`User created`, { email: data.email });
 
     // Trigger instant matching and email
     let matchesCount = 0;
@@ -141,7 +142,7 @@ export async function POST(req: NextRequest) {
           });
 
           matchesCount = matchEntries.length;
-          console.log(` Saved ${matchesCount} matches for ${data.email}`);
+          apiLogger.info(`Saved ${matchesCount} matches for user`, { email: data.email, matchCount: matchesCount });
 
           // Send welcome email with matched jobs
           try {
@@ -172,9 +173,9 @@ export async function POST(req: NextRequest) {
               })
               .eq('email', userData.email);
 
-            console.log(` Welcome email sent to ${data.email} with ${matchesCount} matches`);
+            apiLogger.info(`Welcome email sent to user`, { email: data.email, matchCount: matchesCount });
           } catch (emailError) {
-            console.error('Email send failed (non-fatal):', emailError);
+            apiLogger.warn('Email send failed (non-fatal)', emailError as Error, { email: data.email });
           }
         } else {
           // No matches found, send welcome email anyway
@@ -195,14 +196,14 @@ export async function POST(req: NextRequest) {
               })
               .eq('email', userData.email);
 
-            console.log(` Welcome email (no matches) sent to ${data.email}`);
+            apiLogger.info(`Welcome email (no matches) sent to user`, { email: data.email });
           } catch (emailError) {
-            console.error('Welcome email failed:', emailError);
+            apiLogger.error('Welcome email failed', emailError as Error, { email: data.email });
           }
         }
       }
     } catch (matchError) {
-      console.error('Matching failed (non-fatal):', matchError);
+      apiLogger.warn('Matching failed (non-fatal)', matchError as Error, { email: data.email });
       // Send welcome email even if matching fails
       try {
         await sendWelcomeEmail({
@@ -221,9 +222,9 @@ export async function POST(req: NextRequest) {
           })
           .eq('email', userData.email);
 
-        console.log(` Welcome email (matching failed) sent to ${data.email}`);
+        apiLogger.info(`Welcome email (matching failed) sent to user`, { email: data.email });
       } catch (emailError) {
-        console.error('Welcome email failed:', emailError);
+        apiLogger.error('Welcome email failed', emailError as Error, { email: data.email });
       }
     }
 
@@ -234,7 +235,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Signup error:', error);
+    apiLogger.error('Signup error', error as Error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

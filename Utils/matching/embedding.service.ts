@@ -196,8 +196,7 @@ export class EmbeddingService {
           '/api/generate-embeddings',
           'POST',
           200,
-          duration,
-          { tokens: totalTokens, cost: totalCost, embeddingsGenerated: embeddings.size }
+          duration
         );
       }
     } catch {

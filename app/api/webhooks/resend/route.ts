@@ -1,6 +1,6 @@
-// app/api/webhooks/resend/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/Utils/supabase';
+import { apiLogger } from '@/lib/api-logger';
+import { getDatabaseClient } from '@/Utils/databasePool';
 import crypto from 'crypto';
 
 // Resend webhook event types we care about
@@ -29,7 +29,7 @@ function verifyResendWebhook(payload: string, signature: string | null): boolean
   
   const webhookSecret = process.env.RESEND_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    console.warn('RESEND_WEBHOOK_SECRET not configured - webhook verification disabled');
+    apiLogger.warn('RESEND_WEBHOOK_SECRET not configured - webhook verification disabled');
     return true; // Allow in dev/test if secret not set
   }
   
@@ -47,21 +47,21 @@ function verifyResendWebhook(payload: string, signature: string | null): boolean
       Buffer.from(receivedSignature)
     );
   } catch (error) {
-    console.error('Webhook signature verification failed:', error);
+    apiLogger.error('Webhook signature verification failed', error as Error);
     return false;
   }
 }
 
 // Add email to suppression list
 async function suppressEmail(email: string, reason: string, eventData?: any): Promise<void> {
-  const supabase = getSupabaseClient();
+  const supabase = getDatabaseClient();
   
   try {
     // First create the table if it doesn't exist
     await supabase.rpc('create_email_suppression_table_if_not_exists');
   } catch (error) {
     // If the RPC doesn't exist, create the table manually
-    console.log('Creating email_suppression table...');
+    apiLogger.debug('Creating email_suppression table...');
     const { error: insertError } = await supabase
       .from('email_suppression')
       .insert({ user_email: email, reason, created_at: new Date().toISOString() });
@@ -69,7 +69,7 @@ async function suppressEmail(email: string, reason: string, eventData?: any): Pr
     if (insertError) {
       if (insertError.message?.includes('does not exist')) {
         // Table doesn't exist, we'll handle this gracefully
-        console.warn('email_suppression table does not exist yet');
+        apiLogger.warn('email_suppression table does not exist yet');
       }
     }
     return;
@@ -86,11 +86,11 @@ async function suppressEmail(email: string, reason: string, eventData?: any): Pr
     });
   
   if (error) {
-    console.error('Failed to insert email suppression:', error);
+    apiLogger.error('Failed to insert email suppression', error as Error, { email });
     throw error;
   }
   
-  console.log(` Email suppressed: ${email} (reason: ${reason})`);
+  apiLogger.info(`Email suppressed`, { email, reason });
 }
 
 export async function POST(req: NextRequest) {
@@ -100,13 +100,13 @@ export async function POST(req: NextRequest) {
     
     // Verify webhook signature
     if (!verifyResendWebhook(payload, signature)) {
-      console.error('Invalid webhook signature');
+      apiLogger.error('Invalid webhook signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
     
     const event: ResendWebhookEvent = JSON.parse(payload);
     
-    console.log(` Resend webhook received: ${event.type} for ${event.data.to}`);
+    apiLogger.info(`Resend webhook received`, { eventType: event.type, recipient: event.data.to });
     
     // Handle different event types
     switch (event.type) {
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
             }
           );
         } else {
-          console.log(` Temporary bounce for ${event.data.to}, not suppressing`);
+          apiLogger.debug(`Temporary bounce for ${event.data.to}, not suppressing`, { recipient: event.data.to });
         }
         break;
         
@@ -150,17 +150,17 @@ export async function POST(req: NextRequest) {
       case 'email.opened':
       case 'email.clicked':
         // These are positive signals - we might want to track them but not suppress
-        console.log(` Positive signal: ${event.type} for ${event.data.to}`);
+        apiLogger.debug(`Positive signal received`, { eventType: event.type, recipient: event.data.to });
         break;
         
       default:
-        console.log(` Unhandled webhook event type: ${event.type}`);
+        apiLogger.debug(`Unhandled webhook event type`, { eventType: event.type });
     }
     
     return NextResponse.json({ success: true, processed: event.type });
     
   } catch (error) {
-    console.error('Resend webhook processing failed:', error);
+    apiLogger.error('Resend webhook processing failed', error as Error);
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }

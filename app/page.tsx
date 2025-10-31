@@ -20,19 +20,19 @@ export default function Page() {
   return (
     <>
       <Suspense fallback={<SectionSkeleton />}>
-        <Hero />
+      <Hero />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
-        <EmailPhoneShowcase />
+      <EmailPhoneShowcase />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
-        <HowItWorks />
+      <HowItWorks />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
-        <BuiltForStudents />
+      <BuiltForStudents />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
-        <Pricing />
+      <Pricing />
       </Suspense>
     </>
   );

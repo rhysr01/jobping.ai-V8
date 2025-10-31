@@ -27,7 +27,7 @@ function SignupForm() {
   };
   const [formData, setFormData] = useState({
     fullName: '',
-    email: '',Inject a human line of empathy on signup (“We know job hunting is rough — we make it easier.”).
+    email: '',
     cities: [] as string[],
     languages: [] as string[],
     startDate: '',
@@ -559,7 +559,7 @@ function SignupForm() {
                         <span className={`w-2 h-2 rounded-full ${formData.visaStatus ? 'bg-green-400' : 'bg-zinc-500'}`}></span>
                         Visa Status
                       </div>
-                      <div className={`flex items_center gap-2 ${formData.entryLevelPreferences.length > 0 ? 'text-green-400' : 'text-zinc-500'}`}>
+                      <div className={`flex items-center gap-2 ${formData.entryLevelPreferences.length > 0 ? 'text-green-400' : 'text-zinc-500'}`}>
                         <span className={`w-2 h-2 rounded-full ${formData.entryLevelPreferences.length > 0 ? 'bg-green-400' : 'bg-zinc-500'}`}></span>
                         Entry Level Preferences ({formData.entryLevelPreferences.length}/1+ selected)
                       </div>
@@ -744,7 +744,7 @@ function SignupForm() {
 
                   {/* Progress Helper */}
                   <div className="mt-4 p-4 bg-zinc-800/50 rounded-xl border border-zinc-700">
-                    <h3 className="text-sm font-bold text_zinc-300 mb-2">Required for next step:</h3>
+                    <h3 className="text-sm font-bold text-zinc-300 mb-2">Required for next step:</h3>
                     <div className="space-y-1 text-sm">
                       <div className={`flex items-center gap-2 ${formData.careerPath ? 'text-green-400' : 'text-zinc-500'}`}>
                         <span className={`w-2 h-2 rounded-full ${formData.careerPath ? 'bg-green-400' : 'bg-zinc-500'}`}></span>

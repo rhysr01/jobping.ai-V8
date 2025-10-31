@@ -5,7 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { POST, GET } from '@/app/api/match-users/route';
-import { hmacSign } from '@/Utils/security/hmac';
+import { hmacSign } from '@/Utils/auth/hmac';
 
 // Mock the consolidated matcher
 jest.mock('@/Utils/consolidatedMatching', () => ({

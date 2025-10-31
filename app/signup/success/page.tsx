@@ -26,7 +26,7 @@ function SignupSuccessContent() {
           />
         )}
       </AnimatePresence>
-      <div className="min-h-screen bg-black text-white flex items-center justify-center py-20">
+    <div className="min-h-screen bg-black text-white flex items-center justify-center py-20">
       <div className="container-page max-w-2xl text-center px-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}

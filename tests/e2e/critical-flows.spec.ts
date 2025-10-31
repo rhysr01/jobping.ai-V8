@@ -80,7 +80,7 @@ test.describe('Critical User Flows', () => {
       const navElement = page.locator(`[data-testid="${link.testid}"]`);
       if (await navElement.count() > 0) {
         await navElement.click();
-        await expect(page).toHaveURL(new RegExp(link.href));
+      await expect(page).toHaveURL(new RegExp(link.href));
       }
     }
   });

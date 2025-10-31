@@ -2,7 +2,7 @@
  * Tests for HMAC Security Utilities
  */
 
-import { hmacSign, hmacVerify } from '@/Utils/security/hmac';
+import { hmacSign, hmacVerify } from '@/Utils/auth/hmac';
 import crypto from 'crypto';
 
 describe('HMAC Security Utilities', () => {
@@ -185,7 +185,7 @@ describe('HMAC Security Utilities', () => {
     });
 
     it('should handle unicode characters', () => {
-      const unicodeData = 'Hello ä–ç• ';
+      const unicodeData = 'Hello ï¿½ï¿½ ';
       const signature = hmacSign(unicodeData, testSecret);
       expect(hmacVerify(unicodeData, signature, testSecret)).toBe(true);
     });

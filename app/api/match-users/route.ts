@@ -1,6 +1,7 @@
 // app/api/match-users/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 const HMAC_SECRET = process.env.INTERNAL_API_HMAC_SECRET;
+import { verifyHMAC, isHMACRequired } from '@/Utils/auth/hmac';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getProductionRateLimiter } from '@/Utils/productionRateLimiter';
 import { getDatabaseClient } from '@/Utils/databasePool';
@@ -9,8 +10,7 @@ import {
   logMatchSession
 } from '@/Utils/matching/logging.service';
 import type { UserPreferences, JobMatch } from '@/Utils/matching/types';
-import crypto from 'crypto';
-import { verifyHMAC, isHMACRequired } from '@/Utils/auth/hmac';
+import { apiLogger } from '@/lib/api-logger';
 import { createConsolidatedMatcher } from '@/Utils/consolidatedMatching';
 import { 
   SEND_PLAN,
@@ -73,7 +73,7 @@ async function withRedisLock<T>(
   const redis = (limiter as any).redisClient;
   
   if (!redis) {
-    console.warn('Redis not available, proceeding without lock');
+    apiLogger.warn('Redis not available, proceeding without lock');
     return await fn();
   }
 
@@ -84,11 +84,11 @@ async function withRedisLock<T>(
     // Try to acquire lock
     const acquired = await redis.set(lockKey, token, { NX: true, EX: ttlSeconds });
     if (!acquired) {
-      console.log(`Lock ${lockKey} already held, skipping operation`);
+      apiLogger.debug(`Lock ${lockKey} already held, skipping operation`, { lockKey });
       return null;
     }
 
-    console.log(`Acquired lock ${lockKey} for ${ttlSeconds}s`);
+    apiLogger.debug(`Acquired lock ${lockKey} for ${ttlSeconds}s`, { lockKey, ttlSeconds });
     return await fn();
   } finally {
     // Always try to release lock
@@ -96,10 +96,10 @@ async function withRedisLock<T>(
       const currentToken = await redis.get(lockKey);
       if (currentToken === token) {
         await redis.del(lockKey);
-        console.log(`Released lock ${lockKey}`);
+        apiLogger.debug(`Released lock ${lockKey}`, { lockKey });
       }
     } catch (error) {
-      console.warn(`Failed to release lock ${lockKey}:`, error);
+      apiLogger.warn(`Failed to release lock ${lockKey}`, { lockKey, error: error instanceof Error ? error.message : String(error) });
       // TTL will release it naturally
     }
   }
@@ -151,7 +151,7 @@ async function validateDatabaseSchema(supabase: SupabaseClient): Promise<{ valid
   try {
     // Skip schema validation in test environment
     if (process.env.NODE_ENV === 'test') {
-      console.log('Test mode: Skipping database schema validation');
+      apiLogger.debug('Test mode: Skipping database schema validation');
       return { valid: true };
     }
     
@@ -169,7 +169,7 @@ async function validateDatabaseSchema(supabase: SupabaseClient): Promise<{ valid
     const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
     
     if (error) {
-      console.error('Database schema validation failed:', error.message);
+      apiLogger.error('Database schema validation failed', error as Error, { requiredColumns });
       // Try to identify missing columns from error message
       const missingColumns = requiredColumns.filter(col => 
         error.message?.toLowerCase().includes(col.toLowerCase())
@@ -177,10 +177,10 @@ async function validateDatabaseSchema(supabase: SupabaseClient): Promise<{ valid
       return { valid: false, missingColumns };
     }
     
-    console.log('Database schema validation passed');
+    apiLogger.debug('Database schema validation passed');
     return { valid: true };
   } catch (err) {
-    console.error('Database schema validation error:', err);
+    apiLogger.error('Database schema validation error', err as Error);
     return { valid: false, missingColumns: ['status', 'original_posted_date', 'last_seen_at'] };
   }
 }
@@ -486,9 +486,9 @@ const matchUsersHandler = async (req: NextRequest) => {
   
   // Variables for function scope (some will be assigned in try block)
   
-  // Stopwatch helper
+  // Stopwatch helper - uses structured logger
   const t0 = Date.now(); 
-  const lap = (s: string) => console.log(JSON.stringify({ evt:'perf', step:s, ms: Date.now()-t0 }));
+  const lap = (s: string) => apiLogger.perf(s, Date.now() - t0);
   
   // Extract IP address
   const ip = req.headers.get('x-forwarded-for') || 
@@ -508,7 +508,7 @@ const matchUsersHandler = async (req: NextRequest) => {
   // Use Redis lock to prevent concurrent processing
   const lockKey = LOCK_KEY('global');
   const result = await withRedisLock(lockKey, 30, async () => {
-    if (IS_DEBUG) console.log(`Processing match-users request from IP: ${ip}`);
+    if (IS_DEBUG) apiLogger.debug(`Processing match-users request from IP: ${ip}`, { ip });
     
     // Use validated Zod schema values from the first parsing
     const userCap = IS_TEST ? Math.min(userLimit, USER_LIMIT) : userLimit;
@@ -544,7 +544,7 @@ const matchUsersHandler = async (req: NextRequest) => {
       }
       users = usersData || [];
     } catch (error: any) {
-      console.error('Failed to fetch users:', error);
+      apiLogger.error('Failed to fetch users', error as Error, { userCap });
       return NextResponse.json({ 
         error: 'Failed to fetch users',
         code: 'USER_FETCH_ERROR',
@@ -553,7 +553,7 @@ const matchUsersHandler = async (req: NextRequest) => {
     }
 
     if (!users || users.length === 0) {
-      if (IS_DEBUG) console.log('No users found');
+      if (IS_DEBUG) apiLogger.debug('No users found');
       return NextResponse.json({ message: 'No users found' });
     }
 
@@ -595,13 +595,13 @@ const matchUsersHandler = async (req: NextRequest) => {
 
     // Check if semantic search is available
     const isSemanticAvailable = await semanticRetrievalService.isSemanticSearchAvailable();
-    console.log(`Semantic search available: ${isSemanticAvailable}`);
+    apiLogger.debug(`Semantic search available: ${isSemanticAvailable}`, { isSemanticAvailable });
 
     let jobs: any[] = [];
 
     if (isSemanticAvailable) {
       // Use semantic retrieval for better job matching
-      console.log('Using semantic retrieval for job matching');
+      apiLogger.info('Using semantic retrieval for job matching');
       
       // Get semantic candidates for each user (we'll use the first user's preferences as a sample)
       const sampleUser = transformedUsers[0];
@@ -613,14 +613,14 @@ const matchUsersHandler = async (req: NextRequest) => {
         
         if (semanticJobs.length > 0) {
           jobs = semanticJobs;
-          console.log(`Found ${semanticJobs.length} semantic job candidates`);
+          apiLogger.info(`Found ${semanticJobs.length} semantic job candidates`, { count: semanticJobs.length });
         }
       }
     }
 
     // Fallback to traditional keyword-based search if semantic search fails or returns no results
     if (jobs.length === 0) {
-      console.log('Falling back to keyword-based job search');
+      apiLogger.info('Falling back to keyword-based job search');
       
       // EU location hints for filtering
       const EU_HINTS = [
@@ -649,7 +649,7 @@ const matchUsersHandler = async (req: NextRequest) => {
         .limit(jobCap);
 
       if (jobsError) {
-        console.error('Failed to fetch jobs:', jobsError);
+        apiLogger.error('Failed to fetch jobs', jobsError as Error, { userCap, jobCap });
         return NextResponse.json({ 
           error: 'Failed to fetch jobs',
           code: 'JOB_FETCH_ERROR',
@@ -663,7 +663,7 @@ const matchUsersHandler = async (req: NextRequest) => {
     const jobFetchTime = Date.now() - jobFetchStart;
 
     if (!jobs || jobs.length === 0) {
-      console.log('No active jobs to process');
+      apiLogger.info('No active jobs to process');
       return NextResponse.json({ message: 'No active jobs to process' });
     }
 
@@ -705,9 +705,13 @@ const matchUsersHandler = async (req: NextRequest) => {
         )
       ).length;
       
-      console.log(` Job Filtering Results:`);
-       console.log(`   EU-based jobs: ${euJobs}/${jobs.length} (${Math.round(euJobs/jobs.length*100)}%)`);
-       console.log(`   Early career jobs: ${earlyCareerJobs}/${jobs.length} (${Math.round(earlyCareerJobs/jobs.length*100)}%)`);
+      apiLogger.debug('Job filtering results', {
+        totalJobs: jobs.length,
+        euJobs,
+        euPercentage: Math.round(euJobs/jobs.length*100),
+        earlyCareerJobs,
+        earlyCareerPercentage: Math.round(earlyCareerJobs/jobs.length*100)
+      });
     }
 
     // Skip in-memory job reservations; Redis global lock already protects this run
@@ -737,7 +741,7 @@ const matchUsersHandler = async (req: NextRequest) => {
     let results: Array<{ user: string; success: boolean; matches?: number; error?: string }>;
     
     if (USE_BATCH_PROCESSING) {
-      console.log(`Using batch processing for ${transformedUsers.length} users`);
+      apiLogger.info(`Using batch processing for ${transformedUsers.length} users`, { userCount: transformedUsers.length });
       
       // Prepare users for batch processing
       const usersForBatch = transformedUsers.map(user => ({
@@ -776,7 +780,7 @@ const matchUsersHandler = async (req: NextRequest) => {
       });
     } else {
       // Fall back to individual processing for small groups
-      console.log(`Using individual processing for ${transformedUsers.length} users`);
+      apiLogger.info(`Using individual processing for ${transformedUsers.length} users`, { userCount: transformedUsers.length });
       
       // ============================================
       // OPTIMIZATION: Batch fetch all user matches (fixes N+1 query bomb!)
@@ -901,7 +905,10 @@ const matchUsersHandler = async (req: NextRequest) => {
         // DIVERSITY: Ensure matches include multiple job boards AND multiple cities
         // This runs EVEN for cached results to ensure city distribution!
         if (matches && matches.length >= 3) {
-          console.log(` Running diversity check (method: ${result.method}, cached: ${result.method === 'ai_success' && aiMatchingTime < 100})`);
+          apiLogger.debug(`Running diversity check`, { 
+            method: result.method, 
+            cached: result.method === 'ai_success' && aiMatchingTime < 100 
+          });
 
           const matchedJobs = matches.map(m => {
             const job = distributedJobs.find(j => j.job_hash === m.job_hash);
@@ -922,12 +929,18 @@ const matchUsersHandler = async (req: NextRequest) => {
             }).filter(Boolean)
           );
           
-          console.log(` City diversity: ${matchedCities.size}/${targetCities.length} cities covered (${Array.from(matchedCities).join(', ')})`);
+          apiLogger.debug(`City diversity coverage`, {
+            citiesCovered: matchedCities.size,
+            totalCities: targetCities.length,
+            cities: Array.from(matchedCities)
+          });
           
           // CITY DIVERSITY: Evenly distribute jobs across selected cities
           if (targetCities.length >= 2 && matches.length >= 3) {
-            console.log(` Ensuring even city distribution for ${targetCities.length} target cities`);
-            console.log(` Available jobs pool: ${distributedJobs.length} jobs`);
+            apiLogger.debug(`Ensuring even city distribution`, {
+              targetCities: targetCities.length,
+              availableJobs: distributedJobs.length
+            });
             
             // Calculate target distribution (3+2 for 2 cities, 2+2+1 for 3 cities, etc.)
             const jobsPerCity = Math.floor(5 / targetCities.length); // Base allocation
@@ -938,7 +951,9 @@ const matchUsersHandler = async (req: NextRequest) => {
               target: jobsPerCity + (index < extraJobs ? 1 : 0)
             }));
             
-            console.log(` Target distribution: ${cityAllocations.map((c: { city: string; target: number }) => `${c.city}:${c.target}`).join(', ')}`);
+            apiLogger.debug(`City allocation targets`, {
+              allocations: cityAllocations.map((c: { city: string; target: number }) => ({ city: c.city, target: c.target }))
+            });
             
             // Rebuild matches with even city distribution + relevance scoring
             const newMatches: JobMatch[] = [];
@@ -990,7 +1005,11 @@ const matchUsersHandler = async (req: NextRequest) => {
                        !newMatches.some(m => m.job_hash === job.job_hash);
               });
               
-              console.log(` ${allocation.city}: Found ${cityJobs.length} available jobs, need ${allocation.target}`);
+              apiLogger.debug(`City job allocation`, {
+                city: allocation.city,
+                availableJobs: cityJobs.length,
+                targetJobs: allocation.target
+              });
               
               // Score and sort by relevance (MOST relevant first)
               const scoredCityJobs = cityJobs
@@ -1009,24 +1028,31 @@ const matchUsersHandler = async (req: NextRequest) => {
                   confidence_score: 0.85
                 });
                 
-                console.log(`   Added: ${job.title} (score: ${relevanceScore})`);
+                apiLogger.debug(`Added job to city matches`, {
+                  city: allocation.city,
+                  jobTitle: job.title,
+                  relevanceScore
+                });
               });
             }
             
             // Only replace matches if we got enough jobs from all cities
             if (newMatches.length >= 3) {
-              console.log(` Rebuilt ${newMatches.length} matches with city diversity`);
+              apiLogger.info(`Rebuilt ${newMatches.length} matches with city diversity`, { matchCount: newMatches.length });
               matches = newMatches.slice(0, 5); // Ensure exactly 5
             } else {
-              console.log(` Not enough jobs across all cities (${newMatches.length}), keeping original matches`);
+              apiLogger.debug(`Not enough jobs across all cities`, { matchCount: newMatches.length });
             }
           } else {
-            console.log(` City diversity check: ${targetCities.length} cities, need 3+ matches for diversity`);
+            apiLogger.debug(`City diversity check skipped`, { cityCount: targetCities.length });
           }
           
           // SOURCE DIVERSITY: Ensure matches include multiple job boards (preferred: at least 2)
           if (uniqueSources.size === 1 && distributedJobs.length > 10) {
-            console.log(` All ${matches.length} matches from ${Array.from(uniqueSources)[0]}, adding diversity...`);
+            apiLogger.debug(`Adding source diversity`, {
+              currentSource: Array.from(uniqueSources)[0],
+              matchCount: matches.length
+            });
             
             // Find jobs from OTHER sources in our pre-filtered pool
             const primarySource = Array.from(uniqueSources)[0];
@@ -1101,11 +1127,13 @@ const matchUsersHandler = async (req: NextRequest) => {
           
           try {
             // NOTE: Match saving temporarily disabled - matches are logged for debugging
-            console.log(`✅ Would save ${matchesWithEmail.length} matches for ${user.email}:`, 
-              matchesWithEmail.map(m => ({ job_hash: m.job_hash, match_score: m.match_score }))
-            );
+            apiLogger.debug(`Would save matches for user`, {
+              userEmail: user.email,
+              matchCount: matchesWithEmail.length,
+              matches: matchesWithEmail.map(m => ({ job_hash: m.job_hash, match_score: m.match_score }))
+            });
           } catch (error) {
-            console.error(`❌ Failed to save matches for ${user.email}:`, error);
+            apiLogger.error(`Failed to save matches for user`, error as Error, { userEmail: user.email });
           }
         }
 
@@ -1127,7 +1155,7 @@ const matchUsersHandler = async (req: NextRequest) => {
         return { user: user.email, success: true, matches: matches.length };
 
       } catch (userError) {
-        console.error(`Error processing user ${user.email}:`, userError);
+        apiLogger.error(`Error processing user`, userError as Error, { userEmail: user.email });
         
         return { user: user.email, success: false, error: userError instanceof Error ? userError.message : 'Unknown error' };
       }
@@ -1141,7 +1169,11 @@ const matchUsersHandler = async (req: NextRequest) => {
 
     // SLO check: warn if match-users exceeds target (<2s)
     if (totalProcessingTime > MATCH_SLO_MS) {
-      console.warn(`Match-users SLO violation: ${totalProcessingTime}ms > ${MATCH_SLO_MS}ms target`);
+      apiLogger.warn(`Match-users SLO violation`, {
+        duration: totalProcessingTime,
+        target: MATCH_SLO_MS,
+        processed: users.length
+      });
       Sentry.addBreadcrumb({
         message: 'Match-users SLO violation',
         level: 'warning',
@@ -1162,7 +1194,7 @@ const matchUsersHandler = async (req: NextRequest) => {
       : 0;
     
     if (errorRate > 10) {
-      console.warn(` High error rate detected: ${errorRate.toFixed(2)}%`);
+      apiLogger.warn(`High error rate detected`, { errorRate: errorRate.toFixed(2) });
       Sentry.captureMessage(`High error rate: ${errorRate.toFixed(2)}%`, {
         level: 'warning',
         tags: { errorRate: errorRate.toFixed(2) }
@@ -1212,7 +1244,7 @@ const matchUsersHandler = async (req: NextRequest) => {
 
   } catch (error) {
     const requestDuration = Date.now() - startTime;
-    console.error('Match-users processing error:', error);
+    apiLogger.error('Match-users processing error', error as Error, { requestId, requestDuration });
     
     // Sentry error tracking with context
     Sentry.captureException(error, {

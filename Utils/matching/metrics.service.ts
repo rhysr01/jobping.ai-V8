@@ -66,7 +66,7 @@ export async function logMatchMetrics(metrics: MatchMetrics): Promise<void> {
     const supabase = getDatabaseClient();
     
     // Store metrics in database
-    await supabase
+    const { error } = await supabase
       .from('match_metrics')
       .insert({
         recall_at_50: metrics.recallAt50,
@@ -74,11 +74,12 @@ export async function logMatchMetrics(metrics: MatchMetrics): Promise<void> {
         timestamp: metrics.timestamp,
         user_email: metrics.userEmail || null,
         match_type: metrics.matchType
-      })
-      .catch(err => {
-        // Table might not exist yet - log to Sentry instead
-        console.warn('Metrics table not available, logging to Sentry:', err);
       });
+    
+    if (error) {
+      // Table might not exist yet - log to Sentry instead
+      console.warn('Metrics table not available, logging to Sentry:', error);
+    }
     
     // Log to Sentry for monitoring
     Sentry.addBreadcrumb({
@@ -113,13 +114,12 @@ export async function getMetricsSummary(days: number = 7): Promise<{
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
     
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('match_metrics')
       .select('recall_at_50, ndcg_at_5')
-      .gte('timestamp', cutoffDate.toISOString())
-      .catch(() => ({ data: null }));
+      .gte('timestamp', cutoffDate.toISOString());
     
-    if (!data || data.length === 0) {
+    if (error || !data || data.length === 0) {
       return { avgRecallAt50: 0, avgNDCGAt5: 0, sampleCount: 0 };
     }
     

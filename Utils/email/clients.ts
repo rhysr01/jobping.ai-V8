@@ -9,6 +9,9 @@ export function getResendClient() {
   if (!apiKey) {
     throw new Error('Missing Resend API key: RESEND_API_KEY must be set');
   }
+  if (!apiKey.startsWith('re_')) {
+    throw new Error('Invalid Resend API key format: must start with "re_"');
+  }
   return new Resend(apiKey);
 }
 
@@ -66,5 +69,14 @@ export const EMAIL_CONFIG = {
   listUnsubscribeEmail: getUnsubscribeEmail()
 } as const;
 
-// Validate the from address at module load time
-assertValidFrom(EMAIL_CONFIG.from);
+// Validate the from address at module load time (with error handling)
+try {
+  assertValidFrom(EMAIL_CONFIG.from);
+} catch (error) {
+  // Log but don't throw - allow runtime to handle
+  console.error('Email config validation failed:', error);
+  // In production, you might want to throw here
+  if (process.env.NODE_ENV === 'production') {
+    throw error;
+  }
+}

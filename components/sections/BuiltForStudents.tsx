@@ -41,35 +41,35 @@ export default function BuiltForStudents() {
           {features.filter(feature => feature && feature.title).map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <GlassCard
-                key={feature.num}
-                variant="subtle"
-                hover="lift"
-                initial={{ opacity: 0, y: 30, scale: 0.98 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ 
-                  duration: 0.6, 
-                  delay: index * 0.15,
-                  ease: [0.23, 1, 0.32, 1]
-                }}
+            <GlassCard
+              key={feature.num}
+              variant="subtle"
+              hover="lift"
+              initial={{ opacity: 0, y: 30, scale: 0.98 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ 
+                duration: 0.6, 
+                delay: index * 0.15,
+                ease: [0.23, 1, 0.32, 1]
+              }}
                 className="p-8 sm:p-10 md:p-12 relative overflow-hidden group"
-              >
+            >
                 <div className="flex items-center justify-between mb-4">
-                  <div className="number-chip">{feature.num}</div>
+              <div className="number-chip">{feature.num}</div>
                   <IconBadge>
                     <Icon className="w-5 h-5 text-brand-400" />
                   </IconBadge>
                 </div>
                 <h3 className="mt-4 text-heading text-white font-black leading-tight">{feature.title}</h3>
                 <p className="mt-4 text-large text-neutral-200 leading-relaxed font-medium">{feature.body}</p>
-                <div className="mt-6 pt-5 border-t border-zinc-700/50">
+              <div className="mt-6 pt-5 border-t border-zinc-700/50">
                   <p className="text-small font-bold text-brand-400 flex items-center gap-2">
                     <BrandIcons.Check className="w-4 h-4" />
                     {feature.stats}
                   </p>
-                </div>
-              </GlassCard>
+              </div>
+            </GlassCard>
             );
           })}
         </div>

@@ -59,7 +59,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             </p>
             <div className="flex gap-4 justify-center">
               <Button onClick={this.handleReset} variant="primary">
-                Try again
+              Try again
               </Button>
               <Button
                 onClick={() => window.location.reload()}

@@ -13,29 +13,31 @@ export function getDateDaysAgo(days: number): Date {
   return date;
 }
 
+// DEPRECATED: Unused functions - kept for backward compatibility
+// Consider removing if not needed in future versions
 /**
- * Gets a date N hours ago
+ * @deprecated Not used in codebase - consider removing
  */
 export function getDateHoursAgo(hours: number): Date {
   return new Date(Date.now() - hours * 60 * 60 * 1000);
 }
 
 /**
- * Gets a date N minutes ago
+ * @deprecated Not used in codebase - consider removing
  */
 export function getDateMinutesAgo(minutes: number): Date {
   return new Date(Date.now() - minutes * 60 * 1000);
 }
 
 /**
- * Formats a date to ISO string in UTC
+ * @deprecated Not used in codebase - consider removing
  */
 export function toUTCString(date: Date): string {
   return date.toISOString();
 }
 
 /**
- * Checks if a date is within the last N days
+ * @deprecated Not used in codebase - consider removing
  */
 export function isWithinDays(date: Date | string, days: number): boolean {
   const checkDate = typeof date === 'string' ? new Date(date) : date;
@@ -44,7 +46,7 @@ export function isWithinDays(date: Date | string, days: number): boolean {
 }
 
 /**
- * Gets the start of today in UTC
+ * @deprecated Not used in codebase - consider removing
  */
 export function getStartOfToday(): Date {
   const date = new Date();
@@ -53,7 +55,7 @@ export function getStartOfToday(): Date {
 }
 
 /**
- * Gets the end of today in UTC
+ * @deprecated Not used in codebase - consider removing
  */
 export function getEndOfToday(): Date {
   const date = new Date();
